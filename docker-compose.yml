@@ -1,0 +1,21 @@
+services:
+  db:
+    image: postgres:16-alpine
+    container_name: pv_postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER:-pv}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-pv_dev_password}
+      POSTGRES_DB: ${POSTGRES_DB:-produto_vivo}
+    ports:
+      - "${POSTGRES_PORT:-5433}:5432"
+    volumes:
+      - pv_pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-pv} -d ${POSTGRES_DB:-produto_vivo}"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+volumes:
+  pv_pgdata:

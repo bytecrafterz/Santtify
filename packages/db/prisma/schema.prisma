@@ -1,0 +1,872 @@
+// Produto Vivo — modelo de dados
+//
+// Regra 1: nada aqui conhece o conceito de "letra" ou "alfabeto".
+//          Uma letra é um Content de um Project. Só isso.
+// Regra 2: Event é fonte da verdade e append-only.
+//          DailyMetric e ContentStats são derivados e sempre recalculáveis.
+//
+// Ver docs/ARQUITETURA.md.
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// ═══════════════════════════════════════════════════════════════════
+// PROJETOS
+// ═══════════════════════════════════════════════════════════════════
+
+/// Um projeto = uma vitrine dentro do Produto Vivo.
+/// "Jesus Alfabeto Saudável" é o projeto nº 1. O painel multi-projeto é
+/// Fase 2, mas o modelo já é multi-projeto desde a primeira migration.
+model Project {
+  id          String        @id @default(uuid()) @db.Uuid
+  slug        String        @unique
+  name        String
+  description String?
+  status      ProjectStatus @default(ACTIVE)
+
+  /// Identidade visual — cada empresa mantém a sua no white label.
+  branding Json @default("{}")
+
+  /// Marco de lançamento deste projeto (o "Dia Zero").
+  launchedAt DateTime?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  contents  Content[]
+  campaigns Campaign[]
+  shortLink ShortLink[]
+  visitors  Visitor[]
+  sessions  VisitSession[]
+  events    Event[]
+  metrics   DailyMetric[]
+  baselines BaselineSnapshot[]
+  comments  Comment[]
+  reactions Reaction[]
+  auditLogs AdminAuditLog[]
+
+  @@map("projects")
+}
+
+enum ProjectStatus {
+  DRAFT
+  ACTIVE
+  ARCHIVED
+}
+
+// ═══════════════════════════════════════════════════════════════════
+// CONTEÚDO
+// ═══════════════════════════════════════════════════════════════════
+
+/// Unidade genérica de conteúdo. No alfabeto, cada letra é um Content.
+/// Num próximo projeto, pode ser um produto, um vídeo, um episódio.
+model Content {
+  id        String        @id @default(uuid()) @db.Uuid
+  projectId String        @db.Uuid
+  project   Project       @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  slug      String
+  title     String
+  subtitle  String?
+  summary   String?
+  coverUrl  String?
+  status    ContentStatus @default(DRAFT)
+  /// Ordem de exibição dentro do projeto (A=1, B=2, ... no alfabeto).
+  position  Int           @default(0)
+
+  publishedAt DateTime?
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+
+  blocks    ContentBlock[]
+  metadata  ContentMetadata?
+  stats     ContentStats?
+  shortLink ShortLink[]
+  reactions Reaction[]
+  comments  Comment[]
+  events    Event[]
+
+  @@unique([projectId, slug])
+  @@index([projectId, status, position])
+  @@map("contents")
+}
+
+enum ContentStatus {
+  DRAFT
+  PUBLISHED
+  ARCHIVED
+}
+
+/// A página de um conteúdo é composta por blocos ordenados, não por campos
+/// fixos. É isso que impede o formato "música + letra + texto educativo" do
+/// alfabeto de virar o schema da plataforma inteira.
+model ContentBlock {
+  id        String    @id @default(uuid()) @db.Uuid
+  contentId String    @db.Uuid
+  content   Content   @relation(fields: [contentId], references: [id], onDelete: Cascade)
+  position  Int       @default(0)
+  type      BlockType
+  /// Rótulo livre definido pelo admin: "Letra da música", "Conteúdo educativo".
+  label     String?
+  /// Corpo textual, para TEXT e RICH_TEXT.
+  text      String?
+  assetId   String?     @db.Uuid
+  asset     MediaAsset? @relation(fields: [assetId], references: [id], onDelete: SetNull)
+  /// URL externa, para EMBED e LINK.
+  url       String?
+  meta      Json        @default("{}")
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([contentId, position])
+  @@map("content_blocks")
+}
+
+enum BlockType {
+  TEXT
+  RICH_TEXT
+  AUDIO
+  VIDEO
+  IMAGE
+  EMBED
+  LINK
+}
+
+/// Arquivo enviado pelo admin. Reutilizável entre blocos e projetos.
+model MediaAsset {
+  id         String    @id @default(uuid()) @db.Uuid
+  kind       MediaKind
+  url        String
+  mimeType   String?
+  sizeBytes  Int?
+  durationMs Int?
+  title      String?
+  altText    String?
+
+  uploadedById String? @db.Uuid
+  uploadedBy   User?   @relation(fields: [uploadedById], references: [id], onDelete: SetNull)
+
+  createdAt DateTime @default(now())
+
+  blocks ContentBlock[]
+
+  @@map("media_assets")
+}
+
+enum MediaKind {
+  AUDIO
+  VIDEO
+  IMAGE
+  DOCUMENT
+}
+
+/// Metadados analíticos do conteúdo — pedido explícito do cliente para que a IA
+/// da Fase 2 possa cruzar DESEMPENHO x CARACTERÍSTICAS.
+/// Tabela separada de propósito: é dado analítico, não de renderização, e não
+/// deve pesar no caminho quente de leitura da página.
+model ContentMetadata {
+  contentId String  @id @db.Uuid
+  content   Content @relation(fields: [contentId], references: [id], onDelete: Cascade)
+
+  /// Plataforma de destino/origem pretendida do conteúdo.
+  platform    Platform?
+  /// Formato: reel, short, carrossel, post, página...
+  format      String?
+  /// Tema/assunto, para agrupamento analítico.
+  theme       String?
+  /// Referência do produto associado (checkout externo).
+  productRef  String?
+  campaignId  String?   @db.Uuid
+  campaign    Campaign? @relation(fields: [campaignId], references: [id], onDelete: Restrict)
+  /// Call to action usado.
+  cta         String?
+  /// Variante de teste A/B.
+  testVariant String?
+  /// Data/hora planejada ou de publicação do conteúdo na origem.
+  scheduledAt DateTime?
+
+  /// Qualquer característica futura, sem migration.
+  attributes Json @default("{}")
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([platform])
+  @@index([theme])
+  @@index([testVariant])
+  @@map("content_metadata")
+}
+
+// ═══════════════════════════════════════════════════════════════════
+// CAMPANHAS
+// ═══════════════════════════════════════════════════════════════════
+
+/// Identificador próprio por campanha / publicação / vídeo.
+/// É o que permite ler "Instagram → Vídeo 03 → 850 visitas → 120 cadastros".
+model Campaign {
+  id        String   @id @default(uuid()) @db.Uuid
+  projectId String   @db.Uuid
+  project   Project  @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  /// Código curto usado na URL (?pv=<code>).
+  code      String   @unique
+  platform  Platform
+  name      String
+  /// Formato da publicação: reel, short, story, post, vídeo longo...
+  format    String?
+  theme     String?
+  cta       String?
+  testVariant String?
+  /// Link do post/vídeo original, para conferência humana.
+  externalUrl String?
+  publishedAt DateTime?
+
+  attributes Json @default("{}")
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  shortLinks       ShortLink[]
+  events           Event[]
+  visitorsFirst    Visitor[]        @relation("VisitorFirstTouchCampaign")
+  visitorsLast     Visitor[]        @relation("VisitorLastTouchCampaign")
+  visitorsRoot     Visitor[]        @relation("VisitorRootCampaign")
+  contentMetadatas ContentMetadata[]
+  sessions         VisitSession[]
+
+  @@index([projectId, platform])
+  @@map("campaigns")
+}
+
+/// Origens rastreadas. PRODUTO_VIVO = propagação interna (compartilhamento
+/// feito por alguém que já estava dentro da plataforma).
+enum Platform {
+  INSTAGRAM
+  TIKTOK
+  YOUTUBE
+  FACEBOOK
+  WHATSAPP
+  GOOGLE
+  DIRECT
+  QR_CODE
+  PRODUTO_VIVO
+  EMAIL
+  OTHER
+}
+
+// ═══════════════════════════════════════════════════════════════════
+// LINKS RASTREÁVEIS E QR CODES
+// ═══════════════════════════════════════════════════════════════════
+
+/// Espinha dorsal do rastreamento. Todo link rastreável passa por aqui:
+/// o QR de um conteúdo, o link de uma campanha e o link gerado quando um
+/// usuário compartilha.
+///
+/// parentShortLinkId é a ARESTA da cadeia de propagação.
+/// rootShortLinkId e depth são desnormalizados no momento da criação para que
+/// "quanto esta cadeia inteira gerou" seja uma consulta, não uma reconstrução.
+model ShortLink {
+  id        String        @id @default(uuid()) @db.Uuid
+  projectId String        @db.Uuid
+  project   Project       @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  /// Código curto único, usado na URL pública e codificado no QR.
+  code      String        @unique
+  kind      ShortLinkKind
+
+  contentId String?  @db.Uuid
+  content   Content? @relation(fields: [contentId], references: [id], onDelete: Cascade)
+
+  campaignId String?   @db.Uuid
+  campaign   Campaign? @relation(fields: [campaignId], references: [id], onDelete: Restrict)
+
+  /// Preenchido quando kind = SHARE: quem compartilhou.
+  createdByUserId String? @db.Uuid
+  createdByUser   User?   @relation("UserShareLinks", fields: [createdByUserId], references: [id], onDelete: Restrict)
+
+  /// Canal do compartilhamento (WhatsApp, Instagram, cópia de link...).
+  channel Platform?
+
+  /// Cadeia de propagação.
+  parentShortLinkId String?     @db.Uuid
+  parentShortLink   ShortLink?  @relation("ShortLinkChain", fields: [parentShortLinkId], references: [id], onDelete: Restrict)
+  children          ShortLink[] @relation("ShortLinkChain")
+
+  /// Raiz da cadeia, desnormalizada. Aponta para si mesmo quando depth = 0.
+  rootShortLinkId String?     @db.Uuid
+  rootShortLink   ShortLink?  @relation("ShortLinkRoot", fields: [rootShortLinkId], references: [id], onDelete: Restrict)
+  descendants     ShortLink[] @relation("ShortLinkRoot")
+
+  /// 0 = link de origem (campanha ou QR). 1+ = veio de compartilhamento.
+  depth Int @default(0)
+
+  /// Plataforma que originou a cadeia inteira (o Instagram do exemplo).
+  rootPlatform Platform?
+
+  /// URL de destino resolvida.
+  targetUrl String
+
+  /// QR gerado no momento da publicação. Nulo para links de compartilhamento.
+  qrSvg String?
+
+  clickCount Int      @default(0)
+  active     Boolean  @default(true)
+  expiresAt  DateTime?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  events            Event[]
+  eventsAsParent    Event[]        @relation("EventParentShortLink")
+  eventsAsRoot      Event[]        @relation("EventRootShortLink")
+  visitorsFirst     Visitor[]      @relation("VisitorFirstTouchLink")
+  visitorsLast      Visitor[]      @relation("VisitorLastTouchLink")
+  visitorsAcquired  Visitor[]      @relation("VisitorAcquiredVia")
+  visitorsRoot      Visitor[]      @relation("VisitorRootLink")
+  sessions          VisitSession[]
+  shares            Share[]
+
+  @@index([projectId, kind])
+  @@index([rootShortLinkId])
+  @@index([parentShortLinkId])
+  @@index([createdByUserId])
+  @@index([contentId])
+  @@map("short_links")
+}
+
+enum ShortLinkKind {
+  /// QR Code de um conteúdo, gerado automaticamente na publicação.
+  CONTENT_QR
+  /// Link de uma campanha/post/vídeo.
+  CAMPAIGN
+  /// Link gerado quando um usuário compartilha.
+  SHARE
+  CUSTOM
+}
+
+// ═══════════════════════════════════════════════════════════════════
+// IDENTIDADE
+// ═══════════════════════════════════════════════════════════════════
+
+/// Visitante pseudônimo. Existe desde o PRIMEIRO acesso, antes de qualquer
+/// cadastro. É o que preserva a atribuição de quem chegou pelo Instagram e só
+/// se cadastrou três dias depois.
+model Visitor {
+  id        String  @id @default(uuid()) @db.Uuid
+  projectId String  @db.Uuid
+  project   Project @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  /// Identificador anônimo persistido no dispositivo.
+  anonId    String  @unique
+
+  /// Ligado no cadastro. A atribuição anterior é preservada.
+  userId String? @db.Uuid
+  user   User?   @relation(fields: [userId], references: [id], onDelete: Restrict)
+
+  firstSeenAt DateTime @default(now())
+  lastSeenAt  DateTime @default(now())
+
+  // ── Origem 1: como ESTA pessoa chegou pela primeira vez ────────────
+  firstTouchPlatform   Platform?
+  firstTouchSource     String?
+  firstTouchMedium     String?
+  firstTouchCampaignId String?    @db.Uuid
+  firstTouchCampaign   Campaign?  @relation("VisitorFirstTouchCampaign", fields: [firstTouchCampaignId], references: [id], onDelete: Restrict)
+  firstTouchLinkId     String?    @db.Uuid
+  firstTouchLink       ShortLink? @relation("VisitorFirstTouchLink", fields: [firstTouchLinkId], references: [id], onDelete: Restrict)
+  firstTouchAt         DateTime?
+
+  // ── Origem 2: de onde veio a visita mais recente ───────────────────
+  lastTouchPlatform   Platform?
+  lastTouchSource     String?
+  lastTouchMedium     String?
+  lastTouchCampaignId String?    @db.Uuid
+  lastTouchCampaign   Campaign?  @relation("VisitorLastTouchCampaign", fields: [lastTouchCampaignId], references: [id], onDelete: Restrict)
+  lastTouchLinkId     String?    @db.Uuid
+  lastTouchLink       ShortLink? @relation("VisitorLastTouchLink", fields: [lastTouchLinkId], references: [id], onDelete: Restrict)
+  lastTouchAt         DateTime?
+
+  // ── Origem 3: o que originou a CADEIA inteira ──────────────────────
+  rootPlatform   Platform?
+  rootCampaignId String?    @db.Uuid
+  rootCampaign   Campaign?  @relation("VisitorRootCampaign", fields: [rootCampaignId], references: [id], onDelete: Restrict)
+  rootLinkId     String?    @db.Uuid
+  rootLink       ShortLink? @relation("VisitorRootLink", fields: [rootLinkId], references: [id], onDelete: Restrict)
+  /// Primeira pessoa da cadeia (o "Usuário A" do exemplo do cliente).
+  rootVisitorId  String?    @db.Uuid
+
+  // ── Cadeia de propagação ───────────────────────────────────────────
+  /// Link pelo qual esta pessoa foi adquirida.
+  acquiredViaLinkId String?    @db.Uuid
+  acquiredViaLink   ShortLink? @relation("VisitorAcquiredVia", fields: [acquiredViaLinkId], references: [id], onDelete: Restrict)
+  /// Quem compartilhou o link que trouxe esta pessoa.
+  referredByUserId  String?    @db.Uuid
+  referredByUser    User?      @relation("UserReferrals", fields: [referredByUserId], references: [id], onDelete: Restrict)
+  /// 0 = veio direto de uma plataforma. 1+ = trazido por propagação interna.
+  chainDepth        Int        @default(0)
+
+  // ── LGPD / GDPR: nada de dado pessoal cru ──────────────────────────
+  consentStatus ConsentStatus @default(PENDING)
+  consentAt     DateTime?
+  ipHash        String?
+  userAgentHash String?
+  deviceType    String?
+  countryCode   String?       @db.VarChar(2)
+
+  sessions VisitSession[]
+  events   Event[]
+  consents Consent[]
+
+  @@index([projectId, firstSeenAt])
+  @@index([projectId, chainDepth])
+  @@index([referredByUserId])
+  @@index([rootVisitorId])
+  @@index([rootCampaignId])
+  @@index([userId])
+  @@map("visitors")
+}
+
+enum ConsentStatus {
+  PENDING
+  GRANTED
+  DENIED
+  REVOKED
+}
+
+/// Perfil global, NÃO por projeto — o cliente foi explícito: um só perfil,
+/// interagindo com várias empresas.
+model User {
+  id           String  @id @default(uuid()) @db.Uuid
+  email        String  @unique
+  passwordHash String
+  displayName  String
+  avatarUrl    String?
+  bio          String?
+  role         UserRole @default(USER)
+
+  emailVerifiedAt DateTime?
+  lastLoginAt     DateTime?
+  status          UserStatus @default(ACTIVE)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  visitors      Visitor[]
+  referredUsers Visitor[]       @relation("UserReferrals")
+  shareLinks    ShortLink[]     @relation("UserShareLinks")
+  reactions     Reaction[]
+  comments      Comment[]
+  shares        Share[]
+  events        Event[]
+  sessions      VisitSession[]
+  consents      Consent[]
+  uploads       MediaAsset[]
+  refreshTokens RefreshToken[]
+  auditLogs     AdminAuditLog[]
+
+  @@map("users")
+}
+
+enum UserRole {
+  USER
+  ADMIN
+}
+
+enum UserStatus {
+  ACTIVE
+  SUSPENDED
+  DELETED
+}
+
+model RefreshToken {
+  id        String   @id @default(uuid()) @db.Uuid
+  userId    String   @db.Uuid
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  tokenHash String   @unique
+  expiresAt DateTime
+  revokedAt DateTime?
+  createdAt DateTime @default(now())
+
+  @@index([userId])
+  @@map("refresh_tokens")
+}
+
+/// Sessão de visita. Base para tempo médio de permanência (apresentado na
+/// Fase 2, coletado desde já).
+model VisitSession {
+  id        String  @id @default(uuid()) @db.Uuid
+  projectId String  @db.Uuid
+  project   Project @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  visitorId String  @db.Uuid
+  visitor   Visitor @relation(fields: [visitorId], references: [id], onDelete: Cascade)
+  userId    String? @db.Uuid
+  user      User?   @relation(fields: [userId], references: [id], onDelete: SetNull)
+
+  startedAt   DateTime  @default(now())
+  lastEventAt DateTime  @default(now())
+  endedAt     DateTime?
+  durationMs  Int?
+  pageViews   Int       @default(0)
+
+  /// Atribuição de entrada desta sessão específica (origem imediata).
+  entryPlatform   Platform?
+  entryCampaignId String?    @db.Uuid
+  entryCampaign   Campaign?  @relation(fields: [entryCampaignId], references: [id], onDelete: Restrict)
+  entryLinkId     String?    @db.Uuid
+  entryLink       ShortLink? @relation(fields: [entryLinkId], references: [id], onDelete: Restrict)
+  landingPath     String?
+
+  events Event[]
+
+  @@index([projectId, startedAt])
+  @@index([visitorId, startedAt])
+  @@map("visit_sessions")
+}
+
+// ═══════════════════════════════════════════════════════════════════
+// EVENTOS — FONTE DA VERDADE, APPEND-ONLY
+// ═══════════════════════════════════════════════════════════════════
+
+/// A tabela que não pode ser refeita depois.
+///
+/// Cada linha carrega um SNAPSHOT da atribuição no momento em que o evento
+/// ocorreu — não uma referência ao estado atual do visitante. Se a atribuição
+/// do visitante mudar amanhã, o que aconteceu ontem continua verdadeiro.
+///
+/// Nunca sofre UPDATE. Nunca sofre DELETE fora da política de retenção.
+model Event {
+  id         BigInt   @id @default(autoincrement())
+  /// Quando aconteceu (relógio do cliente, corrigido no servidor).
+  occurredAt DateTime @default(now())
+  /// Quando o servidor recebeu. Divergência revela atraso ou manipulação.
+  receivedAt DateTime @default(now())
+
+  projectId String    @db.Uuid
+  project   Project   @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  type      EventType
+
+  // Restrict, e não SetNull, em tudo o que carrega atribuição.
+  // Apagar um usuário, conteúdo ou campanha NÃO pode zerar o histórico dos
+  // eventos — seria destruir em silêncio exatamente o dado que o cliente
+  // contratou. Para o direito ao apagamento da LGPD/GDPR, anonimiza-se o
+  // registro do usuário e preserva-se o id; ver docs/ARQUITETURA.md.
+  visitorId String  @db.Uuid
+  visitor   Visitor @relation(fields: [visitorId], references: [id], onDelete: Cascade)
+  userId    String? @db.Uuid
+  user      User?   @relation(fields: [userId], references: [id], onDelete: Restrict)
+  sessionId String? @db.Uuid
+  session   VisitSession? @relation(fields: [sessionId], references: [id], onDelete: Restrict)
+
+  contentId String?  @db.Uuid
+  content   Content? @relation(fields: [contentId], references: [id], onDelete: Restrict)
+
+  // ── Snapshot de atribuição no momento do evento ────────────────────
+  platform   Platform?
+  source     String?
+  medium     String?
+  campaignId String?   @db.Uuid
+  campaign   Campaign? @relation(fields: [campaignId], references: [id], onDelete: Restrict)
+  /// Referência externa da publicação (id do post, do vídeo).
+  campaignRef String?
+
+  /// referral_id — o link pelo qual esta pessoa chegou.
+  shortLinkId String?    @db.Uuid
+  shortLink   ShortLink? @relation(fields: [shortLinkId], references: [id], onDelete: Restrict)
+  /// parent_referral — o elo anterior da cadeia.
+  parentShortLinkId String?    @db.Uuid
+  parentShortLink   ShortLink? @relation("EventParentShortLink", fields: [parentShortLinkId], references: [id], onDelete: Restrict)
+  /// Raiz da cadeia. Permite somar o valor gerado por uma cadeia inteira.
+  rootShortLinkId String?    @db.Uuid
+  rootShortLink   ShortLink? @relation("EventRootShortLink", fields: [rootShortLinkId], references: [id], onDelete: Restrict)
+  rootPlatform    Platform?
+  chainDepth      Int        @default(0)
+
+  // ── Comércio: RESERVADO. Nenhum evento destes é gerado na Fase 1. ──
+  // A integração do checkout externo (Fase 2) liga a entrada e não toca
+  // no schema.
+  productRef       String?
+  value            Decimal? @db.Decimal(14, 2)
+  currency         String?  @db.VarChar(3)
+  externalOrderRef String?
+
+  // ── Extensibilidade sem migration ──────────────────────────────────
+  props Json @default("{}")
+
+  // ── Contexto técnico, sem dado pessoal cru ─────────────────────────
+  path          String?
+  referrerHost  String?
+  ipHash        String?
+  userAgentHash String?
+  deviceType    String?
+  countryCode   String? @db.VarChar(2)
+
+  @@index([projectId, occurredAt])
+  @@index([projectId, type, occurredAt])
+  @@index([visitorId, occurredAt])
+  @@index([userId, occurredAt])
+  @@index([contentId, occurredAt])
+  @@index([campaignId, occurredAt])
+  @@index([shortLinkId])
+  @@index([rootShortLinkId])
+  @@index([platform, occurredAt])
+  @@index([sessionId])
+  @@map("events")
+}
+
+enum EventType {
+  SESSION_START
+  PAGE_VIEW
+  CONTENT_VIEW
+  QR_SCAN
+
+  CONSENT_GIVEN
+  CONSENT_REVOKED
+
+  SIGNUP
+  LOGIN
+  LOGOUT
+
+  MEDIA_PLAY
+  MEDIA_PROGRESS
+  MEDIA_COMPLETE
+
+  LIKE
+  UNLIKE
+  COMMENT
+  COMMENT_DELETED
+
+  SHARE_CREATED
+  SHARE_LINK_CLICKED
+
+  PROFILE_VIEW
+
+  /// Reservados para a Fase 2 (checkout externo).
+  CHECKOUT_CLICKED
+  PURCHASE_COMPLETED
+  PURCHASE_REFUNDED
+
+  CUSTOM
+}
+
+// ═══════════════════════════════════════════════════════════════════
+// SOCIAL — genérico sobre Content, futuro white label
+// ═══════════════════════════════════════════════════════════════════
+
+model Reaction {
+  id        String       @id @default(uuid()) @db.Uuid
+  projectId String       @db.Uuid
+  project   Project      @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  contentId String       @db.Uuid
+  content   Content      @relation(fields: [contentId], references: [id], onDelete: Cascade)
+  userId    String       @db.Uuid
+  user      User         @relation(fields: [userId], references: [id], onDelete: Cascade)
+  type      ReactionType @default(LIKE)
+  createdAt DateTime     @default(now())
+
+  @@unique([contentId, userId, type])
+  @@index([contentId])
+  @@index([userId])
+  @@map("reactions")
+}
+
+enum ReactionType {
+  LIKE
+}
+
+model Comment {
+  id        String  @id @default(uuid()) @db.Uuid
+  projectId String  @db.Uuid
+  project   Project @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  contentId String  @db.Uuid
+  content   Content @relation(fields: [contentId], references: [id], onDelete: Cascade)
+  userId    String  @db.Uuid
+  user      User    @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  /// Respostas a comentários.
+  parentId String?   @db.Uuid
+  parent   Comment?  @relation("CommentThread", fields: [parentId], references: [id], onDelete: Cascade)
+  replies  Comment[] @relation("CommentThread")
+
+  body   String
+  status CommentStatus @default(PUBLISHED)
+
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+  deletedAt DateTime?
+
+  @@index([contentId, createdAt])
+  @@index([userId])
+  @@index([parentId])
+  @@map("comments")
+}
+
+enum CommentStatus {
+  PUBLISHED
+  HIDDEN
+  DELETED
+}
+
+/// Registro de um compartilhamento. O link gerado (ShortLink kind=SHARE) é o
+/// que torna a propagação mensurável sem acessar conversas privadas.
+model Share {
+  id          String    @id @default(uuid()) @db.Uuid
+  userId      String    @db.Uuid
+  user        User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  shortLinkId String    @db.Uuid
+  shortLink   ShortLink @relation(fields: [shortLinkId], references: [id], onDelete: Cascade)
+  channel     Platform
+  createdAt   DateTime  @default(now())
+
+  @@index([userId, createdAt])
+  @@index([shortLinkId])
+  @@map("shares")
+}
+
+/// Contadores quentes do conteúdo. DERIVADO de Event/Reaction/Comment.
+/// Existe só para a página não agregar em tempo de leitura.
+model ContentStats {
+  contentId String  @id @db.Uuid
+  content   Content @relation(fields: [contentId], references: [id], onDelete: Cascade)
+
+  views          Int @default(0)
+  uniqueVisitors Int @default(0)
+  likes          Int @default(0)
+  comments       Int @default(0)
+  shares         Int @default(0)
+  shareClicks    Int @default(0)
+  qrScans        Int @default(0)
+
+  recomputedAt DateTime @default(now())
+
+  @@map("content_stats")
+}
+
+// ═══════════════════════════════════════════════════════════════════
+// AGREGADOS — DERIVADOS, NUNCA FONTE DA VERDADE
+// ═══════════════════════════════════════════════════════════════════
+
+/// A "fotografia diária". Recalculável a partir de Event a qualquer momento.
+/// Se divergir, recalcula-se. O inverso jamais acontece.
+model DailyMetric {
+  id        String  @id @default(uuid()) @db.Uuid
+  projectId String  @db.Uuid
+  project   Project @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  /// Dia em UTC.
+  date      DateTime @db.Date
+
+  /// Dimensão do corte: TOTAL, PLATFORM, CAMPAIGN, CONTENT.
+  dimension MetricDimension
+  /// Chave da dimensão: null para TOTAL, 'INSTAGRAM', ou um uuid.
+  dimKey    String?
+
+  visitors       Int @default(0)
+  uniqueVisitors Int @default(0)
+  pageViews      Int @default(0)
+  contentViews   Int @default(0)
+  qrScans        Int @default(0)
+  signups        Int @default(0)
+  likes          Int @default(0)
+  comments       Int @default(0)
+  shares         Int @default(0)
+  shareClicks    Int @default(0)
+
+  /// Adquiridos por propagação interna do Produto Vivo.
+  visitorsFromShares Int @default(0)
+  signupsFromShares  Int @default(0)
+
+  /// Reservado — Fase 2.
+  checkoutClicks     Int     @default(0)
+  purchases          Int     @default(0)
+  purchasesFromShares Int    @default(0)
+  revenue            Decimal @default(0) @db.Decimal(14, 2)
+
+  computedAt DateTime @default(now())
+
+  @@unique([projectId, date, dimension, dimKey])
+  @@index([projectId, date])
+  @@map("daily_metrics")
+}
+
+enum MetricDimension {
+  TOTAL
+  PLATFORM
+  CAMPAIGN
+  CONTENT
+}
+
+/// O "Dia Zero" e os marcos seguintes (Dia 7, 30, 60, 90...).
+/// Registra a linha de base fora da plataforma — seguidores de cada rede no
+/// lançamento — para a curva de crescimento ter um ponto de partida real.
+model BaselineSnapshot {
+  id        String   @id @default(uuid()) @db.Uuid
+  projectId String   @db.Uuid
+  project   Project  @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  /// "Dia Zero", "Dia 7", "Dia 30"...
+  label     String
+  capturedAt DateTime
+  platform  Platform
+  /// Seguidores/inscritos na rede, ou usuários no caso do PRODUTO_VIVO.
+  followers Int?
+  /// Métrica secundária livre (visualizações acumuladas, por exemplo).
+  reach     Int?
+  notes     String?
+  attributes Json @default("{}")
+
+  createdAt DateTime @default(now())
+
+  @@unique([projectId, label, platform])
+  @@index([projectId, capturedAt])
+  @@map("baseline_snapshots")
+}
+
+// ═══════════════════════════════════════════════════════════════════
+// LGPD / GDPR
+// ═══════════════════════════════════════════════════════════════════
+
+/// Consentimento por visitante, com versão da política e finalidades
+/// granulares. Cliente está em Portugal: GDPR é o piso.
+model Consent {
+  id        String   @id @default(uuid()) @db.Uuid
+  visitorId String   @db.Uuid
+  visitor   Visitor  @relation(fields: [visitorId], references: [id], onDelete: Cascade)
+  userId    String?  @db.Uuid
+  user      User?    @relation(fields: [userId], references: [id], onDelete: SetNull)
+
+  policyVersion String
+  /// { essential: true, analytics: true, marketing: false }
+  purposes      Json
+  granted       Boolean
+  grantedAt     DateTime  @default(now())
+  revokedAt     DateTime?
+
+  ipHash        String?
+  userAgentHash String?
+
+  @@index([visitorId, grantedAt])
+  @@map("consents")
+}
+
+// ═══════════════════════════════════════════════════════════════════
+// ADMIN
+// ═══════════════════════════════════════════════════════════════════
+
+model AdminAuditLog {
+  id         String   @id @default(uuid()) @db.Uuid
+  projectId  String?  @db.Uuid
+  project    Project? @relation(fields: [projectId], references: [id], onDelete: SetNull)
+  userId     String?  @db.Uuid
+  user       User?    @relation(fields: [userId], references: [id], onDelete: SetNull)
+  action     String
+  entityType String
+  entityId   String?
+  changes    Json     @default("{}")
+  ipHash     String?
+  createdAt  DateTime @default(now())
+
+  @@index([projectId, createdAt])
+  @@index([userId, createdAt])
+  @@map("admin_audit_logs")
+}

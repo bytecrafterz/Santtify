@@ -1,0 +1,8 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(mkdir -p docs/contexto)",
+      "Bash(rm -f 1.txt)"
+    ]
+  }
+}

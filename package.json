@@ -1,0 +1,24 @@
+{
+  "name": "produto-vivo",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Produto Vivo — plataforma social-comercial. Primeiro projeto: Jesus Alfabeto Saudável.",
+  "workspaces": [
+    "apps/*",
+    "packages/*"
+  ],
+  "scripts": {
+    "db:generate": "npm run generate -w @pv/db",
+    "db:migrate": "npm run migrate -w @pv/db",
+    "db:seed": "npm run seed -w @pv/db",
+    "db:studio": "npm run studio -w @pv/db",
+    "db:reset": "npm run reset -w @pv/db",
+    "dev:api": "npm run dev -w @pv/api",
+    "dev:web": "npm run dev -w @pv/web",
+    "infra:up": "docker compose up -d",
+    "infra:down": "docker compose down"
+  },
+  "engines": {
+    "node": ">=20"
+  }
+}
