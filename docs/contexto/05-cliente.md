@@ -2,7 +2,8 @@
 
 **Nome:** Rossandro Caxito
 **Aparece na plataforma como:** R. C.
-**Contato salvo:** "Rossandro Vodafone" — +351 912 268 224 (Portugal, Vodafone)
+**Contato:** telemóvel português (+351), operadora Vodafone — número mantido fora do
+repositório de propósito; está no contato do celular e na Workana
 **Plataforma de contratação:** Workana
 **Idioma:** Português (usa português europeu — "utilizador", "telemóvel")
 
