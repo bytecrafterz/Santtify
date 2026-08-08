@@ -72,20 +72,7 @@ export class AttributionService {
     let visitor = await this.prisma.visitor.findUnique({ where: { anonId } })
 
     // ── Origem imediata ──────────────────────────────────────────────
-    // Link curto é a fonte mais confiável; UTM e referrer são fallback.
-    // Navegação interna não gera origem nova: preserva a que a pessoa já tinha.
-    const interna =
-      !link && !ctx.utmSource && ehNavegacaoInterna(ctx.referrer, this.hostsProprios)
-
-    const origem =
-      interna && visitor
-        ? {
-            platform: visitor.lastTouchPlatform,
-            source: visitor.lastTouchSource,
-            medium: visitor.lastTouchMedium,
-            campaignId: visitor.lastTouchCampaignId,
-          }
-        : this.resolverOrigemImediata(ctx, link)
+    const origem = this.origemDaVisita(ctx, link, visitor)
 
     if (!visitor) {
       // Primeiro contato desta pessoa. As três origens são fixadas agora.
@@ -134,22 +121,24 @@ export class AttributionService {
       // e a raiz da cadeia NUNCA são sobrescritas — é o que garante que a
       // atribuição de aquisição continue verdadeira meses depois.
       //
-      // E navegação interna não mexe nem na origem imediata: quem veio do
-      // Instagram e está passeando entre as letras continua sendo do Instagram.
+      // E a origem imediata só muda quando há evidência POSITIVA de uma chegada
+      // nova. Quem veio do Instagram e está passeando entre as letras — ou
+      // aceitando o consentimento, ou se cadastrando — continua sendo do
+      // Instagram.
       visitor = await this.prisma.visitor.update({
         where: { id: visitor.id },
         data: {
           lastSeenAt: agora,
-          ...(interna
-            ? {}
-            : {
+          ...(origem.ehNova
+            ? {
                 lastTouchPlatform: origem.platform,
                 lastTouchSource: origem.source,
                 lastTouchMedium: origem.medium,
                 lastTouchCampaignId: origem.campaignId,
                 lastTouchLinkId: link?.id ?? null,
                 lastTouchAt: agora,
-              }),
+              }
+            : {}),
           // Vincula ao usuário se ele acabou de se autenticar.
           ...(ctx.userId && !visitor.userId ? { userId: ctx.userId } : {}),
           ...(ipHash ? { ipHash } : {}),
@@ -170,9 +159,9 @@ export class AttributionService {
       campaignId: origem.campaignId,
       campaignRef: ctx.campaignRef ?? null,
 
-      // Em navegacao interna o link da entrada e preservado: o evento continua
-      // pertencendo a jornada que trouxe a pessoa.
-      shortLinkId: link?.id ?? (interna ? visitor.lastTouchLinkId : null),
+      // Sem chegada nova, o link da entrada é preservado: o evento continua
+      // pertencendo à jornada que trouxe a pessoa.
+      shortLinkId: link?.id ?? (origem.ehNova ? null : visitor.lastTouchLinkId),
       parentShortLinkId: link?.parentShortLinkId ?? null,
       // A raiz do visitante prevalece: um visitante já conhecido que clica num
       // link novo continua pertencendo à cadeia que o adquiriu.
@@ -204,16 +193,29 @@ export class AttributionService {
   /**
    * A origem imediata é o canal por onde a pessoa chegou AGORA — o WhatsApp de
    * um compartilhamento, não o Instagram que originou a cadeia.
+   *
+   * A regra que sustenta a qualidade do dado: uma origem nova só é reconhecida
+   * com EVIDÊNCIA POSITIVA de chegada — um link curto nosso, um UTM, ou um
+   * referrer externo de plataforma conhecida. Na ausência disso, a atribuição
+   * que a pessoa já tinha é preservada.
+   *
+   * Isso vale tanto para navegação interna entre páginas quanto para ações
+   * dentro do app (aceitar consentimento, cadastrar-se, tocar um áudio). Nada
+   * disso é uma chegada, e tratar como chegada foi o que antes transformava a
+   * origem de todo mundo em DIRECT ou OTHER poucos cliques depois da entrada.
    */
-  private resolverOrigemImediata(
+  private origemDaVisita(
     ctx: VisitContext,
     link: (ShortLink & { campaignPlatform: Platform | null }) | null,
+    visitor: Visitor | null,
   ): {
     platform: Platform | null
     source: string | null
     medium: string | null
     campaignId: string | null
+    ehNova: boolean
   } {
+    // 1. Link curto nosso — a evidência mais forte que existe.
     if (link) {
       const platform =
         link.channel ?? // compartilhamento: o canal escolhido por quem compartilhou
@@ -226,17 +228,55 @@ export class AttributionService {
         source: ctx.utmSource ?? platform?.toLowerCase() ?? null,
         medium: ctx.utmMedium ?? (link.kind === 'SHARE' ? 'share' : link.kind.toLowerCase()),
         campaignId: link.campaignId,
+        ehNova: true,
       }
     }
 
+    // 2. UTM na URL — a pessoa chegou por uma campanha marcada.
     const porUtm = plataformaDeUtm(ctx.utmSource)
-    const porReferrer = plataformaDeReferrer(ctx.referrer)
+    if (porUtm) {
+      return {
+        platform: porUtm,
+        source: ctx.utmSource ?? null,
+        medium: ctx.utmMedium ?? null,
+        campaignId: null,
+        ehNova: true,
+      }
+    }
 
+    // 3. Referrer externo de plataforma RECONHECIDA. Um referrer que não
+    //    reconhecemos não vale como origem nova: registrar OTHER por cima de
+    //    "Instagram" troca informação boa por informação inútil.
+    const interna = ehNavegacaoInterna(ctx.referrer, this.hostsProprios)
+    const porReferrer = interna ? null : plataformaDeReferrer(ctx.referrer)
+    if (porReferrer && porReferrer !== Platform.OTHER) {
+      return {
+        platform: porReferrer,
+        source: hostDeReferrer(ctx.referrer),
+        medium: ctx.utmMedium ?? null,
+        campaignId: null,
+        ehNova: true,
+      }
+    }
+
+    // 4. Sem evidência de chegada. Visitante conhecido mantém o que tinha.
+    if (visitor) {
+      return {
+        platform: visitor.lastTouchPlatform,
+        source: visitor.lastTouchSource,
+        medium: visitor.lastTouchMedium,
+        campaignId: visitor.lastTouchCampaignId,
+        ehNova: false,
+      }
+    }
+
+    // 5. Visitante novo sem nenhuma pista: acesso direto de verdade.
     return {
-      platform: porUtm ?? porReferrer ?? Platform.DIRECT,
-      source: ctx.utmSource ?? hostDeReferrer(ctx.referrer) ?? 'direct',
+      platform: porReferrer ?? Platform.DIRECT,
+      source: hostDeReferrer(ctx.referrer) ?? 'direct',
       medium: ctx.utmMedium ?? null,
       campaignId: null,
+      ehNova: true,
     }
   }
 }
