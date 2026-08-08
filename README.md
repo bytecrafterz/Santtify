@@ -54,6 +54,15 @@ para o domínio real), regere os destinos e os QR:
 npx tsx packages/db/prisma/regerar-links.ts
 ```
 
+Criar o administrador do painel (não existe tela para isso de propósito — uma
+rota que promove a admin seria a porta mais fácil de invadir o sistema):
+
+```bash
+npx tsx packages/db/prisma/criar-admin.ts email@dominio.com [senha]
+```
+
+O painel fica em `/<projeto>/admin`.
+
 Verificar que a camada de coleta responde às perguntas do cliente:
 
 ```bash
@@ -99,11 +108,22 @@ O contrário nunca.
 - API de conteúdo: projeto, índice, página e SVG do QR
 - PWA instalável com página de conteúdo montada por blocos, página PV e
   rastreamento ligado — jornada QR → página → navegação verificada em navegador
+- Autenticação própria, consentimento LGPD/GDPR e perfil com as três seções
+- Painel administrativo: criar conteúdo, editar blocos, enviar mídia,
+  publicar e baixar o QR para impressão — usável pelo celular
 
 **Próximo**
-- Autenticação própria (JWT) e consentimento LGPD
-- Painel admin (CRUD de conteúdo, upload, gestão de QR)
-- Módulo social e dashboard das métricas essenciais (Entrega 2)
+- Módulo social: curtir, comentar e compartilhar com link de referência
+- Dashboard com as métricas essenciais (Entrega 2)
+
+## Decisões operacionais a revisitar
+
+- **Mídia em disco local.** `UPLOAD_DIR` precisa ser volume persistente com
+  backup: recriar o container sem volume apaga todas as músicas e áudios. Para
+  26 letras funciona; antes de crescer, trocar `StorageService` por S3/R2 —
+  a interface existe justamente para isso.
+- **Domínio do QR.** `PUBLIC_SHORTLINK_BASE` fica codificado dentro de cada QR
+  gerado. Definir o domínio real ANTES de imprimir qualquer material.
 
 ## Pendências com o cliente
 

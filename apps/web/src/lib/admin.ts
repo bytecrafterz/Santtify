@@ -1,0 +1,130 @@
+'use client'
+
+import { tokens, ErroDeApi, renovarSessao } from '@/lib/auth'
+
+const API_URL = process.env.NEXT_PUBLIC_API_URL ?? 'http://localhost:3333'
+
+export type StatusConteudo = 'DRAFT' | 'PUBLISHED' | 'ARCHIVED'
+export type TipoBloco = 'TEXT' | 'RICH_TEXT' | 'AUDIO' | 'VIDEO' | 'IMAGE' | 'EMBED' | 'LINK'
+
+export interface ItemAdmin {
+  id: string
+  slug: string
+  title: string
+  subtitle: string | null
+  status: StatusConteudo
+  position: number
+  publishedAt: string | null
+  updatedAt: string
+  stats: { views: number; likes: number; comments: number; shares: number } | null
+  qrCode: string | null
+  blocosPreenchidos: number
+  blocosTotal: number
+}
+
+export interface AssetAdmin {
+  id: string
+  kind: string
+  url: string
+  mimeType: string | null
+  title: string | null
+  sizeBytes: number | null
+}
+
+export interface BlocoAdmin {
+  id: string
+  type: TipoBloco
+  label: string | null
+  text: string | null
+  url: string | null
+  position: number
+  assetId: string | null
+  asset: AssetAdmin | null
+}
+
+export interface DetalheAdmin {
+  project: { id: string; slug: string; name: string }
+  content: {
+    id: string
+    slug: string
+    title: string
+    subtitle: string | null
+    summary: string | null
+    status: StatusConteudo
+    position: number
+    blocks: BlocoAdmin[]
+    metadata: Record<string, unknown> | null
+    qrCode: string | null
+    qrUrl: string | null
+  }
+}
+
+async function chamar<T>(caminho: string, init: RequestInit = {}, tentouRenovar = false): Promise<T> {
+  const res = await fetch(`${API_URL}/admin${caminho}`, {
+    ...init,
+    credentials: 'include',
+    headers: {
+      ...(init.body instanceof FormData ? {} : { 'Content-Type': 'application/json' }),
+      ...(tokens.access ? { Authorization: `Bearer ${tokens.access}` } : {}),
+      ...init.headers,
+    },
+  })
+
+  if (res.status === 401 && !tentouRenovar) {
+    if (await renovarSessao()) return chamar<T>(caminho, init, true)
+  }
+  if (res.status === 204) return undefined as T
+
+  const corpo = await res.json().catch(() => ({}))
+  if (!res.ok) {
+    const msg = Array.isArray(corpo?.message) ? corpo.message[0] : corpo?.message
+    throw new ErroDeApi(res.status, msg ?? 'Não foi possível concluir.')
+  }
+  return corpo as T
+}
+
+export const admin = {
+  listar: (projectSlug: string) =>
+    chamar<{ project: { id: string; slug: string; name: string }; contents: ItemAdmin[] }>(
+      `/projects/${projectSlug}/contents`,
+    ),
+
+  detalhe: (projectSlug: string, contentSlug: string) =>
+    chamar<DetalheAdmin>(`/projects/${projectSlug}/contents/${contentSlug}`),
+
+  criarConteudo: (projectSlug: string, dados: { slug: string; title: string; subtitle?: string }) =>
+    chamar(`/projects/${projectSlug}/contents`, { method: 'POST', body: JSON.stringify(dados) }),
+
+  atualizarConteudo: (id: string, dados: Record<string, unknown>) =>
+    chamar(`/contents/${id}`, { method: 'PATCH', body: JSON.stringify(dados) }),
+
+  publicar: (id: string, publicar: boolean) =>
+    chamar(`/contents/${id}/publish`, { method: 'POST', body: JSON.stringify({ publicar }) }),
+
+  salvarBloco: (id: string, dados: Record<string, unknown>) =>
+    chamar<BlocoAdmin>(`/blocks/${id}`, { method: 'PATCH', body: JSON.stringify(dados) }),
+
+  criarBloco: (contentId: string, dados: { type: TipoBloco; label?: string }) =>
+    chamar<BlocoAdmin>(`/contents/${contentId}/blocks`, {
+      method: 'POST',
+      body: JSON.stringify(dados),
+    }),
+
+  removerBloco: (id: string) => chamar<void>(`/blocks/${id}`, { method: 'DELETE' }),
+
+  salvarMetadados: (id: string, dados: Record<string, unknown>) =>
+    chamar(`/contents/${id}/metadata`, { method: 'PATCH', body: JSON.stringify(dados) }),
+
+  /**
+   * Upload. Sem Content-Type manual: o browser precisa definir o boundary do
+   * multipart sozinho, e defini-lo à mão quebra o parse no servidor.
+   */
+  async enviarArquivo(arquivo: File): Promise<AssetAdmin> {
+    const dados = new FormData()
+    dados.append('file', arquivo)
+    return chamar<AssetAdmin>('/upload', { method: 'POST', body: dados })
+  },
+
+  urlQrSvg: (projectSlug: string, contentSlug: string) =>
+    `${API_URL}/projects/${projectSlug}/contents/${contentSlug}/qr.svg`,
+}

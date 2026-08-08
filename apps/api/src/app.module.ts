@@ -7,6 +7,7 @@ import { TrackingModule } from './tracking/tracking.module'
 import { ShortLinksModule } from './short-links/short-links.module'
 import { ContentModule } from './content/content.module'
 import { IdentityModule } from './identity/identity.module'
+import { AdminModule } from './admin/admin.module'
 import { HealthModule } from './health/health.module'
 
 @Module({
@@ -22,6 +23,7 @@ import { HealthModule } from './health/health.module'
     ShortLinksModule,
     ContentModule,
     IdentityModule,
+    AdminModule,
     HealthModule,
   ],
 })

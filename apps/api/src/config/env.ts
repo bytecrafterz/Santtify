@@ -22,6 +22,8 @@ const schema = z.object({
 
   PUBLIC_WEB_URL: z.string().url(),
   PUBLIC_SHORTLINK_BASE: z.string().url(),
+  PUBLIC_API_URL: z.string().url().default('http://localhost:3333'),
+  UPLOAD_DIR: z.string().optional(),
 })
 
 export type Env = z.infer<typeof schema>
