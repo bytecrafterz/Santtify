@@ -294,3 +294,259 @@ h1 {
   padding: 64px 20px;
   color: var(--cor-texto-suave);
 }
+
+/* ── Formulários ─────────────────────────────────────────────────── */
+
+.envoltorio.estreito {
+  max-width: 420px;
+}
+
+.formulario {
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+}
+
+.formulario label {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  font-weight: 600;
+  font-size: 15px;
+}
+
+.formulario input {
+  /* 16px evita o zoom automático do Safari no iPhone ao focar o campo —
+     o acesso principal é por QR escaneado no celular. */
+  font-size: 16px;
+  padding: 14px 16px;
+  border: 1px solid var(--cor-borda);
+  border-radius: 12px;
+  background: var(--cor-superficie);
+  color: var(--cor-texto);
+  font-family: inherit;
+}
+
+.formulario input:focus-visible {
+  outline: 2px solid var(--cor-primaria);
+  outline-offset: 1px;
+  border-color: var(--cor-primaria);
+}
+
+.formulario small {
+  font-weight: 400;
+  color: var(--cor-texto-suave);
+  font-size: 13px;
+}
+
+.formulario button[type='submit'],
+.acoes-perfil button {
+  font-size: 16px;
+  font-weight: 700;
+  padding: 15px 20px;
+  border: 0;
+  border-radius: 12px;
+  background: var(--cor-primaria);
+  color: #fff;
+  cursor: pointer;
+  font-family: inherit;
+}
+
+.formulario button[disabled] {
+  opacity: 0.6;
+  cursor: progress;
+}
+
+.acoes-perfil {
+  margin-top: 32px;
+}
+
+.acoes-perfil .secundario {
+  background: transparent;
+  color: var(--cor-texto-suave);
+  border: 1px solid var(--cor-borda);
+  width: 100%;
+}
+
+.erro {
+  margin: 0;
+  padding: 12px 14px;
+  border-radius: 10px;
+  background: #fdecec;
+  color: #98191b;
+  font-size: 15px;
+}
+
+@media (prefers-color-scheme: dark) {
+  .erro {
+    background: #3a1c1c;
+    color: #ffb4b4;
+  }
+}
+
+.alternativa {
+  text-align: center;
+  color: var(--cor-texto-suave);
+  font-size: 15px;
+  margin: 0;
+}
+
+/* ── Perfil ──────────────────────────────────────────────────────── */
+
+.perfil-topo {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  margin-bottom: 24px;
+}
+
+.perfil-topo h1 {
+  font-size: 26px;
+  margin: 0;
+}
+
+.perfil-topo .subtitulo {
+  margin: 2px 0 0;
+  font-size: 14px;
+}
+
+.avatar {
+  flex: 0 0 auto;
+  width: 64px;
+  height: 64px;
+  border-radius: 50%;
+  display: grid;
+  place-items: center;
+  background: var(--cor-primaria);
+  color: #fff;
+  font-size: 28px;
+  font-weight: 700;
+}
+
+.numeros {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 8px;
+  margin-bottom: 24px;
+}
+
+.numero {
+  background: var(--cor-superficie);
+  border: 1px solid var(--cor-borda);
+  border-radius: var(--raio);
+  padding: 14px 8px;
+  text-align: center;
+}
+
+.numero strong {
+  display: block;
+  font-size: 22px;
+}
+
+.numero span {
+  font-size: 11px;
+  color: var(--cor-texto-suave);
+  line-height: 1.3;
+  display: block;
+}
+
+/* Quebra em duas linhas em vez de rolar na horizontal: os três rótulos que o
+   cliente definiu não cabem em 390px, e uma aba cortada na borda parece
+   defeito. Quebrado parece intencional — e nenhuma aba fica escondida. */
+.abas {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-bottom: 16px;
+}
+
+/* Padding e fonte dimensionados para as três abas caberem numa tela de
+   390px (iPhone), que é o aparelho mais estreito do público real. Continua
+   rolando na horizontal se um rótulo crescer. */
+.aba {
+  flex: 0 0 auto;
+  padding: 10px 12px;
+  border: 1px solid var(--cor-borda);
+  border-radius: 999px;
+  background: var(--cor-superficie);
+  color: var(--cor-texto-suave);
+  font-size: 13px;
+  font-weight: 600;
+  white-space: nowrap;
+  cursor: pointer;
+  font-family: inherit;
+}
+
+.aba.ativa {
+  background: var(--cor-primaria);
+  border-color: var(--cor-primaria);
+  color: #fff;
+}
+
+.lista {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.lista .bloco small {
+  color: var(--cor-texto-suave);
+  font-size: 13px;
+}
+
+.bloco.linha {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 14px 18px;
+}
+
+/* ── Consentimento ───────────────────────────────────────────────── */
+
+.consentimento {
+  position: fixed;
+  left: 12px;
+  right: 12px;
+  bottom: 12px;
+  z-index: 50;
+  max-width: 640px;
+  margin: 0 auto;
+  padding: 16px 18px;
+  background: var(--cor-superficie);
+  border: 1px solid var(--cor-borda);
+  border-radius: var(--raio);
+  box-shadow: 0 8px 32px rgba(31, 36, 48, 0.18);
+}
+
+.consentimento p {
+  margin: 0 0 14px;
+  font-size: 14px;
+  line-height: 1.5;
+  color: var(--cor-texto-suave);
+}
+
+.consentimento-botoes {
+  display: flex;
+  gap: 10px;
+}
+
+/* Os dois botões têm o MESMO peso visual: sob GDPR, recusar precisa ser tão
+   fácil quanto aceitar. Destacar só o "Aceitar" seria padrão escuro. */
+.consentimento-botoes button {
+  flex: 1;
+  padding: 12px 16px;
+  font-size: 15px;
+  font-weight: 600;
+  font-family: inherit;
+  border-radius: 10px;
+  border: 1px solid var(--cor-primaria);
+  background: var(--cor-superficie);
+  color: var(--cor-primaria);
+  cursor: pointer;
+}
+
+.consentimento-botoes button:last-child {
+  background: var(--cor-primaria);
+  color: #fff;
+}

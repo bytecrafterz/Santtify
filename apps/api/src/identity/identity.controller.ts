@@ -21,6 +21,7 @@ import {
   MinLength,
 } from 'class-validator'
 import { AuthService } from './auth.service'
+import { ProfileService } from './profile.service'
 import { ConsentService } from './consent.service'
 import { AuthGuard } from './auth.guard'
 import { ANON_COOKIE, cookieOptions, ipDaRequisicao, paisDaRequisicao } from '../common/http.util'
@@ -64,6 +65,7 @@ export class IdentityController {
   constructor(
     private readonly auth: AuthService,
     private readonly consent: ConsentService,
+    private readonly profile: ProfileService,
   ) {}
 
   @Post('auth/register')
@@ -99,6 +101,28 @@ export class IdentityController {
     const usuario = req.usuario ? await this.auth.porId(req.usuario.id) : null
     if (!usuario) throw new UnauthorizedException('Sessão inválida')
     return usuario
+  }
+
+  // ── Perfil ───────────────────────────────────────────────────────
+
+  @Get('me/profile')
+  @UseGuards(AuthGuard)
+  perfil(@Req() req: Request) {
+    return this.profile.perfil(req.usuario!.id)
+  }
+
+  /** "Minhas Publicações" */
+  @Get('me/posts')
+  @UseGuards(AuthGuard)
+  publicacoes(@Req() req: Request) {
+    return this.profile.publicacoes(req.usuario!.id)
+  }
+
+  /** "Meu Registro" — histórico lido dos eventos brutos. */
+  @Get('me/record')
+  @UseGuards(AuthGuard)
+  registro(@Req() req: Request) {
+    return this.profile.registro(req.usuario!.id)
   }
 
   // ── Consentimento ────────────────────────────────────────────────

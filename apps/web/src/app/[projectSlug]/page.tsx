@@ -3,6 +3,7 @@ import { notFound } from 'next/navigation'
 import { api } from '@/lib/api'
 import { RastreadorDeVisita } from '@/components/RastreadorDeVisita'
 import { SeloProdutoVivo } from '@/components/SeloProdutoVivo'
+import { BannerDeConsentimento } from '@/components/BannerDeConsentimento'
 
 export default async function IndiceDoProjeto({
   params,
@@ -39,6 +40,7 @@ export default async function IndiceDoProjeto({
       )}
 
       <SeloProdutoVivo projectSlug={projectSlug} />
+      <BannerDeConsentimento projectId={project.id} />
     </main>
   )
 }

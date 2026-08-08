@@ -1,6 +1,7 @@
 import type { Metadata, Viewport } from 'next'
 import './globals.css'
 import { RegistroDoServiceWorker } from '@/components/RegistroDoServiceWorker'
+import { ProvedorDeAuth } from '@/components/ProvedorDeAuth'
 
 export const metadata: Metadata = {
   title: 'Jesus Alfabeto Saudável',
@@ -21,7 +22,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
   return (
     <html lang="pt">
       <body>
-        {children}
+        <ProvedorDeAuth>{children}</ProvedorDeAuth>
         <RegistroDoServiceWorker />
       </body>
     </html>

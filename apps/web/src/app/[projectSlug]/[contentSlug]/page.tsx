@@ -5,6 +5,7 @@ import { api } from '@/lib/api'
 import { BlocosDeConteudo } from '@/components/BlocosDeConteudo'
 import { RastreadorDeVisita } from '@/components/RastreadorDeVisita'
 import { SeloProdutoVivo } from '@/components/SeloProdutoVivo'
+import { BannerDeConsentimento } from '@/components/BannerDeConsentimento'
 
 export async function generateMetadata({
   params,
@@ -83,6 +84,7 @@ export default async function PaginaDeConteudo({
       )}
 
       <SeloProdutoVivo projectSlug={projectSlug} />
+      <BannerDeConsentimento projectId={project.id} />
     </main>
   )
 }
