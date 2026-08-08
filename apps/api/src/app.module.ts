@@ -5,6 +5,7 @@ import { PrismaModule } from './prisma/prisma.module'
 import { PrivacyModule } from './common/privacy/privacy.module'
 import { TrackingModule } from './tracking/tracking.module'
 import { ShortLinksModule } from './short-links/short-links.module'
+import { ContentModule } from './content/content.module'
 import { HealthModule } from './health/health.module'
 
 @Module({
@@ -18,6 +19,7 @@ import { HealthModule } from './health/health.module'
     PrivacyModule,
     TrackingModule,
     ShortLinksModule,
+    ContentModule,
     HealthModule,
   ],
 })

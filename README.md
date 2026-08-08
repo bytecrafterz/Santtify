@@ -21,10 +21,9 @@ Cliente: Rossandro Caxito · Contratado via Workana · Fase 1 em desenvolvimento
 ## Estrutura
 
 ```
-apps/web/       Next.js — PWA público + painel admin      (a construir)
-apps/api/       NestJS — API, futura API white label       (a construir)
+apps/web/       Next.js — PWA público (26 páginas, PV)     ✔ funcionando
+apps/api/       NestJS — API, futura API white label       ✔ coleta + conteúdo
 packages/db/    Prisma: schema, migrations, seed           ✔ pronto
-packages/shared/ Tipos e contratos compartilhados          (a construir)
 ```
 
 ## Como rodar
@@ -35,6 +34,24 @@ npm install
 docker compose up -d          # Postgres 16 na porta 5433
 npm run db:migrate            # aplica as migrations
 npm run db:seed               # projeto 1: 26 letras + QR + Dia Zero
+
+npm run dev:api               # API em :3333
+npm run dev:web               # PWA em :3000
+```
+
+Para ver o produto funcionando antes de o cliente enviar o material real,
+publique três letras com conteúdo de exemplo:
+
+```bash
+npx tsx packages/db/prisma/conteudo-exemplo.ts            # publica A, B e C
+npx tsx packages/db/prisma/conteudo-exemplo.ts --limpar   # desfaz
+```
+
+Se `PUBLIC_WEB_URL` ou `PUBLIC_SHORTLINK_BASE` mudarem (ex.: sair de localhost
+para o domínio real), regere os destinos e os QR:
+
+```bash
+npx tsx packages/db/prisma/regerar-links.ts
 ```
 
 Verificar que a camada de coleta responde às perguntas do cliente:
@@ -78,11 +95,15 @@ O contrário nunca.
 - Marco Dia Zero registrado (Instagram 200 · TikTok 40 · YouTube 0 · PV 0)
 - Campos de compra reservados para a Fase 2, sem gerar evento na Fase 1
 - Metadados de conteúdo para a IA futura cruzar desempenho × características
+- API de coleta: atribuição em três camadas, ingestão de eventos, `/r/:code`
+- API de conteúdo: projeto, índice, página e SVG do QR
+- PWA instalável com página de conteúdo montada por blocos, página PV e
+  rastreamento ligado — jornada QR → página → navegação verificada em navegador
 
 **Próximo**
-- `apps/api` — NestJS: ingestão de eventos, auth, conteúdo, social
-- `apps/web` — Next.js PWA: 26 páginas, perfil, painel admin
-- Dashboard com as métricas essenciais da Fase 1
+- Autenticação própria (JWT) e consentimento LGPD
+- Painel admin (CRUD de conteúdo, upload, gestão de QR)
+- Módulo social e dashboard das métricas essenciais (Entrega 2)
 
 ## Pendências com o cliente
 

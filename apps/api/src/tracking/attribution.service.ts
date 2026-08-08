@@ -1,10 +1,12 @@
 import { Injectable, Logger } from '@nestjs/common'
+import { ConfigService } from '@nestjs/config'
 import { Platform, ShortLink, Visitor } from '@pv/db'
 import { randomBytes } from 'node:crypto'
 import { PrismaService } from '../prisma/prisma.service'
 import { HashService } from '../common/privacy/hash.service'
 import { AttributionSnapshot, VisitContext } from './attribution.types'
 import {
+  ehNavegacaoInterna,
   hostDeReferrer,
   plataformaDeReferrer,
   plataformaDeUtm,
@@ -22,10 +24,26 @@ import {
 export class AttributionService {
   private readonly logger = new Logger(AttributionService.name)
 
+  /** Hosts que são nossos — usados para reconhecer navegação interna. */
+  private readonly hostsProprios: ReadonlySet<string>
+
   constructor(
     private readonly prisma: PrismaService,
     private readonly hash: HashService,
-  ) {}
+    config: ConfigService,
+  ) {
+    const hosts = new Set<string>()
+    for (const chave of ['PUBLIC_WEB_URL', 'PUBLIC_SHORTLINK_BASE']) {
+      const valor = config.get<string>(chave)
+      if (!valor) continue
+      try {
+        hosts.add(new URL(valor).hostname.toLowerCase())
+      } catch {
+        /* valor malformado é ignorado; o env já foi validado na subida */
+      }
+    }
+    this.hostsProprios = hosts
+  }
 
   static novoAnonId(): string {
     return `a_${randomBytes(16).toString('base64url')}`
@@ -37,10 +55,6 @@ export class AttributionService {
     anonIdGerado: boolean
   }> {
     const link = ctx.linkCode ? await this.buscarLink(ctx.linkCode) : null
-
-    // ── Origem imediata ──────────────────────────────────────────────
-    // Link curto é a fonte mais confiável; UTM e referrer são fallback.
-    const origem = this.resolverOrigemImediata(ctx, link)
 
     // ── Visitante ────────────────────────────────────────────────────
     let anonIdGerado = false
@@ -56,6 +70,22 @@ export class AttributionService {
     const agora = new Date()
 
     let visitor = await this.prisma.visitor.findUnique({ where: { anonId } })
+
+    // ── Origem imediata ──────────────────────────────────────────────
+    // Link curto é a fonte mais confiável; UTM e referrer são fallback.
+    // Navegação interna não gera origem nova: preserva a que a pessoa já tinha.
+    const interna =
+      !link && !ctx.utmSource && ehNavegacaoInterna(ctx.referrer, this.hostsProprios)
+
+    const origem =
+      interna && visitor
+        ? {
+            platform: visitor.lastTouchPlatform,
+            source: visitor.lastTouchSource,
+            medium: visitor.lastTouchMedium,
+            campaignId: visitor.lastTouchCampaignId,
+          }
+        : this.resolverOrigemImediata(ctx, link)
 
     if (!visitor) {
       // Primeiro contato desta pessoa. As três origens são fixadas agora.
@@ -103,16 +133,23 @@ export class AttributionService {
       // Visita seguinte: só a origem imediata é atualizada. A primeira origem
       // e a raiz da cadeia NUNCA são sobrescritas — é o que garante que a
       // atribuição de aquisição continue verdadeira meses depois.
+      //
+      // E navegação interna não mexe nem na origem imediata: quem veio do
+      // Instagram e está passeando entre as letras continua sendo do Instagram.
       visitor = await this.prisma.visitor.update({
         where: { id: visitor.id },
         data: {
           lastSeenAt: agora,
-          lastTouchPlatform: origem.platform,
-          lastTouchSource: origem.source,
-          lastTouchMedium: origem.medium,
-          lastTouchCampaignId: origem.campaignId,
-          lastTouchLinkId: link?.id ?? null,
-          lastTouchAt: agora,
+          ...(interna
+            ? {}
+            : {
+                lastTouchPlatform: origem.platform,
+                lastTouchSource: origem.source,
+                lastTouchMedium: origem.medium,
+                lastTouchCampaignId: origem.campaignId,
+                lastTouchLinkId: link?.id ?? null,
+                lastTouchAt: agora,
+              }),
           // Vincula ao usuário se ele acabou de se autenticar.
           ...(ctx.userId && !visitor.userId ? { userId: ctx.userId } : {}),
           ...(ipHash ? { ipHash } : {}),
@@ -133,7 +170,9 @@ export class AttributionService {
       campaignId: origem.campaignId,
       campaignRef: ctx.campaignRef ?? null,
 
-      shortLinkId: link?.id ?? null,
+      // Em navegacao interna o link da entrada e preservado: o evento continua
+      // pertencendo a jornada que trouxe a pessoa.
+      shortLinkId: link?.id ?? (interna ? visitor.lastTouchLinkId : null),
       parentShortLinkId: link?.parentShortLinkId ?? null,
       // A raiz do visitante prevalece: um visitante já conhecido que clica num
       // link novo continua pertencendo à cadeia que o adquiriu.

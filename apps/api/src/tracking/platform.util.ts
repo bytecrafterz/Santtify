@@ -56,6 +56,26 @@ export function hostDeReferrer(referrer?: string | null): string | null {
   }
 }
 
+/**
+ * A pessoa veio de outra página NOSSA?
+ *
+ * Isto existe por causa de um erro que passa despercebido e envenena o
+ * relatório de origem: sem esta checagem, alguém navegando da Letra A para a
+ * Letra B chega com referrer do próprio site, cai no "nenhum host conhecido" e
+ * é registrado como OTHER. Em poucos dias a origem da maioria dos eventos
+ * viraria OTHER, e a pergunta "de onde vieram meus visitantes" ficaria sem
+ * resposta — justamente a pergunta que o cliente mais quer responder.
+ *
+ * Navegação interna não é uma origem nova: a atribuição da pessoa é preservada.
+ */
+export function ehNavegacaoInterna(
+  referrer: string | null | undefined,
+  hostsProprios: ReadonlySet<string>,
+): boolean {
+  const host = hostDeReferrer(referrer)
+  return host !== null && hostsProprios.has(host.toLowerCase())
+}
+
 /** Classificação grosseira de dispositivo, suficiente para o dashboard. */
 export function tipoDeDispositivo(userAgent?: string | null): string | null {
   if (!userAgent) return null
