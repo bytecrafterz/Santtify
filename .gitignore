@@ -12,3 +12,4 @@ coverage/
 .turbo/
 .prisma/
 uploads/
+tsconfig.tsbuildinfo

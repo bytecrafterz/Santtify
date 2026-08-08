@@ -1,0 +1,24 @@
+import { Module } from '@nestjs/common'
+import { ConfigModule } from '@nestjs/config'
+import { validateEnv } from './config/env'
+import { PrismaModule } from './prisma/prisma.module'
+import { PrivacyModule } from './common/privacy/privacy.module'
+import { TrackingModule } from './tracking/tracking.module'
+import { ShortLinksModule } from './short-links/short-links.module'
+import { HealthModule } from './health/health.module'
+
+@Module({
+  imports: [
+    ConfigModule.forRoot({
+      isGlobal: true,
+      envFilePath: ['../../.env', '.env'],
+      validate: validateEnv,
+    }),
+    PrismaModule,
+    PrivacyModule,
+    TrackingModule,
+    ShortLinksModule,
+    HealthModule,
+  ],
+})
+export class AppModule {}
