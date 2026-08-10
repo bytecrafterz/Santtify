@@ -6,6 +6,7 @@ import { BlocosDeConteudo } from '@/components/BlocosDeConteudo'
 import { RastreadorDeVisita } from '@/components/RastreadorDeVisita'
 import { SeloProdutoVivo } from '@/components/SeloProdutoVivo'
 import { BannerDeConsentimento } from '@/components/BannerDeConsentimento'
+import { BarraSocial } from '@/components/BarraSocial'
 
 export async function generateMetadata({
   params,
@@ -53,6 +54,13 @@ export default async function PaginaDeConteudo({
       {content.subtitle && <p className="subtitulo">{content.subtitle}</p>}
 
       <BlocosDeConteudo blocos={content.blocks} projectId={project.id} contentId={content.id} />
+
+      <BarraSocial
+        contentId={content.id}
+        projectId={project.id}
+        projectSlug={projectSlug}
+        titulo={content.title}
+      />
 
       <nav className="navegacao">
         {navegacao.anterior ? (

@@ -8,6 +8,7 @@ import { ShortLinksModule } from './short-links/short-links.module'
 import { ContentModule } from './content/content.module'
 import { IdentityModule } from './identity/identity.module'
 import { AdminModule } from './admin/admin.module'
+import { SocialModule } from './social/social.module'
 import { HealthModule } from './health/health.module'
 
 @Module({
@@ -24,6 +25,7 @@ import { HealthModule } from './health/health.module'
     ContentModule,
     IdentityModule,
     AdminModule,
+    SocialModule,
     HealthModule,
   ],
 })
