@@ -11,11 +11,13 @@ Cliente: Rossandro Caxito · Contratado via Workana · Fase 1 em desenvolvimento
 
 | Documento | O que é |
 |---|---|
+| [docs/PROGRESSO.md](docs/PROGRESSO.md) | **Comece por aqui.** Estado técnico, relação com o cliente, bloqueios e avisos |
 | [docs/ARQUITETURA.md](docs/ARQUITETURA.md) | Decisões técnicas, modelo de dados, fluxo de propagação |
 | [docs/contexto/04-escopo-acordado.md](docs/contexto/04-escopo-acordado.md) | **Fonte da verdade do escopo.** O que entra na Fase 1 e o que é Fase 2 |
 | [docs/contexto/01-requisitos-originais.md](docs/contexto/01-requisitos-originais.md) | Publicação original do projeto |
 | [docs/contexto/02-proposta-aceita.md](docs/contexto/02-proposta-aceita.md) | Proposta aceita e compromissos assumidos |
-| [docs/contexto/03-historico-conversa.md](docs/contexto/03-historico-conversa.md) | Histórico completo da negociação |
+| [docs/contexto/03-historico-conversa.md](docs/contexto/03-historico-conversa.md) | Histórico completo: negociação **e** desenvolvimento |
+| [docs/mensagens/](docs/mensagens/) | Cada mensagem enviada ao cliente, com o contexto e a intenção |
 | [docs/contexto/05-cliente.md](docs/contexto/05-cliente.md) | Perfil do cliente e implicação regulatória (GDPR) |
 
 ## Estrutura

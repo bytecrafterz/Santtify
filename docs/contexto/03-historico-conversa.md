@@ -535,12 +535,176 @@ Também precisamos implementar tudo respeitando **LGPD/GDPR**, consentimento e p
 
 ---
 
-## Pendências abertas nesta conversa
+---
+---
 
-| # | Pendência | Responsável |
+# Continuação — desenvolvimento (08 a 11 de agosto de 2026)
+
+A partir daqui o registro cobre a fase de execução. Cada mensagem enviada está
+arquivada na íntegra em [docs/mensagens/](../mensagens/).
+
+---
+
+## 08/08 — Escrow pago, desenvolvimento iniciado
+
+**Rossandro:** "Podemos começar pagamento feito com sucesso" + anexo `IMG_0050.png`
++ "Add quero lhe enviar como sera os mockup"
+
+**Rossandro:** pede que o `content_id` possa ser associado a metadados do conteúdo
+(plataforma, formato, tema, produto, campanha, CTA, data/hora, variante de teste).
+"Se a estrutura já permite isso, por mim podemos iniciar."
+
+**Rossandro:** "Quando pode me entregar?"
+
+**Bruno** → [`2026-08-08-prazo-e-inicio.md`](../mensagens/2026-08-08-prazo-e-inicio.md)
+Confirma os metadados, **antecipa a primeira entrega para antes de 17/08**, e pede
+mockups, material das letras e a definição das três áreas do perfil. Vincula por
+escrito o prazo à chegada dos materiais.
+
+> **Descoberta:** o anexo `IMG_0050.png` não era mockup — era um print do cartão de
+> contato do iPhone dele. Lido junto com "Add quero lhe enviar", a leitura provável
+> era "me adiciona no WhatsApp". A resposta redirecionou para anexar pela Workana,
+> preservando a proteção do escrow, sem constranger.
+
+**Bruno** pergunta sobre domínio e hospedagem, recomendando que a infraestrutura fique
+na conta dele desde o início.
+
+---
+
+## 09/08 — Cliente aprova a antecipação
+
+**Rossandro:** satisfeito com a antecipação e com a ordem de construção. Vai enviar os
+mockups um a um (My Post, Minha Jornada, Lançamentos). Quer definir o domínio antes da
+geração definitiva dos QR. Concorda que a hospedagem fique na conta dele e pede
+recomendação.
+
+---
+
+## 09/08 — Expansão grande de escopo
+
+**Rossandro** descreve um modelo novo, nunca discutido antes:
+
+- Produto vendido a R$ 59,99, pagamento único, checkout externo (Hotmart ou similar)
+- Primeira letra gratuita, demais bloqueadas, desbloqueio diário por QR
+- Playlist pessoal formada conforme a criança avança
+- Visitante navega sem conta; comentar e publicar exige conta validada
+- **Verificação de identidade internacional** (CPF, NIF, passaporte)
+- **Vídeo no My Post**, com limites de duração e publicação
+- Pede simulação de custo: 1.000 clientes, 30.000 vídeos/mês, 2 min cada
+
+**Bruno** responde com a simulação real:
+
+| | Mês 1 | Mês 3 | Mês 6 | Mês 12 |
+|---|---|---|---|---|
+| Vídeo acumulado | 0,6 TB | 1,7 TB | 3,4 TB | 6,8 TB |
+| Armazenamento (Cloudflare R2) | $9 | $26 | $53 | **$105/mês** |
+
+Dois números decidem a viabilidade: **egress** (AWS S3 $526/mês vs R2 **$0**) e
+**conversão** (Mux $3.000/mês vs ffmpeg próprio ~$20). Total do primeiro ano ≈ US$1.000
+contra US$11.000 de receita, ~9%.
+
+E o alerta estrutural: **compra única, custo perpétuo**. No segundo ano o mesmo cliente
+não gera receita nova e a conta continua crescendo. Vídeo sem regra de validade é
+despesa que só aumenta.
+
+Sobre identidade, contraproposta: **a compra já é o filtro**. Quem pagou usou cartão
+real; participação social liberada só para quem comprou, mais telefone por SMS
+(~US$0,05), faz uma conta falsa custar R$ 59,99. Documento custaria US$1,50–2,00 por
+pessoa — mais que o contrato inteiro — e contradiz o objetivo de baixo atrito.
+
+E o ponto que ele não perguntou: **vídeos de crianças, publicados e compartilháveis,
+em EUA/Europa/Brasil**. Não é motivo para não fazer; é motivo para fazer com conta do
+adulto responsável, sem perfil público de criança e com moderação prévia.
+
+---
+
+## 10/08 — Entrega das duas fases
+
+**Bruno** → [`2026-08-10-entrega-1-e-2.md`](../mensagens/2026-08-10-entrega-1-e-2.md)
+
+Entrega 1 **e** Entrega 2 concluídas, sete dias antes do prazo. Ambiente de teste em
+`http://49.12.170.6:3100`, com conta de administrador criada para ele testar o cadastro
+de conteúdo com as próprias mãos. Avisa explicitamente que os números do painel são de
+demonstração e serão apagados.
+
+**Rossandro:** "Vou ler com atenção."
+
+---
+
+## 10/08 — Cliente testa e reporta um problema
+
+**Rossandro:** conseguiu acessar e visualizar as letras, gostou. Mas ao abrir o painel
+de métricas foi levado a uma tela de login e não sabia se era o fluxo correto.
+
+Concorda em separar as funções novas do contrato atual e **pede orçamento de três
+blocos**, com escopo, valor e prazo, para aprovar um por vez:
+
+1. Venda + desbloqueio do conteúdo (com playlist)
+2. Sistema de vídeo/foto no My Post
+3. Sistema de permissões (visitante × membro)
+
+Concorda em **não** implementar verificação por documento agora, e que a conta pertence
+sempre ao adulto responsável.
+
+> **Diagnóstico:** as credenciais estavam certas — ele **entrou com sucesso às 18:58**.
+> O bug era do código: depois do login, todo mundo era mandado para `/perfil` em vez de
+> voltar à página que tentou abrir. Corrigido: o destino é guardado em `?voltar=` e a
+> tela de login passou a explicar por que apareceu.
+
+**Bruno** → [`2026-08-11-orcamento-tres-blocos.md`](../mensagens/2026-08-11-orcamento-tres-blocos.md)
+
+| Bloco | Valor | Prazo |
 |---|---|---|
-| 1 | Mockups do cliente (mencionados, ainda não enviados — "Add quero lhe enviar como sera os mockup") | Rossandro |
-| 2 | Anexo IMG_0050.png (recebido, conteúdo a analisar) | — |
-| 3 | Conteúdo das 26 letras: músicas, áudios, letras, textos educativos, imagens | Rossandro |
-| 4 | Arte + textos da página institucional PV + número de WhatsApp | Rossandro |
-| 5 | Confirmar resposta ao pedido de metadados de `content_id` (aprovado tecnicamente — responder ao cliente) | Bruno |
+| 1. Venda + desbloqueio + playlist | USD 1.400 | 2–3 semanas |
+| 3. Permissões | USD 900 | 1–2 semanas |
+| 2. Vídeo e foto | USD 2.600 | 4–5 semanas |
+
+Ordem 1 → 3 → 2 por dependência, não preferência. O bloco 3 sai por 900 **porque vem
+depois do 1**. Custo recorrente do bloco 2 (US$10–30/mês) declarado antes, não depois.
+
+---
+
+## 11/08 — Alinhamento sobre o My Post + mockups
+
+**Rossandro** envia os mockups (My Post, Minha Jornada, Lançamentos, Música, Playlist)
+e faz uma pergunta objetiva:
+
+> "O My Post já entregue/previsto no contrato atual inclui publicação pelo usuário de
+> foto, texto/legenda e áudio/música, correto?"
+
+Concorda em remover o vídeo por completo por enquanto.
+
+**Bruno** → [`2026-08-11-resposta-my-post-e-mockups.md`](../mensagens/2026-08-11-resposta-my-post-e-mockups.md)
+
+Resposta: **em parte sim, em parte não.** O registro contratual lista quatro
+capacidades — curtir, comentar, compartilhar, ver interações — e descreve o perfil como
+"exibindo". Publicar foto do aparelho não está entre elas.
+
+Mas *"Minhas Publicações"* é genuinamente ambíguo, e o exemplo dele (ouvir uma música e
+publicá-la no perfil) está mais perto de "compartilhar informações". **Concedido sem
+custo:** publicar música/áudio da plataforma no perfil, com legenda. **Mantido
+separado:** envio de foto do aparelho — mesma engrenagem do vídeo menos a conversão,
+com a mesma obrigação de moderação.
+
+E o alerta de planejamento: os mockups mostram **~13 funções que não constam de nenhum
+documento** — seguidores, selo verificado, capa, bloquear/denunciar com seis motivos,
+curtida em comentário, controle de visibilidade, navegação de cinco abas, conquistas,
+quiz, missões, perfis de criança com idade, vitrine de lançamentos, avaliações.
+Pergunta prática: quais são essenciais para o lançamento?
+
+Duas descobertas úteis nos mockups:
+
+- **"Lançamentos" ficou definido** — é a vitrine dos próximos produtos, não lançamentos
+  do usuário. Resolveu a dúvida aberta desde a proposta. Construído no mesmo dia.
+- **Imagens 5 e 6 são outro produto** — marca SANTTIFY, 31 atributos em vez de 26
+  letras, outra navegação. Pergunta pendente: segundo projeto ou referência visual?
+
+---
+
+## Estado em 11/08
+
+Escopo contratado **100% entregue e verificado**, mais duas concessões sem custo
+(My Post com áudio, e Meus Lançamentos). Aguardando dele: triagem dos mockups, resposta
+sobre SANTTIFY, domínio e hospedagem.
+
+Ver [docs/PROGRESSO.md](../PROGRESSO.md) para o estado técnico completo.
