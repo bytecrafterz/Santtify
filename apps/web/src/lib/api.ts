@@ -65,15 +65,32 @@ export interface ItemIndice {
   stats: { views: number; likes: number; comments: number; shares: number } | null
 }
 
+/**
+ * Tempo máximo esperando a API antes de desistir e renderizar o estado vazio.
+ *
+ * Sem isto, API fora do ar derruba a página de um jeito pior do que um erro:
+ * ela simplesmente PENDURA. O visitante fica olhando uma tela em branco até o
+ * navegador desistir sozinho, e o servidor segura a conexão o tempo todo.
+ *
+ * Descoberto testando a build de produção contra um domínio inexistente: as
+ * páginas que buscam dados no servidor não respondiam, enquanto as que não
+ * buscam abriam normalmente. O `catch` cobria erro, mas lentidão não é erro.
+ */
+const LIMITE_MS = 5000
+
 async function buscar<T>(caminho: string, revalidate = 30): Promise<T | null> {
   try {
-    const res = await fetch(`${API_URL}${caminho}`, { next: { revalidate } })
+    const res = await fetch(`${API_URL}${caminho}`, {
+      next: { revalidate },
+      signal: AbortSignal.timeout(LIMITE_MS),
+    })
     if (!res.ok) return null
     return (await res.json()) as T
-  } catch {
-    // A API fora do ar não pode derrubar a renderização: a página mostra o
-    // estado vazio e o erro fica visível no log do servidor.
-    console.error(`Falha ao buscar ${caminho}`)
+  } catch (erro) {
+    // A API fora do ar, ou lenta demais, não pode derrubar a renderização: a
+    // página mostra o estado vazio e o motivo fica no log do servidor.
+    const motivo = (erro as Error)?.name === 'TimeoutError' ? 'tempo esgotado' : 'falha'
+    console.error(`API ${motivo} ao buscar ${caminho}`)
     return null
   }
 }
