@@ -13,6 +13,27 @@ async function bootstrap() {
   // Necessário para que ipDaRequisicao leia o X-Forwarded-For atrás de proxy.
   app.set('trust proxy', true)
   app.use(cookieParser())
+
+  /**
+   * Prefixo /api em tudo, com três exceções.
+   *
+   * O motivo é a origem única: em produção o proxy serve o site e a API no
+   * MESMO domínio, e isso elimina de uma vez CORS entre subdomínios e cookie
+   * com Domain=.dominio.com. O cookie `pv_anon` é o que liga a visita do QR à
+   * pessoa, e cookie entre origens diferentes é a categoria de bug que só
+   * aparece no celular de outra pessoa, depois do lançamento.
+   *
+   * Exceções:
+   *   - `r/:code` fica na raiz porque é o endereço gravado dentro do QR:
+   *     quanto mais curto, mais fácil de escanear.
+   *   - `health` para o monitor não depender do prefixo.
+   *   - `/uploads` é estático e não passa pelo roteador do Nest.
+   *
+   * O mesmo prefixo vale em desenvolvimento, de propósito: divergir aqui é
+   * como se produz o clássico "na minha máquina funcionava".
+   */
+  app.setGlobalPrefix('api', { exclude: ['r/:code', 'health'] })
+
   app.enableCors({
     origin: config.getOrThrow<string>('PUBLIC_WEB_URL'),
     credentials: true,

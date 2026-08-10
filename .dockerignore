@@ -1,0 +1,14 @@
+.git
+node_modules
+**/node_modules
+.next
+**/.next
+dist
+**/dist
+uploads
+.env
+.env.*
+!.env.example
+!.env.production.example
+docs
+*.md

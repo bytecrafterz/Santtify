@@ -1,0 +1,55 @@
+# Proxy reverso e HTTPS automático.
+#
+# Origem única: site e API no MESMO domínio. Isso elimina CORS entre
+# subdomínios e cookie com Domain=.dominio.com — e o cookie `pv_anon` é o que
+# liga a visita do QR à pessoa. Cookie entre origens é a classe de bug que só
+# aparece no celular de outra pessoa, depois do lançamento.
+#
+# O Caddy obtém e renova o certificado Let's Encrypt sozinho. Para isso as
+# portas 80 e 443 precisam estar abertas e o DNS já apontando para o servidor.
+
+{$DOMINIO} {
+	encode zstd gzip
+
+	# Cabeçalhos de segurança básicos.
+	header {
+		Strict-Transport-Security "max-age=31536000; includeSubDomains"
+		X-Content-Type-Options "nosniff"
+		X-Frame-Options "SAMEORIGIN"
+		Referrer-Policy "strict-origin-when-cross-origin"
+		-Server
+	}
+
+	# Mídia enviada pelo painel. Cache longo: o nome do arquivo é único por
+	# upload, então conteúdo novo tem endereço novo e nunca serve versão velha.
+	handle /uploads/* {
+		header Cache-Control "public, max-age=2592000, immutable"
+		reverse_proxy api:3333
+	}
+
+	# Links curtos e QR Codes. Ficam na RAIZ de propósito: quanto mais curto o
+	# endereço, mais fácil o QR é de escanear e menos estranho no WhatsApp.
+	handle /r/* {
+		reverse_proxy api:3333
+	}
+
+	handle /health {
+		reverse_proxy api:3333
+	}
+
+	handle /api/* {
+		reverse_proxy api:3333
+	}
+
+	# Todo o resto é o PWA.
+	handle {
+		reverse_proxy web:3000
+	}
+
+	log {
+		output file /var/log/caddy/acesso.log {
+			roll_size 20mb
+			roll_keep 5
+		}
+	}
+}
