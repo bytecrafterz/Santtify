@@ -1,4 +1,5 @@
 import Link from 'next/link'
+import { Suspense } from 'react'
 import { notFound } from 'next/navigation'
 import { api } from '@/lib/api'
 import { FormularioDeAuth } from '@/components/FormularioDeAuth'
@@ -23,7 +24,9 @@ export default async function PaginaDeCadastro({
       <p className="subtitulo">
         Para curtir, comentar e guardar por onde você já passou.
       </p>
-      <FormularioDeAuth modo="cadastrar" projectId={project.id} projectSlug={projectSlug} />
+      <Suspense fallback={null}>
+        <FormularioDeAuth modo="cadastrar" projectId={project.id} projectSlug={projectSlug} />
+      </Suspense>
     </main>
   )
 }

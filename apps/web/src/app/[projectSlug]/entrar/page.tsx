@@ -1,4 +1,5 @@
 import Link from 'next/link'
+import { Suspense } from 'react'
 import { notFound } from 'next/navigation'
 import { api } from '@/lib/api'
 import { FormularioDeAuth } from '@/components/FormularioDeAuth'
@@ -21,7 +22,9 @@ export default async function PaginaDeLogin({
       </div>
       <h1>Entrar</h1>
       <p className="subtitulo">Que bom te ver de novo.</p>
-      <FormularioDeAuth modo="entrar" projectId={project.id} projectSlug={projectSlug} />
+      <Suspense fallback={null}>
+        <FormularioDeAuth modo="entrar" projectId={project.id} projectSlug={projectSlug} />
+      </Suspense>
     </main>
   )
 }

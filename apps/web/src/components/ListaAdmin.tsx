@@ -23,7 +23,7 @@ export function ListaAdmin({ projectSlug }: { projectSlug: string }) {
   useEffect(() => {
     if (carregando) return
     if (!usuario) {
-      router.replace(`/${projectSlug}/entrar`)
+      router.replace(`/${projectSlug}/entrar?voltar=` + encodeURIComponent(window.location.pathname))
       return
     }
     if (usuario.role !== 'ADMIN') {

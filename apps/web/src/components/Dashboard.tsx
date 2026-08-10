@@ -68,7 +68,7 @@ export function Dashboard({ projectSlug }: { projectSlug: string }) {
 
   useEffect(() => {
     if (carregando) return
-    if (!usuario) return router.replace(`/${projectSlug}/entrar`)
+    if (!usuario) return router.replace(`/${projectSlug}/entrar?voltar=` + encodeURIComponent(window.location.pathname))
     if (usuario.role !== 'ADMIN') return definirErro('Esta área é restrita ao administrador.')
     buscar(projectSlug, dias).then(definirDados).catch((e) => definirErro(e.message))
   }, [usuario, carregando, projectSlug, dias, router])

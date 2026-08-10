@@ -1,6 +1,6 @@
 'use client'
 
-import { useRouter } from 'next/navigation'
+import { useRouter, useSearchParams } from 'next/navigation'
 import Link from 'next/link'
 import { useState } from 'react'
 import { auth, ErroDeApi } from '@/lib/auth'
@@ -20,11 +20,14 @@ export function FormularioDeAuth({
   projectSlug: string
 }) {
   const router = useRouter()
+  const parametros = useSearchParams()
   const { definirUsuario } = useAuth()
   const [erro, definirErro] = useState<string | null>(null)
   const [enviando, definirEnviando] = useState(false)
 
   const cadastro = modo === 'cadastrar'
+  /** Chegou aqui redirecionado de uma página protegida. */
+  const veioDeAreaProtegida = Boolean(parametros.get('voltar'))
 
   async function enviar(evento: React.FormEvent<HTMLFormElement>) {
     evento.preventDefault()
@@ -46,7 +49,17 @@ export function FormularioDeAuth({
         : await auth.entrar({ projectId, email, password })
 
       definirUsuario(usuario)
-      router.push(`/${projectSlug}/perfil`)
+
+      // Volta para a página que a pessoa tentou abrir antes de ser mandada
+      // para o login. Sem isso, quem clica no painel de métricas entra e cai
+      // no perfil, e conclui que o painel não existe — foi exatamente o que
+      // aconteceu com o cliente.
+      const voltar = parametros.get('voltar')
+      const destino =
+        voltar && voltar.startsWith(`/${projectSlug}/`)
+          ? voltar
+          : `/${projectSlug}/perfil`
+      router.push(destino)
       router.refresh()
     } catch (e) {
       definirErro(
@@ -58,6 +71,11 @@ export function FormularioDeAuth({
 
   return (
     <form className="formulario" onSubmit={enviar}>
+      {veioDeAreaProtegida && (
+        <p className="aviso-social">
+          Essa área pede login. Entre e você volta direto para ela.
+        </p>
+      )}
       {cadastro && (
         <label>
           Nome
