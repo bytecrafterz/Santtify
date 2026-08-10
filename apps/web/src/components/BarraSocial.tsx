@@ -3,6 +3,7 @@
 import Link from 'next/link'
 import { useEffect, useState } from 'react'
 import { social, type EstadoSocial } from '@/lib/social'
+import { PublicarNoPerfil } from '@/components/PublicarNoPerfil'
 import { useAuth } from '@/components/ProvedorDeAuth'
 
 /**
@@ -162,6 +163,13 @@ export function BarraSocial({
           </p>
         </div>
       )}
+
+      <PublicarNoPerfil
+        contentId={contentId}
+        projectId={projectId}
+        projectSlug={projectSlug}
+        titulo={titulo}
+      />
 
       <Comentarios
         contentId={contentId}

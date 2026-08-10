@@ -51,7 +51,23 @@ async function chamar<T>(caminho: string, init: RequestInit = {}, jaRenovou = fa
   return corpo as T
 }
 
+export interface PublicacaoCriada {
+  id: string
+  body: string | null
+  createdAt: string
+  content: { slug: string; title: string; subtitle: string | null; project: { slug: string } }
+}
+
 export const social = {
+  /** "My Post": publica no perfil o conteúdo que a pessoa está ouvindo. */
+  publicar: (contentId: string, projectId: string, body?: string) =>
+    chamar<PublicacaoCriada>(`/contents/${contentId}/publish`, {
+      method: 'POST',
+      body: JSON.stringify({ projectId, body }),
+    }),
+
+  removerPublicacao: (id: string) => chamar<void>(`/posts/${id}`, { method: 'DELETE' }),
+
   estado: (contentId: string) => chamar<EstadoSocial>(`/contents/${contentId}/social`),
 
   curtir: (contentId: string, projectId: string) =>

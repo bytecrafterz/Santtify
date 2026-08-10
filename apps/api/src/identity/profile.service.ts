@@ -52,7 +52,7 @@ export class ProfileService {
     if (!user) throw new NotFoundException('Usuário não encontrado')
 
     const [comentarios, curtidas, compartilhamentos, conteudosVistos] = await Promise.all([
-      this.prisma.comment.count({ where: { userId, status: 'PUBLISHED' } }),
+      this.prisma.post.count({ where: { userId, status: 'PUBLISHED' } }),
       this.prisma.reaction.count({ where: { userId } }),
       this.prisma.share.count({ where: { userId } }),
       this.prisma.event
@@ -70,13 +70,20 @@ export class ProfileService {
 
     return {
       user,
-      estatisticas: { comentarios, curtidas, compartilhamentos, conteudosVistos },
+      estatisticas: { publicacoes: comentarios, curtidas, compartilhamentos, conteudosVistos },
     }
   }
 
-  /** "Minhas Publicações" — o que a pessoa escreveu. */
+  /**
+   * "Minhas Publicações" — o que a pessoa publicou no próprio perfil.
+   *
+   * Antes esta aba mostrava os comentários dela, que era a leitura segura
+   * enquanto o termo estava indefinido. O cliente esclareceu: My Post é a área
+   * de PUBLICAÇÃO do usuário. Os comentários continuam visíveis em "Meu
+   * Registro", junto do resto do histórico.
+   */
   async publicacoes(userId: string, limite = 50) {
-    const comments = await this.prisma.comment.findMany({
+    return this.prisma.post.findMany({
       where: { userId, status: 'PUBLISHED' },
       orderBy: { createdAt: 'desc' },
       take: limite,
@@ -84,10 +91,11 @@ export class ProfileService {
         id: true,
         body: true,
         createdAt: true,
-        content: { select: { slug: true, title: true, project: { select: { slug: true } } } },
+        content: {
+          select: { slug: true, title: true, subtitle: true, project: { select: { slug: true } } },
+        },
       },
     })
-    return comments
   }
 
   /**

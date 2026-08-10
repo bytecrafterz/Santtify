@@ -88,7 +88,7 @@ export function PainelDePerfil({ projectSlug }: { projectSlug: string }) {
         <div className="numeros">
           <Numero valor={perfil.estatisticas.conteudosVistos} rotulo="Conteúdos vistos" />
           <Numero valor={perfil.estatisticas.curtidas} rotulo="Curtidas" />
-          <Numero valor={perfil.estatisticas.comentarios} rotulo="Comentários" />
+          <Numero valor={perfil.estatisticas.publicacoes} rotulo="Publicações" />
           <Numero valor={perfil.estatisticas.compartilhamentos} rotulo="Compartilhamentos" />
         </div>
       )}
@@ -108,13 +108,17 @@ export function PainelDePerfil({ projectSlug }: { projectSlug: string }) {
       {aba === 'publicacoes' && (
         <Lista
           itens={publicacoes}
-          vazio="Você ainda não comentou em nenhum conteúdo."
+          vazio="Você ainda não publicou nada. Abra uma letra e toque em Publicar no meu perfil."
           renderizar={(p) => (
             <li className="bloco" key={p.id}>
-              <Link href={`/${p.content.project.slug}/${p.content.slug}`}>
-                <strong>{p.content.title}</strong>
+              {p.body && <p className="bloco-texto">{p.body}</p>}
+              <Link className="conteudo-publicado" href={`/${p.content.project.slug}/${p.content.slug}`}>
+                <span aria-hidden>♪</span>
+                <span>
+                  <strong>{p.content.title}</strong>
+                  {p.content.subtitle && <small> — {p.content.subtitle}</small>}
+                </span>
               </Link>
-              <p className="bloco-texto">{p.body}</p>
               <small>{formatarData(p.createdAt)}</small>
             </li>
           )}

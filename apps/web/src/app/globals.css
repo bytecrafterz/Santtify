@@ -1067,3 +1067,84 @@ h3 {
   color: var(--cor-texto-suave);
   margin: 0 0 8px;
 }
+
+/* ── Publicar no perfil (My Post) ─────────────────────────────────── */
+
+.publicar-abrir {
+  width: 100%;
+  margin-top: 12px;
+  padding: 14px;
+  border: 1px dashed var(--cor-primaria);
+  border-radius: var(--raio);
+  background: var(--cor-superficie);
+  color: var(--cor-primaria);
+  font-weight: 600;
+  font-size: 15px;
+  font-family: inherit;
+  cursor: pointer;
+}
+
+.publicar-caixa {
+  margin-top: 12px;
+}
+
+.publicar-caixa textarea {
+  width: 100%;
+  font-size: 16px; /* evita o zoom do Safari no iPhone */
+  font-family: inherit;
+  padding: 12px 14px;
+  border: 1px solid var(--cor-borda);
+  border-radius: 10px;
+  background: var(--cor-fundo);
+  color: var(--cor-texto);
+  resize: vertical;
+}
+
+.publicar-acoes {
+  display: flex;
+  gap: 10px;
+  margin-top: 12px;
+}
+
+.publicar-acoes button {
+  flex: 1;
+  padding: 12px;
+  border: 0;
+  border-radius: 10px;
+  background: var(--cor-primaria);
+  color: #fff;
+  font-weight: 700;
+  font-size: 15px;
+  font-family: inherit;
+  cursor: pointer;
+}
+
+.publicar-acoes .secundario {
+  background: transparent;
+  color: var(--cor-texto-suave);
+  border: 1px solid var(--cor-borda);
+}
+
+/* O conteúdo publicado, dentro do card da publicação no perfil. */
+.conteudo-publicado {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 12px 14px;
+  margin: 10px 0 8px;
+  border: 1px solid var(--cor-borda);
+  border-radius: 12px;
+  background: var(--cor-fundo);
+  text-decoration: none;
+  color: var(--cor-texto);
+}
+
+.conteudo-publicado span[aria-hidden] {
+  font-size: 20px;
+  color: var(--cor-primaria);
+}
+
+.conteudo-publicado small {
+  color: var(--cor-texto-suave);
+  font-weight: 400;
+}

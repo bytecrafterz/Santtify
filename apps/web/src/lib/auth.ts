@@ -169,7 +169,7 @@ export interface PerfilResposta {
     createdAt: string
   }
   estatisticas: {
-    comentarios: number
+    publicacoes: number
     curtidas: number
     compartilhamentos: number
     conteudosVistos: number
@@ -178,9 +178,9 @@ export interface PerfilResposta {
 
 export interface Publicacao {
   id: string
-  body: string
+  body: string | null
   createdAt: string
-  content: { slug: string; title: string; project: { slug: string } }
+  content: { slug: string; title: string; subtitle: string | null; project: { slug: string } }
 }
 
 export interface ItemDeRegistro {

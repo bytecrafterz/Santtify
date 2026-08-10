@@ -13,6 +13,7 @@ import type { Request } from 'express'
 import { Platform } from '@pv/db'
 import { IsEnum, IsOptional, IsString, IsUUID, MaxLength, MinLength } from 'class-validator'
 import { SocialService } from './social.service'
+import { PostsService } from './posts.service'
 import { AuthGuard, AuthOpcional } from '../identity/auth.guard'
 import { ANON_COOKIE, ipDaRequisicao, paisDaRequisicao } from '../common/http.util'
 import { VisitContext } from '../tracking/attribution.types'
@@ -27,9 +28,26 @@ class CurtirDto {
   @IsUUID() projectId!: string
 }
 
+class PublicarDto {
+  @IsUUID() projectId!: string
+  @IsOptional() @IsString() @MaxLength(1000) body?: string
+}
+
 class CompartilharDto {
   @IsUUID() projectId!: string
   @IsEnum(Platform) canal!: Platform
+}
+
+/** Monta o contexto de visita a partir da requisição. */
+function contextoDaVisita(projectId: string, req: Request): VisitContext {
+  return {
+    projectId,
+    anonId: req.cookies?.[ANON_COOKIE] ?? null,
+    referrer: req.get('referer') ?? null,
+    ip: ipDaRequisicao(req),
+    userAgent: req.get('user-agent') ?? null,
+    countryCode: paisDaRequisicao(req),
+  }
 }
 
 /**
@@ -41,7 +59,10 @@ class CompartilharDto {
  */
 @Controller('contents/:contentId')
 export class SocialController {
-  constructor(private readonly social: SocialService) {}
+  constructor(
+    private readonly social: SocialService,
+    private readonly posts: PostsService,
+  ) {}
 
   @Get('social')
   @AuthOpcional()
@@ -54,7 +75,11 @@ export class SocialController {
   @HttpCode(200)
   @UseGuards(AuthGuard)
   curtir(@Param('contentId') contentId: string, @Body() dto: CurtirDto, @Req() req: Request) {
-    return this.social.alternarCurtida(contentId, req.usuario!.id, this.contexto(dto.projectId, req))
+    return this.social.alternarCurtida(
+      contentId,
+      req.usuario!.id,
+      contextoDaVisita(dto.projectId, req),
+    )
   }
 
   @Get('comments')
@@ -71,7 +96,7 @@ export class SocialController {
       contentId,
       req.usuario!.id,
       { body: dto.body, parentId: dto.parentId },
-      this.contexto(dto.projectId, req),
+      contextoDaVisita(dto.projectId, req),
     )
   }
 
@@ -87,23 +112,30 @@ export class SocialController {
       contentId,
       req.usuario!.id,
       dto.canal,
-      this.contexto(dto.projectId, req),
+      contextoDaVisita(dto.projectId, req),
     )
   }
 
-  private contexto(projectId: string, req: Request): VisitContext {
-    return {
-      projectId,
-      anonId: req.cookies?.[ANON_COOKIE] ?? null,
-      referrer: req.get('referer') ?? null,
-      ip: ipDaRequisicao(req),
-      userAgent: req.get('user-agent') ?? null,
-      countryCode: paisDaRequisicao(req),
-    }
+  /**
+   * "My Post": publica este conteúdo no perfil de quem está logado.
+   *
+   * Publica um conteúdo que JÁ existe na plataforma — a música que a pessoa
+   * está ouvindo — com uma legenda escrita por ela. Envio de arquivo do
+   * aparelho é outro bloco, com moderação.
+   */
+  @Post('publish')
+  @UseGuards(AuthGuard)
+  publicar(@Param('contentId') contentId: string, @Body() dto: PublicarDto, @Req() req: Request) {
+    return this.posts.publicar(
+      contentId,
+      req.usuario!.id,
+      dto.body,
+      contextoDaVisita(dto.projectId, req),
+    )
   }
 }
 
-/** Remoção de comentário fica fora do prefixo de conteúdo. */
+/** Remoção de comentário, fora do prefixo de conteúdo. */
 @Controller('comments')
 export class ComentariosController {
   constructor(private readonly social: SocialService) {}
@@ -113,5 +145,18 @@ export class ComentariosController {
   @UseGuards(AuthGuard)
   remover(@Param('id') id: string, @Req() req: Request) {
     return this.social.removerComentario(id, req.usuario!.id, req.usuario!.role === 'ADMIN')
+  }
+}
+
+/** Remoção de publicação do perfil. */
+@Controller('posts')
+export class PublicacoesController {
+  constructor(private readonly posts: PostsService) {}
+
+  @Delete(':id')
+  @HttpCode(204)
+  @UseGuards(AuthGuard)
+  remover(@Param('id') id: string, @Req() req: Request) {
+    return this.posts.remover(id, req.usuario!.id, req.usuario!.role === 'ADMIN')
   }
 }
