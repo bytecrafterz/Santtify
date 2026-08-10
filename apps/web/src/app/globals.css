@@ -1039,3 +1039,31 @@ h3 {
   background: var(--cor-fundo);
   color: var(--cor-texto);
 }
+
+/* ── Vitrine de lançamentos ──────────────────────────────────────── */
+
+.lancamento {
+  display: flex;
+  gap: 14px;
+  align-items: flex-start;
+}
+
+.lancamento img {
+  width: 84px;
+  height: 84px;
+  object-fit: cover;
+  border-radius: 12px;
+  flex: 0 0 auto;
+}
+
+.lancamento strong {
+  display: block;
+  font-size: 16px;
+  margin-bottom: 4px;
+}
+
+.lancamento .bloco-texto {
+  font-size: 14px;
+  color: var(--cor-texto-suave);
+  margin: 0 0 8px;
+}

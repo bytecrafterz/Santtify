@@ -50,6 +50,7 @@ model Project {
   comments  Comment[]
   reactions Reaction[]
   auditLogs AdminAuditLog[]
+  launches  Launch[]
 
   @@map("projects")
 }
@@ -346,6 +347,41 @@ enum ShortLinkKind {
   /// Link gerado quando um usuário compartilha.
   SHARE
   CUSTOM
+}
+
+/// Vitrine de próximos produtos — a área "Meus Lançamentos" do perfil.
+///
+/// Definida pelos mockups do cliente: NÃO são lançamentos do usuário, e sim os
+/// próximos produtos que ele está preparando, com o status de cada um. A lista
+/// é a mesma para todo mundo, apesar de aparecer dentro do perfil.
+///
+/// Fica ligada ao Project e não ao alfabeto: o próximo projeto tem a própria
+/// vitrine sem código novo.
+model Launch {
+  id          String       @id @default(uuid()) @db.Uuid
+  projectId   String       @db.Uuid
+  project     Project      @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  title       String
+  description String?
+  imageUrl    String?
+  status      LaunchStatus @default(EM_BREVE)
+  /// Ordem de exibição na vitrine.
+  position    Int          @default(0)
+  /// Link externo opcional, para quando o produto sair.
+  externalUrl String?
+  visible     Boolean      @default(true)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([projectId, visible, position])
+  @@map("launches")
+}
+
+enum LaunchStatus {
+  EM_BREVE
+  EM_DESENVOLVIMENTO
+  LANCADO
 }
 
 // ═══════════════════════════════════════════════════════════════════

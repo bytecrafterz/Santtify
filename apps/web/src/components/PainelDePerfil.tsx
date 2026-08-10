@@ -3,7 +3,14 @@
 import Link from 'next/link'
 import { useEffect, useState } from 'react'
 import { useRouter } from 'next/navigation'
-import { auth, type ItemDeRegistro, type PerfilResposta, type Publicacao } from '@/lib/auth'
+import {
+  auth,
+  buscarLancamentos,
+  type ItemDeRegistro,
+  type Lancamento,
+  type PerfilResposta,
+  type Publicacao,
+} from '@/lib/auth'
 import { useAuth } from '@/components/ProvedorDeAuth'
 
 type Aba = 'publicacoes' | 'registro' | 'lancamentos'
@@ -30,6 +37,7 @@ export function PainelDePerfil({ projectSlug }: { projectSlug: string }) {
   const [aba, definirAba] = useState<Aba>('publicacoes')
   const [publicacoes, definirPublicacoes] = useState<Publicacao[] | null>(null)
   const [registro, definirRegistro] = useState<ItemDeRegistro[] | null>(null)
+  const [lancamentos, definirLancamentos] = useState<Lancamento[] | null>(null)
 
   useEffect(() => {
     if (carregando) return
@@ -48,7 +56,10 @@ export function PainelDePerfil({ projectSlug }: { projectSlug: string }) {
     if (aba === 'registro' && registro === null) {
       void auth.registro().then(definirRegistro).catch(() => definirRegistro([]))
     }
-  }, [aba, usuario, publicacoes, registro])
+    if (aba === 'lancamentos' && lancamentos === null) {
+      void buscarLancamentos(projectSlug).then(definirLancamentos).catch(() => definirLancamentos([]))
+    }
+  }, [aba, usuario, publicacoes, registro, lancamentos, projectSlug])
 
   if (carregando || !usuario) {
     return <p className="vazio">Carregando...</p>
@@ -134,13 +145,28 @@ export function PainelDePerfil({ projectSlug }: { projectSlug: string }) {
       )}
 
       {aba === 'lancamentos' && (
-        <div className="bloco">
-          <p className="bloco-vazio">
-            Esta seção está reservada e ainda vai ser definida junto com você. Assim que
-            você me disser o que entra em Meus Lançamentos, ela é preenchida sem mexer no
-            resto do perfil.
-          </p>
-        </div>
+        <>
+          <p className="nota">Nos acompanhe os lançamentos que estamos preparando.</p>
+          <Lista
+            itens={lancamentos}
+            vazio="Nenhum lançamento anunciado ainda."
+            renderizar={(l) => (
+              <li className="bloco lancamento" key={l.id}>
+                {l.imageUrl && (
+                  // eslint-disable-next-line @next/next/no-img-element
+                  <img src={l.imageUrl} alt="" />
+                )}
+                <div>
+                  <strong>{l.title}</strong>
+                  {l.description && <p className="bloco-texto">{l.description}</p>}
+                  <span className={`etiqueta ${l.status === 'LANCADO' ? 'publicado' : ''}`}>
+                    {rotuloDeStatus(l.status)}
+                  </span>
+                </div>
+              </li>
+            )}
+          />
+        </>
       )}
 
       <div className="acoes-perfil">
@@ -218,6 +244,16 @@ function formatarData(iso: string): string {
     month: 'short',
     year: 'numeric',
   })
+}
+
+/** Status do lançamento, com as palavras que o cliente usou nos mockups. */
+function rotuloDeStatus(status: Lancamento['status']): string {
+  const nomes: Record<Lancamento['status'], string> = {
+    EM_BREVE: 'Em breve',
+    EM_DESENVOLVIMENTO: 'Em desenvolvimento',
+    LANCADO: 'Lançado',
+  }
+  return nomes[status]
 }
 
 /** Nomes voltados ao usuário, não ao banco. */

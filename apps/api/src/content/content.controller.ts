@@ -1,6 +1,7 @@
 import { Controller, Get, Header, Param, Res } from '@nestjs/common'
 import type { Response } from 'express'
 import { ContentService } from './content.service'
+import { LaunchesService } from './launches.service'
 
 /**
  * Leitura pública do conteúdo. Sem autenticação: a página da letra é aberta
@@ -8,7 +9,16 @@ import { ContentService } from './content.service'
  */
 @Controller('projects/:projectSlug')
 export class ContentController {
-  constructor(private readonly content: ContentService) {}
+  constructor(
+    private readonly content: ContentService,
+    private readonly launches: LaunchesService,
+  ) {}
+
+  /** Vitrine de próximos produtos — a aba "Meus Lançamentos" do perfil. */
+  @Get('launches')
+  lancamentos(@Param('projectSlug') projectSlug: string) {
+    return this.launches.listar(projectSlug)
+  }
 
   @Get()
   projeto(@Param('projectSlug') projectSlug: string) {

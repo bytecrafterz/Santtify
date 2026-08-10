@@ -18,6 +18,8 @@ import { BlockType } from '@pv/db'
 import { IsBoolean, IsEnum, IsInt, IsOptional, IsString, MaxLength, Min } from 'class-validator'
 import { AdminContentService } from './admin-content.service'
 import { StorageService, TAMANHO_MAXIMO } from './storage.service'
+import { LaunchesService } from '../content/launches.service'
+import { LaunchStatus } from '@pv/db'
 import { AdminGuard, AuthGuard } from '../identity/auth.guard'
 
 class CriarConteudoDto {
@@ -50,6 +52,22 @@ class SalvarBlocoDto {
   @IsOptional() @IsString() assetId?: string | null
 }
 
+class CriarLancamentoDto {
+  @IsString() @MaxLength(120) title!: string
+  @IsOptional() @IsString() @MaxLength(400) description?: string
+  @IsOptional() @IsEnum(LaunchStatus) status?: LaunchStatus
+}
+
+class AtualizarLancamentoDto {
+  @IsOptional() @IsString() @MaxLength(120) title?: string
+  @IsOptional() @IsString() @MaxLength(400) description?: string
+  @IsOptional() @IsString() imageUrl?: string
+  @IsOptional() @IsEnum(LaunchStatus) status?: LaunchStatus
+  @IsOptional() @IsString() externalUrl?: string
+  @IsOptional() @IsBoolean() visible?: boolean
+  @IsOptional() @IsInt() @Min(0) position?: number
+}
+
 class MetadadosDto {
   @IsOptional() @IsString() platform?: string
   @IsOptional() @IsString() format?: string
@@ -72,7 +90,39 @@ export class AdminController {
   constructor(
     private readonly conteudo: AdminContentService,
     private readonly storage: StorageService,
+    private readonly lancamentos: LaunchesService,
   ) {}
+
+  // ── Lançamentos (vitrine de próximos produtos) ───────────────────
+
+  @Get('projects/:projectSlug/launches')
+  listarLancamentos(@Param('projectSlug') projectSlug: string) {
+    return this.lancamentos.listarParaAdmin(projectSlug)
+  }
+
+  @Post('projects/:projectSlug/launches')
+  criarLancamento(
+    @Param('projectSlug') projectSlug: string,
+    @Body() dto: CriarLancamentoDto,
+    @Req() req: Request,
+  ) {
+    return this.lancamentos.criar(projectSlug, dto, req.usuario!.id)
+  }
+
+  @Patch('launches/:id')
+  atualizarLancamento(
+    @Param('id') id: string,
+    @Body() dto: AtualizarLancamentoDto,
+    @Req() req: Request,
+  ) {
+    return this.lancamentos.atualizar(id, dto, req.usuario!.id)
+  }
+
+  @Delete('launches/:id')
+  @HttpCode(204)
+  removerLancamento(@Param('id') id: string, @Req() req: Request) {
+    return this.lancamentos.remover(id, req.usuario!.id)
+  }
 
   @Get('projects/:projectSlug/contents')
   listar(@Param('projectSlug') projectSlug: string) {
