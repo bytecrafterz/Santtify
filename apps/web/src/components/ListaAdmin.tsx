@@ -66,6 +66,11 @@ export function ListaAdmin({ projectSlug }: { projectSlug: string }) {
         {publicados} de {dados.contents.length} conteúdos publicados
       </p>
 
+      <Link className="bloco linha atalho-metricas" href={`/${projectSlug}/admin/metricas`}>
+        <span>Ver métricas</span>
+        <small>visitantes, origem, propagação e conteúdos mais acessados</small>
+      </Link>
+
       <ul className="lista">
         {dados.contents.map((c) => {
           const completo = c.blocosTotal > 0 && c.blocosPreenchidos === c.blocosTotal

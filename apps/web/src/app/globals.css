@@ -898,3 +898,133 @@ h3 {
 .formulario-comentario button[disabled] {
   opacity: 0.5;
 }
+
+/* ── Dashboard ───────────────────────────────────────────────────── */
+
+.atalho-metricas {
+  text-decoration: none;
+  color: var(--cor-texto);
+  font-weight: 700;
+}
+
+.atalho-metricas small {
+  font-weight: 400;
+  color: var(--cor-texto-suave);
+}
+
+.cabecalho select {
+  font-family: inherit;
+  font-size: 14px;
+  padding: 8px 12px;
+  border-radius: 10px;
+  border: 1px solid var(--cor-borda);
+  background: var(--cor-superficie);
+  color: var(--cor-texto);
+}
+
+.nota {
+  font-size: 13px;
+  color: var(--cor-texto-suave);
+  margin: 0 0 12px;
+  line-height: 1.5;
+}
+
+/* Gráfico em CSS puro: sem biblioteca, carrega instantâneo no celular. */
+.grafico {
+  display: flex;
+  align-items: flex-end;
+  gap: 3px;
+  height: 140px;
+  padding: 16px;
+}
+
+.grafico .coluna {
+  flex: 1;
+  height: 100%;
+  display: flex;
+  align-items: flex-end;
+  min-width: 3px;
+}
+
+.grafico .barra {
+  width: 100%;
+  background: var(--cor-primaria);
+  border-radius: 3px 3px 0 0;
+  min-height: 2px;
+  display: flex;
+  align-items: flex-end;
+  opacity: 0.35;
+}
+
+.grafico .parte-cadastro {
+  width: 100%;
+  background: var(--cor-primaria);
+  border-radius: 3px 3px 0 0;
+  opacity: 1;
+}
+
+.legenda {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 12px;
+  color: var(--cor-texto-suave);
+  margin: 8px 0 0;
+}
+
+.legenda .ponto {
+  width: 10px;
+  height: 10px;
+  border-radius: 3px;
+  background: var(--cor-primaria);
+  display: inline-block;
+  margin-left: 10px;
+}
+
+.legenda .ponto.visitante {
+  opacity: 0.35;
+  margin-left: 0;
+}
+
+.barras {
+  list-style: none;
+  margin: 0 0 8px;
+  padding: 0;
+}
+
+.barras li {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 7px 0;
+}
+
+.barras .rotulo {
+  flex: 0 0 96px;
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--cor-texto-suave);
+  text-transform: capitalize;
+}
+
+.barras .trilho {
+  flex: 1;
+  height: 10px;
+  background: var(--cor-borda);
+  border-radius: 999px;
+  overflow: hidden;
+}
+
+.barras .preenchimento {
+  display: block;
+  height: 100%;
+  background: var(--cor-primaria);
+  border-radius: 999px;
+}
+
+.barras strong {
+  flex: 0 0 auto;
+  font-size: 14px;
+  min-width: 32px;
+  text-align: right;
+}

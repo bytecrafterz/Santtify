@@ -17,7 +17,9 @@
 import { PrismaClient } from '@prisma/client'
 
 const prisma = new PrismaClient()
-const API = process.env.NEXT_PUBLIC_API_URL ?? 'http://localhost:3333'
+const API = process.env.NEXT_PUBLIC_API_URL ?? 'http://localhost:3333/api'
+/** /r/:code fica FORA do prefixo /api — é o endereço gravado dentro do QR. */
+const RAIZ = API.replace(/\/api$/, '')
 const WEB = process.env.PUBLIC_WEB_URL ?? 'http://localhost:3100'
 const PROJETO = 'jesus-alfabeto-saudavel'
 
@@ -67,7 +69,7 @@ async function main() {
 
   // ── Caso 1: chegada por QR define a origem ────────────────────────
   console.log('\n1. Chegada por QR Code')
-  const r1 = await fetch(`${API}/r/${qr.code}`, {
+  const r1 = await fetch(`${RAIZ}/r/${qr.code}`, {
     redirect: 'manual',
     headers: { 'User-Agent': 'Mozilla/5.0 (iPhone)' },
   })

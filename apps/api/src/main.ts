@@ -6,6 +6,19 @@ import cookieParser from 'cookie-parser'
 import { join } from 'node:path'
 import { AppModule } from './app.module'
 
+/**
+ * O Postgres devolve `count(*)` e o id de `events` como BigInt, e o
+ * JSON.stringify do Node não sabe serializar BigInt — o resultado é um 500
+ * genérico, sem pista nenhuma para quem depura.
+ *
+ * As consultas convertem para int na própria SQL, que é a correção na origem.
+ * Isto aqui é a rede de segurança para o que escapar: `Event.id` é BigInt e
+ * circula por várias rotas.
+ */
+;(BigInt.prototype as unknown as { toJSON(): string }).toJSON = function () {
+  return this.toString()
+}
+
 async function bootstrap() {
   const app = await NestFactory.create<NestExpressApplication>(AppModule)
   const config = app.get(ConfigService)

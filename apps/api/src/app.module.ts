@@ -9,6 +9,7 @@ import { ContentModule } from './content/content.module'
 import { IdentityModule } from './identity/identity.module'
 import { AdminModule } from './admin/admin.module'
 import { SocialModule } from './social/social.module'
+import { AnalyticsModule } from './analytics/analytics.module'
 import { HealthModule } from './health/health.module'
 
 @Module({
@@ -26,6 +27,7 @@ import { HealthModule } from './health/health.module'
     IdentityModule,
     AdminModule,
     SocialModule,
+    AnalyticsModule,
     HealthModule,
   ],
 })

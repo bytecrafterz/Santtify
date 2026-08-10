@@ -25,12 +25,26 @@ export function BarraSocial({
   titulo: string
 }) {
   const { usuario } = useAuth()
-  const [estado, definirEstado] = useState<EstadoSocial | null>(null)
+  /**
+   * Começa com zeros em vez de `null` para a barra existir já no HTML da
+   * primeira renderização. Antes ela só aparecia depois da resposta da API, e
+   * numa rede ruim os botões surgiam de repente no meio da leitura — além de
+   * empurrar o conteúdo para baixo quando chegavam.
+   */
+  const [estado, definirEstado] = useState<EstadoSocial>({
+    curtidas: 0,
+    comentarios: 0,
+    compartilhamentos: 0,
+    curtidoPorMim: false,
+    lista: [],
+  })
   const [ocupado, definirOcupado] = useState(false)
   const [aviso, definirAviso] = useState<string | null>(null)
 
   useEffect(() => {
-    social.estado(contentId).then(definirEstado).catch(() => definirEstado(null))
+    social.estado(contentId).then(definirEstado).catch(() => {
+      // Sem rede a barra continua visível com zeros: melhor que sumir.
+    })
   }, [contentId])
 
   async function curtir() {
@@ -38,7 +52,7 @@ export function BarraSocial({
     definirOcupado(true)
     try {
       const r = await social.curtir(contentId, projectId)
-      definirEstado((e) => (e ? { ...e, curtidoPorMim: r.curtido, curtidas: r.total } : e))
+      definirEstado((e) => ({ ...e, curtidoPorMim: r.curtido, curtidas: r.total }))
     } catch {
       /* silencioso: curtida não vale um alerta na cara da criança */
     } finally {
@@ -67,7 +81,7 @@ export function BarraSocial({
         definirAviso('copiado')
         setTimeout(() => definirAviso(null), 2500)
       }
-      definirEstado((e) => (e ? { ...e, compartilhamentos: e.compartilhamentos + 1 } : e))
+      definirEstado((e) => ({ ...e, compartilhamentos: e.compartilhamentos + 1 }))
     } catch (e) {
       // Cancelar a folha de compartilhamento dispara AbortError: não é erro.
       if ((e as Error)?.name !== 'AbortError') definirAviso('erro')
@@ -75,8 +89,6 @@ export function BarraSocial({
       definirOcupado(false)
     }
   }
-
-  if (!estado) return null
 
   return (
     <>
@@ -120,7 +132,7 @@ export function BarraSocial({
         projectId={projectId}
         projectSlug={projectSlug}
         inicial={estado.lista}
-        aoMudarTotal={(n) => definirEstado((e) => (e ? { ...e, comentarios: n } : e))}
+        aoMudarTotal={(n) => definirEstado((e) => ({ ...e, comentarios: n }))}
       />
     </>
   )
@@ -141,6 +153,9 @@ function Comentarios({
 }) {
   const { usuario } = useAuth()
   const [lista, definirLista] = useState(inicial)
+
+  // `inicial` chega vazio no primeiro paint e preenchido quando a API responde.
+  useEffect(() => definirLista(inicial), [inicial])
   const [texto, definirTexto] = useState('')
   const [enviando, definirEnviando] = useState(false)
   const [erro, definirErro] = useState<string | null>(null)
