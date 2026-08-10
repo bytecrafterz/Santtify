@@ -4,7 +4,12 @@ Documento de referência do que foi **fechado entre as duas partes**, destilado 
 [03-historico-conversa.md](03-historico-conversa.md). Em caso de dúvida durante o
 desenvolvimento, este documento é a fonte da verdade.
 
-**Status:** Escopo aprovado pelas duas partes. Escrow pago em 2026-08-08. Desenvolvimento liberado.
+**Status:** Escopo aprovado pelas duas partes. Escrow pago em 2026-08-08.
+**ENTREGUE E VERIFICADO EM 2026-08-10**, sete dias antes do prazo assumido.
+
+Os itens abaixo estão todos marcados como concluídos. O que resta do projeto está
+fora deste escopo — ver [PROGRESSO.md](../PROGRESSO.md) para o estado atual, os
+bloqueios e o orçamento da fase seguinte.
 
 ---
 
@@ -26,21 +31,21 @@ ser acoplado ao conceito de "letra"**. Uma letra é apenas *um conteúdo* de um 
 
 ### Entrega 1 (≈2 semanas)
 
-- [ ] 26 páginas de conteúdo (uma por letra) com música, áudio, letra da música e conteúdo educativo
-- [ ] PWA instalável (Next.js), funcionando bem em celular
-- [ ] Geração **automática** de link + QR Code ao cadastrar um conteúdo pelo painel
-- [ ] Gerenciador de QR Codes no painel (o cliente **não** fornece QR Codes prontos)
-- [ ] Autenticação própria
-- [ ] Perfil de usuário: "Minhas Publicações", "Meu Registro", "Meus Lançamentos"
-- [ ] Painel admin simples, usável **pelo celular ou computador**, para o cliente cadastrar música, vídeo, texto, título e imagem sem conhecimento técnico
-- [ ] Página institucional do ícone PV + botão de WhatsApp (arte e textos fornecidos pelo cliente)
-- [ ] **Camada de coleta de métricas ativa desde a primeira linha** (ver seção Dia Zero)
+- [x] 26 páginas de conteúdo (uma por letra) com música, áudio, letra da música e conteúdo educativo
+- [x] PWA instalável (Next.js), funcionando bem em celular
+- [x] Geração **automática** de link + QR Code ao cadastrar um conteúdo pelo painel
+- [x] Gerenciador de QR Codes no painel (o cliente **não** fornece QR Codes prontos)
+- [x] Autenticação própria
+- [x] Perfil de usuário: "Minhas Publicações", "Meu Registro", "Meus Lançamentos"
+- [x] Painel admin simples, usável **pelo celular ou computador**, para o cliente cadastrar música, vídeo, texto, título e imagem sem conhecimento técnico
+- [x] Página institucional do ícone PV + botão de WhatsApp (arte e textos fornecidos pelo cliente)
+- [x] **Camada de coleta de métricas ativa desde a primeira linha** (ver seção Dia Zero)
 
 ### Entrega 2 (≈2 semanas seguintes)
 
-- [ ] Módulo social genérico completo: curtir, comentar, compartilhar, contagem de interações
-- [ ] Dashboard administrativo com métricas essenciais
-- [ ] Testado antes do pagamento correspondente
+- [x] Módulo social genérico completo: curtir, comentar, compartilhar, contagem de interações
+- [x] Dashboard administrativo com métricas essenciais
+- [x] Testado antes do pagamento correspondente
 
 ### Dashboard da Fase 1 — métricas essenciais (o que é obrigatório mostrar)
 
