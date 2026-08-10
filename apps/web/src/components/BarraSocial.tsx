@@ -40,6 +40,8 @@ export function BarraSocial({
   })
   const [ocupado, definirOcupado] = useState(false)
   const [aviso, definirAviso] = useState<string | null>(null)
+  /** Link gerado, exibido quando não dá para copiar automaticamente. */
+  const [linkGerado, definirLinkGerado] = useState<string | null>(null)
 
   useEffect(() => {
     social.estado(contentId).then(definirEstado).catch(() => {
@@ -74,17 +76,36 @@ export function BarraSocial({
       const { url } = await social.compartilhar(contentId, projectId, 'WHATSAPP')
       const texto = `${titulo} — Jesus Alfabeto Saudável`
 
-      if (typeof navigator !== 'undefined' && navigator.share) {
-        await navigator.share({ title: texto, text: texto, url })
-      } else {
-        await navigator.clipboard.writeText(url)
-        definirAviso('copiado')
-        setTimeout(() => definirAviso(null), 2500)
+      // O link JÁ existe no servidor a esta altura. O que vem abaixo é só a
+      // forma de entregá-lo à pessoa, e nenhuma dessas formas pode fazer o
+      // compartilhamento "falhar" — ele já aconteceu.
+      //
+      // navigator.share e navigator.clipboard só existem em contexto seguro
+      // (HTTPS). Em HTTP os dois são undefined, e a versão anterior estourava
+      // aqui e mostrava erro mesmo com o link criado. Por isso o último
+      // recurso é mostrar o endereço na tela para copiar à mão.
+      let entregue = false
+      try {
+        if (typeof navigator !== 'undefined' && navigator.share) {
+          await navigator.share({ title: texto, text: texto, url })
+          entregue = true
+        } else if (typeof navigator !== 'undefined' && navigator.clipboard) {
+          await navigator.clipboard.writeText(url)
+          definirAviso('copiado')
+          setTimeout(() => definirAviso(null), 2500)
+          entregue = true
+        }
+      } catch (erroEntrega) {
+        // Cancelar a folha de compartilhamento dispara AbortError: não é erro,
+        // e nesse caso a pessoa desistiu de propósito.
+        if ((erroEntrega as Error)?.name === 'AbortError') entregue = true
       }
+
+      if (!entregue) definirLinkGerado(url)
       definirEstado((e) => ({ ...e, compartilhamentos: e.compartilhamentos + 1 }))
-    } catch (e) {
-      // Cancelar a folha de compartilhamento dispara AbortError: não é erro.
-      if ((e as Error)?.name !== 'AbortError') definirAviso('erro')
+    } catch {
+      // Só chega aqui se a API falhou — aí o link realmente não existe.
+      definirAviso('erro')
     } finally {
       definirOcupado(false)
     }
@@ -126,6 +147,21 @@ export function BarraSocial({
       )}
       {aviso === 'copiado' && <p className="aviso-social">Link copiado. É só colar e enviar.</p>}
       {aviso === 'erro' && <p className="aviso-social">Não deu para compartilhar agora.</p>}
+
+      {linkGerado && (
+        <div className="aviso-social">
+          <p style={{ margin: '0 0 8px' }}>Seu link de compartilhamento:</p>
+          <input
+            readOnly
+            value={linkGerado}
+            onFocus={(e) => e.currentTarget.select()}
+            className="link-gerado"
+          />
+          <p style={{ margin: '8px 0 0', fontSize: 13 }}>
+            Toque no endereço para selecionar e copiar.
+          </p>
+        </div>
+      )}
 
       <Comentarios
         contentId={contentId}

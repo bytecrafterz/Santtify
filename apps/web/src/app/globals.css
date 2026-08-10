@@ -1028,3 +1028,14 @@ h3 {
   min-width: 32px;
   text-align: right;
 }
+
+.link-gerado {
+  width: 100%;
+  font-size: 14px;
+  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+  padding: 10px 12px;
+  border: 1px solid var(--cor-borda);
+  border-radius: 8px;
+  background: var(--cor-fundo);
+  color: var(--cor-texto);
+}
