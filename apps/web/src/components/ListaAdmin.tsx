@@ -19,6 +19,7 @@ export function ListaAdmin({ projectSlug }: { projectSlug: string }) {
   const [dados, definirDados] = useState<{ contents: ItemAdmin[] } | null>(null)
   const [erro, definirErro] = useState<string | null>(null)
   const [criando, definirCriando] = useState(false)
+  const [aguardando, definirAguardando] = useState<number | null>(null)
 
   useEffect(() => {
     if (carregando) return
@@ -34,6 +35,13 @@ export function ListaAdmin({ projectSlug }: { projectSlug: string }) {
       .listar(projectSlug)
       .then(definirDados)
       .catch((e) => definirErro(e.message))
+
+    // A contagem entra separada de propósito: se a fila falhar, o painel
+    // inteiro não pode deixar de abrir por causa dela.
+    admin
+      .publicacoesPendentes(projectSlug)
+      .then((r) => definirAguardando(r.posts.length))
+      .catch(() => definirAguardando(null))
   }, [usuario, carregando, projectSlug, router])
 
   async function criar(evento: React.FormEvent<HTMLFormElement>) {
@@ -69,6 +77,18 @@ export function ListaAdmin({ projectSlug }: { projectSlug: string }) {
       <Link className="bloco linha atalho-metricas" href={`/${projectSlug}/admin/metricas`}>
         <span>Ver métricas</span>
         <small>visitantes, origem, propagação e conteúdos mais acessados</small>
+      </Link>
+
+      <Link className="bloco linha atalho-metricas" href={`/${projectSlug}/admin/moderacao`}>
+        <span>
+          Aprovações
+          {aguardando ? <em className="contador-fila">{aguardando}</em> : null}
+        </span>
+        <small>
+          {aguardando
+            ? `${aguardando} ${aguardando === 1 ? 'foto aguardando' : 'fotos aguardando'} a sua aprovação`
+            : 'fotos publicadas pelos usuários no My Post'}
+        </small>
       </Link>
 
       <ul className="lista">

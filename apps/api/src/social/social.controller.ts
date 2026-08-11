@@ -7,14 +7,18 @@ import {
   Param,
   Post,
   Req,
+  UploadedFile,
   UseGuards,
+  UseInterceptors,
 } from '@nestjs/common'
+import { FileInterceptor } from '@nestjs/platform-express'
 import type { Request } from 'express'
 import { Platform } from '@pv/db'
 import { IsEnum, IsOptional, IsString, IsUUID, MaxLength, MinLength } from 'class-validator'
 import { SocialService } from './social.service'
 import { PostsService } from './posts.service'
 import { AuthGuard, AuthOpcional } from '../identity/auth.guard'
+import { TAMANHO_MAXIMO_IMAGEM } from '../admin/storage.service'
 import { ANON_COOKIE, ipDaRequisicao, paisDaRequisicao } from '../common/http.util'
 import { VisitContext } from '../tracking/attribution.types'
 
@@ -117,20 +121,29 @@ export class SocialController {
   }
 
   /**
-   * "My Post": publica este conteúdo no perfil de quem está logado.
+   * "My Post": publica no perfil de quem está logado.
    *
-   * Publica um conteúdo que JÁ existe na plataforma — a música que a pessoa
-   * está ouvindo — com uma legenda escrita por ela. Envio de arquivo do
-   * aparelho é outro bloco, com moderação.
+   * Aceita multipart para a foto ser enviada junto da legenda numa requisição
+   * só. Enviar arquivo e publicação separados abriria a porta para foto órfã
+   * no armazenamento quando a segunda chamada falha.
+   *
+   * Publicação com foto nasce aguardando aprovação; sem foto, publica direto.
    */
   @Post('publish')
   @UseGuards(AuthGuard)
-  publicar(@Param('contentId') contentId: string, @Body() dto: PublicarDto, @Req() req: Request) {
+  @UseInterceptors(FileInterceptor('foto', { limits: { fileSize: TAMANHO_MAXIMO_IMAGEM } }))
+  publicar(
+    @Param('contentId') contentId: string,
+    @Body() dto: PublicarDto,
+    @Req() req: Request,
+    @UploadedFile() foto?: Express.Multer.File,
+  ) {
     return this.posts.publicar(
       contentId,
       req.usuario!.id,
       dto.body,
       contextoDaVisita(dto.projectId, req),
+      foto,
     )
   }
 }
@@ -145,6 +158,24 @@ export class ComentariosController {
   @UseGuards(AuthGuard)
   remover(@Param('id') id: string, @Req() req: Request) {
     return this.social.removerComentario(id, req.usuario!.id, req.usuario!.role === 'ADMIN')
+  }
+}
+
+/**
+ * As publicações da própria pessoa.
+ *
+ * Mora aqui, e não no perfil, porque quem decide o que o autor enxerga das
+ * próprias publicações é o mesmo serviço que decide o que nasce pendente. Com
+ * a regra escrita em dois lugares, a foto pendente sumia da tela do autor.
+ */
+@Controller('me/posts')
+export class MinhasPublicacoesController {
+  constructor(private readonly posts: PostsService) {}
+
+  @Get()
+  @UseGuards(AuthGuard)
+  listar(@Req() req: Request) {
+    return this.posts.minhas(req.usuario!.id)
   }
 }
 

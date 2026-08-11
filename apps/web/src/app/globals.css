@@ -1148,3 +1148,143 @@ h3 {
   color: var(--cor-texto-suave);
   font-weight: 400;
 }
+
+/* ── Foto no My Post ────────────────────────────────────────────── */
+
+/* Prévia antes do envio: a pessoa vê o que está mandando. */
+.foto-escolhida {
+  margin-top: 12px;
+}
+
+.foto-escolhida img {
+  display: block;
+  width: 100%;
+  max-height: 320px;
+  object-fit: cover;
+  border-radius: 10px;
+  border: 1px solid var(--cor-borda);
+}
+
+.foto-escolhida .secundario {
+  margin-top: 8px;
+  width: 100%;
+  padding: 10px;
+  border-radius: 10px;
+  background: transparent;
+  color: var(--cor-texto-suave);
+  border: 1px solid var(--cor-borda);
+  font-family: inherit;
+  font-size: 14px;
+  cursor: pointer;
+}
+
+.publicar-caixa > .secundario {
+  margin-top: 12px;
+  width: 100%;
+  padding: 12px;
+  border-radius: 10px;
+  background: transparent;
+  color: var(--cor-primaria);
+  border: 1px dashed var(--cor-borda);
+  font-family: inherit;
+  font-size: 15px;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.foto-publicada {
+  display: block;
+  width: 100%;
+  border-radius: 10px;
+  border: 1px solid var(--cor-borda);
+  margin-bottom: 10px;
+}
+
+/* O estado da moderação, no card da publicação. */
+.selo-moderacao {
+  display: inline-block;
+  margin: 0 0 10px;
+  padding: 6px 10px;
+  border-radius: 999px;
+  font-size: 13px;
+  font-weight: 600;
+}
+
+.selo-moderacao.aguardando {
+  background: #fff5e0;
+  color: #8a5a00;
+}
+
+.selo-moderacao.recusada {
+  display: block;
+  border-radius: 10px;
+  background: #ffeceb;
+  color: #9b2c22;
+  font-weight: 500;
+}
+
+/* ── Fila de moderação, no painel ───────────────────────────────── */
+
+.moderacao-item {
+  display: grid;
+  gap: 10px;
+}
+
+.moderacao-item img {
+  display: block;
+  width: 100%;
+  max-height: 420px;
+  object-fit: contain;
+  background: #000;
+  border-radius: 10px;
+}
+
+.moderacao-quem {
+  font-size: 13px;
+  color: var(--cor-texto-suave);
+}
+
+.moderacao-acoes {
+  display: flex;
+  gap: 10px;
+}
+
+.moderacao-acoes button {
+  flex: 1;
+  padding: 12px;
+  border: 0;
+  border-radius: 10px;
+  font-family: inherit;
+  font-size: 15px;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.moderacao-acoes .aprovar {
+  background: #1c7c4a;
+  color: #fff;
+}
+
+.moderacao-acoes .recusar {
+  background: transparent;
+  color: #9b2c22;
+  border: 1px solid #e0b4b0;
+}
+
+.moderacao-acoes button:disabled {
+  opacity: 0.5;
+  cursor: default;
+}
+
+/* Contador de itens esperando aprovação, no atalho do painel. */
+.contador-fila {
+  display: inline-block;
+  margin-left: 8px;
+  padding: 1px 8px;
+  border-radius: 999px;
+  background: #c0392b;
+  color: #fff;
+  font-style: normal;
+  font-size: 13px;
+  font-weight: 700;
+}

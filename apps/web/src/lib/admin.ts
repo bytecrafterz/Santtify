@@ -59,6 +59,15 @@ export interface DetalheAdmin {
   }
 }
 
+export interface PublicacaoPendente {
+  id: string
+  body: string | null
+  createdAt: string
+  imageAsset: { url: string; title: string | null } | null
+  user: { id: string; displayName: string; email: string }
+  content: { slug: string; title: string; subtitle: string | null; project: { slug: string } }
+}
+
 async function chamar<T>(caminho: string, init: RequestInit = {}, tentouRenovar = false): Promise<T> {
   const res = await fetch(`${API_URL}/admin${caminho}`, {
     ...init,
@@ -124,6 +133,15 @@ export const admin = {
     dados.append('file', arquivo)
     return chamar<AssetAdmin>('/upload', { method: 'POST', body: dados })
   },
+
+  /** Fila de aprovação das fotos publicadas no My Post. */
+  publicacoesPendentes: (projectSlug: string) =>
+    chamar<{ project: { id: string; name: string }; posts: PublicacaoPendente[] }>(
+      `/projects/${projectSlug}/posts/pending`,
+    ),
+
+  moderarPublicacao: (id: string, aprovar: boolean, nota?: string) =>
+    chamar(`/posts/${id}/moderate`, { method: 'POST', body: JSON.stringify({ aprovar, nota }) }),
 
   urlQrSvg: (projectSlug: string, contentSlug: string) =>
     `${API_URL}/projects/${projectSlug}/contents/${contentSlug}/qr.svg`,

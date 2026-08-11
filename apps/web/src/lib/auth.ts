@@ -180,6 +180,9 @@ export interface Publicacao {
   id: string
   body: string | null
   createdAt: string
+  status: 'PENDING' | 'PUBLISHED' | 'REJECTED'
+  moderationNote: string | null
+  imageAsset: { url: string; title: string | null } | null
   content: { slug: string; title: string; subtitle: string | null; project: { slug: string } }
 }
 

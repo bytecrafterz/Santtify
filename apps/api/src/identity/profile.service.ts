@@ -3,16 +3,11 @@ import { EventType } from '@pv/db'
 import { PrismaService } from '../prisma/prisma.service'
 
 /**
- * Perfil do usuário: "My Posts", "Meu Registro" e "Meus Lançamentos".
+ * Perfil do usuário: os números do topo e "Meu Registro".
  *
- * NOTA DE ESCOPO: o cliente listou as três seções sem definir o que são
- * "Meu Registro" e "Meus Lançamentos". A pergunta foi feita a ele. Até a
- * resposta chegar:
- *
- *   - "Minhas Publicações" = comentários da pessoa (definição segura).
- *   - "Meu Registro"       = histórico de atividade dela na plataforma,
- *                            construído a partir dos eventos brutos.
- *   - "Meus Lançamentos"   = NÃO construído. Não vale adivinhar e refazer.
+ * A lista do My Post saiu daqui em 12/08 e foi para o PostsService: quem
+ * decide o que nasce pendente tem de ser o mesmo que decide o que o autor
+ * enxerga, senão a foto esperando aprovação some da tela de quem a enviou.
  *
  * O histórico sai do log de eventos que já existe — nenhuma tabela nova foi
  * precisa. É o primeiro retorno concreto da decisão de gravar evento bruto.
@@ -51,7 +46,10 @@ export class ProfileService {
     })
     if (!user) throw new NotFoundException('Usuário não encontrado')
 
-    const [comentarios, curtidas, compartilhamentos, conteudosVistos] = await Promise.all([
+    // Publicação pendente não entra na conta: o número precisa bater com o que
+    // está de fato visível no perfil, senão a criança vê "1 publicação" e uma
+    // lista onde nada foi publicado ainda.
+    const [publicacoes, curtidas, compartilhamentos, conteudosVistos] = await Promise.all([
       this.prisma.post.count({ where: { userId, status: 'PUBLISHED' } }),
       this.prisma.reaction.count({ where: { userId } }),
       this.prisma.share.count({ where: { userId } }),
@@ -70,32 +68,8 @@ export class ProfileService {
 
     return {
       user,
-      estatisticas: { publicacoes: comentarios, curtidas, compartilhamentos, conteudosVistos },
+      estatisticas: { publicacoes, curtidas, compartilhamentos, conteudosVistos },
     }
-  }
-
-  /**
-   * "Minhas Publicações" — o que a pessoa publicou no próprio perfil.
-   *
-   * Antes esta aba mostrava os comentários dela, que era a leitura segura
-   * enquanto o termo estava indefinido. O cliente esclareceu: My Post é a área
-   * de PUBLICAÇÃO do usuário. Os comentários continuam visíveis em "Meu
-   * Registro", junto do resto do histórico.
-   */
-  async publicacoes(userId: string, limite = 50) {
-    return this.prisma.post.findMany({
-      where: { userId, status: 'PUBLISHED' },
-      orderBy: { createdAt: 'desc' },
-      take: limite,
-      select: {
-        id: true,
-        body: true,
-        createdAt: true,
-        content: {
-          select: { slug: true, title: true, subtitle: true, project: { select: { slug: true } } },
-        },
-      },
-    })
   }
 
   /**

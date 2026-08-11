@@ -158,6 +158,7 @@ model MediaAsset {
   createdAt DateTime @default(now())
 
   blocks ContentBlock[]
+  posts  Post[]        @relation("PostImage")
 
   @@map("media_assets")
 }
@@ -807,7 +808,21 @@ model Post {
 
   /// Legenda escrita pela pessoa. Opcional: publicar sem texto é válido.
   body   String?
+
+  /// Foto enviada pela pessoa. Opcional — a publicação pode ser só o conteúdo
+  /// da plataforma com legenda, que é como funcionava antes da foto entrar.
+  imageAssetId String?     @db.Uuid
+  imageAsset   MediaAsset? @relation("PostImage", fields: [imageAssetId], references: [id], onDelete: Restrict)
+
+  /// Publicação com foto nasce PENDING e só aparece depois da aprovação.
+  /// Sem foto, nasce PUBLISHED — legenda sobre música da plataforma não tem
+  /// o mesmo risco que imagem de criança enviada do aparelho.
   status PostStatus @default(PUBLISHED)
+
+  /// Quem moderou e quando, para a decisão ser auditável.
+  moderatedAt     DateTime?
+  moderatedById   String?   @db.Uuid
+  moderationNote  String?
 
   createdAt DateTime  @default(now())
   updatedAt DateTime  @updatedAt
@@ -816,11 +831,16 @@ model Post {
   @@index([userId, createdAt])
   @@index([projectId, status, createdAt])
   @@index([contentId])
+  @@index([imageAssetId])
   @@map("posts")
 }
 
 enum PostStatus {
+  /// Aguardando aprovação. É o estado inicial de toda publicação com foto.
+  PENDING
   PUBLISHED
+  /// Recusada na moderação. A pessoa vê a recusa; o público não vê a foto.
+  REJECTED
   HIDDEN
   DELETED
 }

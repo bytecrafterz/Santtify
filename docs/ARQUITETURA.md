@@ -302,6 +302,17 @@ exigir migration significa que algo foi modelado errado agora.
 10. **`RESTRICT` em toda FK de atribuição** — apagar uma dimensão não pode zerar histórico.
 11. **Append-only imposto por trigger, não por convenção** — bug de aplicação não reescreve
     o passado.
+12. **Moderação assimétrica no `Post`** — publicação com foto nasce `PENDING` e só fica
+    visível depois da aprovação; sem foto nasce `PUBLISHED`, como sempre foi. O risco
+    está na imagem de criança que vira pública e sai da plataforma, não na legenda
+    sobre uma música do próprio projeto. Moderar as duas coisas igual atrasaria o uso
+    legítimo sem reduzir o risco que importa.
+13. **`PostsService` em módulo próprio, usado pelos dois lados** — quem decide o que
+    nasce pendente é quem decide o que o autor enxerga. Com a regra escrita em dois
+    lugares (era o caso: o perfil filtrava só `PUBLISHED`), a foto esperando aprovação
+    sumia da tela de quem a enviou.
+14. **Foto e legenda numa requisição só** — envio em duas etapas deixa arquivo órfão no
+    disco toda vez que a segunda falha.
 
 ## Pontos de crescimento previstos
 

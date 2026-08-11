@@ -19,7 +19,7 @@ triagem dos mockups) ou é fase seguinte, orçada e aguardando aprovação.
 | Commits | 15 |
 | Migrations | 5 |
 | Tabelas | 23 |
-| Suites de verificação | 3 (atribuição, social, propagação) — todas passando |
+| Suites de verificação | 4 (atribuição, social, propagação, foto) — todas passando |
 
 ---
 
@@ -51,6 +51,24 @@ triagem dos mockups) ou é fase seguinte, orçada e aguardando aprovação.
   em 11/08 para resolver a ambiguidade de "Minhas Publicações" a favor dele.
 - **Meus Lançamentos.** Ficou indefinido desde a proposta; os mockups de 11/08
   esclareceram que é a vitrine de próximos produtos. Construído no mesmo dia.
+  Removido da interface no mesmo dia, a pedido dele; a API continua de pé.
+- **Foto no My Post, com fila de moderação.** Concedido em 12/08 no acordo de escopo
+  (ver `docs/mensagens/2026-08-12-resposta-escopo-my-post.md`). Era o Bloco 2, orçado
+  em USD 900; **o orçamento estava errado** — a infraestrutura de envio já existia do
+  painel, e foi por honestidade que o número foi corrigido para baixo antes de ceder.
+
+#### Como a foto funciona, e por que assim
+
+| Decisão | Motivo |
+|---|---|
+| Com foto nasce `PENDING`; sem foto nasce `PUBLISHED` | Imagem de criança que fica pública e sai da plataforma é de outra ordem de risco que uma legenda sobre uma música do próprio projeto. Moderar as duas coisas igual atrasaria o uso legítimo sem reduzir o risco que importa |
+| Foto e legenda numa requisição só | Enviar em duas etapas deixaria arquivo órfão no disco quando a segunda falha |
+| Recusa não apaga: fica `REJECTED` com o motivo, visível para o autor | Recusar em silêncio faz a criança reenviar a mesma foto até desistir |
+| Autor vê as próprias pendentes | Esconder daria a impressão de que a publicação sumiu |
+| Máximo de 5 fotos por pessoa esperando aprovação | Uma conta sozinha encheria a fila e tiraria do responsável a única proteção que ele tem: conseguir olhar item a item |
+| Só imagem; vídeo recusado na porta | Aceitar vídeo abriria por acidente o bloco que ficou fora do contrato |
+| Aprovação e recusa gravadas em `AdminAuditLog` | Quem moderou o quê, e quando, precisa ser reconstituível |
+| Remoção é `DELETED`, não apagamento da linha | O `POST_CREATED` continua no log; apagar a linha deixaria o histórico contando uma publicação que não existe |
 
 ---
 
@@ -84,6 +102,9 @@ Todos foram descobertos verificando o comportamento real, não lendo o código.
 | 6 | Compartilhar mostrava erro mesmo com o link criado, em HTTP | `navigator.share`/`clipboard` só existem em contexto seguro |
 | 7 | Login não devolvia a pessoa à página que ela tentou abrir | **Reportado pelo cliente** — ele achou que o painel não existia |
 | 8 | API lenta pendurava a página inteira, sem timeout | Primeiro build de produção, apontado a domínio inexistente |
+| 9 | A lista do My Post existia em dois lugares, e a versão do perfil filtrava só `PUBLISHED` — a foto pendente sumia da tela de quem a enviou | Verificação da foto: a API criava o `PENDING` certo e a autora não via nada |
+| 10 | A trava de toque duplo recusava publicar a música logo depois de mandar uma foto dela, como se fosse repetição | Mesma verificação, último passo |
+| 11 | `/favicon.ico` respondia 404 em toda visita, com erro no console de qualquer visitante | Verificação visual no navegador, que falha se houver qualquer erro de JavaScript |
 
 > Padrão que se repetiu: **o teste visual passa e o dado está errado.** Daí as três
 > suites de verificação que rodam contra a API no ar.
@@ -178,6 +199,7 @@ npx tsx packages/db/prisma/regerar-links.ts
 npx tsx packages/db/prisma/verificar-atribuicao.ts   # 14 verificações
 npx tsx packages/db/prisma/verificar-social.ts       # 20 verificações
 npx tsx packages/db/prisma/verificar-propagacao.ts   # cadeia completa
+npx tsx packages/db/prisma/verificar-foto.ts         # 34 verificações da foto no My Post
 ```
 
 ---
@@ -230,3 +252,6 @@ Todas em [docs/mensagens/](mensagens/), com o contexto e a intenção de cada um
 | `2026-08-10-entrega-1-e-2.md` | Entrega das duas fases, acesso ao ambiente de teste |
 | `2026-08-11-orcamento-tres-blocos.md` | Orçamento separado dos três blocos novos |
 | `2026-08-11-resposta-my-post-e-mockups.md` | Resposta objetiva sobre My Post + leitura dos mockups |
+| `2026-08-11-troca-jornada-por-playlist.md` | Troca das duas áreas pela playlist; correção do orçamento |
+| `2026-08-12-resposta-escopo-my-post.md` | **Acordo de escopo**: foto concedida, playlist mantida à parte |
+| `2026-08-12-foto-entregue.md` | Entrega da foto com moderação |

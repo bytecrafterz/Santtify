@@ -39,6 +39,15 @@ const PERMITIDOS: Record<string, { kind: MediaKind; exts: string[] }> = {
 /** 100 MB. Música de qualidade gravada no iPhone passa fácil de 20 MB. */
 export const TAMANHO_MAXIMO = 100 * 1024 * 1024
 
+/**
+ * 12 MB para foto enviada por usuário.
+ *
+ * Foto de celular moderno fica entre 2 e 8 MB; 12 dá folga sem deixar alguém
+ * ocupar o disco com um arquivo enorme. O limite de 100 MB continua valendo
+ * para o painel, onde quem envia é o próprio cliente mandando música.
+ */
+export const TAMANHO_MAXIMO_IMAGEM = 12 * 1024 * 1024
+
 export interface ArquivoSalvo {
   url: string
   kind: MediaKind

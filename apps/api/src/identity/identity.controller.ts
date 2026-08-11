@@ -112,12 +112,6 @@ export class IdentityController {
   }
 
   /** "Minhas Publicações" */
-  @Get('me/posts')
-  @UseGuards(AuthGuard)
-  publicacoes(@Req() req: Request) {
-    return this.profile.publicacoes(req.usuario!.id)
-  }
-
   /** "Meu Registro" — histórico lido dos eventos brutos. */
   @Get('me/record')
   @UseGuards(AuthGuard)

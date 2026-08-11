@@ -80,6 +80,21 @@ export function PainelDePerfil({ projectSlug }: { projectSlug: string }) {
         vazio="Você ainda não publicou nada. Abra uma letra e toque em Publicar no meu perfil."
         renderizar={(p) => (
           <li className="bloco" key={p.id}>
+            {/* O estado vem primeiro: quem publicou uma foto precisa entender
+                por que ela ainda não está no perfil antes de olhar o resto. */}
+            {p.status === 'PENDING' && (
+              <p className="selo-moderacao aguardando">Aguardando aprovação</p>
+            )}
+            {p.status === 'REJECTED' && (
+              <p className="selo-moderacao recusada">
+                Esta foto não foi aprovada
+                {p.moderationNote ? `: ${p.moderationNote}` : '.'}
+              </p>
+            )}
+            {p.imageAsset && (
+              // eslint-disable-next-line @next/next/no-img-element
+              <img className="foto-publicada" src={p.imageAsset.url} alt={p.body ?? 'Foto publicada'} />
+            )}
             {p.body && <p className="bloco-texto">{p.body}</p>}
             <Link
               className="conteudo-publicado"

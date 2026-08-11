@@ -28,11 +28,16 @@ export type CanalDeCompartilhamento =
   | 'PRODUTO_VIVO'
 
 async function chamar<T>(caminho: string, init: RequestInit = {}, jaRenovou = false): Promise<T> {
+  // Com arquivo, o próprio navegador escreve o Content-Type com a fronteira
+  // que separa os campos. Escrever à mão aqui apagaria essa fronteira e o
+  // servidor receberia um envio que não consegue ler.
+  const ehArquivo = init.body instanceof FormData
+
   const res = await fetch(`${API_URL}${caminho}`, {
     ...init,
     credentials: 'include',
     headers: {
-      'Content-Type': 'application/json',
+      ...(ehArquivo ? {} : { 'Content-Type': 'application/json' }),
       ...(tokens.access ? { Authorization: `Bearer ${tokens.access}` } : {}),
       ...init.headers,
     },
@@ -52,6 +57,9 @@ async function chamar<T>(caminho: string, init: RequestInit = {}, jaRenovou = fa
 }
 
 export interface PublicacaoCriada {
+  aguardandoAprovacao: boolean
+  status: 'PENDING' | 'PUBLISHED' | 'REJECTED'
+  imageAsset: { url: string; title: string | null } | null
   id: string
   body: string | null
   createdAt: string
@@ -59,12 +67,29 @@ export interface PublicacaoCriada {
 }
 
 export const social = {
-  /** "My Post": publica no perfil o conteúdo que a pessoa está ouvindo. */
-  publicar: (contentId: string, projectId: string, body?: string) =>
-    chamar<PublicacaoCriada>(`/contents/${contentId}/publish`, {
+  /**
+   * "My Post": publica no perfil.
+   *
+   * A foto vai na mesma requisição que a legenda, e não em duas etapas: se a
+   * segunda falhasse, o arquivo ficaria no servidor sem publicação nenhuma
+   * apontando para ele.
+   */
+  publicar: (contentId: string, projectId: string, body?: string, foto?: File) => {
+    if (!foto) {
+      return chamar<PublicacaoCriada>(`/contents/${contentId}/publish`, {
+        method: 'POST',
+        body: JSON.stringify({ projectId, body }),
+      })
+    }
+    const form = new FormData()
+    form.append('projectId', projectId)
+    if (body) form.append('body', body)
+    form.append('foto', foto)
+    return chamar<PublicacaoCriada>(`/contents/${contentId}/publish`, {
       method: 'POST',
-      body: JSON.stringify({ projectId, body }),
-    }),
+      body: form,
+    })
+  },
 
   removerPublicacao: (id: string) => chamar<void>(`/posts/${id}`, { method: 'DELETE' }),
 

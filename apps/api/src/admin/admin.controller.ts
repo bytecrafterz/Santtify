@@ -19,6 +19,7 @@ import { IsBoolean, IsEnum, IsInt, IsOptional, IsString, MaxLength, Min } from '
 import { AdminContentService } from './admin-content.service'
 import { StorageService, TAMANHO_MAXIMO } from './storage.service'
 import { LaunchesService } from '../content/launches.service'
+import { PostsService } from '../social/posts.service'
 import { LaunchStatus } from '@pv/db'
 import { AdminGuard, AuthGuard } from '../identity/auth.guard'
 
@@ -50,6 +51,11 @@ class SalvarBlocoDto {
   @IsOptional() @IsString() text?: string
   @IsOptional() @IsString() url?: string
   @IsOptional() @IsString() assetId?: string | null
+}
+
+class ModerarDto {
+  @IsBoolean() aprovar!: boolean
+  @IsOptional() @IsString() @MaxLength(300) nota?: string
 }
 
 class CriarLancamentoDto {
@@ -91,7 +97,22 @@ export class AdminController {
     private readonly conteudo: AdminContentService,
     private readonly storage: StorageService,
     private readonly lancamentos: LaunchesService,
+    private readonly posts: PostsService,
   ) {}
+
+  // ── Moderação do My Post ─────────────────────────────────────────
+
+  /** Fila de aprovação: publicações com foto aguardando revisão. */
+  @Get('projects/:projectSlug/posts/pending')
+  publicacoesPendentes(@Param('projectSlug') projectSlug: string) {
+    return this.posts.pendentes(projectSlug)
+  }
+
+  @Post('posts/:id/moderate')
+  @HttpCode(200)
+  moderar(@Param('id') id: string, @Body() dto: ModerarDto, @Req() req: Request) {
+    return this.posts.moderar(id, dto.aprovar, req.usuario!.id, dto.nota)
+  }
 
   // ── Lançamentos (vitrine de próximos produtos) ───────────────────
 
