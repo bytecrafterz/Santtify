@@ -191,23 +191,12 @@ export interface ItemDeRegistro {
   content: { slug: string; title: string; project: { slug: string } } | null
 }
 
-export interface Lancamento {
-  id: string
-  title: string
-  description: string | null
-  imageUrl: string | null
-  status: 'EM_BREVE' | 'EM_DESENVOLVIMENTO' | 'LANCADO'
-  externalUrl: string | null
-}
-
-/** Vitrine pública dos próximos produtos — não exige conta. */
-export async function buscarLancamentos(projectSlug: string): Promise<Lancamento[]> {
-  const res = await fetch(`${API_URL}/projects/${projectSlug}/launches`, {
-    credentials: 'include',
-  })
-  if (!res.ok) return []
-  return (await res.json()) as Lancamento[]
-}
+/*
+ * A vitrine de lançamentos saiu do perfil em 11/08, por decisão do cliente.
+ * O cliente HTTP dela foi removido daqui para não pesar o bundle sem ter quem
+ * chame; o endpoint `/projects/:slug/launches` e o CRUD do painel continuam na
+ * API, intactos, caso ele volte atrás.
+ */
 
 // ── Consentimento ───────────────────────────────────────────────────
 

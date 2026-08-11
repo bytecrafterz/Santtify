@@ -36,7 +36,10 @@ ser acoplado ao conceito de "letra"**. Uma letra é apenas *um conteúdo* de um 
 - [x] Geração **automática** de link + QR Code ao cadastrar um conteúdo pelo painel
 - [x] Gerenciador de QR Codes no painel (o cliente **não** fornece QR Codes prontos)
 - [x] Autenticação própria
-- [x] Perfil de usuário: "Minhas Publicações", "Meu Registro", "Meus Lançamentos"
+- [x] Perfil de usuário — **alterado pelo cliente em 11/08**: "Minha Jornada" e
+      "Meus Lançamentos" eliminados a pedido dele. O perfil fica com My Post e,
+      quando o Bloco 1 for aprovado, Minha Playlist. As duas áreas removidas
+      chegaram a ser construídas e entregues antes da mudança.
 - [x] Painel admin simples, usável **pelo celular ou computador**, para o cliente cadastrar música, vídeo, texto, título e imagem sem conhecimento técnico
 - [x] Página institucional do ícone PV + botão de WhatsApp (arte e textos fornecidos pelo cliente)
 - [x] **Camada de coleta de métricas ativa desde a primeira linha** (ver seção Dia Zero)

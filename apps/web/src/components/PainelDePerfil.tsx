@@ -3,41 +3,29 @@
 import Link from 'next/link'
 import { useEffect, useState } from 'react'
 import { useRouter } from 'next/navigation'
-import {
-  auth,
-  buscarLancamentos,
-  type ItemDeRegistro,
-  type Lancamento,
-  type PerfilResposta,
-  type Publicacao,
-} from '@/lib/auth'
+import { auth, type PerfilResposta, type Publicacao } from '@/lib/auth'
 import { useAuth } from '@/components/ProvedorDeAuth'
 
-type Aba = 'publicacoes' | 'registro' | 'lancamentos'
-
 /**
- * Perfil do usuário, com as três seções que o cliente pediu.
+ * Perfil do usuário — apenas My Post por enquanto.
  *
- * PENDÊNCIA DE ESCOPO: ele listou "My Posts", "Meu Registro" e "Meus
- * Lançamentos" sem definir as duas últimas. A pergunta foi feita e ainda não
- * respondida. Enquanto isso:
+ * O cliente decidiu em 11/08 eliminar "Minha Jornada" e "Meus Lançamentos",
+ * deixando o perfil com duas áreas: My Post e Minha Playlist. A playlist é o
+ * Bloco 1 e entra quando ele aprovar; até lá o perfil mostra só as publicações,
+ * e as abas voltam quando houver uma segunda área para alternar.
  *
- *   - Minhas Publicações → comentários da pessoa (leitura segura)
- *   - Meu Registro       → histórico de atividade, lido dos eventos brutos
- *   - Meus Lançamentos   → aba presente, conteúdo aguardando definição
- *
- * A aba fica visível, e não escondida, de propósito: o cliente vê que o lugar
- * dela existe e que só falta ele dizer o que entra ali. Adivinhar significaria
- * construir duas vezes.
+ * O que ficou para trás, e por que não foi apagado do servidor: a leitura do
+ * histórico (`/me/record`) e a vitrine de lançamentos continuam existindo na
+ * API, sem nenhuma tela apontando para elas. Este cliente mudou de direção três
+ * vezes em três dias, e o backend das duas áreas já está construído e testado —
+ * apagar tabela e migration seria destrutivo e irreversível por uma decisão que
+ * pode voltar atrás. Sem tela não custa nada manter; reconstruir custaria.
  */
 export function PainelDePerfil({ projectSlug }: { projectSlug: string }) {
   const router = useRouter()
   const { usuario, carregando, sair } = useAuth()
   const [perfil, definirPerfil] = useState<PerfilResposta | null>(null)
-  const [aba, definirAba] = useState<Aba>('publicacoes')
   const [publicacoes, definirPublicacoes] = useState<Publicacao[] | null>(null)
-  const [registro, definirRegistro] = useState<ItemDeRegistro[] | null>(null)
-  const [lancamentos, definirLancamentos] = useState<Lancamento[] | null>(null)
 
   useEffect(() => {
     if (carregando) return
@@ -49,17 +37,9 @@ export function PainelDePerfil({ projectSlug }: { projectSlug: string }) {
   }, [usuario, carregando, router, projectSlug])
 
   useEffect(() => {
-    if (!usuario) return
-    if (aba === 'publicacoes' && publicacoes === null) {
-      void auth.publicacoes().then(definirPublicacoes).catch(() => definirPublicacoes([]))
-    }
-    if (aba === 'registro' && registro === null) {
-      void auth.registro().then(definirRegistro).catch(() => definirRegistro([]))
-    }
-    if (aba === 'lancamentos' && lancamentos === null) {
-      void buscarLancamentos(projectSlug).then(definirLancamentos).catch(() => definirLancamentos([]))
-    }
-  }, [aba, usuario, publicacoes, registro, lancamentos, projectSlug])
+    if (!usuario || publicacoes !== null) return
+    void auth.publicacoes().then(definirPublicacoes).catch(() => definirPublicacoes([]))
+  }, [usuario, publicacoes])
 
   if (carregando || !usuario) {
     return <p className="vazio">Carregando...</p>
@@ -93,85 +73,28 @@ export function PainelDePerfil({ projectSlug }: { projectSlug: string }) {
         </div>
       )}
 
-      <div className="abas" role="tablist">
-        <BotaoDeAba atual={aba} valor="publicacoes" ao={definirAba}>
-          Minhas Publicações
-        </BotaoDeAba>
-        <BotaoDeAba atual={aba} valor="registro" ao={definirAba}>
-          Meu Registro
-        </BotaoDeAba>
-        <BotaoDeAba atual={aba} valor="lancamentos" ao={definirAba}>
-          Meus Lançamentos
-        </BotaoDeAba>
-      </div>
+      <h2>My Post</h2>
 
-      {aba === 'publicacoes' && (
-        <Lista
-          itens={publicacoes}
-          vazio="Você ainda não publicou nada. Abra uma letra e toque em Publicar no meu perfil."
-          renderizar={(p) => (
-            <li className="bloco" key={p.id}>
-              {p.body && <p className="bloco-texto">{p.body}</p>}
-              <Link className="conteudo-publicado" href={`/${p.content.project.slug}/${p.content.slug}`}>
-                <span aria-hidden>♪</span>
-                <span>
-                  <strong>{p.content.title}</strong>
-                  {p.content.subtitle && <small> — {p.content.subtitle}</small>}
-                </span>
-              </Link>
-              <small>{formatarData(p.createdAt)}</small>
-            </li>
-          )}
-        />
-      )}
-
-      {aba === 'registro' && (
-        <Lista
-          itens={registro}
-          vazio="Seu histórico aparece aqui conforme você navega."
-          renderizar={(e) => (
-            <li className="bloco linha" key={e.id}>
+      <Lista
+        itens={publicacoes}
+        vazio="Você ainda não publicou nada. Abra uma letra e toque em Publicar no meu perfil."
+        renderizar={(p) => (
+          <li className="bloco" key={p.id}>
+            {p.body && <p className="bloco-texto">{p.body}</p>}
+            <Link
+              className="conteudo-publicado"
+              href={`/${p.content.project.slug}/${p.content.slug}`}
+            >
+              <span aria-hidden>♪</span>
               <span>
-                {descreverEvento(e.type)}
-                {e.content && (
-                  <>
-                    {' — '}
-                    <Link href={`/${e.content.project.slug}/${e.content.slug}`}>
-                      {e.content.title}
-                    </Link>
-                  </>
-                )}
+                <strong>{p.content.title}</strong>
+                {p.content.subtitle && <small> — {p.content.subtitle}</small>}
               </span>
-              <small>{formatarData(e.occurredAt)}</small>
-            </li>
-          )}
-        />
-      )}
-
-      {aba === 'lancamentos' && (
-        <>
-          <p className="nota">Nos acompanhe os lançamentos que estamos preparando.</p>
-          <Lista
-            itens={lancamentos}
-            vazio="Nenhum lançamento anunciado ainda."
-            renderizar={(l) => (
-              <li className="bloco lancamento" key={l.id}>
-                {l.imageUrl && (
-                  // eslint-disable-next-line @next/next/no-img-element
-                  <img src={l.imageUrl} alt="" />
-                )}
-                <div>
-                  <strong>{l.title}</strong>
-                  {l.description && <p className="bloco-texto">{l.description}</p>}
-                  <span className={`etiqueta ${l.status === 'LANCADO' ? 'publicado' : ''}`}>
-                    {rotuloDeStatus(l.status)}
-                  </span>
-                </div>
-              </li>
-            )}
-          />
-        </>
-      )}
+            </Link>
+            <small>{formatarData(p.createdAt)}</small>
+          </li>
+        )}
+      />
 
       <div className="acoes-perfil">
         <button
@@ -195,30 +118,6 @@ function Numero({ valor, rotulo }: { valor: number; rotulo: string }) {
       <strong>{valor}</strong>
       <span>{rotulo}</span>
     </div>
-  )
-}
-
-function BotaoDeAba({
-  atual,
-  valor,
-  ao,
-  children,
-}: {
-  atual: Aba
-  valor: Aba
-  ao: (a: Aba) => void
-  children: React.ReactNode
-}) {
-  return (
-    <button
-      type="button"
-      role="tab"
-      aria-selected={atual === valor}
-      className={atual === valor ? 'aba ativa' : 'aba'}
-      onClick={() => ao(valor)}
-    >
-      {children}
-    </button>
   )
 }
 
@@ -248,27 +147,4 @@ function formatarData(iso: string): string {
     month: 'short',
     year: 'numeric',
   })
-}
-
-/** Status do lançamento, com as palavras que o cliente usou nos mockups. */
-function rotuloDeStatus(status: Lancamento['status']): string {
-  const nomes: Record<Lancamento['status'], string> = {
-    EM_BREVE: 'Em breve',
-    EM_DESENVOLVIMENTO: 'Em desenvolvimento',
-    LANCADO: 'Lançado',
-  }
-  return nomes[status]
-}
-
-/** Nomes voltados ao usuário, não ao banco. */
-function descreverEvento(tipo: string): string {
-  const nomes: Record<string, string> = {
-    SIGNUP: 'Criou a conta',
-    CONTENT_VIEW: 'Visitou',
-    MEDIA_COMPLETE: 'Ouviu até o fim',
-    LIKE: 'Curtiu',
-    COMMENT: 'Comentou em',
-    SHARE_CREATED: 'Compartilhou',
-  }
-  return nomes[tipo] ?? tipo
 }
