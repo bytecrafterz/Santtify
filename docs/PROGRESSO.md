@@ -165,6 +165,29 @@ quem publica; e o 1 é o único que gera receita.
   decidida e informada na compra.
 - **Hospedagem na conta dele**, no cartão dele.
 
+### Em aberto: quem pode publicar foto (12/08)
+
+Ele propôs substituir a fila de aprovação por controle de acesso — só **Membro Premium**
+(quem comprou) publica foto, com selo de verificado, aceite de regras, bloqueio
+permanente e Bloquear/Denunciar. Argumento: aprovar 100 mil fotos à mão é impossível.
+
+**Resposta dada:** concordar com a barreira de entrada, discordar de remover a revisão.
+
+| Ponto | Posição assumida por escrito |
+|---|---|
+| Entrada ≠ conteúdo | Pagar não impede publicar a foto errada. O caso mais provável é o pai de boa-fé cuja foto tem outra criança, ou rosto + uniforme + escola. Premium não toca nesse caso; a fila pega |
+| Escala | A fila cresce com **fotos publicadas**, não com usuários. Com o desenho dele, só quem pagou publica — o universo já encolhe sozinho |
+| Confiança graduada | Revisar só as primeiras publicações de cada conta; depois de N aprovadas, publica direto. A fila fica proporcional a **contas novas**, não à base |
+| Denunciar | É moderação **depois**, reativa, e vira fila também: dá mais trabalho, não menos. Numa plataforma de crianças, o intervalo entre publicar e denunciar **é o risco**. Recomendado ter — na UE é praticamente obrigatório — mas como obrigação adicional, não como troca |
+| Selo "verificado" | Ele recusou verificação por documento pelo custo. Selo que diz "verificado" significando só "comprou" é **risco**, não proteção: pai vê selo e baixa a guarda. Proposto: chamar de **Membro** |
+| Gratuito | Deve continuar publicando **conteúdo da plataforma com legenda**; só a **foto do aparelho** exige Premium. A restrição fica onde está o risco e preserva o compartilhamento que alimenta as métricas |
+| Custo técnico | **Zero.** O `PostsService` já se ramifica em "tem foto / não tem foto". A mesma separação que decide o que nasce pendente passa a decidir quem pode publicar |
+| Enquadramento | O que ele descreveu **é Bloco 1 (USD 1.000) + Bloco 3 (USD 700)**, já orçados. Segurança em vez de funcionalidade não muda o trabalho |
+| Nunca orçado | Aceite de regras versionado, bloqueio permanente com registro, bloquear/denunciar com motivos e fila própria |
+
+**Consequência prática:** enquanto o Bloco 1 não existir, ninguém é Premium — a regra
+"só Premium publica" desligaria a foto para todos. A fila fica como está até lá.
+
 ### Perguntas abertas com ele
 
 1. **Triagem dos mockups** — quais das ~13 funções são essenciais para o lançamento.
@@ -255,3 +278,4 @@ Todas em [docs/mensagens/](mensagens/), com o contexto e a intenção de cada um
 | `2026-08-11-troca-jornada-por-playlist.md` | Troca das duas áreas pela playlist; correção do orçamento |
 | `2026-08-12-resposta-escopo-my-post.md` | **Acordo de escopo**: foto concedida, playlist mantida à parte |
 | `2026-08-12-foto-entregue.md` | Entrega da foto com moderação |
+| `2026-08-12-quem-pode-publicar.md` | **Barreira na entrada em vez de fila manual** — o que foi aceito e o que foi contestado |
