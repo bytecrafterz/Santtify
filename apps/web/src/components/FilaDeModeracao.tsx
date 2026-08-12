@@ -24,6 +24,8 @@ export function FilaDeModeracao({ projectSlug }: { projectSlug: string }) {
   const router = useRouter()
   const { usuario, carregando } = useAuth()
   const [pendentes, definirPendentes] = useState<PublicacaoPendente[] | null>(null)
+  const [exigeAprovacao, definirExigeAprovacao] = useState<boolean | null>(null)
+  const [trocando, definirTrocando] = useState(false)
   const [erro, definirErro] = useState<string | null>(null)
   const [ocupado, definirOcupado] = useState<string | null>(null)
 
@@ -39,7 +41,10 @@ export function FilaDeModeracao({ projectSlug }: { projectSlug: string }) {
     }
     admin
       .publicacoesPendentes(projectSlug)
-      .then((r) => definirPendentes(r.posts))
+      .then((r) => {
+        definirPendentes(r.posts)
+        definirExigeAprovacao(r.project.photoApprovalRequired)
+      })
       .catch((e) => definirErro(e.message))
   }, [usuario, carregando, projectSlug, router])
 
@@ -64,20 +69,97 @@ export function FilaDeModeracao({ projectSlug }: { projectSlug: string }) {
     }
   }
 
+  async function trocarChave(exigir: boolean) {
+    definirTrocando(true)
+    try {
+      const r = await admin.definirAprovacaoDeFoto(projectSlug, exigir)
+      definirExigeAprovacao(r.photoApprovalRequired)
+    } catch (e) {
+      definirErro(e instanceof Error ? e.message : 'Não foi possível mudar')
+    } finally {
+      definirTrocando(false)
+    }
+  }
+
   if (erro) return <p className="erro">{erro}</p>
   if (carregando || pendentes === null) return <p className="vazio">Carregando...</p>
 
-  if (pendentes.length === 0) {
-    return (
-      <div className="bloco">
-        <p className="bloco-vazio">
-          Nenhuma publicação aguardando aprovação. Fotos enviadas pelos usuários aparecem aqui
-          antes de ficarem visíveis no perfil.
-        </p>
-      </div>
-    )
-  }
+  return (
+    <>
+      <Chave
+        ligada={exigeAprovacao === true}
+        trocando={trocando}
+        aoTrocar={trocarChave}
+        naFila={pendentes.length}
+      />
 
+      {pendentes.length === 0 ? (
+        <div className="bloco">
+          <p className="bloco-vazio">
+            {exigeAprovacao
+              ? 'Nenhuma publicação aguardando aprovação. Fotos enviadas pelos usuários aparecem aqui antes de ficarem visíveis no perfil.'
+              : 'A aprovação prévia está desligada, então nada chega aqui. As fotos ficam visíveis assim que são enviadas.'}
+          </p>
+        </div>
+      ) : (
+        <Fila
+          pendentes={pendentes}
+          ocupado={ocupado}
+          aoDecidir={decidir}
+        />
+      )}
+    </>
+  )
+}
+
+/**
+ * A chave que liga e desliga a aprovação prévia.
+ *
+ * Fica no alto da própria fila porque é ali que a pergunta aparece: quem abre
+ * esta tela e vê trabalho acumulado é exatamente quem precisa saber que dá
+ * para desligar — e quem desliga precisa entender, na mesma frase, o que passa
+ * a acontecer.
+ */
+function Chave({
+  ligada,
+  trocando,
+  aoTrocar,
+  naFila,
+}: {
+  ligada: boolean
+  trocando: boolean
+  aoTrocar: (exigir: boolean) => void
+  naFila: number
+}) {
+  return (
+    <div className={ligada ? 'bloco chave-aprovacao' : 'bloco chave-aprovacao desligada'}>
+      <span className="bloco-rotulo">Aprovação prévia de fotos</span>
+      <p className="bloco-texto">
+        {ligada
+          ? 'Ligada. Toda foto enviada por um usuário espera aqui e só fica visível depois que você aprovar.'
+          : 'Desligada. As fotos ficam públicas no instante do envio, sem passar por você.'}
+      </p>
+      {!ligada && naFila > 0 && (
+        <p className="nota">
+          As {naFila} que já estavam na fila continuam esperando a sua decisão.
+        </p>
+      )}
+      <button type="button" className="secundario" disabled={trocando} onClick={() => aoTrocar(!ligada)}>
+        {trocando ? 'Salvando...' : ligada ? 'Desligar a aprovação prévia' : 'Ligar a aprovação prévia'}
+      </button>
+    </div>
+  )
+}
+
+function Fila({
+  pendentes,
+  ocupado,
+  aoDecidir,
+}: {
+  pendentes: PublicacaoPendente[]
+  ocupado: string | null
+  aoDecidir: (p: PublicacaoPendente, aprovar: boolean) => void
+}) {
   return (
     <ul className="lista">
       {pendentes.map((p) => (
@@ -99,7 +181,7 @@ export function FilaDeModeracao({ projectSlug }: { projectSlug: string }) {
               type="button"
               className="recusar"
               disabled={ocupado === p.id}
-              onClick={() => decidir(p, false)}
+              onClick={() => aoDecidir(p, false)}
             >
               Recusar
             </button>
@@ -107,7 +189,7 @@ export function FilaDeModeracao({ projectSlug }: { projectSlug: string }) {
               type="button"
               className="aprovar"
               disabled={ocupado === p.id}
-              onClick={() => decidir(p, true)}
+              onClick={() => aoDecidir(p, true)}
             >
               {ocupado === p.id ? 'Salvando...' : 'Aprovar'}
             </button>

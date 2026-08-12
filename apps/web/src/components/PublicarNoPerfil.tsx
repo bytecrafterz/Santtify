@@ -14,9 +14,14 @@ import { useAuth } from '@/components/ProvedorDeAuth'
  * A foto é opcional, e a legenda também: publicar só a música é um uso
  * legítimo, e exigir texto faria a pessoa desistir no meio.
  *
- * Publicação com foto passa pela aprovação do responsável antes de aparecer, e
- * a tela diz isso ANTES do envio, não depois. Descobrir que a foto não apareceu
- * e não entender por quê faria a criança reenviar várias vezes.
+ * O aviso de comunidade aparece assim que a foto é escolhida, ANTES do envio.
+ * É a barreira que o cliente pediu no lugar da revisão prévia: quem está para
+ * publicar lê a regra no momento em que ela importa, não num termo aceito
+ * semanas antes e já esquecido.
+ *
+ * Se a aprovação prévia estiver ligada no painel, a resposta do servidor diz
+ * isso e a tela avisa depois do envio. Quem descobre que a foto não apareceu e
+ * não entende por quê acaba reenviando várias vezes.
  */
 export function PublicarNoPerfil({
   contentId,
@@ -149,10 +154,24 @@ export function PublicarNoPerfil({
         </button>
       )}
 
+      {/* O aviso do cliente, palavra por palavra, no momento em que ele importa:
+          com a foto já escolhida e o dedo indo para Publicar. Um termo aceito no
+          cadastro, semanas antes, ninguém lembra. */}
       {foto && (
-        <p className="nota">
-          Fotos passam pela aprovação do responsável antes de aparecerem no perfil.
-        </p>
+        <div className="aviso-comunidade">
+          <strong>Antes de publicar</strong>
+          <p>
+            Esta é uma comunidade cristã, infantil e familiar. A publicação deve
+            permanecer dentro do propósito do Jesus Alfabeto Saudável.
+          </p>
+          <p>
+            Evite mostrar endereço, escola ou localização da criança.
+          </p>
+          <p>
+            Conteúdo imoral, ofensivo ou incompatível com a comunidade pode levar ao
+            bloqueio da conta.
+          </p>
+        </div>
       )}
 
       {erro && <p className="erro">{erro}</p>}

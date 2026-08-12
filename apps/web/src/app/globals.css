@@ -1288,3 +1288,52 @@ h3 {
   font-size: 13px;
   font-weight: 700;
 }
+
+/* A chave que liga e desliga a aprovação prévia, no alto da fila. */
+.chave-aprovacao .bloco-texto {
+  margin: 6px 0 0;
+}
+
+.chave-aprovacao > .secundario {
+  margin-top: 12px;
+  width: 100%;
+  padding: 12px;
+  border-radius: 10px;
+  background: transparent;
+  color: var(--cor-texto-suave);
+  border: 1px solid var(--cor-borda);
+  font-family: inherit;
+  font-size: 15px;
+  cursor: pointer;
+}
+
+.chave-aprovacao.desligada {
+  border-color: #e0b4b0;
+  background: #fff8f7;
+}
+
+/* O aviso da comunidade, com a foto já escolhida e antes de publicar. */
+.aviso-comunidade {
+  margin-top: 12px;
+  padding: 12px 14px;
+  border: 1px solid var(--cor-borda);
+  border-radius: 10px;
+  background: #fff8ec;
+}
+
+.aviso-comunidade strong {
+  display: block;
+  margin-bottom: 6px;
+  font-size: 14px;
+}
+
+.aviso-comunidade p {
+  margin: 0 0 6px;
+  font-size: 14px;
+  line-height: 1.45;
+  color: var(--cor-texto-suave);
+}
+
+.aviso-comunidade p:last-child {
+  margin-bottom: 0;
+}

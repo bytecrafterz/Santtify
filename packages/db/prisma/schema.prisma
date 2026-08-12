@@ -36,6 +36,15 @@ model Project {
   /// Marco de lançamento deste projeto (o "Dia Zero").
   launchedAt DateTime?
 
+  /// Foto publicada por usuário espera aprovação antes de ficar visível.
+  ///
+  /// É uma chave, e não uma decisão gravada no código, porque o dono da
+  /// plataforma é quem paga o custo dos dois lados: ligada, alguém precisa
+  /// olhar cada foto; desligada, a foto fica pública no instante do envio.
+  /// Quem responde pelo conteúdo hospedado tem de poder decidir isso sem
+  /// depender de mim, e mudar de ideia depois sem refazer nada.
+  photoApprovalRequired Boolean @default(true)
+
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 

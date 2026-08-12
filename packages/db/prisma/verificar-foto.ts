@@ -13,7 +13,10 @@
  *   5. arquivo que não é imagem é recusado na porta — aceitar vídeo aqui abriria
  *      por acidente o bloco que ficou de fora do contrato;
  *   6. moderar duas vezes não é possível;
- *   7. publicação sem foto continua saindo direto, como antes.
+ *   7. publicação sem foto continua saindo direto, como antes;
+ *   8. com a chave DESLIGADA a foto sai na hora, e com ela LIGADA de novo volta
+ *      a esperar — a decisão é do dono da plataforma e precisa valer nos dois
+ *      sentidos, sem deixar publicação presa no meio do caminho.
  *
  *   npx tsx packages/db/prisma/verificar-foto.ts
  */
@@ -86,20 +89,27 @@ async function main() {
   const admin = await rLog.json()
   conferir('administrador autenticado', Boolean(admin.accessToken), true)
 
+  const usuarioAna: string = ana.user.id
   const comAna = { Authorization: `Bearer ${ana.accessToken}` }
   const comAdmin = {
     'Content-Type': 'application/json',
     Authorization: `Bearer ${admin.accessToken}`,
   }
 
-  const publicarComFoto = async (nomeArquivo: string, tipo: string, dados: Buffer, legenda: string) => {
+  const publicarComFoto = async (
+    nomeArquivo: string,
+    tipo: string,
+    dados: Buffer,
+    legenda: string,
+    autor = comAna,
+  ) => {
     const form = new FormData()
     form.append('projectId', projeto.id)
     form.append('body', legenda)
     form.append('foto', new Blob([new Uint8Array(dados)], { type: tipo }), nomeArquivo)
     const r = await fetch(`${API}/contents/${conteudo.id}/publish`, {
       method: 'POST',
-      headers: comAna,
+      headers: autor,
       body: form,
     })
     return { status: r.status, corpo: await r.json().catch(() => null) }
@@ -225,7 +235,65 @@ async function main() {
   conferir('publicada na hora', semFoto.status, 'PUBLISHED')
   conferir('sem esperar aprovação', semFoto.aguardandoAprovacao, false)
 
+  // ── 10. A chave do painel ─────────────────────────────────────────
+  console.log('\n10. Desligar a aprovação prévia faz a foto sair na hora')
+  const trocar = async (exigir: boolean) => {
+    const r = await fetch(`${API}/admin/projects/${PROJETO}/photo-approval`, {
+      method: 'POST',
+      headers: comAdmin,
+      body: JSON.stringify({ exigir }),
+    })
+    return { status: r.status, corpo: await r.json().catch(() => null) }
+  }
+
+  const desligou = await trocar(false)
+  conferir('a chave desliga', desligou.corpo?.photoApprovalRequired, false)
+
+  const semFila = await publicarComFoto('direto.png', 'image/png', PNG_1X1, 'sem fila')
+  conferir('a foto nasce publicada', semFila.corpo?.status, 'PUBLISHED')
+  conferir('e a tela não promete aprovação', semFila.corpo?.aguardandoAprovacao, false)
+  conferir('a foto continua guardada', Boolean(semFila.corpo?.imageAsset?.url), true)
+
+  // O teto da fila não pode barrar quem publica direto: sem aprovação não há
+  // fila para encher, e as pendentes antigas travariam publicações novas.
+  const aindaPendentes = await prisma.post.count({ where: { userId: usuarioAna, status: 'PENDING' } })
+  const extra = await publicarComFoto('direto2.png', 'image/png', PNG_1X1, 'sem fila 2')
+  conferir(`o teto não se aplica (${aindaPendentes} pendentes antigas)`, extra.status, 201)
+
+  const ligou = await trocar(true)
+  conferir('a chave liga de volta', ligou.corpo?.photoApprovalRequired, true)
+
+  // Com outra conta: a Ana já tem cinco na fila, e o teto é por pessoa. Usar a
+  // conta dela aqui verificaria o teto, não a chave.
+  const rBia = await fetch(`${API}/auth/register`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({
+      projectId: projeto.id,
+      email: `foto_bia_${sufixo}@teste.local`,
+      password: 'senhaDeTeste123',
+      displayName: 'Bia',
+    }),
+  })
+  const bia = await rBia.json()
+  emails.push(bia.user.email)
+  const comBia = { Authorization: `Bearer ${bia.accessToken}` }
+
+  const deNovo = await publicarComFoto('espera.png', 'image/png', PNG_1X1, 'espera de novo', comBia)
+  conferir('e a foto volta a esperar', deNovo.corpo?.status, 'PENDING')
+
+  const travadaPeloTeto = await publicarComFoto('teto.png', 'image/png', PNG_1X1, 'teto', comAna)
+  conferir('o teto da Ana volta a valer com a chave ligada', travadaPeloTeto.status, 400)
+
+  const trocas = await prisma.adminAuditLog.count({
+    where: { action: { in: ['project.photo_approval.on', 'project.photo_approval.off'] } },
+  })
+  conferir('as duas trocas ficaram registradas na auditoria', trocas >= 2, true)
+
   // ── Limpeza ───────────────────────────────────────────────────────
+  // A chave é estado do projeto, não do teste: devolve como estava.
+  await trocar(true)
+
   const users = await prisma.user.findMany({ where: { email: { in: emails } }, select: { id: true } })
   const ids = users.map((u) => u.id)
   const assets = await prisma.mediaAsset.findMany({

@@ -188,6 +188,35 @@ permanente e Bloquear/Denunciar. Argumento: aprovar 100 mil fotos à mão é imp
 **Consequência prática:** enquanto o Bloco 1 não existir, ninguém é Premium — a regra
 "só Premium publica" desligaria a foto para todos. A fila fica como está até lá.
 
+### Decidido em 12/08: sem aprovação prévia
+
+Ele reafirmou depois de ouvir a recomendação contrária, e **o motivo muda o peso da
+decisão**: não é estimativa de volume, é que não tem tempo nem condição financeira de
+contratar quem modere. Restrição real, não preferência.
+
+**Posição assumida:** aceito, sem insistir uma terceira vez. A recomendação contrária
+está por escrito em `2026-08-12-quem-pode-publicar.md`; a decisão e o conteúdo hospedado
+são dele.
+
+**O que mudou no código, sem cobrar:**
+
+| | |
+|---|---|
+| `Project.photoApprovalRequired` | Chave no painel (área de Aprovações). Ele liga e desliga sozinho |
+| `project.photo_approval.on/off` | Vai para o `AdminAuditLog` — é a configuração de maior consequência do painel |
+| Aviso antes de publicar | O texto dele, palavra por palavra, com a foto já escolhida e antes do botão Publicar |
+| A fila **não foi apagada** | Desligada continua sendo a caixa de entrada natural das denúncias |
+
+**Os três buracos apontados no desenho dele, aguardando resposta:**
+
+1. **Foto de perfil do membro grátis é upload de foto pessoal** — contradiz "só Premium
+   envia foto" e seria a única porta aberta de graça. Recomendado: avatar de um conjunto
+   de ilustrações do projeto. **É o ponto que trava o cadastro.**
+2. **Telefone coletado ≠ verificado** — sem código por SMS é um campo de texto, não
+   barreira. Custa por envio; ele decide sabendo disso. Mesmo caso do "nome verdadeiro".
+3. **Denúncia precisa de caixa de entrada** — a tela existe (é a fila), o sistema de
+   bloquear/denunciar com motivos e reincidência **não está orçado**.
+
 ### Perguntas abertas com ele
 
 1. **Triagem dos mockups** — quais das ~13 funções são essenciais para o lançamento.
@@ -222,7 +251,7 @@ npx tsx packages/db/prisma/regerar-links.ts
 npx tsx packages/db/prisma/verificar-atribuicao.ts   # 14 verificações
 npx tsx packages/db/prisma/verificar-social.ts       # 20 verificações
 npx tsx packages/db/prisma/verificar-propagacao.ts   # cadeia completa
-npx tsx packages/db/prisma/verificar-foto.ts         # 34 verificações da foto no My Post
+npx tsx packages/db/prisma/verificar-foto.ts         # 43 verificações da foto e da chave de aprovação
 ```
 
 ---
@@ -279,3 +308,4 @@ Todas em [docs/mensagens/](mensagens/), com o contexto e a intenção de cada um
 | `2026-08-12-resposta-escopo-my-post.md` | **Acordo de escopo**: foto concedida, playlist mantida à parte |
 | `2026-08-12-foto-entregue.md` | Entrega da foto com moderação |
 | `2026-08-12-quem-pode-publicar.md` | **Barreira na entrada em vez de fila manual** — o que foi aceito e o que foi contestado |
+| `2026-08-12-sem-aprovacao-previa.md` | **Decisão dele: sem revisão manual.** Aceite, chave no painel, e os três buracos do desenho |

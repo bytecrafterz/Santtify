@@ -53,6 +53,10 @@ class SalvarBlocoDto {
   @IsOptional() @IsString() assetId?: string | null
 }
 
+class AprovacaoDeFotoDto {
+  @IsBoolean() exigir!: boolean
+}
+
 class ModerarDto {
   @IsBoolean() aprovar!: boolean
   @IsOptional() @IsString() @MaxLength(300) nota?: string
@@ -106,6 +110,28 @@ export class AdminController {
   @Get('projects/:projectSlug/posts/pending')
   publicacoesPendentes(@Param('projectSlug') projectSlug: string) {
     return this.posts.pendentes(projectSlug)
+  }
+
+  /**
+   * Liga e desliga a aprovação prévia de foto.
+   *
+   * Fica no painel, e não numa variável de ambiente, porque quem responde pelo
+   * conteúdo hospedado precisa conseguir mudar isso sozinho — inclusive às
+   * pressas, num dia de problema, sem esperar por mim.
+   */
+  @Post('projects/:projectSlug/photo-approval')
+  @HttpCode(200)
+  async definirAprovacaoDeFoto(
+    @Param('projectSlug') projectSlug: string,
+    @Body() dto: AprovacaoDeFotoDto,
+    @Req() req: Request,
+  ) {
+    const projeto = await this.conteudo.definirAprovacaoDeFoto(
+      projectSlug,
+      dto.exigir,
+      req.usuario!.id,
+    )
+    return projeto
   }
 
   @Post('posts/:id/moderate')

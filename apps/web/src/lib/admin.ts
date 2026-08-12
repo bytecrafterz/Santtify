@@ -94,8 +94,16 @@ async function chamar<T>(caminho: string, init: RequestInit = {}, tentouRenovar 
 
 export const admin = {
   listar: (projectSlug: string) =>
-    chamar<{ project: { id: string; slug: string; name: string }; contents: ItemAdmin[] }>(
-      `/projects/${projectSlug}/contents`,
+    chamar<{
+      project: { id: string; slug: string; name: string; photoApprovalRequired: boolean }
+      contents: ItemAdmin[]
+    }>(`/projects/${projectSlug}/contents`),
+
+  /** Liga e desliga a aprovação prévia das fotos publicadas pelos usuários. */
+  definirAprovacaoDeFoto: (projectSlug: string, exigir: boolean) =>
+    chamar<{ slug: string; name: string; photoApprovalRequired: boolean }>(
+      `/projects/${projectSlug}/photo-approval`,
+      { method: 'POST', body: JSON.stringify({ exigir }) },
     ),
 
   detalhe: (projectSlug: string, contentSlug: string) =>
@@ -136,9 +144,10 @@ export const admin = {
 
   /** Fila de aprovação das fotos publicadas no My Post. */
   publicacoesPendentes: (projectSlug: string) =>
-    chamar<{ project: { id: string; name: string }; posts: PublicacaoPendente[] }>(
-      `/projects/${projectSlug}/posts/pending`,
-    ),
+    chamar<{
+      project: { id: string; name: string; photoApprovalRequired: boolean }
+      posts: PublicacaoPendente[]
+    }>(`/projects/${projectSlug}/posts/pending`),
 
   moderarPublicacao: (id: string, aprovar: boolean, nota?: string) =>
     chamar(`/posts/${id}/moderate`, { method: 'POST', body: JSON.stringify({ aprovar, nota }) }),

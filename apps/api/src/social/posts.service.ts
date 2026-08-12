@@ -33,6 +33,15 @@ import { VisitContext } from '../tracking/attribution.types'
  * compartilhada para fora da plataforma, é de outra ordem de risco que uma
  * legenda sobre uma música do próprio projeto. Moderar as duas coisas do mesmo
  * jeito atrasaria o uso legítimo sem reduzir o risco que importa.
+ *
+ * A aprovação prévia virou uma CHAVE do projeto em 12/08. O cliente decidiu não
+ * seguir com revisão manual — não tem tempo nem condição de contratar quem
+ * revise — e quer prevenção na entrada mais ação por exceção. A recomendação
+ * contrária ficou registrada; a decisão é dele, e é dele o conteúdo hospedado.
+ *
+ * Continua sendo uma chave, e não uma remoção do código, por dois motivos:
+ * ele pode religar num dia de problema sem depender de mim, e a mesma fila é a
+ * caixa de entrada das denúncias quando esse bloco existir.
  */
 /** Quantas fotos a mesma pessoa pode ter esperando aprovação ao mesmo tempo. */
 const MAXIMO_NA_FILA = 5
@@ -55,11 +64,17 @@ export class PostsService {
   ) {
     const content = await this.prisma.content.findUnique({
       where: { id: contentId },
-      select: { id: true, status: true, projectId: true },
+      select: {
+        id: true,
+        status: true,
+        projectId: true,
+        project: { select: { photoApprovalRequired: true } },
+      },
     })
     if (!content || content.status !== 'PUBLISHED') {
       throw new NotFoundException('Conteúdo não encontrado')
     }
+    const exigeAprovacao = content.project.photoApprovalRequired
 
     const corpo = legenda?.trim() || null
     if (corpo && corpo.length > 1000) {
@@ -97,7 +112,7 @@ export class PostsService {
     // ferramenta que tem para proteger as crianças: conseguir olhar item a
     // item. O teto é por fila, não por dia — quem tem foto aprovada volta a
     // ter espaço na hora, e quem está esperando aguarda a revisão.
-    if (foto) {
+    if (foto && exigeAprovacao) {
       const naFila = await this.prisma.post.count({
         where: { userId, status: PostStatus.PENDING },
       })
@@ -131,7 +146,7 @@ export class PostsService {
         contentId,
         body: corpo,
         imageAssetId,
-        status: foto ? PostStatus.PENDING : PostStatus.PUBLISHED,
+        status: foto && exigeAprovacao ? PostStatus.PENDING : PostStatus.PUBLISHED,
       },
       select: this.selecao(),
     })
@@ -208,7 +223,7 @@ export class PostsService {
   async pendentes(projectSlug: string) {
     const project = await this.prisma.project.findUnique({
       where: { slug: projectSlug },
-      select: { id: true, name: true },
+      select: { id: true, name: true, photoApprovalRequired: true },
     })
     if (!project) throw new NotFoundException('Projeto não encontrado')
 

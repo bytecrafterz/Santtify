@@ -297,10 +297,42 @@ export class AdminContentService {
   private async projeto(slug: string) {
     const project = await this.prisma.project.findUnique({
       where: { slug },
-      select: { id: true, slug: true, name: true, description: true },
+      select: {
+        id: true,
+        slug: true,
+        name: true,
+        description: true,
+        photoApprovalRequired: true,
+      },
     })
     if (!project) throw new NotFoundException('Projeto não encontrado')
     return project
+  }
+
+  /**
+   * Liga e desliga a aprovação prévia de foto.
+   *
+   * Passa pela auditoria como qualquer outra decisão do painel: é a mudança de
+   * configuração de maior consequência que existe aqui, porque decide se uma
+   * foto de criança fica pública no instante do envio. Quem ligou ou desligou,
+   * e quando, precisa ser reconstituível.
+   */
+  async definirAprovacaoDeFoto(projectSlug: string, exigir: boolean, userId: string) {
+    const project = await this.projeto(projectSlug)
+    const atual = await this.prisma.project.update({
+      where: { id: project.id },
+      data: { photoApprovalRequired: exigir },
+      select: { slug: true, name: true, photoApprovalRequired: true },
+    })
+    await this.auditar(
+      userId,
+      project.id,
+      exigir ? 'project.photo_approval.on' : 'project.photo_approval.off',
+      'Project',
+      project.id,
+      { photoApprovalRequired: exigir },
+    )
+    return atual
   }
 
   private normalizarSlug(bruto: string): string {
