@@ -3,7 +3,6 @@
 import Link from 'next/link'
 import { useEffect, useState } from 'react'
 import { social, type EstadoSocial } from '@/lib/social'
-import { PublicarNoPerfil } from '@/components/PublicarNoPerfil'
 import { useAuth } from '@/components/ProvedorDeAuth'
 
 /**
@@ -164,12 +163,11 @@ export function BarraSocial({
         </div>
       )}
 
-      <PublicarNoPerfil
-        contentId={contentId}
-        projectId={projectId}
-        projectSlug={projectSlug}
-        titulo={titulo}
-      />
+      {/* O My Post saiu da interface em 12/08, a pedido do cliente: o MVP fica
+          em ver, curtir, comentar e compartilhar, sem publicação própria. O
+          componente e a API continuam de pé, sem tela apontando para eles —
+          este cliente já mudou de direção quatro vezes, e reconstruir custa
+          enquanto deixar parado não custa. Ver docs/PROGRESSO.md. */}
 
       <Comentarios
         contentId={contentId}

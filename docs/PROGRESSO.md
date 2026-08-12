@@ -45,6 +45,17 @@ triagem dos mockups) ou é fase seguinte, orçada e aguardando aprovação.
 | Módulo social (curtir, comentar, compartilhar) | ✔ |
 | Dashboard com métricas essenciais | ✔ |
 
+### Fora da interface desde 12/08 (servidor intacto)
+
+**Quarta mudança de direção em quatro dias.** A regra se manteve nas quatro: **a tela
+sai, o servidor fica.** Minha Jornada (`/me/record`), Meus Lançamentos e agora o My
+Post inteiro — com foto, moderação e a chave de aprovação — continuam construídos,
+testados e sem tela apontando para eles. O atalho de Aprovações no painel só aparece se
+houver algo na fila.
+
+O número do perfil que dizia "Publicações" passou a contar **comentários**: com o My
+Post fora, era um número que a pessoa não conseguiria explicar olhando a própria tela.
+
 ### Fora do contrato, entregue sem custo
 
 - **My Post — publicar música/áudio da plataforma no perfil com legenda.** Concedido
@@ -217,6 +228,40 @@ são dele.
 3. **Denúncia precisa de caixa de entrada** — a tela existe (é a fila), o sistema de
    bloquear/denunciar com motivos e reincidência **não está orçado**.
 
+### 12/08 — MVP reduzido, e a proposta de €260
+
+Ele cortou o escopo por aperto financeiro e mencionou **~50 propostas não respondidas**
+e um desenvolvedor que faria **tudo** (vídeo, foto, métricas, Hotmart) por **€260**.
+
+**O dado que desarma a comparação:** o contrato é **USD 256**, praticamente a mesma
+quantia que €260. A outra proposta **não é mais barata** — é o mesmo dinheiro por um
+escopo várias vezes maior. Apresentar a aritmética e parar; não atacar o outro
+profissional, não dar desconto para competir.
+
+**A lista dele, item a item:**
+
+| # | Pedido | Situação |
+|---|---|---|
+| 1 | Perfil simples, sem My Post | **Feito em 12/08, sem custo.** Tela fora, API preservada |
+| 2 | My Playlist com "Reproduzir todas" | Lista já existe (é o índice). **Reprodução contínua é construção nova** |
+| 3 | Ver, curtir, comentar, compartilhar | **Entregue em 10/08** |
+| 4 | Bloquear e Denunciar | **Não existe, nunca orçado.** Construção nova |
+
+**Dois dos quatro itens são trabalho novo** — redução frente ao que ele imaginou,
+acréscimo frente ao contratado. Dito por escrito para não virar a quinta concessão.
+
+**Preços coerentes com o histórico** (e são reduções, não invenções): reprodução
+contínua **350** (era 800 com desbloqueio diário e venda); bloquear/denunciar **250**
+(encolheu sozinho — sem foto e sem post, o único conteúdo de usuário é o comentário);
+os dois **500**. Recomendação dada: **lançar sem os dois** e decidir com dado.
+
+**O caminho crítico não é código:** das 26 letras, **só 3 estão publicadas e com
+áudio**. As outras 23 estão criadas e vazias no painel. Sem elas não há playlist. Não
+custa nada e só ele pode fazer.
+
+**Deploy vai por conta do contrato atual** — "entregar" sempre incluiu pôr no ar.
+Falta ele decidir domínio (~€15/ano) e hospedagem (~€5/mês), na conta dele.
+
 ### Perguntas abertas com ele
 
 1. **Triagem dos mockups** — quais das ~13 funções são essenciais para o lançamento.
@@ -309,3 +354,4 @@ Todas em [docs/mensagens/](mensagens/), com o contexto e a intenção de cada um
 | `2026-08-12-foto-entregue.md` | Entrega da foto com moderação |
 | `2026-08-12-quem-pode-publicar.md` | **Barreira na entrada em vez de fila manual** — o que foi aceito e o que foi contestado |
 | `2026-08-12-sem-aprovacao-previa.md` | **Decisão dele: sem revisão manual.** Aceite, chave no painel, e os três buracos do desenho |
+| `2026-08-12-mvp-reduzido.md` | **MVP cortado ao essencial** — e quais itens da lista dele são trabalho novo |

@@ -46,11 +46,11 @@ export class ProfileService {
     })
     if (!user) throw new NotFoundException('Usuário não encontrado')
 
-    // Publicação pendente não entra na conta: o número precisa bater com o que
-    // está de fato visível no perfil, senão a criança vê "1 publicação" e uma
-    // lista onde nada foi publicado ainda.
-    const [publicacoes, curtidas, compartilhamentos, conteudosVistos] = await Promise.all([
-      this.prisma.post.count({ where: { userId, status: 'PUBLISHED' } }),
+    // Comentários, e não publicações: o My Post saiu da interface em 12/08 e um
+    // número que a pessoa não consegue explicar olhando a tela é pior do que
+    // número nenhum.
+    const [comentarios, curtidas, compartilhamentos, conteudosVistos] = await Promise.all([
+      this.prisma.comment.count({ where: { userId, status: 'PUBLISHED' } }),
       this.prisma.reaction.count({ where: { userId } }),
       this.prisma.share.count({ where: { userId } }),
       this.prisma.event
@@ -68,7 +68,7 @@ export class ProfileService {
 
     return {
       user,
-      estatisticas: { publicacoes, curtidas, compartilhamentos, conteudosVistos },
+      estatisticas: { comentarios, curtidas, compartilhamentos, conteudosVistos },
     }
   }
 

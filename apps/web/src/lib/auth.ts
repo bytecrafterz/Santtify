@@ -169,7 +169,7 @@ export interface PerfilResposta {
     createdAt: string
   }
   estatisticas: {
-    publicacoes: number
+    comentarios: number
     curtidas: number
     compartilhamentos: number
     conteudosVistos: number

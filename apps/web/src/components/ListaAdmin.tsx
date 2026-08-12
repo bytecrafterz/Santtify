@@ -79,17 +79,21 @@ export function ListaAdmin({ projectSlug }: { projectSlug: string }) {
         <small>visitantes, origem, propagação e conteúdos mais acessados</small>
       </Link>
 
-      <Link className="bloco linha atalho-metricas" href={`/${projectSlug}/admin/moderacao`}>
-        <span>
-          Aprovações
-          {aguardando ? <em className="contador-fila">{aguardando}</em> : null}
-        </span>
-        <small>
-          {aguardando
-            ? `${aguardando} ${aguardando === 1 ? 'foto aguardando' : 'fotos aguardando'} a sua aprovação`
-            : 'fotos publicadas pelos usuários no My Post'}
-        </small>
-      </Link>
+      {/* O atalho de Aprovações só aparece se houver algo esperando. Com o My
+          Post fora da interface ninguém publica foto, então a fila fica vazia e
+          um atalho para uma tela que nunca tem nada é ruído no painel de quem
+          precisa cadastrar 26 letras. A tela continua acessível pelo endereço. */}
+      {aguardando ? (
+        <Link className="bloco linha atalho-metricas" href={`/${projectSlug}/admin/moderacao`}>
+          <span>
+            Aprovações
+            <em className="contador-fila">{aguardando}</em>
+          </span>
+          <small>
+            {aguardando === 1 ? 'foto aguardando' : 'fotos aguardando'} a sua aprovação
+          </small>
+        </Link>
+      ) : null}
 
       <ul className="lista">
         {dados.contents.map((c) => {
