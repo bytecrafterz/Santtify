@@ -1,0 +1,219 @@
+'use client'
+
+import Link from 'next/link'
+import { useEffect, useRef, useState } from 'react'
+import type { Faixa } from '@/lib/api'
+import { rastrear } from '@/lib/track'
+
+/**
+ * "Reproduzir todas": as músicas do projeto tocando em sequência, do A ao Z.
+ *
+ * Combinado com o cliente em 13/08. Sem desbloqueio diário e sem estados de
+ * bloqueio — isso era o Bloco 1 e ficou para depois. Aqui é só o tocador.
+ *
+ * DECISÃO: **um único elemento de áudio para a fila inteira**, trocando a fonte
+ * a cada faixa, em vez de um elemento por música. No celular, o navegador só
+ * deixa tocar som depois de um toque da pessoa, e essa permissão fica presa ao
+ * elemento que ela tocou. Com 26 elementos, a primeira música tocaria e a
+ * segunda seria bloqueada em silêncio — o defeito clássico deste tipo de tela,
+ * e que só aparece no aparelho de verdade, nunca no computador.
+ *
+ * A tela mora numa página só e não segue a pessoa pelo site. Áudio que
+ * atravessa a navegação exige o tocador no layout e estado global; o cliente
+ * pediu a experiência simples, e simples aqui também significa menos coisa
+ * para quebrar no celular da mãe.
+ */
+export function Playlist({
+  projectId,
+  projectSlug,
+  faixas,
+}: {
+  projectId: string
+  projectSlug: string
+  faixas: Faixa[]
+}) {
+  const audio = useRef<HTMLAudioElement>(null)
+  const [atual, definirAtual] = useState(0)
+  const [tocando, definirTocando] = useState(false)
+  const [erro, definirErro] = useState<string | null>(null)
+
+  /**
+   * Só toca sozinho quando a pessoa PEDIU para tocar.
+   *
+   * A intenção é registrada explicitamente, e não deduzida de "já montei uma
+   * vez". A primeira versão usava um contador de montagem e tocava som ao abrir
+   * a página: em desenvolvimento o React monta os efeitos duas vezes de
+   * propósito, a segunda passagem via o contador já marcado e mandava tocar.
+   * Ninguém tinha pedido música nenhuma.
+   *
+   * É `ref` e não estado porque pausar não pode reiniciar a faixa: se entrasse
+   * na lista de dependências, o efeito rodaria de novo e voltaria a música
+   * para o começo a cada pausa.
+   */
+  const querTocar = useRef(false)
+
+  useEffect(() => {
+    if (!querTocar.current) return
+    const el = audio.current
+    if (!el) return
+    el.load()
+    void el
+      .play()
+      .then(() => definirErro(null))
+      .catch(() => {
+        // O navegador pode recusar em alguns aparelhos. Melhor dizer o que
+        // fazer do que deixar a tela parada sem explicação.
+        querTocar.current = false
+        definirTocando(false)
+        definirErro('Toque em tocar para continuar ouvindo.')
+      })
+  }, [atual])
+
+  if (faixas.length === 0) {
+    return (
+      <div className="bloco">
+        <p className="bloco-vazio">
+          As músicas ainda estão sendo preparadas. Assim que as letras forem publicadas com
+          áudio, elas aparecem aqui para tocar em sequência.
+        </p>
+      </div>
+    )
+  }
+
+  const faixa = faixas[atual]
+
+  function irPara(indice: number) {
+    if (indice < 0 || indice >= faixas.length) return
+    querTocar.current = true
+    // Tocar na faixa que já está tocando não muda o índice, então o efeito não
+    // roda: aqui ela recomeça do início, que é o que a pessoa espera.
+    if (indice === atual) {
+      const el = audio.current
+      if (el) {
+        el.currentTime = 0
+        void el.play().catch(() => definirErro('Não foi possível tocar agora.'))
+      }
+      return
+    }
+    definirAtual(indice)
+    definirTocando(true)
+  }
+
+  function alternar() {
+    const el = audio.current
+    if (!el) return
+    if (el.paused) {
+      querTocar.current = true
+      void el.play().then(
+        () => {
+          definirTocando(true)
+          definirErro(null)
+        },
+        () => definirErro('Não foi possível tocar agora.'),
+      )
+    } else {
+      querTocar.current = false
+      el.pause()
+      definirTocando(false)
+    }
+  }
+
+  return (
+    <>
+      <div className="bloco tocador">
+        <span className="bloco-rotulo">Tocando agora</span>
+        <p className="tocador-titulo">
+          {faixa.title}
+          {faixa.subtitle && <small> — {faixa.subtitle}</small>}
+        </p>
+        <p className="nota">
+          {atual + 1} de {faixas.length}
+        </p>
+
+        <audio
+          ref={audio}
+          preload="metadata"
+          onPlay={() => {
+            definirTocando(true)
+            void rastrear({
+              projectId,
+              contentId: faixa.id,
+              type: 'MEDIA_PLAY',
+              props: { origem: 'playlist' },
+            })
+          }}
+          onPause={() => definirTocando(false)}
+          onEnded={() => {
+            void rastrear({
+              projectId,
+              contentId: faixa.id,
+              type: 'MEDIA_COMPLETE',
+              props: { origem: 'playlist' },
+            })
+            // Fim da fila: para, e não volta ao início. Recomeçar sozinho do A
+            // depois do Z deixaria a música tocando sem ninguém pedir.
+            if (atual + 1 < faixas.length) irPara(atual + 1)
+            else {
+              querTocar.current = false
+              definirTocando(false)
+            }
+          }}
+          onError={() => definirErro('Não foi possível carregar esta música.')}
+        >
+          <source src={faixa.url} type={faixa.mimeType ?? undefined} />
+        </audio>
+
+        {erro && <p className="erro">{erro}</p>}
+
+        <div className="tocador-controles">
+          <button
+            type="button"
+            className="secundario"
+            onClick={() => irPara(atual - 1)}
+            disabled={atual === 0}
+            aria-label="Música anterior"
+          >
+            ◀◀
+          </button>
+          <button type="button" onClick={alternar} aria-label={tocando ? 'Pausar' : 'Tocar'}>
+            {tocando ? '❚❚  Pausar' : '▶  Tocar'}
+          </button>
+          <button
+            type="button"
+            className="secundario"
+            onClick={() => irPara(atual + 1)}
+            disabled={atual === faixas.length - 1}
+            aria-label="Próxima música"
+          >
+            ▶▶
+          </button>
+        </div>
+      </div>
+
+      <h2>Todas as músicas</h2>
+
+      <ul className="lista lista-faixas">
+        {faixas.map((f, i) => (
+          <li key={f.id}>
+            <button
+              type="button"
+              className={i === atual ? 'faixa atual' : 'faixa'}
+              onClick={() => irPara(i)}
+            >
+              <span className="faixa-numero" aria-hidden>
+                {i === atual && tocando ? '♪' : i + 1}
+              </span>
+              <span className="faixa-nome">
+                <strong>{f.title}</strong>
+                {f.subtitle && <small>{f.subtitle}</small>}
+              </span>
+            </button>
+            <Link className="faixa-abrir" href={`/${projectSlug}/${f.slug}`}>
+              abrir
+            </Link>
+          </li>
+        ))}
+      </ul>
+    </>
+  )
+}

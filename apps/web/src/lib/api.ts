@@ -65,6 +65,17 @@ export interface ItemIndice {
   stats: { views: number; likes: number; comments: number; shares: number } | null
 }
 
+export interface Faixa {
+  id: string
+  slug: string
+  title: string
+  subtitle: string | null
+  coverUrl: string | null
+  url: string
+  mimeType: string | null
+  durationMs: number | null
+}
+
 /**
  * Tempo máximo esperando a API antes de desistir e renderizar o estado vazio.
  *
@@ -98,6 +109,8 @@ async function buscar<T>(caminho: string, revalidate = 30): Promise<T | null> {
 export const api = {
   projeto: (slug: string) => buscar<Projeto>(`/projects/${slug}`),
   indice: (slug: string) => buscar<{ project: Projeto; contents: ItemIndice[] }>(`/projects/${slug}/contents`),
+  playlist: (slug: string) =>
+    buscar<{ project: Projeto; faixas: Faixa[] }>(`/projects/${slug}/playlist`),
   conteudo: (projeto: string, conteudo: string) =>
     buscar<PaginaConteudo>(`/projects/${projeto}/contents/${conteudo}`),
   qrSvgUrl: (projeto: string, conteudo: string) =>

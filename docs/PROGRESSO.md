@@ -350,8 +350,30 @@ foi digitado (`mod_Bia_...`) e o servidor grava em minúsculas (`mod_bia_...`), 
 conta de teste sobrevivia à limpeza. Mesmo padrão de sempre — o teste passa e o dado
 fica errado.
 
-**Pendente:** playlist contínua A→Z; login por Google com preservação da atribuição e
-ligação de contas.
+#### 2 de 3 entregue — Minha Playlist (reprodução contínua) ✔
+
+Página `/{projeto}/playlist`, com entrada pelo botão **▶ Reproduzir todas** no índice.
+Toca do A ao Z, com tocar/pausar, anterior e próxima, e passagem automática no fim de
+cada faixa.
+
+| Decisão | Motivo |
+|---|---|
+| **Um único elemento de áudio** para a fila toda | No celular a permissão de tocar som fica presa ao elemento que a pessoa tocou. Com 26 elementos, a primeira música tocaria e a segunda seria bloqueada **em silêncio** — defeito que só aparece no aparelho, nunca no computador |
+| Só entram letras publicadas **com áudio** | Uma letra sem música no meio da fila faria o tocador parar em silêncio, e isso se lê como defeito |
+| No fim da fila **para**, não recomeça | Voltar do Z para o A sozinho deixaria música tocando sem ninguém pedir |
+| Toca só quando a pessoa **pediu** | Ver o defeito abaixo |
+| `MEDIA_PLAY`/`MEDIA_COMPLETE` com `origem: playlist` | Sem isso, ouvir pela playlist não contaria em "conteúdos mais acessados" — e dá para separar depois quem ouviu pela playlist de quem ouviu na página |
+
+**Defeito encontrado no navegador:** a primeira versão tocava música sozinha ao abrir a
+página. O guarda era "ignore a primeira montagem", e em desenvolvimento o React monta os
+efeitos **duas vezes** de propósito: a segunda passagem via o contador já marcado e
+mandava tocar. Trocado por intenção explícita — só toca quando alguém pediu.
+
+**Verificado:** o caminho inteiro num navegador **sem** o atalho de autoplay, adiantando
+o áudio até o fim para provar a passagem automática de verdade.
+
+**Pendente:** login por Google, com preservação da atribuição no desvio e ligação de
+contas pelo mesmo e-mail.
 
 ### Perguntas abertas com ele
 
@@ -369,7 +391,7 @@ ligação de contas.
 |---|---|---|
 | Deploy em produção | Domínio + conta de hospedagem dele | **Alta** — nada está no ar |
 | Imagens Docker nunca construídas | Máquina com Docker | Média — reservar 1h no servidor dele |
-| Apagar dados de demonstração | Nada; fazer antes do lançamento | **Crítica** — 439 visitantes falsos contaminam o Dia Zero |
+| Zerar a operação para o Dia Zero | Nada; fazer no dia do lançamento | **Crítica** — ver abaixo |
 | Trocar senha temporária dele | Deploy real | Média |
 | Arte e textos da página PV | Ele | Baixa |
 | Conteúdo das 26 letras | Ele | Baixa — ele cadastra pelo painel |
@@ -377,7 +399,11 @@ ligação de contas.
 ### Comandos que importam
 
 ```bash
-# antes do lançamento, obrigatório
+# NO DIA DO LANÇAMENTO, obrigatório: zera a operação sem tocar em QR nem conteúdo
+npx tsx packages/db/prisma/preparar-lancamento.ts             # mostra o que sairá
+npx tsx packages/db/prisma/preparar-lancamento.ts --executar  # apaga de verdade
+
+# remove só os dados sintéticos de demonstração (não basta sozinho — ver acima)
 npx tsx packages/db/prisma/dados-demonstracao.ts --limpar
 
 # se o domínio mudar, regera destinos e QR
@@ -410,6 +436,13 @@ Admin dele: `rossandro@alfabeto.local` / `Alfabeto5639Vivo`
 ---
 
 ## Avisos que não podem ser esquecidos
+
+**`dados-demonstracao.ts --limpar` NÃO basta para o Dia Zero.** Ele remove só os
+visitantes marcados com `demo_`. Todo acesso feito de um navegador real durante o
+desenvolvimento — teste meu, teste do cliente, alguém abrindo o link para ver — cria
+visitante e evento comuns, sem marca, e sobrevive à limpeza. Como o log é append-only,
+depois não há como saber quais eventos eram reais. Use `preparar-lancamento.ts`, que
+zera a operação inteira **preservando os QR Codes, o conteúdo e os administradores**.
 
 **O domínio fica gravado dentro de cada QR Code.** Trocar depois de imprimir invalida
 todo o material. Decidir antes de qualquer impressão. Para demonstração não há risco.

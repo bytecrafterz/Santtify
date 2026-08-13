@@ -1355,3 +1355,118 @@ h3 {
   font-size: 12px;
   font-weight: 600;
 }
+
+/* ── Minha Playlist ─────────────────────────────────────────────── */
+
+.atalho-playlist span {
+  font-weight: 700;
+}
+
+.tocador {
+  margin-bottom: 24px;
+}
+
+.tocador-titulo {
+  margin: 6px 0 2px;
+  font-size: 20px;
+  font-weight: 700;
+}
+
+.tocador-titulo small {
+  font-weight: 400;
+  color: var(--cor-texto-suave);
+}
+
+.tocador audio {
+  display: none; /* os controles são os botões grandes abaixo */
+}
+
+.tocador-controles {
+  display: flex;
+  gap: 10px;
+  margin-top: 14px;
+}
+
+.tocador-controles button {
+  padding: 14px 12px;
+  border: 0;
+  border-radius: 10px;
+  background: var(--cor-primaria);
+  color: #fff;
+  font-family: inherit;
+  font-size: 16px;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+/* Tocar/pausar é o alvo principal: cresce, e os laterais ficam estreitos. */
+.tocador-controles button:nth-child(2) {
+  flex: 1;
+}
+
+.tocador-controles .secundario {
+  background: transparent;
+  color: var(--cor-texto-suave);
+  border: 1px solid var(--cor-borda);
+  min-width: 64px;
+}
+
+.tocador-controles button:disabled {
+  opacity: 0.4;
+  cursor: default;
+}
+
+.lista-faixas li {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.faixa {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 12px 14px;
+  border: 1px solid var(--cor-borda);
+  border-radius: 10px;
+  background: var(--cor-superficie, #fff);
+  font-family: inherit;
+  font-size: 16px;
+  text-align: left;
+  cursor: pointer;
+}
+
+.faixa.atual {
+  border-color: var(--cor-primaria);
+  box-shadow: inset 0 0 0 1px var(--cor-primaria);
+}
+
+.faixa-numero {
+  width: 28px;
+  flex-shrink: 0;
+  text-align: center;
+  color: var(--cor-texto-suave);
+  font-variant-numeric: tabular-nums;
+}
+
+.faixa.atual .faixa-numero {
+  color: var(--cor-primaria);
+  font-weight: 700;
+}
+
+.faixa-nome {
+  display: flex;
+  flex-direction: column;
+}
+
+.faixa-nome small {
+  color: var(--cor-texto-suave);
+}
+
+.faixa-abrir {
+  flex-shrink: 0;
+  padding: 8px;
+  font-size: 14px;
+  color: var(--cor-texto-suave);
+}

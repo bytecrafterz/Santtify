@@ -25,6 +25,12 @@ export class ContentController {
     return this.content.projeto(projectSlug)
   }
 
+  /** Fila de reprodução contínua do projeto, do A ao Z. */
+  @Get('playlist')
+  playlist(@Param('projectSlug') projectSlug: string) {
+    return this.content.playlist(projectSlug)
+  }
+
   @Get('contents')
   listar(@Param('projectSlug') projectSlug: string) {
     return this.content.listar(projectSlug)

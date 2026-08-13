@@ -1,5 +1,5 @@
 import { Injectable, NotFoundException } from '@nestjs/common'
-import { ContentStatus } from '@pv/db'
+import { BlockType, ContentStatus } from '@pv/db'
 import { PrismaService } from '../prisma/prisma.service'
 import { ShortLinksService } from '../short-links/short-links.service'
 
@@ -29,6 +29,7 @@ export class ContentService {
   }
 
   /** Índice do projeto: só o publicado, na ordem definida no painel. */
+
   async listar(projectSlug: string) {
     const project = await this.projeto(projectSlug)
 
@@ -47,6 +48,57 @@ export class ContentService {
     })
 
     return { project, contents }
+  }
+
+  /**
+   * "Reproduzir todas": a fila de músicas do projeto, em ordem.
+   *
+   * Só entram as letras publicadas E que já têm música enviada. Uma letra
+   * publicada sem áudio no meio da fila faria o tocador parar em silêncio, e
+   * quem está ouvindo entenderia isso como defeito, não como conteúdo que
+   * ainda falta.
+   *
+   * Ordena por `position`, que é a ordem alfabética cadastrada — a fila do A ao
+   * Z é a ordem do próprio produto, não uma decisão desta tela.
+   */
+  async playlist(projectSlug: string) {
+    const project = await this.projeto(projectSlug)
+
+    const contents = await this.prisma.content.findMany({
+      where: {
+        projectId: project.id,
+        status: ContentStatus.PUBLISHED,
+        blocks: { some: { type: BlockType.AUDIO, assetId: { not: null } } },
+      },
+      orderBy: { position: 'asc' },
+      select: {
+        id: true,
+        slug: true,
+        title: true,
+        subtitle: true,
+        coverUrl: true,
+        blocks: {
+          where: { type: BlockType.AUDIO, assetId: { not: null } },
+          orderBy: { position: 'asc' },
+          take: 1,
+          select: { asset: { select: { url: true, mimeType: true, durationMs: true } } },
+        },
+      },
+    })
+
+    return {
+      project,
+      faixas: contents.map((c) => ({
+        id: c.id,
+        slug: c.slug,
+        title: c.title,
+        subtitle: c.subtitle,
+        coverUrl: c.coverUrl,
+        url: c.blocks[0]!.asset!.url,
+        mimeType: c.blocks[0]!.asset!.mimeType,
+        durationMs: c.blocks[0]!.asset!.durationMs,
+      })),
+    }
   }
 
   /** Página de um conteúdo, com os blocos que o admin montou. */

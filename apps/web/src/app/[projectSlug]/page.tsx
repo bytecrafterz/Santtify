@@ -23,6 +23,16 @@ export default async function IndiceDoProjeto({
       <h1>{project.name}</h1>
       {project.description && <p className="subtitulo">{project.description}</p>}
 
+      {/* A porta de entrada da playlist fica antes da grade das letras: é o
+          jeito mais rápido de ouvir tudo, e quem chega pelo QR de uma letra só
+          descobre aqui que existem outras 25. */}
+      {contents.length > 0 && (
+        <Link className="bloco linha atalho-playlist" href={`/${projectSlug}/playlist`}>
+          <span>▶ Reproduzir todas</span>
+          <small>ouça as músicas em sequência, da letra A à letra Z</small>
+        </Link>
+      )}
+
       {contents.length === 0 ? (
         <div className="vazio">
           <p>Os conteúdos ainda estão sendo preparados.</p>
