@@ -262,6 +262,39 @@ custa nada e só ele pode fazer.
 **Deploy vai por conta do contrato atual** — "entregar" sempre incluiu pôr no ar.
 Falta ele decidir domínio (~€15/ano) e hospedagem (~€5/mês), na conta dele.
 
+### 13/08 — Ele exige o núcleo social completo e ameaça a Workana
+
+Usou a admissão do Bruno ("eu deveria ter especificado antes de precificar") como
+fundamento para exigir **sem custo**: seguir/seguidores, feed, múltiplas fotos, vídeo e
+controle administrativo. Disse que, se não vier dentro dos USD 256, prefere levar à
+plataforma.
+
+**A distinção que sustenta a resposta:**
+
+| | |
+|---|---|
+| **Ambiguidade** — ele escreveu o termo, o Bruno não detalhou | É o caso do My Post. Ele tem razão, foi reconhecido, **e já foi remediado sem cobrança** |
+| **Ausência** — nunca escrito em lugar nenhum | Seguir, feed, vídeo, múltiplas fotos. **Não se deixa de esclarecer o que não foi pedido** |
+
+**A prova está na publicação dele:** *"área social **simples**"* seguida de **quatro**
+itens enumerados, e perfil *"**exibindo**"* três áreas. "Mini rede social" descreve o
+**Produto Vivo**, que ambos combinaram por escrito ser a etapa seguinte.
+
+**Custo real do que ele exige:** 145–190 h → menos de USD 2/hora dentro do contrato.
+O vídeo, o item mais pesado, foi removido **por decisão dele** em 11/08 por causa do
+custo que o próprio Bruno simulou.
+
+**Concedido:** controle administrativo, sem custo. Verificado no código — o admin **já
+apaga qualquer comentário** e a conta suspensa **já é impedida de entrar**; falta o
+botão. É o único item que pertence à higiene de uma "área social simples", e concedê-lo
+estreita a divergência aos quatro itens comprovadamente ausentes.
+
+**Postura sobre a disputa:** aceita sem medo e sem ameaça, apresentando tudo — inclusive
+a própria admissão, que **não pode ser retratada** sem destruir a credibilidade.
+
+**Pendente:** implementar o botão de bloquear conta no painel (a suspensão já é
+aplicada em `auth.service.ts`, falta a rota e a tela).
+
 ### Perguntas abertas com ele
 
 1. **Triagem dos mockups** — quais das ~13 funções são essenciais para o lançamento.
@@ -355,3 +388,4 @@ Todas em [docs/mensagens/](mensagens/), com o contexto e a intenção de cada um
 | `2026-08-12-quem-pode-publicar.md` | **Barreira na entrada em vez de fila manual** — o que foi aceito e o que foi contestado |
 | `2026-08-12-sem-aprovacao-previa.md` | **Decisão dele: sem revisão manual.** Aceite, chave no painel, e os três buracos do desenho |
 | `2026-08-12-mvp-reduzido.md` | **MVP cortado ao essencial** — e quais itens da lista dele são trabalho novo |
+| `2026-08-13-resposta-nucleo-social.md` | **Ameaça de disputa na Workana** — ambiguidade × ausência, e a concessão do controle administrativo |
