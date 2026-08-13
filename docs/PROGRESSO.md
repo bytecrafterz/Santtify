@@ -292,8 +292,40 @@ estreita a divergência aos quatro itens comprovadamente ausentes.
 **Postura sobre a disputa:** aceita sem medo e sem ameaça, apresentando tudo — inclusive
 a própria admissão, que **não pode ser retratada** sem destruir a credibilidade.
 
-**Pendente:** implementar o botão de bloquear conta no painel (a suspensão já é
-aplicada em `auth.service.ts`, falta a rota e a tela).
+**Desfecho, no mesmo dia:** ele **desistiu de feed, seguir/seguidores, vídeo e múltiplas
+fotos** — 145 a 190 horas de exigência — e propôs encerrar com três pontos.
+
+### 13/08 — Acordo de fechamento em três pontos
+
+| Ponto | Situação | Decisão |
+|---|---|---|
+| Controle administrativo | Admin já apaga comentário; conta suspensa já é barrada no login. Falta rota e botão | **Incluído, sem custo** |
+| Playlist contínua (A→Z) | **Orçada em USD 350** na mensagem anterior; ele reincorporou sem citar o valor | **Concedida — com o valor nomeado**, como gesto de fechamento e não reconhecimento de dívida |
+| Login Apple / Google / e-mail | E-mail existe. **Nenhum OAuth no código** (verificado) | **Google incluído**; Apple pronto para ligar quando ele abrir a conta |
+
+**O que ele não sabia sobre o Apple, e é o valor daquela mensagem:**
+
+1. **USD 99/ano, dele, recorrente** — Sign in with Apple exige conta no Apple Developer
+   Program em nome dele. Não é taxa do Bruno.
+2. **Não é obrigatório aqui** — a exigência vale para apps da App Store; este é um PWA
+   instalado pelo navegador.
+3. **"Esconder meu e-mail" quebra a medição da venda** — o endereço de redirecionamento
+   não bate com o e-mail usado na Hotmart, e a compra não se liga sozinha à conta.
+   Atinge exatamente a métrica que ele mais quer.
+
+**Dois riscos técnicos assumidos por escrito** (ambos mexem nos números dele):
+
+- A **origem da visita precisa sobreviver ao desvio do OAuth** — sem isso, quem chegou
+  pelo Instagram volta contabilizado como vindo do Google, **sem sinal na tela**. Mesma
+  família dos sete defeitos que passaram no teste visual.
+- **Contas duplicadas** — mesma pessoa por e-mail e por Google com o mesmo endereço
+  vira duas contas. Ligação pelo e-mail verificado.
+
+**Ganho colateral:** ele tirou o telefone do cadastro, o que encerra sozinho a objeção
+de 12/08 (telefone não verificado não é barreira).
+
+**Pendente de construção:** rota e botão de bloquear conta; playlist contínua A→Z;
+login por Google com preservação da atribuição e ligação de contas.
 
 ### Perguntas abertas com ele
 
@@ -389,3 +421,4 @@ Todas em [docs/mensagens/](mensagens/), com o contexto e a intenção de cada um
 | `2026-08-12-sem-aprovacao-previa.md` | **Decisão dele: sem revisão manual.** Aceite, chave no painel, e os três buracos do desenho |
 | `2026-08-12-mvp-reduzido.md` | **MVP cortado ao essencial** — e quais itens da lista dele são trabalho novo |
 | `2026-08-13-resposta-nucleo-social.md` | **Ameaça de disputa na Workana** — ambiguidade × ausência, e a concessão do controle administrativo |
+| `2026-08-13-fechamento-tres-pontos.md` | **Acordo de fechamento** — ele desiste de feed, seguir, vídeo e múltiplas fotos |
