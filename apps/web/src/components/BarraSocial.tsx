@@ -42,6 +42,8 @@ export function BarraSocial({
   const [aviso, definirAviso] = useState<string | null>(null)
   /** Link gerado, exibido quando não dá para copiar automaticamente. */
   const [linkGerado, definirLinkGerado] = useState<string | null>(null)
+  const [caixaAberta, definirCaixaAberta] = useState(false)
+  const [recado, definirRecado] = useState('')
 
   useEffect(() => {
     social.estado(contentId).then(definirEstado).catch(() => {
@@ -69,12 +71,30 @@ export function BarraSocial({
    * é ele que carrega a referência de quem compartilhou, e sem isso a
    * propagação vira tráfego anônimo e a cadeia se perde.
    */
-  async function compartilhar() {
+  /**
+   * Abre a caixa para a pessoa escrever um recado antes de enviar.
+   *
+   * O cliente pediu isso em 13/08, e o motivo é bom: "olha essa música que
+   * estou ouvindo com meu filho" convence muito mais do que um link seco. O
+   * recado vai no TEXTO da mensagem; a imagem e o título que aparecem no cartão
+   * vêm da própria página, e são duas coisas diferentes que chegam juntas do
+   * outro lado.
+   */
+  function abrirCaixaDeCompartilhar() {
     if (!usuario) return definirAviso('entrar')
+    definirRecado('')
+    definirCaixaAberta(true)
+  }
+
+  async function compartilhar(recadoDaPessoa: string) {
+    if (!usuario) return definirAviso('entrar')
+    definirCaixaAberta(false)
     definirOcupado(true)
     try {
       const { url } = await social.compartilhar(contentId, projectId, 'WHATSAPP')
-      const texto = `${titulo} — Jesus Alfabeto Saudável`
+      const recado = recadoDaPessoa.trim()
+      const titulize = `${titulo} — Jesus Alfabeto Saudável`
+      const texto = recado ? `${recado}\n\n${titulize}` : titulize
 
       // O link JÁ existe no servidor a esta altura. O que vem abaixo é só a
       // forma de entregá-lo à pessoa, e nenhuma dessas formas pode fazer o
@@ -87,10 +107,10 @@ export function BarraSocial({
       let entregue = false
       try {
         if (typeof navigator !== 'undefined' && navigator.share) {
-          await navigator.share({ title: texto, text: texto, url })
+          await navigator.share({ title: titulize, text: texto, url })
           entregue = true
         } else if (typeof navigator !== 'undefined' && navigator.clipboard) {
-          await navigator.clipboard.writeText(url)
+          await navigator.clipboard.writeText(recado ? `${texto}\n${url}` : url)
           definirAviso('copiado')
           setTimeout(() => definirAviso(null), 2500)
           entregue = true
@@ -132,7 +152,12 @@ export function BarraSocial({
           <small>comentários</small>
         </a>
 
-        <button type="button" onClick={compartilhar} disabled={ocupado} className="acao">
+        <button
+          type="button"
+          onClick={abrirCaixaDeCompartilhar}
+          disabled={ocupado}
+          className="acao"
+        >
           <span aria-hidden>↗</span>
           {estado.compartilhamentos}
           <small>compartilhar</small>
@@ -147,6 +172,36 @@ export function BarraSocial({
       )}
       {aviso === 'copiado' && <p className="aviso-social">Link copiado. É só colar e enviar.</p>}
       {aviso === 'erro' && <p className="aviso-social">Não deu para compartilhar agora.</p>}
+
+      {caixaAberta && (
+        <div className="bloco caixa-compartilhar">
+          <span className="bloco-rotulo">Compartilhar</span>
+          <p className="nota">
+            Escreva um recado, se quiser. Quem receber vê o seu texto e a imagem desta letra,
+            e ao tocar no link abre direto aqui.
+          </p>
+          <textarea
+            value={recado}
+            onChange={(e) => definirRecado(e.target.value)}
+            placeholder="Olha essa música que estou ouvindo com meu filho"
+            rows={3}
+            maxLength={300}
+            autoFocus
+          />
+          <div className="publicar-acoes">
+            <button
+              type="button"
+              className="secundario"
+              onClick={() => definirCaixaAberta(false)}
+            >
+              Cancelar
+            </button>
+            <button type="button" onClick={() => compartilhar(recado)} disabled={ocupado}>
+              {ocupado ? 'Preparando...' : 'Compartilhar'}
+            </button>
+          </div>
+        </div>
+      )}
 
       {linkGerado && (
         <div className="aviso-social">

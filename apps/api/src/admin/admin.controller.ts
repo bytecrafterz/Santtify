@@ -53,6 +53,10 @@ class SalvarBlocoDto {
   @IsOptional() @IsString() assetId?: string | null
 }
 
+class DefinirCapaDto {
+  @IsOptional() @IsString() assetId?: string | null
+}
+
 class BloquearContaDto {
   @IsBoolean() bloquear!: boolean
   @IsOptional() @IsString() @MaxLength(300) motivo?: string
@@ -264,9 +268,22 @@ export class AdminController {
         mimeType: salvo.mimeType,
         sizeBytes: salvo.sizeBytes,
         title: salvo.nomeOriginal,
+        shareCardUrl: salvo.urlCartao,
+        width: salvo.largura,
+        height: salvo.altura,
       },
       req.usuario!.id,
     )
     return asset
+  }
+
+  /** Define (ou remove) a capa da letra. */
+  @Patch('contents/:id/cover')
+  definirCapa(
+    @Param('id') id: string,
+    @Body() dto: DefinirCapaDto,
+    @Req() req: Request,
+  ) {
+    return this.conteudo.definirCapa(id, dto.assetId ?? null, req.usuario!.id)
   }
 }

@@ -19,14 +19,33 @@ export async function generateMetadata({
 
   // Importa para o compartilhamento: o cartão que aparece no WhatsApp é o que
   // faz a pessoa do outro lado clicar, e cada clique é propagação medida.
+  //
+  // Usa o cartão 1200x630 e não a capa: a arte das letras é retrato A4, e o
+  // recorte que o WhatsApp faz numa imagem alta corta a marca no topo e o selo
+  // embaixo — justamente o que o cliente pôs ali para ser visto.
+  //
+  // As dimensões vão declaradas porque sem elas alguns leitores de prévia
+  // desistem da imagem em vez de baixá-la para descobrir o tamanho.
+  const imagem = dados.content.shareCardUrl ?? dados.content.coverUrl
+  const descricao = dados.content.summary ?? dados.project.description ?? undefined
+
   return {
     title: `${dados.content.title} — ${dados.project.name}`,
-    description: dados.content.summary ?? dados.project.description ?? undefined,
+    description: descricao,
     openGraph: {
       title: dados.content.title,
-      description: dados.content.summary ?? undefined,
-      images: dados.content.coverUrl ? [dados.content.coverUrl] : undefined,
+      description: descricao,
+      siteName: dados.project.name,
+      images: imagem
+        ? [{ url: imagem, width: 1200, height: 630, alt: dados.content.title }]
+        : undefined,
       type: 'article',
+    },
+    twitter: {
+      card: 'summary_large_image',
+      title: dados.content.title,
+      description: descricao,
+      images: imagem ? [imagem] : undefined,
     },
   }
 }
@@ -52,6 +71,22 @@ export default async function PaginaDeConteudo({
 
       <h1>{content.title}</h1>
       {content.subtitle && <p className="subtitulo">{content.subtitle}</p>}
+
+      {/* A arte da letra, logo abaixo do título e antes do player: é o fluxo que
+          o cliente descreveu — a pessoa abre, vê a imagem, e aperta Play.
+          A altura é limitada porque a arte é retrato A4; sem limite, ela
+          empurraria o botão de tocar para fora da tela do celular, e quem chega
+          pelo QR Code vem para ouvir. */}
+      {content.coverUrl && (
+        // eslint-disable-next-line @next/next/no-img-element
+        <img
+          className="capa-conteudo"
+          src={content.coverUrl}
+          alt={content.title}
+          width={1200}
+          height={1697}
+        />
+      )}
 
       <BlocosDeConteudo blocos={content.blocks} projectId={project.id} contentId={content.id} />
 

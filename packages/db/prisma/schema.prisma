@@ -86,6 +86,13 @@ model Content {
   subtitle  String?
   summary   String?
   coverUrl  String?
+
+  /// Cartão 1200x630 da capa, para a prévia do link nas redes.
+  ///
+  /// Gravado junto com a capa, e não deduzido dela na hora de montar a página:
+  /// o robô do WhatsApp busca a prévia com pressa, e uma consulta a mais no
+  /// meio disso é a diferença entre o cartão aparecer e o link sair pelado.
+  shareCardUrl String?
   status    ContentStatus @default(DRAFT)
   /// Ordem de exibição dentro do projeto (A=1, B=2, ... no alfabeto).
   position  Int           @default(0)
@@ -160,6 +167,17 @@ model MediaAsset {
   durationMs Int?
   title      String?
   altText    String?
+
+  /// Dimensões da versão servida no site (só imagem).
+  width  Int?
+  height Int?
+
+  /// Cartão 1200x630 usado na prévia do link no WhatsApp e nas redes.
+  ///
+  /// Fica guardado porque a arte das letras é retrato A4: o recorte que essas
+  /// plataformas fazem numa imagem alta cortaria a marca no topo e o selo
+  /// embaixo, que é justamente o que o cliente quer que apareça.
+  shareCardUrl String?
 
   uploadedById String? @db.Uuid
   uploadedBy   User?   @relation(fields: [uploadedById], references: [id], onDelete: SetNull)

@@ -23,6 +23,9 @@ export interface ItemAdmin {
 }
 
 export interface AssetAdmin {
+  shareCardUrl?: string | null
+  width?: number | null
+  height?: number | null
   id: string
   kind: string
   url: string
@@ -52,6 +55,8 @@ export interface DetalheAdmin {
     summary: string | null
     status: StatusConteudo
     position: number
+    coverUrl: string | null
+    shareCardUrl: string | null
     blocks: BlocoAdmin[]
     metadata: Record<string, unknown> | null
     qrCode: string | null
@@ -161,6 +166,13 @@ export const admin = {
     dados.append('file', arquivo)
     return chamar<AssetAdmin>('/upload', { method: 'POST', body: dados })
   },
+
+  /** Define (ou remove) a capa da letra. */
+  definirCapa: (contentId: string, assetId: string | null) =>
+    chamar<{ id: string; coverUrl: string | null; shareCardUrl: string | null }>(
+      `/contents/${contentId}/cover`,
+      { method: 'PATCH', body: JSON.stringify({ assetId }) },
+    ),
 
   /** Comentários recentes do projeto, para revisar e agir. */
   comentarios: (projectSlug: string) =>

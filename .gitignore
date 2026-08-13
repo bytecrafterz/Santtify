@@ -13,3 +13,11 @@ coverage/
 .prisma/
 uploads/
 tsconfig.tsbuildinfo
+
+# Arte enviada pelo cliente: fica no armazenamento de mídia, não no histórico.
+# São 26 arquivos de ~10 MB — em git eles ficariam para sempre, mesmo apagados.
+*.jpeg
+*.jpg
+!apps/web/public/*.jpg
+IMG_*.png
+ABBC*.png

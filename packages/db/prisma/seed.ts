@@ -77,10 +77,14 @@ async function main() {
     if (existingBlocks === 0) {
       await prisma.contentBlock.createMany({
         data: [
+          // Um bloco de áudio só: o cliente confirmou em 13/08 que música e
+          // narração vêm juntas no mesmo MP3. Dois campos deixariam as 26
+          // páginas com um "áudio ainda não enviado" permanente, que se lê como
+          // defeito. Quem quiser uma segunda música numa letra acrescenta o
+          // bloco pelo painel — a página é uma lista de blocos, não um formulário fixo.
           { contentId: content.id, position: 1, type: BlockType.AUDIO, label: 'Música' },
-          { contentId: content.id, position: 2, type: BlockType.AUDIO, label: 'Áudio' },
-          { contentId: content.id, position: 3, type: BlockType.RICH_TEXT, label: 'Letra da música' },
-          { contentId: content.id, position: 4, type: BlockType.RICH_TEXT, label: 'Conteúdo educativo' },
+          { contentId: content.id, position: 2, type: BlockType.RICH_TEXT, label: 'Letra da música' },
+          { contentId: content.id, position: 3, type: BlockType.RICH_TEXT, label: 'Conteúdo educativo' },
         ],
       })
     }

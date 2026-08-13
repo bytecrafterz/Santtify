@@ -154,6 +154,7 @@ export class ContentService {
         subtitle: content.subtitle,
         summary: content.summary,
         coverUrl: content.coverUrl,
+        shareCardUrl: content.shareCardUrl,
         position: content.position,
         blocks: content.blocks.map((b) => ({
           id: b.id,

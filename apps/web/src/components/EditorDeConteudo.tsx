@@ -106,6 +106,8 @@ export function EditorDeConteudo({
         aoSalvar={(v) => admin.atualizarConteudo(content.id, { subtitle: v }).then(recarregar)}
       />
 
+      <Capa content={content} aoMudar={recarregar} />
+
       <h2>Blocos da página</h2>
       {content.blocks.map((bloco) => (
         <EditorDeBloco key={bloco.id} bloco={bloco} aoMudar={recarregar} />
@@ -129,6 +131,93 @@ export function EditorDeConteudo({
         </div>
       )}
     </>
+  )
+}
+
+/**
+ * A capa da letra.
+ *
+ * Fica antes dos blocos porque é o primeiro passo do fluxo que o cliente
+ * descreveu: título, imagem, áudio, texto.
+ *
+ * O aviso sobre o tamanho não é decoração. A arte chega do arquivo de
+ * impressão, com quase 10 MB, e é o servidor que reduz — a tela diz isso para
+ * ele não achar que precisa preparar duas versões de cada uma das 26 letras.
+ */
+function Capa({ content, aoMudar }: { content: DetalheAdmin['content']; aoMudar: () => void }) {
+  const [enviando, definirEnviando] = useState(false)
+  const [erro, definirErro] = useState<string | null>(null)
+
+  async function enviar(arquivo: File | undefined) {
+    if (!arquivo) return
+    definirErro(null)
+    definirEnviando(true)
+    try {
+      const asset = await admin.enviarArquivo(arquivo)
+      await admin.definirCapa(content.id, asset.id)
+      aoMudar()
+    } catch (e) {
+      definirErro(e instanceof Error ? e.message : 'Não foi possível enviar')
+    } finally {
+      definirEnviando(false)
+    }
+  }
+
+  return (
+    <div className="bloco capa-editor">
+      <span className="bloco-rotulo">Imagem da letra</span>
+
+      {content.coverUrl ? (
+        <>
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img className="capa-previa" src={content.coverUrl} alt={`Capa de ${content.title}`} />
+          <p className="nota">
+            É esta imagem que aparece na página e na prévia do link quando alguém compartilha
+            no WhatsApp.
+          </p>
+        </>
+      ) : (
+        <p className="bloco-vazio">
+          Sem imagem ainda. É ela que aparece na página da letra e na prévia do link quando
+          alguém compartilha.
+        </p>
+      )}
+
+      <label className="botao-arquivo">
+        {enviando ? 'Enviando...' : content.coverUrl ? 'Trocar imagem' : 'Enviar imagem'}
+        <input
+          type="file"
+          accept="image/*"
+          hidden
+          disabled={enviando}
+          onChange={(e) => enviar(e.target.files?.[0])}
+        />
+      </label>
+
+      {content.coverUrl && (
+        <button
+          type="button"
+          className="secundario"
+          disabled={enviando}
+          onClick={() => admin.definirCapa(content.id, null).then(aoMudar)}
+        >
+          Remover imagem
+        </button>
+      )}
+
+      <p className="nota">
+        Pode mandar a imagem grande, do arquivo de impressão. O sistema reduz sozinho para o
+        tamanho certo do site e monta o cartão do compartilhamento.
+      </p>
+      {/* O site guarda a página pronta por meio minuto para não pesar no
+          servidor a cada visita. Sem este aviso, quem acabou de trocar a imagem
+          abre a letra, vê a antiga e acha que não salvou. */}
+      <p className="nota">
+        Na página da letra a troca aparece em até meio minuto.
+      </p>
+
+      {erro && <p className="erro">{erro}</p>}
+    </div>
   )
 }
 

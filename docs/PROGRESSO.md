@@ -395,6 +395,57 @@ contato em `legal.ts`, que está com um e-mail de exemplo.
 contas pelo mesmo e-mail. **Bloqueado por ele:** precisa criar o projeto no Google Cloud
 e enviar Client ID e Client Secret — e isso, por sua vez, depende do domínio.
 
+### 14/08 — Conteúdo real: imagem, áudio e compartilhamento
+
+**A troca de PNG para JPG saiu pela culatra, e o diagnóstico importa.** O JPG que ele
+mandou tem **9,3 MB — quase 4× o PNG anterior**: 4419×6250 px, 27,6 megapixels, o
+**arquivo de impressão** (A4 a ~530 DPI). O formato estava certo; a resolução é que
+anulava o ganho. Medido no arquivo real dele:
+
+| Largura | JPG q82 | WebP q82 |
+|---|---|---|
+| 1200 px | 336 KB | 223 KB |
+
+**Solução escolhida: o servidor reduz, não o cliente.** Ele tem 26 letras para preparar;
+manter duas exportações de cada uma é tarefa recorrente que uma hora sai errada. Agora
+manda o arquivo de impressão e o `StorageService` gera:
+
+- a **versão do site**, 1200 px, ~340 KB (28× menor), e **não guarda o original** — quem
+  quer a arte em alta tem o PDF; guardar as duas custaria 250 MB à toa;
+- o **cartão 1200×630** da prévia do link, com a arte inteira encaixada e o fundo na cor
+  média da própria imagem.
+
+**Por que o cartão existe:** a arte é retrato A4 e o WhatsApp recorta previews em
+formato largo — o corte comeria a marca SANTTIFY no topo e o selo embaixo, justamente o
+que ele pôs ali. E um `og:image` de 9 MB simplesmente **não gera prévia nenhuma**, o que
+mataria o fluxo de compartilhamento que ele descreveu no ponto 7.
+
+| Entregue | |
+|---|---|
+| Capa no painel | Envio, prévia, troca e remoção, com aviso de que pode mandar o arquivo grande |
+| Capa na página | Abaixo do título, com teto de 52vh para o player não cair abaixo da dobra |
+| Cartão de compartilhamento | `og:image` 1200×630 com largura e altura declaradas |
+| Recado ao compartilhar | Caixa antes do envio; o texto vai na mensagem, o cartão vem da página |
+| Segundo campo de áudio | **Removido** — 23 blocos vazios apagados; ele confirmou um MP3 por letra |
+
+**Defeito corrigido de passagem:** nome de arquivo com acento chegava como `diÃ¡rio.jpg`
+(Multer entrega `originalname` em latin1) e virava o título da mídia no painel — com 26
+arquivos em português, apareceria em quase todos.
+
+**Verificado:** upload real do arquivo de 9,3 MB dele ponta a ponta (1,8 s), prévia no
+painel, capa na página, `og:image` apontando para o cartão de 67 KB, e a caixa de recado.
+A arte da letra A **ficou publicada no ambiente de teste** para ele ver funcionando.
+
+**Ponto de atenção:** a página fica guardada por 30 s. Quem troca a imagem e abre a letra
+na hora vê a antiga — por isso o painel avisa "em até meio minuto".
+
+**Sobre mais de uma música por letra:** já é possível sem mudar nada. A página é uma
+lista de blocos; ele acrescenta outro bloco de áudio pelo painel quando quiser. O que
+saiu foi só o segundo campo **vazio por padrão**.
+
+**QR Code:** ele pediu para gerar sozinho — **já era assim**. O painel mostra o QR de
+cada letra e oferece download em **SVG**, o formato certo para impressão.
+
 ### O domínio destrava três coisas de uma vez
 
 Decisão única, ainda pendente, que bloqueia: **os QR Codes** (o endereço fica gravado

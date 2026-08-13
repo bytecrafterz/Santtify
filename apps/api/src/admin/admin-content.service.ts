@@ -254,7 +254,16 @@ export class AdminContentService {
   }
 
   async registrarMidia(
-    dados: { url: string; kind: MediaKind; mimeType: string; sizeBytes: number; title: string },
+    dados: {
+      url: string
+      kind: MediaKind
+      mimeType: string
+      sizeBytes: number
+      title: string
+      shareCardUrl?: string
+      width?: number
+      height?: number
+    },
     adminId: string,
   ) {
     return this.prisma.mediaAsset.create({
@@ -264,9 +273,50 @@ export class AdminContentService {
         mimeType: dados.mimeType,
         sizeBytes: dados.sizeBytes,
         title: dados.title,
+        shareCardUrl: dados.shareCardUrl ?? null,
+        width: dados.width ?? null,
+        height: dados.height ?? null,
         uploadedById: adminId,
       },
     })
+  }
+
+  /**
+   * Define a capa da letra a partir de uma mídia já enviada.
+   *
+   * A capa não é enfeite: é ela que aparece na prévia do link quando alguém
+   * compartilha no WhatsApp, e é por isso que o cliente desenhou a arte.
+   */
+  async definirCapa(contentId: string, assetId: string | null, adminId: string) {
+    const content = await this.prisma.content.findUnique({
+      where: { id: contentId },
+      select: { id: true, projectId: true },
+    })
+    if (!content) throw new NotFoundException('Conteúdo não encontrado')
+
+    let coverUrl: string | null = null
+    let shareCardUrl: string | null = null
+    if (assetId) {
+      const asset = await this.prisma.mediaAsset.findUnique({
+        where: { id: assetId },
+        select: { url: true, kind: true, shareCardUrl: true },
+      })
+      if (!asset || asset.kind !== MediaKind.IMAGE) {
+        throw new BadRequestException('A capa precisa ser uma imagem.')
+      }
+      coverUrl = asset.url
+      shareCardUrl = asset.shareCardUrl
+    }
+
+    const atualizado = await this.prisma.content.update({
+      where: { id: contentId },
+      data: { coverUrl, shareCardUrl },
+      select: { id: true, coverUrl: true, shareCardUrl: true },
+    })
+    await this.auditar(adminId, content.projectId, 'content.cover', 'Content', contentId, {
+      coverUrl,
+    })
+    return atualizado
   }
 
   /** Metadados analíticos do conteúdo — o pedido final do cliente. */

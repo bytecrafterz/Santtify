@@ -39,6 +39,7 @@ export interface Conteudo {
   subtitle: string | null
   summary: string | null
   coverUrl: string | null
+  shareCardUrl: string | null
   position: number
   blocks: Bloco[]
   stats: { views: number; likes: number; comments: number; shares: number }

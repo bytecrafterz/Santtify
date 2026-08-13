@@ -1505,3 +1505,79 @@ h3 {
   line-height: 1.5;
   color: var(--cor-texto-suave);
 }
+
+/* A capa da letra, no painel. */
+.capa-editor {
+  margin-bottom: 20px;
+}
+
+.capa-previa {
+  display: block;
+  width: 100%;
+  max-height: 340px;
+  object-fit: contain;
+  background: var(--cor-fundo);
+  border: 1px solid var(--cor-borda);
+  border-radius: 10px;
+  margin: 8px 0;
+}
+
+/* Rótulo que se comporta como botão, porque input[type=file] não estiliza. */
+.botao-arquivo {
+  display: block;
+  margin-top: 10px;
+  padding: 12px;
+  border: 0;
+  border-radius: 10px;
+  background: var(--cor-primaria);
+  color: #fff;
+  font-weight: 700;
+  font-size: 15px;
+  text-align: center;
+  cursor: pointer;
+}
+
+.capa-editor > .secundario {
+  margin-top: 8px;
+  width: 100%;
+  padding: 10px;
+  border-radius: 10px;
+  background: transparent;
+  color: var(--cor-texto-suave);
+  border: 1px solid var(--cor-borda);
+  font-family: inherit;
+  font-size: 14px;
+  cursor: pointer;
+}
+
+/* A caixa de recado antes de compartilhar. */
+.caixa-compartilhar {
+  margin-top: 12px;
+}
+
+.caixa-compartilhar textarea {
+  width: 100%;
+  margin-top: 8px;
+  font-size: 16px; /* evita o zoom do Safari no iPhone */
+  font-family: inherit;
+  padding: 12px 14px;
+  border: 1px solid var(--cor-borda);
+  border-radius: 10px;
+  background: var(--cor-fundo);
+  color: var(--cor-texto);
+  resize: vertical;
+}
+
+/* A arte da letra, no topo da página do conteúdo. */
+.capa-conteudo {
+  display: block;
+  width: 100%;
+  height: auto;
+  /* A arte é retrato A4. Sem teto, ela ocuparia a tela inteira do celular e o
+     botão de tocar ficaria abaixo da dobra — e quem chega pelo QR vem ouvir. */
+  max-height: 52vh;
+  object-fit: contain;
+  border-radius: 12px;
+  margin: 12px 0 4px;
+  background: var(--cor-fundo);
+}
