@@ -103,6 +103,23 @@ export function FormularioDeAuth({
 
       {erro && <p className="erro" role="alert">{erro}</p>}
 
+      {/* O aceite fica ligado ao próprio botão, e não numa caixinha separada
+          que a pessoa marca sem ler. É comunidade infantil: quem cria conta
+          precisa ver as regras existirem, no momento em que está entrando. */}
+      {cadastro && (
+        <p className="aceite">
+          Ao criar a conta você concorda com os{' '}
+          <Link href="/termos" target="_blank">
+            termos de uso
+          </Link>{' '}
+          e com a{' '}
+          <Link href="/privacidade" target="_blank">
+            política de privacidade
+          </Link>
+          . Esta é uma comunidade cristã, infantil e familiar.
+        </p>
+      )}
+
       <button type="submit" disabled={enviando}>
         {enviando ? 'Aguarde...' : cadastro ? 'Criar minha conta' : 'Entrar'}
       </button>

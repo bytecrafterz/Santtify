@@ -372,8 +372,41 @@ mandava tocar. Trocado por intenção explícita — só toca quando alguém ped
 **Verificado:** o caminho inteiro num navegador **sem** o atalho de autoplay, adiantando
 o áudio até o fim para provar a passagem automática de verdade.
 
+#### Páginas legais ✔ (defeito corrigido)
+
+**O banner de consentimento apontava para `/privacidade`, que não existia — 404.** O aviso
+de LGPD que todo visitante vê levava a lugar nenhum. Corrigido: `/privacidade` e `/termos`
+existem, se referenciam, e o cadastro passou a mostrar o aceite com os dois links antes do
+botão de criar conta.
+
+O texto foi escrito a partir do que o sistema **realmente** faz, campo por campo: IP
+truncado (IPv4 /24, IPv6 /64) e depois transformado em hash irreversível, user agent em
+hash, consentimento com versão e data, retenção de 1095 dias. Os dados do responsável e os
+números ficam em `apps/web/src/lib/legal.ts`, um lugar só.
+
+> ⚠️ `RETENCAO_EVENTOS_DIAS` e `VERSAO_DA_POLITICA` precisam continuar iguais a
+> `EVENT_RETENTION_DAYS` e `CONSENT_POLICY_VERSION` do servidor. Divergir significa a
+> página prometer uma coisa e o sistema fazer outra.
+
+**Pendente do cliente:** revisar os textos (ele é o responsável legal) e preencher o
+contato em `legal.ts`, que está com um e-mail de exemplo.
+
 **Pendente:** login por Google, com preservação da atribuição no desvio e ligação de
-contas pelo mesmo e-mail.
+contas pelo mesmo e-mail. **Bloqueado por ele:** precisa criar o projeto no Google Cloud
+e enviar Client ID e Client Secret — e isso, por sua vez, depende do domínio.
+
+### O domínio destrava três coisas de uma vez
+
+Decisão única, ainda pendente, que bloqueia: **os QR Codes** (o endereço fica gravado
+dentro de cada um e o material impresso morre se mudar), **a publicação em produção**, e
+**o login com Google** (o endereço de redirecionamento contém o domínio).
+
+**Hospedagem — resposta dada em 13/08 sobre a Hostinger:** serve, mas **só o VPS (planos
+KVM)**. Os planos baratos de hospedagem compartilhada são para PHP/WordPress — sem root,
+sem Docker, sem Node em processo contínuo, sem PostgreSQL — e o dinheiro seria perdido.
+Especificação: KVM 1 (mínimo) ou KVM 2, Ubuntu 24.04, **backup ativado**, e data center
+escolhido por onde estão os compradores (São Paulo se a maioria for do Brasil). Alertado
+também que o preço anunciado vale para contratos longos e a renovação é bem mais cara.
 
 ### Perguntas abertas com ele
 
@@ -482,3 +515,4 @@ Todas em [docs/mensagens/](mensagens/), com o contexto e a intenção de cada um
 | `2026-08-12-mvp-reduzido.md` | **MVP cortado ao essencial** — e quais itens da lista dele são trabalho novo |
 | `2026-08-13-resposta-nucleo-social.md` | **Ameaça de disputa na Workana** — ambiguidade × ausência, e a concessão do controle administrativo |
 | `2026-08-13-fechamento-tres-pontos.md` | **Acordo de fechamento** — ele desiste de feed, seguir, vídeo e múltiplas fotos |
+| `2026-08-13-passo-a-passo-google.md` | Passo a passo para ele criar o acesso do Google (e as duas armadilhas) |

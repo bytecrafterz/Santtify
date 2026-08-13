@@ -1470,3 +1470,38 @@ h3 {
   font-size: 14px;
   color: var(--cor-texto-suave);
 }
+
+/* Páginas legais: leitura longa, então linha mais alta e largura confortável. */
+.texto-legal h2 {
+  margin-top: 28px;
+  font-size: 18px;
+}
+
+.texto-legal p,
+.texto-legal li {
+  line-height: 1.65;
+}
+
+.texto-legal ul {
+  padding-left: 20px;
+  margin: 10px 0;
+}
+
+.texto-legal li {
+  margin-bottom: 8px;
+}
+
+.texto-legal code {
+  padding: 1px 5px;
+  border-radius: 4px;
+  background: var(--cor-borda);
+  font-size: 14px;
+}
+
+/* O aceite, logo acima do botão de criar conta. */
+.aceite {
+  margin: 4px 0 0;
+  font-size: 13px;
+  line-height: 1.5;
+  color: var(--cor-texto-suave);
+}
