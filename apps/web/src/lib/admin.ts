@@ -59,6 +59,15 @@ export interface DetalheAdmin {
   }
 }
 
+export interface ComentarioAdmin {
+  id: string
+  body: string
+  status: 'PUBLISHED' | 'HIDDEN' | 'DELETED'
+  createdAt: string
+  user: { id: string; displayName: string; email: string; status: 'ACTIVE' | 'SUSPENDED' | 'DELETED' }
+  content: { slug: string; title: string }
+}
+
 export interface PublicacaoPendente {
   id: string
   body: string | null
@@ -68,8 +77,19 @@ export interface PublicacaoPendente {
   content: { slug: string; title: string; subtitle: string | null; project: { slug: string } }
 }
 
-async function chamar<T>(caminho: string, init: RequestInit = {}, tentouRenovar = false): Promise<T> {
-  const res = await fetch(`${API_URL}/admin${caminho}`, {
+/** Igual ao `chamar`, mas sem o prefixo `/admin` — a remoção de comentário é a
+ *  mesma rota que o autor usa, e o servidor decide pelo papel de quem chama. */
+function chamarRaiz<T>(caminho: string, init: RequestInit = {}): Promise<T> {
+  return chamar<T>(caminho, init, false, true)
+}
+
+async function chamar<T>(
+  caminho: string,
+  init: RequestInit = {},
+  tentouRenovar = false,
+  semPrefixo = false,
+): Promise<T> {
+  const res = await fetch(`${API_URL}${semPrefixo ? '' : '/admin'}${caminho}`, {
     ...init,
     credentials: 'include',
     headers: {
@@ -80,7 +100,7 @@ async function chamar<T>(caminho: string, init: RequestInit = {}, tentouRenovar 
   })
 
   if (res.status === 401 && !tentouRenovar) {
-    if (await renovarSessao()) return chamar<T>(caminho, init, true)
+    if (await renovarSessao()) return chamar<T>(caminho, init, true, semPrefixo)
   }
   if (res.status === 204) return undefined as T
 
@@ -141,6 +161,22 @@ export const admin = {
     dados.append('file', arquivo)
     return chamar<AssetAdmin>('/upload', { method: 'POST', body: dados })
   },
+
+  /** Comentários recentes do projeto, para revisar e agir. */
+  comentarios: (projectSlug: string) =>
+    chamar<{ project: { name: string }; comments: ComentarioAdmin[] }>(
+      `/projects/${projectSlug}/comments`,
+    ),
+
+  /** Bloqueia ou libera uma conta. */
+  bloquearConta: (userId: string, bloquear: boolean, motivo?: string) =>
+    chamar<{ id: string; displayName: string; status: string }>(`/users/${userId}/block`, {
+      method: 'POST',
+      body: JSON.stringify({ bloquear, motivo }),
+    }),
+
+  /** Apaga um comentário impróprio. Rota fora do prefixo do painel. */
+  apagarComentario: (id: string) => chamarRaiz<void>(`/comments/${id}`, { method: 'DELETE' }),
 
   /** Fila de aprovação das fotos publicadas no My Post. */
   publicacoesPendentes: (projectSlug: string) =>

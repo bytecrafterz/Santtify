@@ -53,6 +53,11 @@ class SalvarBlocoDto {
   @IsOptional() @IsString() assetId?: string | null
 }
 
+class BloquearContaDto {
+  @IsBoolean() bloquear!: boolean
+  @IsOptional() @IsString() @MaxLength(300) motivo?: string
+}
+
 class AprovacaoDeFotoDto {
   @IsBoolean() exigir!: boolean
 }
@@ -132,6 +137,21 @@ export class AdminController {
       req.usuario!.id,
     )
     return projeto
+  }
+
+  // ── Moderação da comunidade ──────────────────────────────────────
+
+  /** Comentários recentes do projeto, para o dono revisar e agir. */
+  @Get('projects/:projectSlug/comments')
+  comentarios(@Param('projectSlug') projectSlug: string) {
+    return this.conteudo.comentariosRecentes(projectSlug)
+  }
+
+  /** Bloqueia ou libera uma conta. */
+  @Post('users/:id/block')
+  @HttpCode(200)
+  bloquearConta(@Param('id') id: string, @Body() dto: BloquearContaDto, @Req() req: Request) {
+    return this.conteudo.bloquearConta(id, dto.bloquear, req.usuario!.id, dto.motivo)
   }
 
   @Post('posts/:id/moderate')

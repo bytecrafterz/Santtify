@@ -1337,3 +1337,21 @@ h3 {
 .aviso-comunidade p:last-child {
   margin-bottom: 0;
 }
+
+/* Moderação da comunidade: comentário apagado e conta bloqueada. */
+.comentario-apagado {
+  text-decoration: line-through;
+  color: var(--cor-texto-suave);
+}
+
+.etiqueta-bloqueado {
+  display: inline-block;
+  margin-left: 6px;
+  padding: 1px 8px;
+  border-radius: 999px;
+  background: #ffeceb;
+  color: #9b2c22;
+  font-style: normal;
+  font-size: 12px;
+  font-weight: 600;
+}

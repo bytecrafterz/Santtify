@@ -335,6 +335,79 @@ export class AdminContentService {
     return atual
   }
 
+  // ── Moderação da comunidade ───────────────────────────────────────
+
+  /**
+   * Comentários recentes do projeto, para o dono ver e agir.
+   *
+   * Mostra os apagados junto, marcados: quem modera precisa conseguir conferir
+   * o que já resolveu, e uma lista onde o item some no instante da ação deixa
+   * a dúvida de se a ação funcionou.
+   */
+  async comentariosRecentes(projectSlug: string, limite = 100) {
+    const project = await this.projeto(projectSlug)
+    const comments = await this.prisma.comment.findMany({
+      where: { projectId: project.id },
+      orderBy: { createdAt: 'desc' },
+      take: limite,
+      select: {
+        id: true,
+        body: true,
+        status: true,
+        createdAt: true,
+        user: { select: { id: true, displayName: true, email: true, status: true } },
+        content: { select: { slug: true, title: true } },
+      },
+    })
+    return { project, comments }
+  }
+
+  /**
+   * Bloqueia ou libera uma conta.
+   *
+   * Bloquear apaga também os tokens de renovação da pessoa. Sem isso, a sessão
+   * já aberta continuaria funcionando até o token curto expirar, e "bloqueei e
+   * ele continua comentando" é exatamente o tipo de coisa que faz o dono
+   * perder a confiança na ferramenta.
+   *
+   * Administrador não bloqueia administrador: evita que uma conta invadida
+   * derrube o dono do próprio painel.
+   */
+  async bloquearConta(userId: string, bloquear: boolean, adminId: string, motivo?: string) {
+    const alvo = await this.prisma.user.findUnique({
+      where: { id: userId },
+      select: { id: true, displayName: true, email: true, role: true, status: true },
+    })
+    if (!alvo) throw new NotFoundException('Conta não encontrada')
+    if (alvo.role === 'ADMIN') {
+      throw new BadRequestException('Não é possível bloquear uma conta de administrador')
+    }
+
+    const atual = await this.prisma.user.update({
+      where: { id: userId },
+      data: { status: bloquear ? 'SUSPENDED' : 'ACTIVE' },
+      select: { id: true, displayName: true, email: true, status: true },
+    })
+
+    if (bloquear) {
+      await this.prisma.refreshToken.deleteMany({ where: { userId } })
+    }
+
+    const projeto = await this.prisma.project.findFirst({ select: { id: true } })
+    if (projeto) {
+      await this.auditar(
+        adminId,
+        projeto.id,
+        bloquear ? 'user.block' : 'user.unblock',
+        'User',
+        userId,
+        { motivo: motivo ?? null, email: alvo.email },
+      )
+    }
+
+    return atual
+  }
+
   private normalizarSlug(bruto: string): string {
     return bruto
       .trim()

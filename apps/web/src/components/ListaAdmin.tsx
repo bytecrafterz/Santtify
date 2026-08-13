@@ -79,6 +79,11 @@ export function ListaAdmin({ projectSlug }: { projectSlug: string }) {
         <small>visitantes, origem, propagação e conteúdos mais acessados</small>
       </Link>
 
+      <Link className="bloco linha atalho-metricas" href={`/${projectSlug}/admin/comunidade`}>
+        <span>Comunidade</span>
+        <small>apagar comentário impróprio e bloquear conta</small>
+      </Link>
+
       {/* O atalho de Aprovações só aparece se houver algo esperando. Com o My
           Post fora da interface ninguém publica foto, então a fila fica vazia e
           um atalho para uma tela que nunca tem nada é ruído no painel de quem

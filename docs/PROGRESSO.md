@@ -19,7 +19,7 @@ triagem dos mockups) ou é fase seguinte, orçada e aguardando aprovação.
 | Commits | 15 |
 | Migrations | 5 |
 | Tabelas | 23 |
-| Suites de verificação | 4 (atribuição, social, propagação, foto) — todas passando |
+| Suites de verificação | 5 (atribuição, social, propagação, foto, moderação) — todas passando |
 
 ---
 
@@ -324,8 +324,34 @@ fotos** — 145 a 190 horas de exigência — e propôs encerrar com três ponto
 **Ganho colateral:** ele tirou o telefone do cadastro, o que encerra sozinho a objeção
 de 12/08 (telefone não verificado não é barreira).
 
-**Pendente de construção:** rota e botão de bloquear conta; playlist contínua A→Z;
-login por Google com preservação da atribuição e ligação de contas.
+**Confirmado por escrito por ele em 13/08**, incluindo os dois cuidados técnicos
+(atribuição sobrevivendo ao desvio do Google, e contas unificadas pelo mesmo e-mail).
+
+#### 1 de 3 entregue — Moderação da comunidade ✔
+
+Tela **Comunidade** no painel: lista os comentários do projeto e, em cada um, apaga o
+comentário ou bloqueia a conta de quem escreveu.
+
+| Decisão | Motivo |
+|---|---|
+| As duas ações na mesma tela | Na prática são o mesmo momento: ele lê o comentário e decide se remove só aquilo ou tira a pessoa |
+| Comentário apagado **fica na lista**, riscado | Item que some no instante da ação deixa a dúvida de se funcionou, e ele apaga duas vezes |
+| Bloquear **apaga os tokens de renovação** | Sem isso a sessão aberta sobreviveria; "bloqueei e ele continua comentando" destrói a confiança na ferramenta |
+| Bloquear **não** apaga o que a pessoa escreveu | São decisões separadas, e juntá-las tira a escolha dele |
+| Admin não bloqueia admin | Conta invadida não pode derrubar o dono do próprio painel |
+| Bloqueio e liberação vão para a auditoria | Com motivo, para reconstituir a decisão depois |
+
+**Verificado:** 21 checagens contra a API no ar (`verificar-moderacao.ts`) e o caminho
+inteiro no navegador — comentar, apagar, bloquear, e conferir que o comentário sumiu
+para quem não tem conta.
+
+**Defeito encontrado na própria verificação:** a limpeza do teste comparava o e-mail como
+foi digitado (`mod_Bia_...`) e o servidor grava em minúsculas (`mod_bia_...`), então a
+conta de teste sobrevivia à limpeza. Mesmo padrão de sempre — o teste passa e o dado
+fica errado.
+
+**Pendente:** playlist contínua A→Z; login por Google com preservação da atribuição e
+ligação de contas.
 
 ### Perguntas abertas com ele
 
@@ -362,6 +388,7 @@ npx tsx packages/db/prisma/verificar-atribuicao.ts   # 14 verificações
 npx tsx packages/db/prisma/verificar-social.ts       # 20 verificações
 npx tsx packages/db/prisma/verificar-propagacao.ts   # cadeia completa
 npx tsx packages/db/prisma/verificar-foto.ts         # 43 verificações da foto e da chave de aprovação
+npx tsx packages/db/prisma/verificar-moderacao.ts    # 21 verificações da moderação da comunidade
 ```
 
 ---
