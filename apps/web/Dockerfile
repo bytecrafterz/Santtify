@@ -11,7 +11,10 @@ RUN npm ci --workspace @pv/web --include-workspace-root
 FROM node:22-alpine AS build
 WORKDIR /app
 COPY --from=deps /app/node_modules ./node_modules
-COPY --from=deps /app/apps/web/node_modules ./apps/web/node_modules
+# Sem copiar apps/web/node_modules: o npm workspaces iça as dependências para a
+# raiz, e essa pasta não existe. A imagem da API copia a dela porque o argon2 é
+# módulo nativo e fica no workspace; aqui não há nenhum, e a linha equivalente
+# quebrava o build inteiro com "not found".
 COPY package.json package-lock.json ./
 COPY apps/web apps/web
 

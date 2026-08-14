@@ -42,6 +42,16 @@ done
 [ -z "$faltando" ] || morrer "segredos por preencher:$faltando"
 ok "segredos preenchidos"
 
+# A senha do banco é montada dentro do endereço de conexão. Com / + @ ou : no
+# meio, o endereço fica inválido e a API morre citando "porta inválida" — erro
+# que não aponta para a causa e custa meia hora para achar no servidor.
+case "$POSTGRES_PASSWORD" in
+  *[!A-Za-z0-9_.-]*)
+    morrer "POSTGRES_PASSWORD tem caractere que quebra o endereço do banco. Gere com: openssl rand -hex 24"
+    ;;
+esac
+ok "senha do banco é segura para o endereço de conexão"
+
 # O certificado é emitido na subida. Se o nome não aponta para cá, o Let's
 # Encrypt recusa — e recusa repetida entra em limite semanal.
 info "Conferindo o DNS de $DOMINIO"

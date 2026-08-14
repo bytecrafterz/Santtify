@@ -540,6 +540,36 @@ ficaria só do lado de fora. Conferido no banco: `CHECKOUT_CLICKED` com
 **Estado:** os dois campos estão no painel, **vazios de propósito**. O PDF de teste e o
 link falso foram retirados — botão apontando para página inexistente pareceria defeito.
 
+### 14/08 — Imagens de produção construídas e provadas pela primeira vez
+
+O Docker passou a estar disponível nesta máquina, então dei o passo que faltava: **rodar
+o deploy de verdade** antes do dia do deploy. Achou dois defeitos que só apareceriam no
+servidor, na frente do cliente.
+
+**1. A imagem do site não construía.** `apps/web/Dockerfile` copiava
+`apps/web/node_modules`, que **não existe**: o npm workspaces iça tudo para a raiz. A
+imagem da API passava porque o `argon2` é nativo e fica no workspace. Erro:
+`failed to compute cache key: "/app/apps/web/node_modules": not found`.
+
+**2. A senha do banco gerada como eu mesmo mandava quebrava a subida.** O exemplo dizia
+`openssl rand -base64 32`, que produz `/`, `+` e `=`. Uma barra no meio da senha invalida
+o endereço de conexão, e a API morre com **`invalid port number in database URL`** — uma
+mensagem que não aponta para a causa e custaria meia hora de procura no servidor.
+Corrigido em dois lugares: o exemplo agora manda `openssl rand -hex 24` para a senha do
+banco, e o `publicar.sh` recusa subir se a senha tiver caractere que quebre o endereço.
+
+**Provado ponta a ponta, em containers, contra um banco vazio:**
+
+| | |
+|---|---|
+| Imagens | API e site constroem |
+| Migrations | 11 aplicadas sozinhas pelo entrypoint |
+| API | sobe e responde `/health` |
+| `seed.ts` no container | projeto, 26 letras, 26 QR Codes, 78 blocos |
+| `criar-admin.ts` no container | administrador criado |
+
+Falta só o que exige domínio real: Caddy, certificado e o redirecionamento de HTTP.
+
 ### Implantação pronta para rodar (14/08)
 
 Escrita enquanto o domínio não existe, para que no dia seja um comando e não uma
