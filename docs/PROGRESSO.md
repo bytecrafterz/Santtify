@@ -666,8 +666,12 @@ ver e dar retorno; não é lançamento.
 
 Admin dele: `rossandro@alfabeto.local` / `Alfabeto5639Vivo`
 
-> **Cuidado:** é servidor de desenvolvimento, sem supervisor. Já caiu três vezes, duas
-> por ação minha. **Conferir antes de apontar o cliente para ele:**
+> **Agora tem vigia.** `deploy/manter-no-ar.sh` confere a cada 30 s e religa o que
+> morreu. Provado matando a API de propósito: voltou sozinha em 14 s. Subir com
+> `nohup bash deploy/manter-no-ar.sh > /tmp/vigia.log 2>&1 &`. Não é para produção —
+> lá quem faz isso é o Docker com `restart: unless-stopped`.
+>
+> **Ainda vale conferir antes de apontar o cliente para ele:**
 > `curl -s -o /dev/null -w '%{http_code}\n' http://49.12.170.6:3100/jesus-alfabeto-saudavel`
 >
 > E **nunca rodar `next build` na mesma árvore do servidor de desenvolvimento** — o
