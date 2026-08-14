@@ -97,6 +97,7 @@ export class ContentService {
             id: true,
             label: true,
             category: { select: { slug: true, name: true, position: true } },
+            imageAsset: { select: { url: true } },
             asset: { select: { url: true, mimeType: true, durationMs: true } },
           },
         },
@@ -110,7 +111,9 @@ export class ContentService {
         slug: c.slug,
         title: c.title,
         subtitle: c.subtitle,
-        coverUrl: c.coverUrl,
+        // A arte da própria faixa quando existir; a capa da letra como
+        // reserva, para o tocador nunca ficar sem imagem no meio da fila.
+        coverUrl: b.imageAsset?.url ?? c.coverUrl,
         // O rótulo do bloco descreve a faixa ("Explicação e música"); a
         // categoria é o que agrupa as faixas entre letras diferentes.
         rotulo: b.label,
@@ -156,6 +159,7 @@ export class ContentService {
         blocks: {
           orderBy: { position: 'asc' },
           include: {
+            imageAsset: { select: { url: true, width: true, height: true } },
             asset: {
               select: { id: true, kind: true, url: true, mimeType: true, durationMs: true, title: true, altText: true },
             },
@@ -210,6 +214,7 @@ export class ContentService {
           text: b.text,
           url: b.url,
           asset: b.asset,
+          arte: b.imageAsset?.url ?? null,
           meta: b.meta,
         })),
         stats: content.stats ?? { views: 0, likes: 0, comments: 0, shares: 0 },

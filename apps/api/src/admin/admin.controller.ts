@@ -61,6 +61,10 @@ class MoverBlocoDto {
   @IsIn(['cima', 'baixo']) direcao!: 'cima' | 'baixo'
 }
 
+class ArteDoBlocoDto {
+  @IsOptional() @IsString() assetId?: string | null
+}
+
 class ClassificarBlocoDto {
   @IsOptional() @IsString() categoryId?: string | null
 }
@@ -193,6 +197,16 @@ export class AdminController {
   @Patch('blocks/:id/move')
   moverBloco(@Param('id') id: string, @Body() dto: MoverBlocoDto, @Req() req: Request) {
     return this.conteudo.moverBloco(id, dto.direcao, req.usuario!.id)
+  }
+
+  /** Define a arte própria da faixa. */
+  @Patch('blocks/:id/image')
+  definirArteDoBloco(
+    @Param('id') id: string,
+    @Body() dto: ArteDoBlocoDto,
+    @Req() req: Request,
+  ) {
+    return this.conteudo.definirArteDoBloco(id, dto.assetId ?? null, req.usuario!.id)
   }
 
   /** Classifica um áudio numa categoria (ou tira dela). */

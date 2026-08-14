@@ -60,12 +60,21 @@ function CorpoDoBloco({
 
     case 'AUDIO':
       return bloco.asset?.url ? (
-        <MidiaRastreada
-          bloco={bloco}
-          projectId={projectId}
-          contentId={contentId}
-          elemento="audio"
-        />
+        <>
+          {/* A arte desta faixa, quando existe. Cada áudio tem a sua: o palco
+              na música, o versículo na memorização, a cena da oração. Vem
+              antes do player porque é o que a pessoa olha enquanto ouve. */}
+          {bloco.arte && (
+            // eslint-disable-next-line @next/next/no-img-element
+            <img className="arte-faixa" src={bloco.arte} alt={bloco.label ?? 'Arte da faixa'} />
+          )}
+          <MidiaRastreada
+            bloco={bloco}
+            projectId={projectId}
+            contentId={contentId}
+            elemento="audio"
+          />
+        </>
       ) : (
         <p className="bloco-vazio">Áudio ainda não enviado.</p>
       )

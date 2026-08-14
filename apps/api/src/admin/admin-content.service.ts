@@ -73,7 +73,7 @@ export class AdminContentService {
     const content = await this.prisma.content.findUnique({
       where: { projectId_slug: { projectId: project.id, slug: contentSlug } },
       include: {
-        blocks: { orderBy: { position: 'asc' }, include: { asset: true } },
+        blocks: { orderBy: { position: 'asc' }, include: { asset: true, imageAsset: true } },
         metadata: true,
         shortLink: { where: { kind: 'CONTENT_QR', active: true }, take: 1 },
       },
@@ -291,6 +291,41 @@ export class AdminContentService {
       direcao,
     })
     return { movido: true }
+  }
+
+  /**
+   * Define (ou remove) a arte própria de uma faixa.
+   *
+   * Separada da capa da letra de propósito: a capa é uma só e vai na prévia do
+   * link compartilhado; a arte da faixa muda a cada áudio e é o que a pessoa vê
+   * enquanto ouve aquela faixa.
+   */
+  async definirArteDoBloco(blocoId: string, assetId: string | null, adminId: string) {
+    const bloco = await this.prisma.contentBlock.findUnique({
+      where: { id: blocoId },
+      select: { id: true, content: { select: { projectId: true } } },
+    })
+    if (!bloco) throw new NotFoundException('Bloco não encontrado')
+
+    if (assetId) {
+      const asset = await this.prisma.mediaAsset.findUnique({
+        where: { id: assetId },
+        select: { kind: true },
+      })
+      if (!asset || asset.kind !== MediaKind.IMAGE) {
+        throw new BadRequestException('A arte da faixa precisa ser uma imagem.')
+      }
+    }
+
+    const atualizado = await this.prisma.contentBlock.update({
+      where: { id: blocoId },
+      data: { imageAssetId: assetId },
+      select: { id: true, imageAssetId: true },
+    })
+    await this.auditar(adminId, bloco.content.projectId, 'block.image', 'ContentBlock', blocoId, {
+      imageAssetId: assetId,
+    })
+    return atualizado
   }
 
   /** Classifica (ou desclassifica) um áudio numa categoria. */

@@ -31,6 +31,8 @@ export interface Bloco {
   text: string | null
   url: string | null
   asset: Asset | null
+  /** Arte própria desta faixa, quando o dono enviou uma. */
+  arte: string | null
   meta: Record<string, unknown>
 }
 

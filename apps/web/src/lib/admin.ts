@@ -36,6 +36,8 @@ export interface AssetAdmin {
 
 export interface BlocoAdmin {
   categoryId?: string | null
+  imageAssetId?: string | null
+  imageAsset?: { url: string } | null
   id: string
   type: TipoBloco
   label: string | null
@@ -207,6 +209,10 @@ export const admin = {
       method: 'PATCH',
       body: JSON.stringify({ categoryId }),
     }),
+
+  /** Define (ou remove) a arte própria de uma faixa. */
+  definirArteDoBloco: (blocoId: string, assetId: string | null) =>
+    chamar(`/blocks/${blocoId}/image`, { method: 'PATCH', body: JSON.stringify({ assetId }) }),
 
   moverBloco: (blocoId: string, direcao: 'cima' | 'baixo') =>
     chamar<{ movido: boolean }>(`/blocks/${blocoId}/move`, {

@@ -167,6 +167,12 @@ export function Playlist({
 
       <div className="bloco tocador">
         <span className="bloco-rotulo">Tocando agora</span>
+        {/* A arte troca junto com a faixa. É o que faz "só memorizações" ficar
+            visualmente coerente da letra A à Z. */}
+        {faixa.coverUrl && (
+          // eslint-disable-next-line @next/next/no-img-element
+          <img className="arte-tocador" src={faixa.coverUrl} alt={faixa.title} />
+        )}
         <p className="tocador-titulo">
           {faixa.title}
           {faixa.subtitle && <small> — {faixa.subtitle}</small>}

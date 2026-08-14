@@ -540,6 +540,38 @@ ficaria só do lado de fora. Conferido no banco: `CHECKOUT_CLICKED` com
 **Estado:** os dois campos estão no painel, **vazios de propósito**. O PDF de teste e o
 link falso foram retirados — botão apontando para página inexistente pareceria defeito.
 
+### 14/08 — Arte por faixa (o que as três imagens revelaram)
+
+Ele mandou três imagens e dois áudios novos. **Não eram três versões da mesma coisa: era
+uma arte por ÁUDIO** — palco para a música, quadro do versículo para a memorização, cena
+de oração para a oração. E o modelo só tinha lugar para **uma imagem por letra**
+(`Content.coverUrl`), então duas das três não teriam onde ficar.
+
+`ContentBlock.imageAssetId` resolve: cada faixa carrega a própria arte, e a capa da
+letra continua sendo outra coisa — é ela que vai na prévia do link compartilhado.
+
+| Onde aparece | Comportamento |
+|---|---|
+| Página da letra | A arte vem **antes** do player daquela faixa, com teto de altura para o botão de tocar não cair abaixo da dobra |
+| Tocador da playlist | A arte **troca junto com a faixa** — é o que faz "só memorizações" ficar coerente de A a Z |
+| Sem arte própria | Cai para a capa da letra, para o tocador nunca ficar sem imagem no meio da fila |
+| Painel | Envio da arte dentro do próprio bloco de áudio, ao lado da categoria |
+
+**Consequência de produção que ele confirmou ("Fechou"):** não são 26 imagens, são
+**26 letras × 4 categorias ≈ 104**. Vale a pena estar escrito, porque é trabalho dele.
+
+**Letra A completa, com o material real:**
+
+| Faixa | Categoria | Arte | Áudio |
+|---|---|---|---|
+| Explicação e música | Explicação | — | 4m16s, 5,7 MB |
+| Música | Música | 338 KB | 5m32s, 7,2 MB |
+| Memorize e repita — João 14:15 | Memorização | 279 KB | 3m00s, 4,0 MB |
+| Oração — Romanos 5:5 | Oração | 310 KB | 6m29s, 8,7 MB |
+
+**Peso:** ~25,6 MB de áudio por letra → **~0,65 GB** nas 26. As artes chegam com 8–10 MB
+e ficam com ~300 KB cada.
+
 ### 14/08 — Selo PV nos indicadores, com contagem global
 
 Pedido dele: o PV sai do rodapé e passa a ficar **no fim da fileira de indicadores** de

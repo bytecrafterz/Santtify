@@ -160,6 +160,15 @@ model ContentBlock {
   text      String?
   assetId   String?     @db.Uuid
   asset     MediaAsset? @relation(fields: [assetId], references: [id], onDelete: SetNull)
+
+  /// Arte própria desta faixa.
+  ///
+  /// O cliente manda uma imagem por ÁUDIO, e não uma por letra: a música tem o
+  /// palco, a memorização tem o versículo, a oração tem a cena da oração. A
+  /// capa da letra (`Content.coverUrl`) continua existindo e é outra coisa —
+  /// é ela que vai na prévia do link quando alguém compartilha.
+  imageAssetId String?     @db.Uuid
+  imageAsset   MediaAsset? @relation("BlockImage", fields: [imageAssetId], references: [id], onDelete: SetNull)
   /// URL externa, para EMBED e LINK.
   url       String?
   meta      Json        @default("{}")
@@ -169,6 +178,7 @@ model ContentBlock {
 
   @@index([contentId, position])
   @@index([categoryId])
+  @@index([imageAssetId])
   @@map("content_blocks")
 }
 
@@ -240,8 +250,9 @@ model MediaAsset {
 
   createdAt DateTime @default(now())
 
-  blocks ContentBlock[]
-  posts  Post[]        @relation("PostImage")
+  blocks      ContentBlock[]
+  blockImages ContentBlock[] @relation("BlockImage")
+  posts       Post[]         @relation("PostImage")
 
   @@map("media_assets")
 }

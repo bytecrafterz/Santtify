@@ -1829,3 +1829,56 @@ h3 {
   text-align: center;
   font-size: 13px;
 }
+
+/* A arte de cada faixa. */
+.arte-faixa,
+.arte-tocador {
+  display: block;
+  width: 100%;
+  height: auto;
+  border-radius: 10px;
+  margin-bottom: 10px;
+  background: var(--cor-fundo);
+}
+
+/* Teto de altura: a arte é retrato A4, e sem limite ela empurraria o botão de
+   tocar para fora da tela do celular. */
+.arte-faixa {
+  max-height: 46vh;
+  object-fit: contain;
+}
+
+.arte-tocador {
+  max-height: 38vh;
+  object-fit: contain;
+  margin-top: 8px;
+}
+
+/* Arte da faixa, no painel. */
+.arte-editor {
+  margin: 10px 0;
+}
+
+.arte-previa {
+  display: block;
+  width: 100%;
+  max-height: 240px;
+  object-fit: contain;
+  background: var(--cor-fundo);
+  border: 1px solid var(--cor-borda);
+  border-radius: 10px;
+  margin-bottom: 8px;
+}
+
+.arte-editor .secundario {
+  margin-top: 8px;
+  width: 100%;
+  padding: 10px;
+  border-radius: 10px;
+  background: transparent;
+  color: var(--cor-texto-suave);
+  border: 1px solid var(--cor-borda);
+  font-family: inherit;
+  font-size: 14px;
+  cursor: pointer;
+}

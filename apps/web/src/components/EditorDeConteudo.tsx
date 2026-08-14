@@ -317,6 +317,62 @@ function Capa({ content, aoMudar }: { content: DetalheAdmin['content']; aoMudar:
   )
 }
 
+/** A arte de uma faixa, no painel. */
+function ArteDaFaixa({ bloco, aoMudar }: { bloco: BlocoAdmin; aoMudar: () => Promise<void> }) {
+  const [enviando, definirEnviando] = useState(false)
+  const [erro, definirErro] = useState<string | null>(null)
+
+  async function enviar(arquivo: File | undefined) {
+    if (!arquivo) return
+    definirErro(null)
+    definirEnviando(true)
+    try {
+      const asset = await admin.enviarArquivo(arquivo)
+      await admin.definirArteDoBloco(bloco.id, asset.id)
+      await aoMudar()
+    } catch (e) {
+      definirErro(e instanceof Error ? e.message : 'Não foi possível enviar')
+    } finally {
+      definirEnviando(false)
+    }
+  }
+
+  return (
+    <div className="arte-editor">
+      {bloco.imageAsset?.url ? (
+        // eslint-disable-next-line @next/next/no-img-element
+        <img className="arte-previa" src={bloco.imageAsset.url} alt="Arte desta faixa" />
+      ) : (
+        <p className="nota">Sem arte própria. Esta faixa usa a imagem da letra.</p>
+      )}
+
+      <label className="botao-arquivo">
+        {enviando ? 'Enviando...' : bloco.imageAsset?.url ? 'Trocar arte' : 'Enviar arte da faixa'}
+        <input
+          type="file"
+          accept="image/*"
+          hidden
+          disabled={enviando}
+          onChange={(e) => enviar(e.target.files?.[0])}
+        />
+      </label>
+
+      {bloco.imageAsset?.url && (
+        <button
+          type="button"
+          className="secundario"
+          disabled={enviando}
+          onClick={() => admin.definirArteDoBloco(bloco.id, null).then(aoMudar)}
+        >
+          Remover arte
+        </button>
+      )}
+
+      {erro && <p className="erro">{erro}</p>}
+    </div>
+  )
+}
+
 /** Campo de texto que salva ao sair do foco, com confirmação visível. */
 function CampoDeTexto({
   rotulo,
@@ -446,6 +502,11 @@ function EditorDeBloco({
           </button>
         </div>
       </div>
+
+      {/* A arte desta faixa. Fica junto do áudio, e não na capa da letra,
+          porque o cliente manda uma imagem por faixa: palco na música,
+          versículo na memorização, oração na oração. */}
+      {bloco.type === 'AUDIO' && <ArteDaFaixa bloco={bloco} aoMudar={aoMudar} />}
 
       {/* A categoria é o que permite à playlist tocar "só músicas" de A a Z.
           Só faz sentido em áudio: um texto não entra numa fila de reprodução. */}
