@@ -7,6 +7,7 @@ import { RastreadorDeVisita } from '@/components/RastreadorDeVisita'
 import { SeloProdutoVivo } from '@/components/SeloProdutoVivo'
 import { BannerDeConsentimento } from '@/components/BannerDeConsentimento'
 import { BarraSocial } from '@/components/BarraSocial'
+import { OfertaDaLetra } from '@/components/OfertaDaLetra'
 
 export async function generateMetadata({
   params,
@@ -95,6 +96,17 @@ export default async function PaginaDeConteudo({
         projectId={project.id}
         projectSlug={projectSlug}
         titulo={content.title}
+      />
+
+      {/* Depois do conteúdo e da área social: a pessoa ouviu, gostou, e é aí
+          que faz sentido oferecer. Antes disso seria vender antes de mostrar. */}
+      <OfertaDaLetra
+        contentId={content.id}
+        projectId={project.id}
+        titulo={content.title}
+        arquivoGratis={content.freeFileUrl}
+        nomeDoArquivo={content.freeFileName}
+        linkDeCompra={project.checkoutUrl ?? null}
       />
 
       <nav className="navegacao">

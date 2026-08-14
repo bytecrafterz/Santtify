@@ -177,6 +177,59 @@ export class SocialService {
    * QUEM ESTÁ COMPARTILHANDO chegou. Com isso o novo link herda a raiz e soma
    * 1 na profundidade, e a árvore Instagram → A → B → C fica reconstruível.
    */
+  /**
+   * Clique no botão de comprar: registra o evento e devolve o link já
+   * carimbado com a origem.
+   *
+   * O evento é gravado ANTES de a pessoa sair, porque depois de sair do site
+   * não há segunda chance: a próxima coisa que acontece é a Hotmart, e ela não
+   * sabe nada do que houve aqui. Este é o último passo do funil que o cliente
+   * descreveu em 08/08 — entrada, cadastro, interação, compartilhamento e
+   * clique em comprar — e era o único que faltava, por não existir botão.
+   *
+   * O que vai no link é a ORIGEM, não a pessoa: `pv-instagram-video03`. Assim,
+   * quando a confirmação de compra da Hotmart for ligada, cada venda volta
+   * dizendo de qual canal e campanha veio. Mandar um identificador do visitante
+   * resolveria o mesmo problema com mais precisão, mas seria entregar um dado
+   * pessoal pseudonimizado a um terceiro — e a nossa política de privacidade
+   * diz, com todas as letras, que isso não é feito.
+   */
+  async cliqueDeCompra(contentId: string, ctx: VisitContext, userId: string | null) {
+    const content = await this.conteudoPublicado(contentId)
+    const projeto = await this.prisma.project.findUnique({
+      where: { id: content.projectId },
+      select: { checkoutUrl: true },
+    })
+    if (!projeto?.checkoutUrl) {
+      throw new NotFoundException('Este projeto ainda não tem link de compra')
+    }
+
+    const visita = await this.attribution.resolveVisit({ ...ctx, userId: userId ?? undefined })
+    const a = visita.attribution
+
+    await this.events.registrar({
+      type: EventType.CHECKOUT_CLICKED,
+      attribution: { ...a, userId: userId ?? a.userId },
+      contentId,
+      props: { destino: 'externo' },
+    })
+
+    const limpar = (v: string | null | undefined) =>
+      (v ?? '').toString().toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '')
+
+    const origem = ['pv', limpar(a.rootPlatform ?? a.platform) || 'direto', limpar(a.campaignRef)]
+      .filter(Boolean)
+      .join('-')
+      .slice(0, 60)
+
+    // `src` é o parâmetro que a Hotmart devolve na confirmação da compra.
+    // Se o cliente colar um link que já tenha `src`, o dele é respeitado.
+    const url = new URL(projeto.checkoutUrl)
+    if (!url.searchParams.has('src')) url.searchParams.set('src', origem)
+
+    return { url: url.toString(), origem }
+  }
+
   async compartilhar(
     contentId: string,
     userId: string,

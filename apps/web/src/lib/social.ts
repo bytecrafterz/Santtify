@@ -91,6 +91,13 @@ export const social = {
     })
   },
 
+  /** Clique em comprar: registra e devolve o link já com o código de origem. */
+  cliqueDeCompra: (contentId: string, projectId: string) =>
+    chamar<{ url: string; origem: string }>(`/contents/${contentId}/checkout`, {
+      method: 'POST',
+      body: JSON.stringify({ projectId }),
+    }),
+
   removerPublicacao: (id: string) => chamar<void>(`/posts/${id}`, { method: 'DELETE' }),
 
   estado: (contentId: string) => chamar<EstadoSocial>(`/contents/${contentId}/social`),

@@ -36,6 +36,13 @@ model Project {
   /// Marco de lançamento deste projeto (o "Dia Zero").
   launchedAt DateTime?
 
+  /// Link externo de compra (Hotmart ou equivalente).
+  ///
+  /// É do PROJETO e não de cada letra: o produto é um só, então o cliente cola
+  /// uma vez e o botão aparece nas 26. Guardar por letra seria 26 lugares para
+  /// ele errar e depois manter.
+  checkoutUrl String?
+
   /// Foto publicada por usuário espera aprovação antes de ficar visível.
   ///
   /// É uma chave, e não uma decisão gravada no código, porque o dono da
@@ -87,6 +94,14 @@ model Content {
   subtitle  String?
   summary   String?
   coverUrl  String?
+
+  /// Material gratuito para download nesta letra (o PDF do cartão).
+  ///
+  /// Fica no conteúdo e não numa lista fixa: o cliente quer a demonstração
+  /// grátis só na letra A por enquanto, e o botão aparece apenas onde existe
+  /// arquivo. Liberar outra letra depois é subir o PDF dela, sem tocar no código.
+  freeFileUrl   String?
+  freeFileName  String?
 
   /// Cartão 1200x630 da capa, para a prévia do link nas redes.
   ///

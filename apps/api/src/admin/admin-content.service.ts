@@ -424,6 +424,7 @@ export class AdminContentService {
         name: true,
         description: true,
         photoApprovalRequired: true,
+        checkoutUrl: true,
       },
     })
     if (!project) throw new NotFoundException('Projeto não encontrado')
@@ -454,6 +455,61 @@ export class AdminContentService {
       { photoApprovalRequired: exigir },
     )
     return atual
+  }
+
+  /** Define (ou remove) o material gratuito para download da letra. */
+  async definirMaterialGratis(contentId: string, assetId: string | null, adminId: string) {
+    const content = await this.prisma.content.findUnique({
+      where: { id: contentId },
+      select: { id: true, projectId: true },
+    })
+    if (!content) throw new NotFoundException('Conteúdo não encontrado')
+
+    let freeFileUrl: string | null = null
+    let freeFileName: string | null = null
+    if (assetId) {
+      const asset = await this.prisma.mediaAsset.findUnique({
+        where: { id: assetId },
+        select: { url: true, kind: true, title: true },
+      })
+      if (!asset || asset.kind !== MediaKind.DOCUMENT) {
+        throw new BadRequestException('O material precisa ser um PDF.')
+      }
+      freeFileUrl = asset.url
+      freeFileName = asset.title
+    }
+
+    const atualizado = await this.prisma.content.update({
+      where: { id: contentId },
+      data: { freeFileUrl, freeFileName },
+      select: { id: true, freeFileUrl: true, freeFileName: true },
+    })
+    await this.auditar(adminId, content.projectId, 'content.free_file', 'Content', contentId, {
+      freeFileUrl,
+    })
+    return atualizado
+  }
+
+  /** Define (ou remove) o link externo de compra do projeto. */
+  async definirLinkDeCompra(projectSlug: string, url: string | null, adminId: string) {
+    const project = await this.projeto(projectSlug)
+    const limpo = url?.trim() || null
+
+    // Só http(s): um link colado errado que vira "javascript:" seria um buraco
+    // aberto por um campo de texto do painel.
+    if (limpo && !/^https:\/\/[^\s]+$/i.test(limpo)) {
+      throw new BadRequestException('Cole o endereço completo, começando com https://')
+    }
+
+    const atualizado = await this.prisma.project.update({
+      where: { id: project.id },
+      data: { checkoutUrl: limpo },
+      select: { id: true, checkoutUrl: true },
+    })
+    await this.auditar(adminId, project.id, 'project.checkout_url', 'Project', project.id, {
+      checkoutUrl: limpo,
+    })
+    return atualizado
   }
 
   // ── Categorias de áudio ───────────────────────────────────────────

@@ -122,6 +122,8 @@ export function EditorDeConteudo({
 
       <Capa content={content} aoMudar={recarregar} />
 
+      <MaterialGratis content={content} aoMudar={recarregar} />
+
       <h2>Blocos da página</h2>
       {content.blocks.map((bloco) => (
         <EditorDeBloco
@@ -150,6 +152,81 @@ export function EditorDeConteudo({
         </div>
       )}
     </>
+  )
+}
+
+/**
+ * O PDF gratuito desta letra.
+ *
+ * Fica por letra e não numa configuração geral: hoje só a letra A tem
+ * demonstração grátis, e o botão no site aparece apenas onde existe arquivo.
+ * Liberar outra letra depois é subir o PDF dela aqui — sem me chamar.
+ */
+function MaterialGratis({
+  content,
+  aoMudar,
+}: {
+  content: DetalheAdmin['content']
+  aoMudar: () => void
+}) {
+  const [enviando, definirEnviando] = useState(false)
+  const [erro, definirErro] = useState<string | null>(null)
+
+  async function enviar(arquivo: File | undefined) {
+    if (!arquivo) return
+    definirErro(null)
+    definirEnviando(true)
+    try {
+      const asset = await admin.enviarArquivo(arquivo)
+      await admin.definirMaterialGratis(content.id, asset.id)
+      aoMudar()
+    } catch (e) {
+      definirErro(e instanceof Error ? e.message : 'Não foi possível enviar')
+    } finally {
+      definirEnviando(false)
+    }
+  }
+
+  return (
+    <div className="bloco capa-editor">
+      <span className="bloco-rotulo">Material grátis para baixar</span>
+
+      {content.freeFileUrl ? (
+        <p className="nota">
+          <strong>{content.freeFileName ?? 'PDF enviado'}</strong>
+          <br />O botão de baixar já aparece nesta letra.
+        </p>
+      ) : (
+        <p className="bloco-vazio">
+          Sem arquivo. Suba o PDF do cartão e o botão de baixar aparece nesta letra — só
+          nela.
+        </p>
+      )}
+
+      <label className="botao-arquivo">
+        {enviando ? 'Enviando...' : content.freeFileUrl ? 'Trocar PDF' : 'Enviar PDF'}
+        <input
+          type="file"
+          accept="application/pdf"
+          hidden
+          disabled={enviando}
+          onChange={(e) => enviar(e.target.files?.[0])}
+        />
+      </label>
+
+      {content.freeFileUrl && (
+        <button
+          type="button"
+          className="secundario"
+          disabled={enviando}
+          onClick={() => admin.definirMaterialGratis(content.id, null).then(aoMudar)}
+        >
+          Remover material
+        </button>
+      )}
+
+      {erro && <p className="erro">{erro}</p>}
+    </div>
   )
 }
 

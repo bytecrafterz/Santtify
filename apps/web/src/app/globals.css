@@ -1729,3 +1729,60 @@ h3 {
   color: #9b2c22;
   border-color: #e0b4b0;
 }
+
+/* Experimentar grátis e comprar, no fim da página da letra. */
+.oferta {
+  margin-top: 20px;
+}
+
+.botao-baixar,
+.botao-comprar {
+  display: block;
+  width: 100%;
+  margin-top: 10px;
+  padding: 14px 12px;
+  border: 0;
+  border-radius: 10px;
+  font-family: inherit;
+  font-size: 16px;
+  font-weight: 700;
+  text-align: center;
+  text-decoration: none;
+  cursor: pointer;
+}
+
+/* Baixar é a ação secundária: experimentar vem antes de comprar. */
+.botao-baixar {
+  background: transparent;
+  color: var(--cor-primaria);
+  border: 1px solid var(--cor-primaria);
+}
+
+.botao-comprar {
+  background: #1c7c4a;
+  color: #fff;
+}
+
+.botao-comprar:disabled {
+  opacity: 0.6;
+  cursor: default;
+}
+
+.oferta-chamada {
+  margin-top: 18px;
+  padding-top: 16px;
+  border-top: 1px solid var(--cor-borda);
+}
+
+/* Link de compra, no painel. */
+.link-de-compra input {
+  width: 100%;
+  margin-top: 8px;
+  padding: 12px 14px;
+  font-size: 16px;
+  font-family: inherit;
+  border: 1px solid var(--cor-borda);
+  border-radius: 10px;
+  background: var(--cor-fundo);
+  color: var(--cor-texto);
+}

@@ -35,6 +35,10 @@ const PERMITIDOS: Record<string, { kind: MediaKind; exts: string[] }> = {
   'image/png': { kind: MediaKind.IMAGE, exts: ['.png'] },
   'image/webp': { kind: MediaKind.IMAGE, exts: ['.webp'] },
   'image/heic': { kind: MediaKind.IMAGE, exts: ['.heic'] },
+  // O PDF do cartão que a família imprime em casa. Entra como está: é material
+  // para impressão, então reduzir ou recomprimir estragaria justamente o que
+  // ele serve para fazer.
+  'application/pdf': { kind: MediaKind.DOCUMENT, exts: ['.pdf'] },
 }
 
 /** 100 MB. Música de qualidade gravada no iPhone passa fácil de 20 MB. */

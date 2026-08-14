@@ -484,6 +484,36 @@ defeitos que passaram no teste visual.
 com 3, "só explicações" com 1, tocar dentro do filtro, criar categoria pelo painel,
 categoria vazia não virando filtro, apagar, e os seletores na página da letra.
 
+### 14/08 — Material grátis e link de compra
+
+O fluxo que ele descreveu: ouvir → conhecer → **baixar o cartão grátis** → **comprar o
+produto completo**.
+
+| Decisão | Motivo |
+|---|---|
+| PDF **por letra**, não caso especial da A | O botão aparece só onde existe arquivo. Liberar outra letra depois é subir o PDF dela — sem tocar no código |
+| Link de compra **por projeto** | O produto é um só: ele cola uma vez e o botão aparece nas 26. Por letra seriam 26 lugares para errar e manter |
+| PDF entra **sem recompressão** | É material de impressão; reduzir estragaria o que ele serve para fazer |
+| Só `https://` no campo do link | Campo de texto do painel não pode virar porta para `javascript:` |
+| Baixar é botão **secundário**, comprar é o destacado | Experimentar vem antes de vender |
+
+**O clique em comprar fecha o funil de 08/08.** `CHECKOUT_CLICKED` estava reservado no
+schema desde o primeiro dia e nunca era emitido, porque não havia botão. Agora o evento
+é gravado **antes** de a pessoa sair — depois da Hotmart não há segunda chance — e a
+navegação segue mesmo se o registro falhar: perder o dado é ruim, perder a venda é pior.
+
+**O link leva a ORIGEM, não a pessoa:** `?src=pv-instagram-video03`. Quando ele ligar a
+confirmação da Hotmart, cada venda volta dizendo de que canal e campanha veio. Mandar o
+identificador do visitante daria mais precisão, mas seria entregar dado pessoal
+pseudonimizado a um terceiro — e a política de privacidade diz que isso não é feito.
+
+**Verificado no navegador:** chegada pelo Instagram, oferta na letra A, PDF baixando de
+verdade, clique registrado com plataforma e visitante, endereço final com `src=`, e a
+letra B sem botão de baixar.
+
+**Estado:** os dois campos estão no painel, **vazios de propósito**. O PDF de teste e o
+link falso foram retirados — botão apontando para página inexistente pareceria defeito.
+
 ### Implantação pronta para rodar (14/08)
 
 Escrita enquanto o domínio não existe, para que no dia seja um comando e não uma

@@ -65,6 +65,14 @@ class ClassificarBlocoDto {
   @IsOptional() @IsString() categoryId?: string | null
 }
 
+class MaterialGratisDto {
+  @IsOptional() @IsString() assetId?: string | null
+}
+
+class LinkDeCompraDto {
+  @IsOptional() @IsString() @MaxLength(500) url?: string | null
+}
+
 class DefinirCapaDto {
   @IsOptional() @IsString() assetId?: string | null
 }
@@ -329,6 +337,26 @@ export class AdminController {
       req.usuario!.id,
     )
     return asset
+  }
+
+  /** Define (ou remove) o PDF gratuito da letra. */
+  @Patch('contents/:id/free-file')
+  definirMaterialGratis(
+    @Param('id') id: string,
+    @Body() dto: MaterialGratisDto,
+    @Req() req: Request,
+  ) {
+    return this.conteudo.definirMaterialGratis(id, dto.assetId ?? null, req.usuario!.id)
+  }
+
+  /** Define (ou remove) o link de compra do projeto. */
+  @Patch('projects/:projectSlug/checkout-url')
+  definirLinkDeCompra(
+    @Param('projectSlug') projectSlug: string,
+    @Body() dto: LinkDeCompraDto,
+    @Req() req: Request,
+  ) {
+    return this.conteudo.definirLinkDeCompra(projectSlug, dto.url ?? null, req.usuario!.id)
   }
 
   /** Define (ou remove) a capa da letra. */

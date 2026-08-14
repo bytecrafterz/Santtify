@@ -8,6 +8,8 @@ export interface Projeto {
   name: string
   description: string | null
   branding: Record<string, unknown>
+  /** Link externo de compra, quando o dono já tiver cadastrado. */
+  checkoutUrl?: string | null
 }
 
 export type TipoBloco = 'TEXT' | 'RICH_TEXT' | 'AUDIO' | 'VIDEO' | 'IMAGE' | 'EMBED' | 'LINK'
@@ -40,6 +42,9 @@ export interface Conteudo {
   summary: string | null
   coverUrl: string | null
   shareCardUrl: string | null
+  /** PDF gratuito desta letra, quando houver. */
+  freeFileUrl: string | null
+  freeFileName: string | null
   position: number
   blocks: Bloco[]
   stats: { views: number; likes: number; comments: number; shares: number }

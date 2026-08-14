@@ -37,6 +37,10 @@ class PublicarDto {
   @IsOptional() @IsString() @MaxLength(1000) body?: string
 }
 
+class CliqueDeCompraDto {
+  @IsUUID() projectId!: string
+}
+
 class CompartilharDto {
   @IsUUID() projectId!: string
   @IsEnum(Platform) canal!: Platform
@@ -101,6 +105,26 @@ export class SocialController {
       req.usuario!.id,
       { body: dto.body, parentId: dto.parentId },
       contextoDaVisita(dto.projectId, req),
+    )
+  }
+
+  /**
+   * Clique em comprar. Sem exigir conta: quem ainda não se cadastrou também
+   * pode querer comprar, e barrar aqui perderia venda e perderia o dado.
+   */
+  @Post('checkout')
+  @HttpCode(200)
+  @AuthOpcional()
+  @UseGuards(AuthGuard)
+  cliqueDeCompra(
+    @Param('contentId') contentId: string,
+    @Body() dto: CliqueDeCompraDto,
+    @Req() req: Request,
+  ) {
+    return this.social.cliqueDeCompra(
+      contentId,
+      contextoDaVisita(dto.projectId, req),
+      req.usuario?.id ?? null,
     )
   }
 

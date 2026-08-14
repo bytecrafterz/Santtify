@@ -58,6 +58,8 @@ export interface DetalheAdmin {
     position: number
     coverUrl: string | null
     shareCardUrl: string | null
+    freeFileUrl: string | null
+    freeFileName: string | null
     blocks: BlocoAdmin[]
     metadata: Record<string, unknown> | null
     qrCode: string | null
@@ -129,7 +131,13 @@ async function chamar<T>(
 export const admin = {
   listar: (projectSlug: string) =>
     chamar<{
-      project: { id: string; slug: string; name: string; photoApprovalRequired: boolean }
+      project: {
+        id: string
+        slug: string
+        name: string
+        photoApprovalRequired: boolean
+        checkoutUrl?: string | null
+      }
       contents: ItemAdmin[]
     }>(`/projects/${projectSlug}/contents`),
 
@@ -204,6 +212,20 @@ export const admin = {
     chamar<{ movido: boolean }>(`/blocks/${blocoId}/move`, {
       method: 'PATCH',
       body: JSON.stringify({ direcao }),
+    }),
+
+  /** Define (ou remove) o PDF gratuito da letra. */
+  definirMaterialGratis: (contentId: string, assetId: string | null) =>
+    chamar<{ id: string; freeFileUrl: string | null; freeFileName: string | null }>(
+      `/contents/${contentId}/free-file`,
+      { method: 'PATCH', body: JSON.stringify({ assetId }) },
+    ),
+
+  /** Define (ou remove) o link externo de compra do projeto. */
+  definirLinkDeCompra: (projectSlug: string, url: string | null) =>
+    chamar<{ id: string; checkoutUrl: string | null }>(`/projects/${projectSlug}/checkout-url`, {
+      method: 'PATCH',
+      body: JSON.stringify({ url }),
     }),
 
   /** Define (ou remove) a capa da letra. */

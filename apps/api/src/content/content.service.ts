@@ -20,7 +20,15 @@ export class ContentService {
   async projeto(slug: string) {
     const project = await this.prisma.project.findUnique({
       where: { slug },
-      select: { id: true, slug: true, name: true, description: true, branding: true, status: true },
+      select: {
+        id: true,
+        slug: true,
+        name: true,
+        description: true,
+        branding: true,
+        status: true,
+        checkoutUrl: true,
+      },
     })
     if (!project || project.status === 'ARCHIVED') {
       throw new NotFoundException('Projeto não encontrado')
@@ -192,6 +200,8 @@ export class ContentService {
         summary: content.summary,
         coverUrl: content.coverUrl,
         shareCardUrl: content.shareCardUrl,
+        freeFileUrl: content.freeFileUrl,
+        freeFileName: content.freeFileName,
         position: content.position,
         blocks: content.blocks.map((b) => ({
           id: b.id,
