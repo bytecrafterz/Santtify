@@ -446,6 +446,38 @@ saiu foi só o segundo campo **vazio por padrão**.
 **QR Code:** ele pediu para gerar sozinho — **já era assim**. O painel mostra o QR de
 cada letra e oferece download em **SVG**, o formato certo para impressão.
 
+### Implantação pronta para rodar (14/08)
+
+Escrita enquanto o domínio não existe, para que no dia seja um comando e não uma
+tarde de improviso. Tudo em `deploy/`.
+
+| Arquivo | O que faz |
+|---|---|
+| `provisionar.sh` | Servidor Ubuntu novo → Docker, swap de 2 GB, firewall (só SSH/80/443), atualizações de segurança automáticas, usuário sem root |
+| `publicar.sh` | Confere segredos e DNS **antes** de subir, constrói, sobe, espera responder e verifica |
+| `verificar.sh` | Confere o que o visitante vê: HTTPS, páginas, QR, mídia em pedaços, backup |
+| `restaurar.sh` | Volta de uma cópia de segurança, guardando o estado atual antes |
+| `.env.production.exemplo` | Modelo com os segredos e os avisos de cada um |
+| `README.md` | Passo a passo, operação e o que nunca fazer |
+
+**Defeito grave corrigido:** o container da API subia direto em `node main.js`
+e **nada aplicava as migrations**. Num servidor novo, o banco fica vazio: a API
+sobe, responde o `/health` e quebra em toda consulta — pareceria erro de
+aplicação, não de implantação. Agora o entrypoint roda `prisma migrate deploy`
+antes de atender, e se o banco estiver à frente do código ele **recusa subir**,
+porque atender com um schema desconhecido corrompe dado em silêncio.
+
+**Falha de segurança corrigida:** `.gitignore` cobria `.env` e `.env.*.local`,
+mas **não `.env.production`** — o arquivo com a senha do banco, as chaves JWT e o
+sal dos hashes seria comitado no primeiro deploy.
+
+**Verificado:** `verificar.sh` roda hoje contra o ambiente de teste (aceita
+`BASE` em HTTP para poder ser exercitado antes de existir produção). Dois erros
+meus apareceram só por rodá-lo: `/health` estava sendo procurado no site em vez
+da raiz da API, e a leitura do primeiro conteúdo pegava o slug do **projeto**.
+Ele agora confere **o endereço exato gravado dentro do QR**, que é o que vai
+para o papel.
+
 ### O domínio destrava três coisas de uma vez
 
 Decisão única, ainda pendente, que bloqueia: **os QR Codes** (o endereço fica gravado

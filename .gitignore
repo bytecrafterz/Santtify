@@ -2,6 +2,11 @@ node_modules/
 .env
 .env.local
 .env.*.local
+# Segredos de produção: senha do banco, chaves JWT e o sal dos hashes.
+# Comitar este arquivo é entregar o servidor junto com o código.
+.env.production
+.env.production.*
+!deploy/.env.production.exemplo
 dist/
 build/
 .next/

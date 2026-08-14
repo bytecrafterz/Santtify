@@ -43,6 +43,11 @@ COPY --from=build /app/apps/api/dist ./apps/api/dist
 COPY --from=build /app/packages/db ./packages/db
 COPY --from=build /app/package.json ./package.json
 
+# O entrypoint aplica as migrations antes de subir. Sem ele, um servidor novo
+# sobe a API contra um banco sem tabela nenhuma.
+COPY apps/api/docker-entrypoint.sh /usr/local/bin/entrada.sh
+RUN chmod +x /usr/local/bin/entrada.sh
+
 # Pasta de mídia. Precisa ser volume no compose — sem isso, recriar o
 # container apaga todas as músicas e áudios enviados pelo cliente.
 RUN mkdir -p /app/uploads && chown -R pv:pv /app/uploads
@@ -53,4 +58,5 @@ EXPOSE 3333
 HEALTHCHECK --interval=30s --timeout=5s --start-period=20s --retries=3 \
   CMD node -e "fetch('http://127.0.0.1:3333/health').then(r=>process.exit(r.ok?0:1)).catch(()=>process.exit(1))"
 
+ENTRYPOINT ["/usr/local/bin/entrada.sh"]
 CMD ["node", "apps/api/dist/main.js"]
