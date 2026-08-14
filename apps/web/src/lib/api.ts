@@ -67,14 +67,27 @@ export interface ItemIndice {
 }
 
 export interface Faixa {
+  /** Id do BLOCO, não da letra: uma letra tem várias faixas. */
   id: string
+  contentId: string
   slug: string
   title: string
   subtitle: string | null
   coverUrl: string | null
+  /** Como esta faixa se chama: "Explicação e música". */
+  rotulo: string | null
+  /** O que agrupa faixas entre letras: "musica", "explicacao". */
+  categoria: string | null
+  categoriaNome: string | null
   url: string
   mimeType: string | null
   durationMs: number | null
+}
+
+export interface CategoriaDeAudio {
+  slug: string
+  nome: string
+  total: number
 }
 
 /**
@@ -111,7 +124,9 @@ export const api = {
   projeto: (slug: string) => buscar<Projeto>(`/projects/${slug}`),
   indice: (slug: string) => buscar<{ project: Projeto; contents: ItemIndice[] }>(`/projects/${slug}/contents`),
   playlist: (slug: string) =>
-    buscar<{ project: Projeto; faixas: Faixa[] }>(`/projects/${slug}/playlist`),
+    buscar<{ project: Projeto; categorias: CategoriaDeAudio[]; faixas: Faixa[] }>(
+      `/projects/${slug}/playlist`,
+    ),
   conteudo: (projeto: string, conteudo: string) =>
     buscar<PaginaConteudo>(`/projects/${projeto}/contents/${conteudo}`),
   qrSvgUrl: (projeto: string, conteudo: string) =>

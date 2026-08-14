@@ -253,6 +253,77 @@ export class AdminContentService {
     await this.auditar(adminId, bloco.content.projectId, 'block.delete', 'ContentBlock', blocoId, {})
   }
 
+  /**
+   * Sobe ou desce um bloco na página.
+   *
+   * Bloco novo sempre nasce no fim, e a ordem importa: o cliente quer a
+   * explicação antes da música. Sem isto, ele teria de acertar a ordem de
+   * criação em todas as 26 letras e nunca poderia corrigir um engano.
+   *
+   * Subir/descer, e não arrastar: o painel é usado no celular, onde arrastar
+   * uma lista é justamente o gesto que briga com a rolagem da página.
+   */
+  async moverBloco(blocoId: string, direcao: 'cima' | 'baixo', adminId: string) {
+    const bloco = await this.prisma.contentBlock.findUnique({
+      where: { id: blocoId },
+      select: { id: true, position: true, contentId: true, content: { select: { projectId: true } } },
+    })
+    if (!bloco) throw new NotFoundException('Bloco não encontrado')
+
+    // O vizinho na direção pedida — que pode não existir, se já está na ponta.
+    const vizinho = await this.prisma.contentBlock.findFirst({
+      where: {
+        contentId: bloco.contentId,
+        position: direcao === 'cima' ? { lt: bloco.position } : { gt: bloco.position },
+      },
+      orderBy: { position: direcao === 'cima' ? 'desc' : 'asc' },
+      select: { id: true, position: true },
+    })
+    if (!vizinho) return { movido: false }
+
+    // Troca em transação: com duas escritas soltas, uma falha no meio deixaria
+    // dois blocos na mesma posição e a ordem viraria sorteio.
+    await this.prisma.$transaction([
+      this.prisma.contentBlock.update({ where: { id: bloco.id }, data: { position: vizinho.position } }),
+      this.prisma.contentBlock.update({ where: { id: vizinho.id }, data: { position: bloco.position } }),
+    ])
+    await this.auditar(adminId, bloco.content.projectId, 'block.move', 'ContentBlock', blocoId, {
+      direcao,
+    })
+    return { movido: true }
+  }
+
+  /** Classifica (ou desclassifica) um áudio numa categoria. */
+  async definirCategoriaDoBloco(blocoId: string, categoryId: string | null, adminId: string) {
+    const bloco = await this.prisma.contentBlock.findUnique({
+      where: { id: blocoId },
+      select: { id: true, content: { select: { projectId: true } } },
+    })
+    if (!bloco) throw new NotFoundException('Bloco não encontrado')
+
+    if (categoryId) {
+      const cat = await this.prisma.blockCategory.findUnique({ where: { id: categoryId } })
+      if (!cat || cat.projectId !== bloco.content.projectId) {
+        throw new BadRequestException('Categoria não pertence a este projeto')
+      }
+    }
+
+    const atualizado = await this.prisma.contentBlock.update({
+      where: { id: blocoId },
+      data: { categoryId },
+      select: { id: true, categoryId: true },
+    })
+    await this.auditar(
+      adminId,
+      bloco.content.projectId,
+      'block.category',
+      'ContentBlock',
+      blocoId,
+      { categoryId },
+    )
+    return atualizado
+  }
+
   async registrarMidia(
     dados: {
       url: string
@@ -383,6 +454,106 @@ export class AdminContentService {
       { photoApprovalRequired: exigir },
     )
     return atual
+  }
+
+  // ── Categorias de áudio ───────────────────────────────────────────
+
+  /**
+   * As categorias do projeto, com quantos áudios cada uma tem.
+   *
+   * A contagem vai junto porque é ela que responde a pergunta que o dono faz ao
+   * abrir a tela: "esta categoria está sendo usada?" — e porque apagar uma
+   * categoria com áudios dentro tem consequência, então ele precisa ver o
+   * número antes de decidir.
+   */
+  async categorias(projectSlug: string) {
+    const project = await this.projeto(projectSlug)
+    const categorias = await this.prisma.blockCategory.findMany({
+      where: { projectId: project.id },
+      orderBy: [{ position: 'asc' }, { name: 'asc' }],
+      select: {
+        id: true,
+        name: true,
+        slug: true,
+        position: true,
+        _count: { select: { blocks: true } },
+      },
+    })
+    return {
+      project,
+      categorias: categorias.map((c) => ({
+        id: c.id,
+        name: c.name,
+        slug: c.slug,
+        position: c.position,
+        audios: c._count.blocks,
+      })),
+    }
+  }
+
+  async criarCategoria(projectSlug: string, nome: string, adminId: string) {
+    const project = await this.projeto(projectSlug)
+    const limpo = nome.trim()
+    if (limpo.length < 2) throw new BadRequestException('O nome ficou curto demais')
+
+    const slug = this.normalizarSlug(limpo)
+    if (!slug) throw new BadRequestException('Escolha um nome com letras ou números')
+
+    const jaExiste = await this.prisma.blockCategory.findUnique({
+      where: { projectId_slug: { projectId: project.id, slug } },
+    })
+    if (jaExiste) throw new BadRequestException(`Já existe uma categoria "${jaExiste.name}"`)
+
+    const ultima = await this.prisma.blockCategory.findFirst({
+      where: { projectId: project.id },
+      orderBy: { position: 'desc' },
+      select: { position: true },
+    })
+
+    const criada = await this.prisma.blockCategory.create({
+      data: { projectId: project.id, name: limpo, slug, position: (ultima?.position ?? 0) + 1 },
+    })
+    await this.auditar(adminId, project.id, 'category.create', 'BlockCategory', criada.id, {
+      name: limpo,
+    })
+    return criada
+  }
+
+  async renomearCategoria(id: string, nome: string, adminId: string) {
+    const atual = await this.prisma.blockCategory.findUnique({ where: { id } })
+    if (!atual) throw new NotFoundException('Categoria não encontrada')
+    const limpo = nome.trim()
+    if (limpo.length < 2) throw new BadRequestException('O nome ficou curto demais')
+
+    // O slug NÃO muda ao renomear: ele está nos endereços que as pessoas já
+    // compartilharam da playlist filtrada. Renomear é trocar a etiqueta, não
+    // mudar de lugar.
+    const renomeada = await this.prisma.blockCategory.update({
+      where: { id },
+      data: { name: limpo },
+    })
+    await this.auditar(adminId, atual.projectId, 'category.rename', 'BlockCategory', id, {
+      de: atual.name,
+      para: limpo,
+    })
+    return renomeada
+  }
+
+  async removerCategoria(id: string, adminId: string) {
+    const atual = await this.prisma.blockCategory.findUnique({
+      where: { id },
+      select: { id: true, name: true, projectId: true, _count: { select: { blocks: true } } },
+    })
+    if (!atual) throw new NotFoundException('Categoria não encontrada')
+
+    // Os áudios ficam: a chave é SetNull. Eles voltam a ser "sem categoria" e
+    // continuam tocando. Apagar categoria não pode apagar conteúdo.
+    await this.prisma.blockCategory.delete({ where: { id } })
+    await this.auditar(adminId, atual.projectId, 'category.delete', 'BlockCategory', id, {
+      name: atual.name,
+      audiosDesclassificados: atual._count.blocks,
+    })
+    return { removida: atual.name, audiosDesclassificados: atual._count.blocks }
   }
 
   // ── Moderação da comunidade ───────────────────────────────────────

@@ -51,15 +51,20 @@ export class ContentService {
   }
 
   /**
-   * "Reproduzir todas": a fila de músicas do projeto, em ordem.
+   * "Reproduzir todas": as faixas do projeto, em ordem, com a categoria de cada
+   * uma.
    *
-   * Só entram as letras publicadas E que já têm música enviada. Uma letra
-   * publicada sem áudio no meio da fila faria o tocador parar em silêncio, e
-   * quem está ouvindo entenderia isso como defeito, não como conteúdo que
-   * ainda falta.
+   * Devolve TUDO de uma vez, com as categorias junto, em vez de uma consulta
+   * por filtro. São no máximo algumas dezenas de faixas, e assim trocar de
+   * "só músicas" para "só explicações" é instantâneo, sem ida ao servidor e sem
+   * a música parar no meio da troca.
    *
-   * Ordena por `position`, que é a ordem alfabética cadastrada — a fila do A ao
-   * Z é a ordem do próprio produto, não uma decisão desta tela.
+   * Uma letra pode ter vários áudios (explicação, música, memorização,
+   * oração), então a fila é por FAIXA e não por letra. A ordem é a da letra e,
+   * dentro dela, a ordem dos blocos que o dono definiu no painel.
+   *
+   * Só entram letras publicadas com áudio de verdade: uma faixa vazia no meio
+   * da fila faria o tocador parar em silêncio, e isso se lê como defeito.
    */
   async playlist(projectSlug: string) {
     const project = await this.projeto(projectSlug)
@@ -80,25 +85,57 @@ export class ContentService {
         blocks: {
           where: { type: BlockType.AUDIO, assetId: { not: null } },
           orderBy: { position: 'asc' },
-          take: 1,
-          select: { asset: { select: { url: true, mimeType: true, durationMs: true } } },
+          select: {
+            id: true,
+            label: true,
+            category: { select: { slug: true, name: true, position: true } },
+            asset: { select: { url: true, mimeType: true, durationMs: true } },
+          },
         },
       },
     })
 
-    return {
-      project,
-      faixas: contents.map((c) => ({
-        id: c.id,
+    const faixas = contents.flatMap((c) =>
+      c.blocks.map((b) => ({
+        id: b.id,
+        contentId: c.id,
         slug: c.slug,
         title: c.title,
         subtitle: c.subtitle,
         coverUrl: c.coverUrl,
-        url: c.blocks[0]!.asset!.url,
-        mimeType: c.blocks[0]!.asset!.mimeType,
-        durationMs: c.blocks[0]!.asset!.durationMs,
+        // O rótulo do bloco descreve a faixa ("Explicação e música"); a
+        // categoria é o que agrupa as faixas entre letras diferentes.
+        rotulo: b.label,
+        categoria: b.category?.slug ?? null,
+        categoriaNome: b.category?.name ?? null,
+        url: b.asset!.url,
+        mimeType: b.asset!.mimeType,
+        durationMs: b.asset!.durationMs,
       })),
+    )
+
+    // Só as categorias que têm faixa. Oferecer "só orações" numa lista sem
+    // nenhuma oração é prometer o que não existe.
+    const porCategoria = new Map<string, { slug: string; nome: string; posicao: number; total: number }>()
+    for (const c of contents) {
+      for (const b of c.blocks) {
+        if (!b.category) continue
+        const atual = porCategoria.get(b.category.slug)
+        if (atual) atual.total++
+        else
+          porCategoria.set(b.category.slug, {
+            slug: b.category.slug,
+            nome: b.category.name,
+            posicao: b.category.position,
+            total: 1,
+          })
+      }
     }
+    const categorias = [...porCategoria.values()].sort(
+      (a, b) => a.posicao - b.posicao || a.nome.localeCompare(b.nome),
+    )
+
+    return { project, categorias, faixas }
   }
 
   /** Página de um conteúdo, com os blocos que o admin montou. */

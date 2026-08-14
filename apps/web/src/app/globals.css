@@ -1581,3 +1581,151 @@ h3 {
   margin: 12px 0 4px;
   background: var(--cor-fundo);
 }
+
+/* Filtros da playlist: ouvir tudo, só músicas, só explicações. */
+.filtros-playlist {
+  display: flex;
+  gap: 8px;
+  overflow-x: auto;
+  padding-bottom: 4px;
+  margin-bottom: 14px;
+  /* Rolagem horizontal sem barra visível: com cinco categorias não cabe tudo
+     na largura do celular, e cortar seria esconder opção do usuário. */
+  scrollbar-width: none;
+}
+
+.filtros-playlist::-webkit-scrollbar {
+  display: none;
+}
+
+.filtro {
+  flex-shrink: 0;
+  padding: 8px 14px;
+  border: 1px solid var(--cor-borda);
+  border-radius: 999px;
+  background: transparent;
+  color: var(--cor-texto-suave);
+  font-family: inherit;
+  font-size: 14px;
+  white-space: nowrap;
+  cursor: pointer;
+}
+
+.filtro.atual {
+  background: var(--cor-primaria);
+  border-color: var(--cor-primaria);
+  color: #fff;
+  font-weight: 600;
+}
+
+.tocador-rotulo {
+  margin: 2px 0 0;
+  font-size: 14px;
+  color: var(--cor-texto-suave);
+}
+
+/* Controles de cada bloco no painel: subir, descer e remover. */
+.acoes-bloco {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.acoes-bloco .mover {
+  width: 34px;
+  height: 34px;
+  border: 1px solid var(--cor-borda);
+  border-radius: 8px;
+  background: transparent;
+  color: var(--cor-texto-suave);
+  font-size: 13px;
+  line-height: 1;
+  cursor: pointer;
+}
+
+.campo-categoria {
+  display: block;
+  margin: 10px 0 2px;
+  font-size: 13px;
+  color: var(--cor-texto-suave);
+}
+
+.campo-categoria select {
+  display: block;
+  width: 100%;
+  margin-top: 4px;
+  padding: 10px 12px;
+  font-size: 16px; /* evita o zoom do Safari no iPhone */
+  font-family: inherit;
+  border: 1px solid var(--cor-borda);
+  border-radius: 10px;
+  background: var(--cor-fundo);
+  color: var(--cor-texto);
+}
+
+/* Categorias de áudio, no painel. */
+.criar-categoria input {
+  width: 100%;
+  margin-top: 10px;
+  padding: 12px 14px;
+  font-size: 16px;
+  font-family: inherit;
+  border: 1px solid var(--cor-borda);
+  border-radius: 10px;
+  background: var(--cor-fundo);
+  color: var(--cor-texto);
+}
+
+.criar-categoria button {
+  width: 100%;
+  margin-top: 10px;
+  padding: 12px;
+  border: 0;
+  border-radius: 10px;
+  background: var(--cor-primaria);
+  color: #fff;
+  font-family: inherit;
+  font-size: 15px;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.criar-categoria button:disabled {
+  opacity: 0.5;
+  cursor: default;
+}
+
+.item-categoria {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+}
+
+.item-categoria small {
+  display: block;
+  color: var(--cor-texto-suave);
+  font-size: 13px;
+}
+
+.acoes-categoria {
+  display: flex;
+  gap: 6px;
+  flex-shrink: 0;
+}
+
+.acoes-categoria button {
+  padding: 8px 10px;
+  border-radius: 8px;
+  background: transparent;
+  border: 1px solid var(--cor-borda);
+  color: var(--cor-texto-suave);
+  font-family: inherit;
+  font-size: 13px;
+  cursor: pointer;
+}
+
+.acoes-categoria .remover {
+  color: #9b2c22;
+  border-color: #e0b4b0;
+}

@@ -15,7 +15,7 @@ import {
 import { FileInterceptor } from '@nestjs/platform-express'
 import type { Request } from 'express'
 import { BlockType } from '@pv/db'
-import { IsBoolean, IsEnum, IsInt, IsOptional, IsString, MaxLength, Min } from 'class-validator'
+import { IsBoolean, IsEnum, IsIn, IsInt, IsOptional, IsString, MaxLength, Min } from 'class-validator'
 import { AdminContentService } from './admin-content.service'
 import { StorageService, TAMANHO_MAXIMO } from './storage.service'
 import { LaunchesService } from '../content/launches.service'
@@ -51,6 +51,18 @@ class SalvarBlocoDto {
   @IsOptional() @IsString() text?: string
   @IsOptional() @IsString() url?: string
   @IsOptional() @IsString() assetId?: string | null
+}
+
+class CategoriaDto {
+  @IsString() @MaxLength(60) nome!: string
+}
+
+class MoverBlocoDto {
+  @IsIn(['cima', 'baixo']) direcao!: 'cima' | 'baixo'
+}
+
+class ClassificarBlocoDto {
+  @IsOptional() @IsString() categoryId?: string | null
 }
 
 class DefinirCapaDto {
@@ -141,6 +153,48 @@ export class AdminController {
       req.usuario!.id,
     )
     return projeto
+  }
+
+  // ── Categorias de áudio ──────────────────────────────────────────
+
+  @Get('projects/:projectSlug/categories')
+  categorias(@Param('projectSlug') projectSlug: string) {
+    return this.conteudo.categorias(projectSlug)
+  }
+
+  @Post('projects/:projectSlug/categories')
+  criarCategoria(
+    @Param('projectSlug') projectSlug: string,
+    @Body() dto: CategoriaDto,
+    @Req() req: Request,
+  ) {
+    return this.conteudo.criarCategoria(projectSlug, dto.nome, req.usuario!.id)
+  }
+
+  @Patch('categories/:id')
+  renomearCategoria(@Param('id') id: string, @Body() dto: CategoriaDto, @Req() req: Request) {
+    return this.conteudo.renomearCategoria(id, dto.nome, req.usuario!.id)
+  }
+
+  @Delete('categories/:id')
+  removerCategoria(@Param('id') id: string, @Req() req: Request) {
+    return this.conteudo.removerCategoria(id, req.usuario!.id)
+  }
+
+  /** Sobe ou desce um bloco na página. */
+  @Patch('blocks/:id/move')
+  moverBloco(@Param('id') id: string, @Body() dto: MoverBlocoDto, @Req() req: Request) {
+    return this.conteudo.moverBloco(id, dto.direcao, req.usuario!.id)
+  }
+
+  /** Classifica um áudio numa categoria (ou tira dela). */
+  @Patch('blocks/:id/category')
+  classificarBloco(
+    @Param('id') id: string,
+    @Body() dto: ClassificarBlocoDto,
+    @Req() req: Request,
+  ) {
+    return this.conteudo.definirCategoriaDoBloco(id, dto.categoryId ?? null, req.usuario!.id)
   }
 
   // ── Moderação da comunidade ──────────────────────────────────────

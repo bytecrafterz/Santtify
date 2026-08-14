@@ -28,7 +28,12 @@ export default async function PaginaPlaylist({
         Toca as músicas em sequência, da letra A à letra Z, sem precisar escolher uma por uma.
       </p>
 
-      <Playlist projectId={dados.project.id} projectSlug={projectSlug} faixas={dados.faixas} />
+      <Playlist
+        projectId={dados.project.id}
+        projectSlug={projectSlug}
+        categorias={dados.categorias}
+        faixas={dados.faixas}
+      />
 
       <BannerDeConsentimento projectId={dados.project.id} />
     </main>

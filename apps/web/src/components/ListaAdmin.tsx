@@ -79,6 +79,11 @@ export function ListaAdmin({ projectSlug }: { projectSlug: string }) {
         <small>visitantes, origem, propagação e conteúdos mais acessados</small>
       </Link>
 
+      <Link className="bloco linha atalho-metricas" href={`/${projectSlug}/admin/categorias`}>
+        <span>Categorias de áudio</span>
+        <small>explicação, música, oração — definem os filtros da playlist</small>
+      </Link>
+
       <Link className="bloco linha atalho-metricas" href={`/${projectSlug}/admin/comunidade`}>
         <span>Comunidade</span>
         <small>apagar comentário impróprio e bloquear conta</small>

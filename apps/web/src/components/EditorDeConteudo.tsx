@@ -3,7 +3,13 @@
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 import { useEffect, useRef, useState } from 'react'
-import { admin, type BlocoAdmin, type DetalheAdmin, type TipoBloco } from '@/lib/admin'
+import {
+  admin,
+  type BlocoAdmin,
+  type CategoriaAdmin,
+  type DetalheAdmin,
+  type TipoBloco,
+} from '@/lib/admin'
 import { useAuth } from '@/components/ProvedorDeAuth'
 
 /**
@@ -30,6 +36,7 @@ export function EditorDeConteudo({
   const [dados, definirDados] = useState<DetalheAdmin | null>(null)
   const [erro, definirErro] = useState<string | null>(null)
   const [salvandoStatus, definirSalvandoStatus] = useState(false)
+  const [categorias, definirCategorias] = useState<CategoriaAdmin[]>([])
 
   useEffect(() => {
     if (carregando) return
@@ -45,6 +52,13 @@ export function EditorDeConteudo({
       .detalhe(projectSlug, contentSlug)
       .then(definirDados)
       .catch((e) => definirErro(e.message))
+
+    // As categorias vêm separadas: se esta chamada falhar, o editor continua
+    // funcionando e só o seletor de categoria fica vazio.
+    admin
+      .categorias(projectSlug)
+      .then((r) => definirCategorias(r.categorias))
+      .catch(() => definirCategorias([]))
   }, [usuario, carregando, projectSlug, contentSlug, router])
 
   async function alternarPublicacao() {
@@ -110,7 +124,12 @@ export function EditorDeConteudo({
 
       <h2>Blocos da página</h2>
       {content.blocks.map((bloco) => (
-        <EditorDeBloco key={bloco.id} bloco={bloco} aoMudar={recarregar} />
+        <EditorDeBloco
+          key={bloco.id}
+          bloco={bloco}
+          categorias={categorias}
+          aoMudar={recarregar}
+        />
       ))}
 
       <AdicionarBloco contentId={content.id} aoMudar={recarregar} />
@@ -275,7 +294,15 @@ function CampoDeTexto({
   )
 }
 
-function EditorDeBloco({ bloco, aoMudar }: { bloco: BlocoAdmin; aoMudar: () => Promise<void> }) {
+function EditorDeBloco({
+  bloco,
+  categorias,
+  aoMudar,
+}: {
+  bloco: BlocoAdmin
+  categorias: CategoriaAdmin[]
+  aoMudar: () => Promise<void>
+}) {
   const [enviando, definirEnviando] = useState(false)
   const [erroUpload, definirErroUpload] = useState<string | null>(null)
 
@@ -303,19 +330,67 @@ function EditorDeBloco({ bloco, aoMudar }: { bloco: BlocoAdmin; aoMudar: () => P
     <div className="bloco bloco-admin">
       <div className="topo-bloco">
         <span className="bloco-rotulo">{bloco.label ?? bloco.type}</span>
-        <button
-          type="button"
-          className="remover"
-          onClick={async () => {
-            if (confirm('Remover este bloco? O conteúdo dele será perdido.')) {
-              await admin.removerBloco(bloco.id)
+        <div className="acoes-bloco">
+          {/* Subir e descer em vez de arrastar: o painel é usado no celular, e
+              arrastar uma lista briga com a rolagem da página. */}
+          <button
+            type="button"
+            className="mover"
+            aria-label="Subir este bloco"
+            onClick={async () => {
+              await admin.moverBloco(bloco.id, 'cima')
               await aoMudar()
-            }
-          }}
-        >
-          Remover
-        </button>
+            }}
+          >
+            ▲
+          </button>
+          <button
+            type="button"
+            className="mover"
+            aria-label="Descer este bloco"
+            onClick={async () => {
+              await admin.moverBloco(bloco.id, 'baixo')
+              await aoMudar()
+            }}
+          >
+            ▼
+          </button>
+          <button
+            type="button"
+            className="remover"
+            onClick={async () => {
+              if (confirm('Remover este bloco? O conteúdo dele será perdido.')) {
+                await admin.removerBloco(bloco.id)
+                await aoMudar()
+              }
+            }}
+          >
+            Remover
+          </button>
+        </div>
       </div>
+
+      {/* A categoria é o que permite à playlist tocar "só músicas" de A a Z.
+          Só faz sentido em áudio: um texto não entra numa fila de reprodução. */}
+      {bloco.type === 'AUDIO' && categorias.length > 0 && (
+        <label className="campo-categoria">
+          Categoria
+          <select
+            value={bloco.categoryId ?? ''}
+            onChange={async (e) => {
+              await admin.classificarBloco(bloco.id, e.target.value || null)
+              await aoMudar()
+            }}
+          >
+            <option value="">Sem categoria</option>
+            {categorias.map((c) => (
+              <option key={c.id} value={c.id}>
+                {c.name}
+              </option>
+            ))}
+          </select>
+        </label>
+      )}
 
       {ehTexto && (
         <CampoDeTexto

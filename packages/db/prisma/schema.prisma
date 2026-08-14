@@ -61,6 +61,7 @@ model Project {
   auditLogs AdminAuditLog[]
   launches  Launch[]
   posts     Post[]
+  categories BlockCategory[]
 
   @@map("projects")
 }
@@ -130,6 +131,14 @@ model ContentBlock {
   content   Content   @relation(fields: [contentId], references: [id], onDelete: Cascade)
   position  Int       @default(0)
   type      BlockType
+
+  /// Categoria do áudio: Explicação, Música, Memorização, Oração...
+  ///
+  /// É uma tabela e não um enum de propósito: o cliente pediu para poder criar
+  /// categorias novas sozinho, pelo painel, sem esperar por mim. Enum exigiria
+  /// migration a cada ideia nova dele.
+  categoryId String?        @db.Uuid
+  category   BlockCategory? @relation(fields: [categoryId], references: [id], onDelete: SetNull)
   /// Rótulo livre definido pelo admin: "Letra da música", "Conteúdo educativo".
   label     String?
   /// Corpo textual, para TEXT e RICH_TEXT.
@@ -144,7 +153,39 @@ model ContentBlock {
   updatedAt DateTime @updatedAt
 
   @@index([contentId, position])
+  @@index([categoryId])
   @@map("content_blocks")
+}
+
+/**
+ * Categoria de áudio dentro de um projeto.
+ *
+ * Existe para a playlist poder ser filtrada — "só músicas", "só orações" — e
+ * para o cliente criar categorias novas sem tocar no código.
+ *
+ * `onDelete: SetNull` no bloco: apagar uma categoria não pode apagar o áudio
+ * que estava nela. O áudio volta a ser "sem categoria" e continua tocando.
+ */
+model BlockCategory {
+  id        String  @id @default(uuid()) @db.Uuid
+  projectId String  @db.Uuid
+  project   Project @relation(fields: [projectId], references: [id], onDelete: Cascade)
+
+  /// Nome como aparece na tela: "Música", "Memorização do versículo".
+  name String
+  /// Identificador estável na URL do filtro: "musica", "memorizacao".
+  slug String
+  /// Ordem dos filtros na playlist.
+  position Int @default(0)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  blocks ContentBlock[]
+
+  @@unique([projectId, slug])
+  @@index([projectId, position])
+  @@map("block_categories")
 }
 
 enum BlockType {

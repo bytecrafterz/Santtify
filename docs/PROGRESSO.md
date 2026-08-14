@@ -446,6 +446,44 @@ saiu foi só o segundo campo **vazio por padrão**.
 **QR Code:** ele pediu para gerar sozinho — **já era assim**. O painel mostra o QR de
 cada letra e oferece download em **SVG**, o formato certo para impressão.
 
+### 14/08 — Categorias de áudio, definidas por ele
+
+Cada letra passa a ter vários áudios (explicação, música, memorização do versículo,
+oração) e a playlist ganha filtro: **Ouvir tudo / Só músicas / Só explicações**.
+
+**Decisão central: tabela, não enum.** Ele pediu explicitamente para poder criar
+categorias novas sozinho. Com enum, cada ideia dele viraria migration e uma espera por
+mim. `BlockCategory` é por projeto, com nome, slug e ordem, e o painel tem tela para
+criar, renomear e apagar.
+
+| Decisão | Motivo |
+|---|---|
+| A fila da playlist é por **faixa**, não por letra | Uma letra tem vários áudios; a fila precisa passar por todos |
+| Filtro aplicado **na tela**, com tudo já carregado | São poucas dezenas de faixas: trocar de "só músicas" para "só explicações" é instantâneo |
+| Categoria **sem faixa não vira filtro** | Oferecer "só orações" numa lista sem nenhuma oração é prometer o que não existe |
+| Trocar de filtro **reinicia a fila** | Manter o índice cairia numa faixa qualquer, porque a numeração muda |
+| Apagar categoria **não apaga áudio** (`SetNull`) | O áudio volta a ser "sem categoria" e continua tocando |
+| Renomear **não muda o slug** | O slug está nos endereços de filtro já compartilhados |
+| Subir/descer em vez de arrastar | O painel é usado no celular, e arrastar briga com a rolagem |
+
+**Faltava reordenar blocos.** Bloco novo nasce no fim, e ele quer a explicação antes da
+música — em 26 letras. Sem isso teria de acertar a ordem de criação sempre e nunca
+poderia corrigir. Agora há ▲▼ em cada bloco, trocando posição em transação (duas
+escritas soltas deixariam dois blocos na mesma posição).
+
+**Defeito que eu mesmo introduzi e peguei antes de publicar:** ao passar a fila para
+faixas, o rastreio da playlist continuou enviando `faixa.id` como `contentId` — e `id`
+virou o do **bloco**. Os eventos apontariam para um conteúdo inexistente e "conteúdos
+mais acessados" ficaria vazio **sem erro nenhum na tela**. Mesma família dos sete
+defeitos que passaram no teste visual.
+
+**Letra A carregada com o material real dele:** os dois MP3 (4:17 explicação+música,
+5:33 música), classificados, na ordem que ele pediu.
+
+**Verificado no navegador:** filtros presentes, "ouvir tudo" com 4 faixas, "só músicas"
+com 3, "só explicações" com 1, tocar dentro do filtro, criar categoria pelo painel,
+categoria vazia não virando filtro, apagar, e os seletores na página da letra.
+
 ### Implantação pronta para rodar (14/08)
 
 Escrita enquanto o domínio não existe, para que no dia seja um comando e não uma

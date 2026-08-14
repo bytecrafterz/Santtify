@@ -2,7 +2,7 @@
 
 import Link from 'next/link'
 import { useEffect, useRef, useState } from 'react'
-import type { Faixa } from '@/lib/api'
+import type { CategoriaDeAudio, Faixa } from '@/lib/api'
 import { rastrear } from '@/lib/track'
 
 /**
@@ -22,16 +22,25 @@ import { rastrear } from '@/lib/track'
  * atravessa a navegação exige o tocador no layout e estado global; o cliente
  * pediu a experiência simples, e simples aqui também significa menos coisa
  * para quebrar no celular da mãe.
+ *
+ * FILTRO POR CATEGORIA (14/08): cada letra passa a ter vários áudios —
+ * explicação, música, memorização, oração — e a pessoa escolhe o que quer
+ * ouvir de A a Z. A filtragem é feita aqui, na tela, com a lista inteira já
+ * carregada: são poucas dezenas de faixas, e assim trocar de "só músicas" para
+ * "só explicações" é instantâneo, sem esperar o servidor.
  */
 export function Playlist({
   projectId,
   projectSlug,
+  categorias,
   faixas,
 }: {
   projectId: string
   projectSlug: string
+  categorias: CategoriaDeAudio[]
   faixas: Faixa[]
 }) {
+  const [filtro, definirFiltro] = useState<string | null>(null)
   const audio = useRef<HTMLAudioElement>(null)
   const [atual, definirAtual] = useState(0)
   const [tocando, definirTocando] = useState(false)
@@ -69,6 +78,20 @@ export function Playlist({
       })
   }, [atual])
 
+  // A fila em si. Trocar o filtro reinicia a fila do começo — continuar do
+  // índice antigo cairia numa faixa qualquer, porque a numeração muda.
+  const fila = filtro ? faixas.filter((f) => f.categoria === filtro) : faixas
+
+  function trocarFiltro(novo: string | null) {
+    if (novo === filtro) return
+    const el = audio.current
+    if (el) el.pause()
+    querTocar.current = false
+    definirTocando(false)
+    definirAtual(0)
+    definirFiltro(novo)
+  }
+
   if (faixas.length === 0) {
     return (
       <div className="bloco">
@@ -80,10 +103,10 @@ export function Playlist({
     )
   }
 
-  const faixa = faixas[atual]
+  const faixa = fila[atual] ?? fila[0]
 
   function irPara(indice: number) {
-    if (indice < 0 || indice >= faixas.length) return
+    if (indice < 0 || indice >= fila.length) return
     querTocar.current = true
     // Tocar na faixa que já está tocando não muda o índice, então o efeito não
     // roda: aqui ela recomeça do início, que é o que a pessoa espera.
@@ -120,14 +143,37 @@ export function Playlist({
 
   return (
     <>
+      {categorias.length > 1 && (
+        <div className="filtros-playlist" role="group" aria-label="O que ouvir">
+          <button
+            type="button"
+            className={filtro === null ? 'filtro atual' : 'filtro'}
+            onClick={() => trocarFiltro(null)}
+          >
+            Ouvir tudo
+          </button>
+          {categorias.map((c) => (
+            <button
+              key={c.slug}
+              type="button"
+              className={filtro === c.slug ? 'filtro atual' : 'filtro'}
+              onClick={() => trocarFiltro(c.slug)}
+            >
+              Só {c.nome.toLocaleLowerCase('pt')}
+            </button>
+          ))}
+        </div>
+      )}
+
       <div className="bloco tocador">
         <span className="bloco-rotulo">Tocando agora</span>
         <p className="tocador-titulo">
           {faixa.title}
           {faixa.subtitle && <small> — {faixa.subtitle}</small>}
         </p>
+        {faixa.rotulo && <p className="tocador-rotulo">{faixa.rotulo}</p>}
         <p className="nota">
-          {atual + 1} de {faixas.length}
+          {atual + 1} de {fila.length}
         </p>
 
         <audio
@@ -135,24 +181,28 @@ export function Playlist({
           preload="metadata"
           onPlay={() => {
             definirTocando(true)
+            // contentId, e não faixa.id: desde que a fila passou a ser por
+            // faixa, `id` é o do BLOCO. Registrar o bloco aqui apontaria o
+            // evento para um conteúdo que não existe, e "conteúdos mais
+            // acessados" ficaria em branco sem nenhum erro aparecer na tela.
             void rastrear({
               projectId,
-              contentId: faixa.id,
+              contentId: faixa.contentId,
               type: 'MEDIA_PLAY',
-              props: { origem: 'playlist' },
+              props: { origem: 'playlist', faixa: faixa.rotulo, categoria: faixa.categoria },
             })
           }}
           onPause={() => definirTocando(false)}
           onEnded={() => {
             void rastrear({
               projectId,
-              contentId: faixa.id,
+              contentId: faixa.contentId,
               type: 'MEDIA_COMPLETE',
-              props: { origem: 'playlist' },
+              props: { origem: 'playlist', faixa: faixa.rotulo, categoria: faixa.categoria },
             })
             // Fim da fila: para, e não volta ao início. Recomeçar sozinho do A
             // depois do Z deixaria a música tocando sem ninguém pedir.
-            if (atual + 1 < faixas.length) irPara(atual + 1)
+            if (atual + 1 < fila.length) irPara(atual + 1)
             else {
               querTocar.current = false
               definirTocando(false)
@@ -182,7 +232,7 @@ export function Playlist({
             type="button"
             className="secundario"
             onClick={() => irPara(atual + 1)}
-            disabled={atual === faixas.length - 1}
+            disabled={atual === fila.length - 1}
             aria-label="Próxima música"
           >
             ▶▶
@@ -193,7 +243,7 @@ export function Playlist({
       <h2>Todas as músicas</h2>
 
       <ul className="lista lista-faixas">
-        {faixas.map((f, i) => (
+        {fila.map((f, i) => (
           <li key={f.id}>
             <button
               type="button"
@@ -205,7 +255,9 @@ export function Playlist({
               </span>
               <span className="faixa-nome">
                 <strong>{f.title}</strong>
-                {f.subtitle && <small>{f.subtitle}</small>}
+                {/* Sem filtro, a mesma letra aparece mais de uma vez: o rótulo
+                    é o que diz qual das faixas é qual. */}
+                <small>{filtro ? f.subtitle : (f.rotulo ?? f.subtitle)}</small>
               </span>
             </button>
             <Link className="faixa-abrir" href={`/${projectSlug}/${f.slug}`}>

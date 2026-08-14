@@ -35,6 +35,7 @@ export interface AssetAdmin {
 }
 
 export interface BlocoAdmin {
+  categoryId?: string | null
   id: string
   type: TipoBloco
   label: string | null
@@ -62,6 +63,14 @@ export interface DetalheAdmin {
     qrCode: string | null
     qrUrl: string | null
   }
+}
+
+export interface CategoriaAdmin {
+  id: string
+  name: string
+  slug: string
+  position: number
+  audios?: number
 }
 
 export interface ComentarioAdmin {
@@ -166,6 +175,36 @@ export const admin = {
     dados.append('file', arquivo)
     return chamar<AssetAdmin>('/upload', { method: 'POST', body: dados })
   },
+
+  // ── Categorias de áudio ─────────────────────────────────────────
+  categorias: (projectSlug: string) =>
+    chamar<{ categorias: CategoriaAdmin[] }>(`/projects/${projectSlug}/categories`),
+
+  criarCategoria: (projectSlug: string, nome: string) =>
+    chamar<CategoriaAdmin>(`/projects/${projectSlug}/categories`, {
+      method: 'POST',
+      body: JSON.stringify({ nome }),
+    }),
+
+  renomearCategoria: (id: string, nome: string) =>
+    chamar<CategoriaAdmin>(`/categories/${id}`, { method: 'PATCH', body: JSON.stringify({ nome }) }),
+
+  removerCategoria: (id: string) =>
+    chamar<{ removida: string; audiosDesclassificados: number }>(`/categories/${id}`, {
+      method: 'DELETE',
+    }),
+
+  classificarBloco: (blocoId: string, categoryId: string | null) =>
+    chamar(`/blocks/${blocoId}/category`, {
+      method: 'PATCH',
+      body: JSON.stringify({ categoryId }),
+    }),
+
+  moverBloco: (blocoId: string, direcao: 'cima' | 'baixo') =>
+    chamar<{ movido: boolean }>(`/blocks/${blocoId}/move`, {
+      method: 'PATCH',
+      body: JSON.stringify({ direcao }),
+    }),
 
   /** Define (ou remove) a capa da letra. */
   definirCapa: (contentId: string, assetId: string | null) =>
