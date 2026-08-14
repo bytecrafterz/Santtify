@@ -207,13 +207,6 @@ export class SocialService {
     const visita = await this.attribution.resolveVisit({ ...ctx, userId: userId ?? undefined })
     const a = visita.attribution
 
-    await this.events.registrar({
-      type: EventType.CHECKOUT_CLICKED,
-      attribution: { ...a, userId: userId ?? a.userId },
-      contentId,
-      props: { destino: 'externo' },
-    })
-
     // A referência da campanha (o vídeo, o post) chega na URL de entrada e fica
     // gravada no evento daquela visita. Este clique, porém, é uma requisição
     // nova e sem aqueles parâmetros: resolvido sozinho, ele sairia sabendo o
@@ -232,6 +225,16 @@ export class SocialService {
       })
       campanha = anterior?.campaignRef ?? null
     }
+
+    // A campanha entra também NO EVENTO, e não só no endereço que vai para a
+    // Hotmart: sem isso, o painel dele contaria cliques por canal mas não por
+    // publicação, e a resposta ficaria só do lado de fora.
+    await this.events.registrar({
+      type: EventType.CHECKOUT_CLICKED,
+      attribution: { ...a, campaignRef: campanha, userId: userId ?? a.userId },
+      contentId,
+      props: { destino: 'externo' },
+    })
 
     const limpar = (v: string | null | undefined) =>
       (v ?? '').toString().toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '')

@@ -529,6 +529,11 @@ casos:
 | `?utm_source=instagram` | `src=pv-instagram` |
 | `?utm_source=instagram&pv_ref=video03` | `src=pv-instagram-video03` |
 
+A campanha entra **também no evento**, e não só no endereço que vai para a Hotmart: sem
+isso o painel dele contaria cliques por canal mas não por publicação, e a resposta
+ficaria só do lado de fora. Conferido no banco: `CHECKOUT_CLICKED` com
+`platform=INSTAGRAM` e `campaignRef=video03`.
+
 > **Não existe tela de campanhas no painel.** O `pv_ref` é posto à mão na URL divulgada.
 > Construir o gerador de links de campanha é candidato natural à próxima etapa.
 
