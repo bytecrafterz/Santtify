@@ -19,7 +19,7 @@ triagem dos mockups) ou é fase seguinte, orçada e aguardando aprovação.
 | Commits | 15 |
 | Migrations | 5 |
 | Tabelas | 23 |
-| Suites de verificação | 5 (atribuição, social, propagação, foto, moderação) — todas passando |
+| Suites de verificação | 5 (atribuição, social, propagação, foto, moderação) — **todas passando em 14/08**, depois das mudanças da playlist, categorias e armazenamento |
 
 ---
 
@@ -539,6 +539,15 @@ ficaria só do lado de fora. Conferido no banco: `CHECKOUT_CLICKED` com
 
 **Estado:** os dois campos estão no painel, **vazios de propósito**. O PDF de teste e o
 link falso foram retirados — botão apontando para página inexistente pareceria defeito.
+
+### 14/08 — Regressão completa depois de tudo
+
+As cinco suítes rodadas de novo contra a API no ar, porque a semana mexeu em áudio,
+armazenamento, conteúdo e playlist. **Quatro passaram intactas.** A da foto acusou uma
+falha, e era o **teste** que estava velho, não o produto: desde a conversão automática de
+imagens, um PNG enviado é guardado como JPEG de 1200 px, e a asserção ainda esperava
+`image/png`. Atualizada, e ganhou de brinde a verificação de que a conversão de fato
+acontece.
 
 ### 14/08 — Imagens de produção construídas e provadas pela primeira vez
 

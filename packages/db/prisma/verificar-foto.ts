@@ -131,7 +131,11 @@ async function main() {
   const caminhoFoto = urlFoto.replace(/^https?:\/\/[^/]+/, '')
   const rArquivo = await fetch(`${API.replace(/\/api$/, '')}${caminhoFoto}`)
   conferir('o arquivo é servido pela API', rArquivo.status, 200)
-  conferir('servido como imagem', rArquivo.headers.get('content-type'), 'image/png')
+  // Desde 14/08 toda imagem enviada é convertida e reduzida na entrada: o que
+  // fica guardado é JPEG de 1200px, e não o arquivo original. Por isso o tipo
+  // esperado aqui é JPEG mesmo tendo sido enviado um PNG.
+  conferir('servido como imagem', rArquivo.headers.get('content-type'), 'image/jpeg')
+  conferir('e foi convertido, não guardado como veio', urlFoto.endsWith('.jpg'), true)
 
   // ── 3. Invisível para o público antes da aprovação ────────────────
   console.log('\n3. Antes da aprovação, ninguém de fora vê')
