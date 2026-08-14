@@ -564,13 +564,45 @@ letra continua sendo outra coisa — é ela que vai na prévia do link compartil
 
 | Faixa | Categoria | Arte | Áudio |
 |---|---|---|---|
-| Explicação e música | Explicação | — | 4m16s, 5,7 MB |
+| Explicação e música | Explicação | 341 KB | 4m16s, 5,7 MB |
 | Música | Música | 338 KB | 5m32s, 7,2 MB |
 | Memorize e repita — João 14:15 | Memorização | 279 KB | 3m00s, 4,0 MB |
 | Oração — Romanos 5:5 | Oração | 310 KB | 6m29s, 8,7 MB |
 
 **Peso:** ~25,6 MB de áudio por letra → **~0,65 GB** nas 26. As artes chegam com 8–10 MB
 e ficam com ~300 KB cada.
+
+### Visões futuras registradas (não construir)
+
+Ele descreveu duas evoluções e pediu explicitamente para **não construir agora**, só
+para a estrutura não fechar a porta. Ficam aqui para não se perderem.
+
+**ScanLove** — rede social de comércio local que reuniria todas as empresas com Produto
+Vivo, com identidade única do usuário. **Ponto encerrado por ele em 14/08** depois de
+confirmado que: a identidade já é global (`User` não tem `projectId`), as interações já
+são separadas por empresa (`Visitor` tem), e nada vaza entre projetos por padrão.
+Provado criando uma segunda empresa e fazendo a mesma pessoa interagir nas duas: uma
+conta, dois visitantes, métricas separadas. A discussão de privacidade fica para um
+documento próprio quando a ScanLove entrar em desenvolvimento.
+
+**Santtify como plataforma de produtores** — depois de mais uns três produtos próprios,
+abrir para produtores cristãos externos cadastrarem e venderem, com afiliados numa etapa
+posterior.
+
+O que isso exige que **ainda não existe**, e é bom estar escrito antes de alguém supor
+que existe:
+
+| Precisa | Estado |
+|---|---|
+| Vários projetos lado a lado | ✔ já é assim desde a primeira migration |
+| Conteúdo genérico (não sabe o que é "letra") | ✔ decisão da proposta |
+| Separação de dados por projeto | ✔ 46 campos `projectId` no schema |
+| **Permissão por projeto** | ✘ **`UserRole` é global**: hoje um ADMIN administra TODOS os projetos. Para produtor externo, isto tem de virar papel por projeto |
+| Repasse, comissão, saque | ✘ não existe |
+| Afiliados | ✘ não existe — **mas a fundação sim**: a cadeia de `ShortLink` com raiz e profundidade já registra quem trouxe quem, que é exatamente o que um sistema de afiliados precisa medir |
+
+Nada disso é reconstrução: a parte cara — separar dados por projeto — está feita. A
+permissão por projeto é uma tabela de ligação e um guarda que a consulta.
 
 ### 14/08 — Selo PV nos indicadores, com contagem global
 
