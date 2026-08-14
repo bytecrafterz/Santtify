@@ -14,6 +14,10 @@ const TIPOS_PERMITIDOS = new Set<EventType>([
   EventType.MEDIA_PROGRESS,
   EventType.MEDIA_COMPLETE,
   EventType.PROFILE_VIEW,
+  // O clique no selo PV nasce no navegador e é inofensivo se alguém forjar:
+  // infla um contador de curiosidade, não uma venda nem um cadastro. Compra
+  // continua de fora — aquela só entra por dentro, pela rota de checkout.
+  EventType.PV_CLICK,
   EventType.CUSTOM,
 ])
 

@@ -49,20 +49,44 @@ export class AnalyticsService {
 
   /** Visitantes, cadastros, interações. */
   private async totais(projectId: string) {
-    const [visitantes, cadastros, curtidas, comentarios, compartilhamentos, cliquesEmPartilha] =
-      await Promise.all([
-        this.prisma.visitor.count({ where: { projectId } }),
-        this.prisma.visitor.count({ where: { projectId, userId: { not: null } } }),
-        this.prisma.reaction.count({ where: { projectId } }),
-        this.prisma.comment.count({ where: { projectId, status: 'PUBLISHED' } }),
-        this.prisma.share.count({ where: { shortLink: { projectId } } }),
-        this.prisma.event.count({ where: { projectId, type: 'SHARE_LINK_CLICKED' } }),
-      ])
+    const [
+      visitantes,
+      cadastros,
+      curtidas,
+      comentarios,
+      compartilhamentos,
+      cliquesEmPartilha,
+      cliquesNoPv,
+      cliquesEmComprar,
+    ] = await Promise.all([
+      this.prisma.visitor.count({ where: { projectId } }),
+      this.prisma.visitor.count({ where: { projectId, userId: { not: null } } }),
+      this.prisma.reaction.count({ where: { projectId } }),
+      this.prisma.comment.count({ where: { projectId, status: 'PUBLISHED' } }),
+      this.prisma.share.count({ where: { shortLink: { projectId } } }),
+      this.prisma.event.count({ where: { projectId, type: 'SHARE_LINK_CLICKED' } }),
+      // O PV é contado somando TODAS as letras: é um só Produto Vivo,
+      // apresentado em vinte e seis lugares. Por isso não há filtro de
+      // conteúdo aqui — e é justamente esse número que diz quantas empresas
+      // podem estar olhando.
+      this.prisma.event.count({ where: { projectId, type: 'PV_CLICK' } }),
+      this.prisma.event.count({ where: { projectId, type: 'CHECKOUT_CLICKED' } }),
+    ])
 
     // Conversão de visita para cadastro: a pergunta comercial central.
     const conversao = visitantes > 0 ? Number(((cadastros / visitantes) * 100).toFixed(1)) : 0
 
-    return { visitantes, cadastros, conversao, curtidas, comentarios, compartilhamentos, cliquesEmPartilha }
+    return {
+      visitantes,
+      cadastros,
+      conversao,
+      curtidas,
+      comentarios,
+      compartilhamentos,
+      cliquesEmPartilha,
+      cliquesNoPv,
+      cliquesEmComprar,
+    }
   }
 
   /** Curva de crescimento a partir do Dia Zero. */

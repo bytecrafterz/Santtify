@@ -1786,3 +1786,46 @@ h3 {
   background: var(--cor-fundo);
   color: var(--cor-texto);
 }
+
+/* O selo PV, no fim da fileira de indicadores da letra. */
+.acao-pv {
+  text-decoration: none;
+}
+
+.acao-pv span {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 26px;
+  height: 26px;
+  border-radius: 999px;
+  background: var(--cor-primaria);
+  color: #fff;
+  font-size: 12px;
+  font-weight: 800;
+  letter-spacing: 0.5px;
+}
+
+/* Página do Produto Vivo: a chamada para empresas. */
+.chamada-pv {
+  border-color: var(--cor-primaria);
+}
+
+.botao-whatsapp {
+  display: block;
+  margin-top: 12px;
+  padding: 14px;
+  border-radius: 10px;
+  background: #1c7c4a;
+  color: #fff;
+  font-size: 16px;
+  font-weight: 700;
+  text-align: center;
+  text-decoration: none;
+}
+
+.nota-patente {
+  margin-top: 18px;
+  text-align: center;
+  font-size: 13px;
+}

@@ -19,6 +19,8 @@ interface VisaoGeral {
     comentarios: number
     compartilhamentos: number
     cliquesEmPartilha: number
+    cliquesNoPv: number
+    cliquesEmComprar: number
   }
   porDia: Array<{ dia: string; visitantes: number; cadastros: number }>
   origemVisitantes: Array<{ plataforma: string; visitantes: number }>
@@ -100,6 +102,21 @@ export function Dashboard({ projectSlug }: { projectSlug: string }) {
         <Cartao valor={`${t.conversao}%`} rotulo="Conversão" />
         <Cartao valor={n(t.compartilhamentos)} rotulo="Compartilhamentos" />
       </div>
+
+      {/* O Produto Vivo tem quadro próprio, separado das métricas das letras,
+          porque a contagem é de outra natureza: as letras têm números
+          individuais, e o PV é um só somado em todas elas. Misturar os dois
+          quadros faria parecer que este número é da letra. */}
+      <h2>Produto Vivo</h2>
+      <div className="numeros">
+        <Cartao valor={n(t.cliquesNoPv)} rotulo="Cliques no PV (todas as letras)" />
+        <Cartao valor={n(t.cliquesEmComprar)} rotulo="Cliques em comprar" />
+      </div>
+      <p className="nota">
+        O PV aparece nas 26 letras e a contagem é a soma de todas. É o número que diz
+        quantas pessoas — e possivelmente quantas empresas — quiseram saber o que é a
+        tecnologia.
+      </p>
 
       <h2>Crescimento</h2>
       {dados.porDia.length === 0 ? (

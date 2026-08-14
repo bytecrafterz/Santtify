@@ -46,39 +46,56 @@ export default async function PaginaProdutoVivo({
       </div>
 
       <h1>Produto Vivo</h1>
-      <p className="subtitulo">
-        Esta plataforma utiliza a tecnologia Produto Vivo.
-      </p>
+      <p className="subtitulo">dando vida aos produtos</p>
 
       <div className="bloco">
-        <span className="bloco-rotulo">O que é</span>
         <p className="bloco-texto">
-          O Produto Vivo transforma qualquer site ou aplicativo em uma mini rede social
-          comercial. Em vez de um produto mostrar apenas foto, preço e descrição, ele ganha
-          um card social com visualizações, curtidas, comentários e compartilhamentos.
-          {'\n\n'}
-          Cada empresa mantém a sua identidade visual e usa a mesma infraestrutura social.
-          O utilizador tem um só perfil e interage com várias empresas, sem precisar criar
-          uma conta para cada aplicativo.
+          O Produto Vivo é uma tecnologia que adiciona uma camada social a um site ou
+          aplicativo já existente. Um produto que antes era apenas uma imagem ou item de
+          catálogo passa a ter visualizações, curtidas, comentários, compartilhamentos,
+          perfis e interação entre usuários.
         </p>
       </div>
 
       <div className="bloco">
-        <span className="bloco-rotulo">Para empresas</span>
+        <span className="bloco-rotulo">Você acabou de ver funcionando</span>
+        <p className="bloco-texto">
+          É exatamente o que estamos demonstrando aqui com o Jesus Alfabeto Saudável: o
+          conteúdo deixou de ser apenas uma página estática e ganhou vida social.
+        </p>
+        <p className="bloco-texto">
+          A proposta futura é permitir que empresas façam isso também dentro dos próprios
+          sites e aplicativos, através da integração do Produto Vivo.
+        </p>
+      </div>
+
+      <div className="bloco chamada-pv">
+        <p className="bloco-texto">
+          Tem uma empresa e gostaria de conhecer ou acompanhar o desenvolvimento do Produto
+          Vivo?
+        </p>
         {linkWhatsapp ? (
-          <p className="bloco-texto">
-            Quer aplicar o Produto Vivo no seu negócio?{' '}
-            <a href={linkWhatsapp} target="_blank" rel="noopener noreferrer">
-              Fale comigo pelo WhatsApp
-            </a>
-            .
-          </p>
+          <a
+            className="botao-whatsapp"
+            href={linkWhatsapp}
+            target="_blank"
+            rel="noopener noreferrer"
+          >
+            Falar pelo WhatsApp
+          </a>
         ) : (
           <p className="bloco-vazio">
-            Botão de WhatsApp aguardando o número de contato do cliente.
+            Botão de WhatsApp aguardando o número de contato.
           </p>
         )}
       </div>
+
+      {/* Discreto, como ele pediu, e com a palavra certa: o pedido foi
+          depositado, não concedido. Escrever "patenteado" seria afirmar uma
+          coisa que ainda não aconteceu. */}
+      <p className="nota nota-patente">
+        Produto Vivo — tecnologia com pedido de patente depositado.
+      </p>
     </main>
   )
 }

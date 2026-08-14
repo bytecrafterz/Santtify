@@ -540,6 +540,28 @@ ficaria só do lado de fora. Conferido no banco: `CHECKOUT_CLICKED` com
 **Estado:** os dois campos estão no painel, **vazios de propósito**. O PDF de teste e o
 link falso foram retirados — botão apontando para página inexistente pareceria defeito.
 
+### 14/08 — Selo PV nos indicadores, com contagem global
+
+Pedido dele: o PV sai do rodapé e passa a ficar **no fim da fileira de indicadores** de
+cada letra, levando a uma página que explica o Produto Vivo e capta empresas.
+
+| Decisão | Motivo |
+|---|---|
+| Tipo de evento próprio, `PV_CLICK` | É a métrica comercial do Produto Vivo. Com `CUSTOM` a consulta dependeria de filtrar um campo JSON |
+| Contagem **global**, sem filtro de letra | O Produto Vivo é um só, apresentado em 26 lugares. A letra continua com métricas próprias |
+| Quadro separado no painel | Misturado com as letras, o número pareceria ser daquela letra |
+| "pedido de patente depositado" | Ele disse depositado, não concedido. Escrever "patenteado" afirmaria o que ainda não aconteceu |
+
+**Defeito encontrado pela verificação:** o clique não gravava nada. A rota pública de
+eventos tem uma **lista branca** — a mesma que faz o teste de atribuição provar que
+"compra forjada no navegador NÃO é gravada" — e `PV_CLICK` não estava nela. O contador
+mostrava zero corretamente; o evento é que nunca chegava. Incluído de propósito: clique
+forjado no selo infla um contador de curiosidade, não uma venda. **Compra continua de
+fora da lista branca.**
+
+**Verificado:** selo como último item da fileira, página com o texto dele, cliques em
+três letras diferentes somando 3 no painel.
+
 ### 14/08 — Regressão completa depois de tudo
 
 As cinco suítes rodadas de novo contra a API no ar, porque a semana mexeu em áudio,

@@ -769,6 +769,13 @@ enum EventType {
 
   PROFILE_VIEW
 
+  /// Clique no selo PV, em qualquer letra.
+  ///
+  /// Tipo próprio e não CUSTOM porque esta é a métrica comercial do Produto
+  /// Vivo: a contagem é GLOBAL, somando os cliques de todas as letras, e
+  /// precisa ser consultável sem depender de filtrar por um campo JSON.
+  PV_CLICK
+
   /// Reservados para a Fase 2 (checkout externo).
   CHECKOUT_CLICKED
   PURCHASE_COMPLETED

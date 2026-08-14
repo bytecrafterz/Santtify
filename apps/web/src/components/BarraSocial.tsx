@@ -3,6 +3,7 @@
 import Link from 'next/link'
 import { useEffect, useState } from 'react'
 import { social, type EstadoSocial } from '@/lib/social'
+import { rastrear } from '@/lib/track'
 import { useAuth } from '@/components/ProvedorDeAuth'
 
 /**
@@ -162,6 +163,21 @@ export function BarraSocial({
           {estado.compartilhamentos}
           <small>compartilhar</small>
         </button>
+
+        {/* O selo PV no fim da fileira de indicadores, como o cliente pediu em
+            14/08. Não é mais uma função social da letra: leva à página que
+            explica o Produto Vivo e capta empresas interessadas.
+
+            O clique é contado em TODAS as letras somadas, e não por letra: o
+            Produto Vivo é um só, apresentado em vinte e seis lugares. */}
+        <Link
+          href={`/${projectSlug}/produto-vivo`}
+          className="acao acao-pv"
+          onClick={() => void rastrear({ projectId, contentId, type: 'PV_CLICK' })}
+        >
+          <span aria-hidden>PV</span>
+          <small>o que é isto</small>
+        </Link>
       </div>
 
       {aviso === 'entrar' && (
