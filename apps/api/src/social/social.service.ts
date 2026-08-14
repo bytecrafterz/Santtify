@@ -214,10 +214,29 @@ export class SocialService {
       props: { destino: 'externo' },
     })
 
+    // A referência da campanha (o vídeo, o post) chega na URL de entrada e fica
+    // gravada no evento daquela visita. Este clique, porém, é uma requisição
+    // nova e sem aqueles parâmetros: resolvido sozinho, ele sairia sabendo o
+    // canal e não sabendo QUAL publicação trouxe a pessoa.
+    //
+    // Então lê-se o histórico do próprio visitante, em vez de reescrevê-lo —
+    // mesma solução usada no perfil para contar o que aconteceu antes do
+    // cadastro. Sem isto, "conversão por campanha" nunca sairia do zero, que é
+    // exatamente o exemplo que o cliente deu: Instagram → Vídeo 03 → compras.
+    let campanha = a.campaignRef
+    if (!campanha && a.visitorId) {
+      const anterior = await this.prisma.event.findFirst({
+        where: { visitorId: a.visitorId, campaignRef: { not: null } },
+        orderBy: { occurredAt: 'desc' },
+        select: { campaignRef: true },
+      })
+      campanha = anterior?.campaignRef ?? null
+    }
+
     const limpar = (v: string | null | undefined) =>
       (v ?? '').toString().toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '')
 
-    const origem = ['pv', limpar(a.rootPlatform ?? a.platform) || 'direto', limpar(a.campaignRef)]
+    const origem = ['pv', limpar(a.rootPlatform ?? a.platform) || 'direto', limpar(campanha)]
       .filter(Boolean)
       .join('-')
       .slice(0, 60)

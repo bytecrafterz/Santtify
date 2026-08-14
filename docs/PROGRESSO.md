@@ -511,6 +511,27 @@ pseudonimizado a um terceiro — e a política de privacidade diz que isso não 
 verdade, clique registrado com plataforma e visitante, endereço final com `src=`, e a
 letra B sem botão de baixar.
 
+**Defeito encontrado por recusar afirmar sem testar:** eu ia dizer ao cliente que o
+código de origem levaria a campanha. Fui medir e **não levava**. O `pv_ref` da URL de
+entrada é gravado no evento daquela visita, mas o clique em comprar é uma requisição
+nova, sem aqueles parâmetros — resolvido sozinho, saía com o canal e **sem qual
+publicação** trouxe a pessoa. Ou seja, "conversão por campanha" nunca sairia do zero,
+que é exatamente o exemplo dele: *Instagram → Vídeo 03 → 850 visitas → 120 cadastros →
+18 compras*.
+
+Corrigido lendo o histórico do próprio visitante em vez de reescrevê-lo — a mesma
+técnica usada no perfil para contar o que aconteceu antes do cadastro. Medido nos três
+casos:
+
+| Link divulgado | Código que chega na Hotmart |
+|---|---|
+| endereço cru | `src=pv-direct` |
+| `?utm_source=instagram` | `src=pv-instagram` |
+| `?utm_source=instagram&pv_ref=video03` | `src=pv-instagram-video03` |
+
+> **Não existe tela de campanhas no painel.** O `pv_ref` é posto à mão na URL divulgada.
+> Construir o gerador de links de campanha é candidato natural à próxima etapa.
+
 **Estado:** os dois campos estão no painel, **vazios de propósito**. O PDF de teste e o
 link falso foram retirados — botão apontando para página inexistente pareceria defeito.
 
