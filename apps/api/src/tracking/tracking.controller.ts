@@ -18,6 +18,7 @@ const TIPOS_PERMITIDOS = new Set<EventType>([
   // infla um contador de curiosidade, não uma venda nem um cadastro. Compra
   // continua de fora — aquela só entra por dentro, pela rota de checkout.
   EventType.PV_CLICK,
+  EventType.PV_CONTACT,
   EventType.CUSTOM,
 ])
 

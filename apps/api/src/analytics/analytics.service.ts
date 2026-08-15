@@ -57,6 +57,7 @@ export class AnalyticsService {
       compartilhamentos,
       cliquesEmPartilha,
       cliquesNoPv,
+      contatosPv,
       cliquesEmComprar,
     ] = await Promise.all([
       this.prisma.visitor.count({ where: { projectId } }),
@@ -70,6 +71,9 @@ export class AnalyticsService {
       // conteúdo aqui — e é justamente esse número que diz quantas empresas
       // podem estar olhando.
       this.prisma.event.count({ where: { projectId, type: 'PV_CLICK' } }),
+      // Quem foi até o fim e pediu para entrar no grupo. É este o número que
+      // responde "existem 10, 20 ou 50 empresas interessadas?".
+      this.prisma.event.count({ where: { projectId, type: 'PV_CONTACT' } }),
       this.prisma.event.count({ where: { projectId, type: 'CHECKOUT_CLICKED' } }),
     ])
 
@@ -85,6 +89,7 @@ export class AnalyticsService {
       compartilhamentos,
       cliquesEmPartilha,
       cliquesNoPv,
+      contatosPv,
       cliquesEmComprar,
     }
   }

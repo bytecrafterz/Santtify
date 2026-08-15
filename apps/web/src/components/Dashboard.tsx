@@ -20,6 +20,7 @@ interface VisaoGeral {
     compartilhamentos: number
     cliquesEmPartilha: number
     cliquesNoPv: number
+    contatosPv: number
     cliquesEmComprar: number
   }
   porDia: Array<{ dia: string; visitantes: number; cadastros: number }>
@@ -110,12 +111,14 @@ export function Dashboard({ projectSlug }: { projectSlug: string }) {
       <h2>Produto Vivo</h2>
       <div className="numeros">
         <Cartao valor={n(t.cliquesNoPv)} rotulo="Cliques no PV (todas as letras)" />
+        <Cartao valor={n(t.contatosPv)} rotulo="Entraram no grupo" />
         <Cartao valor={n(t.cliquesEmComprar)} rotulo="Cliques em comprar" />
       </div>
       <p className="nota">
-        O PV aparece nas 26 letras e a contagem é a soma de todas. É o número que diz
-        quantas pessoas — e possivelmente quantas empresas — quiseram saber o que é a
-        tecnologia.
+        O PV aparece nas 26 letras e a contagem é a soma de todas. O primeiro número é
+        curiosidade: quantas pessoas quiseram saber o que é a tecnologia. O segundo é
+        intenção: quantas foram até o fim e pediram para entrar no grupo. É esse que
+        responde se existem dez, vinte ou cinquenta empresas interessadas.
       </p>
 
       <h2>Crescimento</h2>

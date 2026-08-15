@@ -16,6 +16,7 @@ const API_URL = process.env.NEXT_PUBLIC_API_URL ?? 'http://localhost:3333'
 
 export type TipoEvento =
   | 'PV_CLICK'
+  | 'PV_CONTACT'
   | 'PAGE_VIEW'
   | 'CONTENT_VIEW'
   | 'MEDIA_PLAY'

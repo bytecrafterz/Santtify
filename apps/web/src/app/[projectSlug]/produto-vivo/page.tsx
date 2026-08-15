@@ -1,6 +1,7 @@
 import Link from 'next/link'
 import { api } from '@/lib/api'
 import { RastreadorDeVisita } from '@/components/RastreadorDeVisita'
+import { EntrarNoGrupoPv } from '@/components/EntrarNoGrupoPv'
 
 /**
  * Página institucional do Produto Vivo.
@@ -14,8 +15,15 @@ import { RastreadorDeVisita } from '@/components/RastreadorDeVisita'
  * com slug "produto-vivo" conflita com ela.
  */
 
-// Substituir pelo número que o cliente enviar.
-const WHATSAPP = process.env.NEXT_PUBLIC_WHATSAPP_PV ?? ''
+/**
+ * Link de convite do grupo oficial do Produto Vivo.
+ *
+ * Fica em variável de ambiente, e não no código, por dois motivos: o cliente
+ * pode trocar o convite no WhatsApp a qualquer momento (é o que se faz quando
+ * um grupo recebe spam), e assim a troca é uma linha de configuração em vez de
+ * uma alteração de código com novo deploy.
+ */
+const GRUPO_PV = process.env.NEXT_PUBLIC_PV_GRUPO_URL ?? ''
 
 export const metadata = {
   title: 'Produto Vivo — a tecnologia por trás desta plataforma',
@@ -31,10 +39,11 @@ export default async function PaginaProdutoVivo({
   const { projectSlug } = await params
   const project = await api.projeto(projectSlug)
 
-  const linkWhatsapp = WHATSAPP
-    ? `https://wa.me/${WHATSAPP.replace(/\D/g, '')}?text=${encodeURIComponent(
-        'Olá! Vi o Produto Vivo e gostaria de saber mais para a minha empresa.',
-      )}`
+  // Aceita só convite de grupo do WhatsApp. Um endereço qualquer colado aqui
+  // por engano viraria um botão levando a lugar nenhum, numa página que é a
+  // porta de entrada comercial do projeto.
+  const linkGrupo = /^https:\/\/chat\.whatsapp\.com\/[A-Za-z0-9]+/.test(GRUPO_PV)
+    ? GRUPO_PV
     : null
 
   return (
@@ -74,19 +83,17 @@ export default async function PaginaProdutoVivo({
           Tem uma empresa e gostaria de conhecer ou acompanhar o desenvolvimento do Produto
           Vivo?
         </p>
-        {linkWhatsapp ? (
-          <a
-            className="botao-whatsapp"
-            href={linkWhatsapp}
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            Falar pelo WhatsApp
-          </a>
+        {/* Diz que é grupo ANTES do toque. Quem espera conversa privada e cai
+            num grupo com desconhecidos sai na hora — e teria sido um contato
+            perdido por surpresa, não por falta de interesse. */}
+        <p className="nota">
+          Entre no grupo oficial no WhatsApp: lá saem as novidades, as demonstrações e os
+          números do projeto, e dá para acompanhar a evolução junto com outras empresas.
+        </p>
+        {linkGrupo ? (
+          <EntrarNoGrupoPv projectId={project?.id ?? ''} url={linkGrupo} />
         ) : (
-          <p className="bloco-vazio">
-            Botão de WhatsApp aguardando o número de contato.
-          </p>
+          <p className="bloco-vazio">Botão aguardando o link do grupo.</p>
         )}
       </div>
 

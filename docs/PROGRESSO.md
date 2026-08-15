@@ -761,10 +761,15 @@ ver e dar retorno; não é lançamento.
 
 Admin dele: `rossandro@alfabeto.local` / `Alfabeto5639Vivo`
 
-> **O telefone dele NÃO vai para o git.** O número do WhatsApp do Produto Vivo vive em
-> `.env` e em `apps/web/.env.local`, ambos ignorados. Histórico de git é permanente, e é
-> a mesma razão pela qual o telefone dele foi retirado do repositório em 10/08.
-> Em produção ele entra como `NEXT_PUBLIC_WHATSAPP_PV` no `.env.production`.
+> **O contato do PV é um GRUPO, não o telefone dele** (decisão de 15/08). Ele centraliza
+> as respostas num lugar só e, de quebra, o número pessoal deixa de ficar publicado numa
+> página aberta. Vive em `NEXT_PUBLIC_PV_GRUPO_URL`, nos `.env` ignorados, e entra no
+> `.env.production` no deploy. A página valida o formato: só aceita convite de grupo do
+> WhatsApp, para um endereço colado por engano não virar um botão para lugar nenhum.
+>
+> **Curiosidade × intenção:** `PV_CLICK` conta quem abriu a página; `PV_CONTACT` conta
+> quem pediu para entrar no grupo. É o segundo que responde "existem dez, vinte ou
+> cinquenta empresas?".
 >
 > **Agora tem vigia.** `deploy/manter-no-ar.sh` confere a cada 30 s e religa o que
 > morreu. Provado matando a API de propósito: voltou sozinha em 14 s. Subir com

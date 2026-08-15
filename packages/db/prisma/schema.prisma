@@ -780,6 +780,13 @@ enum EventType {
 
   PROFILE_VIEW
 
+  /// Clique no botão que leva ao grupo do Produto Vivo.
+  ///
+  /// Separado do PV_CLICK de propósito: abrir a página é curiosidade, pedir
+  /// para entrar no grupo é intenção. É a diferença entre "quantos olharam" e
+  /// "quantas empresas quero contar para o investidor".
+  PV_CONTACT
+
   /// Clique no selo PV, em qualquer letra.
   ///
   /// Tipo próprio e não CUSTOM porque esta é a métrica comercial do Produto
