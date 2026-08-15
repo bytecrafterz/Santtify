@@ -761,6 +761,11 @@ ver e dar retorno; não é lançamento.
 
 Admin dele: `rossandro@alfabeto.local` / `Alfabeto5639Vivo`
 
+> **O telefone dele NÃO vai para o git.** O número do WhatsApp do Produto Vivo vive em
+> `.env` e em `apps/web/.env.local`, ambos ignorados. Histórico de git é permanente, e é
+> a mesma razão pela qual o telefone dele foi retirado do repositório em 10/08.
+> Em produção ele entra como `NEXT_PUBLIC_WHATSAPP_PV` no `.env.production`.
+>
 > **Agora tem vigia.** `deploy/manter-no-ar.sh` confere a cada 30 s e religa o que
 > morreu. Provado matando a API de propósito: voltou sozinha em 14 s. Subir com
 > `nohup bash deploy/manter-no-ar.sh > /tmp/vigia.log 2>&1 &`. Não é para produção —
