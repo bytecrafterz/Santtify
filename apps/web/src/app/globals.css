@@ -1882,3 +1882,17 @@ h3 {
   font-size: 14px;
   cursor: pointer;
 }
+
+/* Confirmação discreta depois de trocar a senha. Verde e curta: a pessoa
+   precisa saber que deu certo, não precisa de um cartaz. */
+.aviso-ok {
+  color: #15803d;
+  font-size: 0.9rem;
+  margin: 0 0 0.75rem;
+}
+
+/* O formulário de senha vive dentro do perfil, então respira menos que uma
+   página inteira de formulário. */
+.troca-senha {
+  margin-top: 1.5rem;
+}

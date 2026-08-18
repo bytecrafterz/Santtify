@@ -51,6 +51,12 @@ class RenovarDto {
   @IsString() refreshToken!: string
 }
 
+class TrocarSenhaDto {
+  @IsString() senhaAtual!: string
+  /** Mesmo mínimo do cadastro: comprimento no lugar de complexidade. */
+  @IsString() @MinLength(10) @MaxLength(200) senhaNova!: string
+}
+
 class ConsentimentoDto {
   @IsUUID() projectId!: string
   @IsBoolean() granted!: boolean
@@ -93,6 +99,18 @@ export class IdentityController {
   @HttpCode(204)
   async sair(@Body() dto: RenovarDto) {
     await this.auth.sair(dto.refreshToken)
+  }
+
+  /**
+   * Troca de senha. Devolve um par de tokens novo porque a troca revoga todas
+   * as sessões — inclusive a de quem trocou, que sem isto seria deslogado
+   * justamente por ter feito a coisa certa.
+   */
+  @Post('auth/change-password')
+  @HttpCode(200)
+  @UseGuards(AuthGuard)
+  trocarSenha(@Body() dto: TrocarSenhaDto, @Req() req: Request) {
+    return this.auth.trocarSenha(req.usuario!.id, dto.senhaAtual, dto.senhaNova)
   }
 
   @Get('auth/me')

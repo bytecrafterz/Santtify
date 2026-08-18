@@ -1,4 +1,5 @@
 import {
+  BadRequestException,
   ConflictException,
   Injectable,
   Logger,
@@ -155,6 +156,44 @@ export class AuthService {
       where: { tokenHash: this.hashDeToken(refreshToken), revokedAt: null },
       data: { revokedAt: new Date() },
     })
+  }
+
+  /**
+   * Troca a senha de quem já está autenticado.
+   *
+   * Exige a senha atual mesmo já havendo sessão válida: sem isso, um aparelho
+   * deixado aberto num balcão vira uma tomada de conta permanente — o token de
+   * acesso na memória bastaria para trocar a senha e expulsar o dono.
+   *
+   * E revoga TODAS as sessões, não só as outras. Trocar a senha é o que se faz
+   * quando se desconfia de que mais alguém entrou; se as sessões antigas
+   * continuassem de pé, a troca não expulsaria esse alguém, que é justamente o
+   * objetivo do gesto. Em troca emitimos um par novo aqui mesmo, para quem
+   * trocou continuar dentro sem ter de entrar de novo.
+   */
+  async trocarSenha(userId: string, senhaAtual: string, senhaNova: string): Promise<ParDeTokens> {
+    const user = await this.prisma.user.findUnique({ where: { id: userId } })
+    if (!user || user.status !== 'ACTIVE') throw new UnauthorizedException('Sessão inválida')
+
+    const confere = await argon2.verify(user.passwordHash, senhaAtual)
+    if (!confere) throw new UnauthorizedException('A senha atual não confere')
+
+    if (senhaAtual === senhaNova) {
+      throw new BadRequestException('A nova senha precisa ser diferente da atual')
+    }
+
+    await this.prisma.user.update({
+      where: { id: user.id },
+      data: { passwordHash: await argon2.hash(senhaNova) },
+    })
+
+    await this.prisma.refreshToken.updateMany({
+      where: { userId: user.id, revokedAt: null },
+      data: { revokedAt: new Date() },
+    })
+
+    this.logger.log(`Senha trocada: ${user.id}`)
+    return this.emitirTokens(user)
   }
 
   async porId(userId: string): Promise<UsuarioPublico | null> {

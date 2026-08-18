@@ -153,6 +153,20 @@ export const auth = {
     })
   },
 
+  /**
+   * Troca de senha. O servidor revoga todas as sessões e devolve um par novo;
+   * guardamos esse par aqui, senão a própria pessoa que trocou seria expulsa
+   * na chamada seguinte.
+   */
+  async trocarSenha(dados: { senhaAtual: string; senhaNova: string }): Promise<void> {
+    const r = await chamarAutenticado<{ accessToken: string; refreshToken: string }>(
+      '/auth/change-password',
+      { method: 'POST', body: JSON.stringify(dados) },
+    )
+    tokens.access = r.accessToken
+    tokens.refresh = r.refreshToken
+  },
+
   me: () => chamarAutenticado<Usuario>('/auth/me'),
   perfil: () => chamarAutenticado<PerfilResposta>('/me/profile'),
   publicacoes: () => chamarAutenticado<Publicacao[]>('/me/posts'),

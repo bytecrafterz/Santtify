@@ -1,6 +1,7 @@
 'use client'
 
 import { useEffect, useState } from 'react'
+import { TrocarSenha } from './TrocarSenha'
 import { useRouter } from 'next/navigation'
 import { auth, type PerfilResposta } from '@/lib/auth'
 import { useAuth } from '@/components/ProvedorDeAuth'
@@ -64,6 +65,8 @@ export function PainelDePerfil({ projectSlug }: { projectSlug: string }) {
           <Numero valor={perfil.estatisticas.compartilhamentos} rotulo="Compartilhamentos" />
         </div>
       )}
+
+      <TrocarSenha />
 
       <div className="acoes-perfil">
         <button
