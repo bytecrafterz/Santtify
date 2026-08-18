@@ -665,6 +665,55 @@ banco, e o `publicar.sh` recusa subir se a senha tiver caractere que quebre o en
 
 Falta só o que exige domínio real: Caddy, certificado e o redirecionamento de HTTP.
 
+### 18/08 — No ar em santtify.com
+
+Publicado no VPS do cliente (Hostinger KVM 1, Ubuntu 24.04, São Paulo),
+comprado na conta dele e no cartão dele — de propósito. O servidor onde o
+projeto viveu durante o desenvolvimento era meu, e produto do cliente hospedado
+em máquina do fornecedor é dependência que só aparece no dia em que a relação
+termina.
+
+**A senha do servidor chegou pelo chat, e era a mesma da conta da Hostinger.**
+Trocada por chave SSH, senha rotacionada para uma aleatória e autenticação por
+senha desligada no sshd. Confirmado por teste: a senha vazada já não abre nada.
+A recuperação dele não depende de mim — o painel da Hostinger redefine a senha
+do root e dá consola pelo navegador, e isso ficou dito por escrito a pedido
+dele.
+
+**Banco de produção nasceu limpo, e não migrado.** `MediaAsset.url` é absoluto,
+montado a partir de `PUBLIC_API_URL`, e `qrSvg` é gerado uma vez e guardado.
+Um dump do ambiente de desenvolvimento levaria `localhost` para dentro de cada
+áudio e de cada QR impresso. O conteúdo real foi carregado pela API já com o
+domínio final, e o QR gravado aponta para `https://santtify.com/r/7FJVQPB`.
+
+Letra A publicada com as quatro faixas dele, nas quatro categorias. Confirmado
+`206` em requisição com `Range` — sem isso não toca no iPhone nem deixa
+arrastar o cursor.
+
+### 18/08 — Trocar a senha deixa de depender de mim
+
+O login existia desde o começo, mas não havia como trocar a senha. Quem recebia
+um acesso gerado ficava com ele para sempre, e perder a senha só se resolvia com
+alguém a mexer no servidor. Numa conta de administrador que vê dados de
+famílias, isso é fraqueza, não simplicidade — e cai dentro do ponto 3 do acordo,
+que era cadastro e login.
+
+Duas decisões que não são óbvias:
+
+**Exige a senha atual mesmo já havendo sessão válida.** Sem isso, um aparelho
+deixado aberto num balcão vira tomada de conta permanente: o token na memória
+bastaria para trocar a senha e expulsar o dono.
+
+**Revoga todas as sessões, não só as outras.** Trocar a senha é o gesto de quem
+desconfia de que mais alguém entrou; se as sessões antigas continuassem de pé, a
+troca não expulsaria esse alguém. Em troca, o endpoint devolve um par de tokens
+novo, para quem trocou não ser deslogado por ter feito a coisa certa.
+
+Provado contra a produção: senha atual errada dá 401, nova igual à atual dá 400,
+nova curta dá 400, troca válida dá 200 com par novo, senha velha deixa de
+entrar, senha nova entra, refresh antigo fica revogado e a sessão de quem trocou
+continua de pé.
+
 ### Implantação pronta para rodar (14/08)
 
 Escrita enquanto o domínio não existe, para que no dia seja um comando e não uma
