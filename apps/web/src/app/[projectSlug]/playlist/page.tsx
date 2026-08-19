@@ -9,12 +9,20 @@ export const metadata = { title: 'Minha Playlist' }
 
 export default async function PaginaPlaylist({
   params,
+  searchParams,
 }: {
   params: Promise<{ projectSlug: string }>
+  searchParams: Promise<{ filtro?: string }>
 }) {
   const { projectSlug } = await params
+  const { filtro } = await searchParams
   const dados = await api.playlist(projectSlug)
   if (!dados) notFound()
+
+  // O filtro pode chegar da página inicial ("Só músicas"). Só vale se existir
+  // mesmo: um endereço partilhado com uma categoria já apagada abriria a lista
+  // vazia, e a pessoa concluiria que não há músicas nenhumas.
+  const filtroInicial = dados.categorias.some((c) => c.slug === filtro) ? filtro! : null
 
   return (
     <main className="envoltorio">
@@ -33,6 +41,7 @@ export default async function PaginaPlaylist({
         projectSlug={projectSlug}
         categorias={dados.categorias}
         faixas={dados.faixas}
+        filtroInicial={filtroInicial}
       />
 
       <BannerDeConsentimento projectId={dados.project.id} />

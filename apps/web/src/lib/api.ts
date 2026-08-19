@@ -70,7 +70,14 @@ export interface ItemIndice {
   subtitle: string | null
   coverUrl: string | null
   position: number
+  /** Falso enquanto a letra ainda não tem conteúdo: aparece trancada na grade. */
+  publicado: boolean
   stats: { views: number; likes: number; comments: number; shares: number } | null
+}
+
+export interface ProgressoDasLetras {
+  liberadas: number
+  total: number
 }
 
 export interface Faixa {
@@ -129,7 +136,15 @@ async function buscar<T>(caminho: string, revalidate = 30): Promise<T | null> {
 
 export const api = {
   projeto: (slug: string) => buscar<Projeto>(`/projects/${slug}`),
-  indice: (slug: string) => buscar<{ project: Projeto; contents: ItemIndice[] }>(`/projects/${slug}/contents`),
+  indice: (slug: string) =>
+    buscar<{
+      project: Projeto
+      contents: ItemIndice[]
+      progresso: ProgressoDasLetras
+      comunidade: { perfis: number; impressoes: number }
+    }>(
+      `/projects/${slug}/contents`,
+    ),
   playlist: (slug: string) =>
     buscar<{ project: Projeto; categorias: CategoriaDeAudio[]; faixas: Faixa[] }>(
       `/projects/${slug}/playlist`,

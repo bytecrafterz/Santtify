@@ -1,26 +1,46 @@
 /*
  * Estilo base do PWA.
  *
- * Deliberadamente neutro e todo baseado em variáveis: os mockups do cliente
- * ainda não chegaram, e quando chegarem a troca deve ser de valores, não de
- * estrutura. Não vale investir em visual que vai ser substituído.
+ * A versão neutra deste arquivo dizia que esperava os mockups do cliente e que,
+ * quando chegassem, a troca seria de valores e não de estrutura. Chegaram em
+ * 19/08, e é isso que está feito aqui: as variáveis abaixo passaram a falar a
+ * língua da marca dele, e as estruturas novas (o trilho de indicadores, o card
+ * de capa, a grade de letras) foram acrescentadas sem desmontar o que existia.
+ *
+ * O desenho segue o padrão que os próprios mockups pedem e que é o de qualquer
+ * rede vertical de hoje: capa grande, identidade sobre a capa, e os indicadores
+ * numa coluna à direita, ao alcance do polegar de quem segura o telemóvel com
+ * uma mão só.
  *
  * Mobile-first e alvos de toque grandes — o público é criança, e o acesso
  * principal é por QR Code escaneado no celular.
  */
 
 :root {
-  --cor-fundo: #fdfbf7;
+  --cor-fundo: #f6f7fb;
   --cor-superficie: #ffffff;
-  --cor-texto: #1f2430;
+  --cor-texto: #171a22;
   --cor-texto-suave: #5b6478;
-  --cor-borda: #e8e3d9;
+  --cor-borda: #e6e8ef;
   --cor-primaria: #2563eb;
   --cor-primaria-suave: #eef3ff;
   --cor-destaque: #f59e0b;
 
+  /* Cores de papel definido, tiradas dos mockups dele.
+   *
+   * Verde é sempre "faça isto": criar perfil, imprimir, entrar no grupo. Roxo é
+   * sempre "toque para ouvir". Vermelho é sempre segurança. Manter cada cor com
+   * um só significado é o que permite a uma criança aprender a tela sem ler. */
+  --cor-acao: #16a34a;
+  --cor-acao-escura: #15803d;
+  --cor-tocar: #7c3aed;
+  --cor-alerta: #dc2626;
+  --cor-pv: #16a34a;
+
   --raio: 16px;
-  --sombra: 0 1px 2px rgba(31, 36, 48, 0.05), 0 8px 24px rgba(31, 36, 48, 0.06);
+  --raio-grande: 22px;
+  --sombra: 0 1px 2px rgba(23, 26, 34, 0.04), 0 8px 24px rgba(23, 26, 34, 0.06);
+  --sombra-alta: 0 10px 30px rgba(23, 26, 34, 0.14);
   --largura: 720px;
 }
 
@@ -33,6 +53,9 @@
     --cor-borda: #2c313d;
     --cor-primaria: #6b9bff;
     --cor-primaria-suave: #1e2740;
+    --cor-acao: #22c55e;
+    --cor-acao-escura: #16a34a;
+    --cor-tocar: #a78bfa;
   }
 }
 
@@ -1927,4 +1950,477 @@ img.avatar {
    o afeto de botão. */
 .acao.contagem {
   cursor: default;
+}
+
+/* ═══════════════════════════════════════════════════════════════════
+   Linguagem visual dos mockups de 19/08
+
+   Três peças novas, e só três: o card de capa, o trilho de indicadores e
+   a grade de letras. Tudo o resto continua a usar as classes que já
+   existiam — o objetivo era vestir a estrutura, não trocá-la.
+   ═══════════════════════════════════════════════════════════════════ */
+
+/* ── Card de capa ────────────────────────────────────────────────────
+   A capa é o que a pessoa vê primeiro ao abrir pelo QR Code. Fica em
+   proporção fixa para a página não saltar enquanto a imagem carrega:
+   texto que dança durante o carregamento é a forma mais rápida de fazer
+   alguém tocar no sítio errado. */
+.card-capa {
+  position: relative;
+  border-radius: var(--raio-grande);
+  overflow: hidden;
+  background: var(--cor-superficie);
+  box-shadow: var(--sombra);
+  margin-bottom: 1.25rem;
+}
+
+.card-capa .capa {
+  display: block;
+  width: 100%;
+  aspect-ratio: 3 / 4;
+  object-fit: cover;
+  background: linear-gradient(160deg, #e9edf6, #dfe5f1);
+}
+
+/* O véu existe para o nome sobre a capa continuar legível seja qual for a
+   arte que o cliente enviar. Sem ele, um título branco sobre um fundo
+   claro desaparece, e é justamente o que ele quer que se leia. */
+.card-capa .veu {
+  position: absolute;
+  inset: auto 0 0 0;
+  padding: 2.5rem 1rem 1rem;
+  background: linear-gradient(to top, rgba(10, 12, 18, 0.82), rgba(10, 12, 18, 0));
+  color: #fff;
+}
+
+.card-capa .veu h2,
+.card-capa .veu h1 {
+  margin: 0;
+  font-size: 1.35rem;
+  line-height: 1.25;
+  color: #fff;
+}
+
+.card-capa .veu p {
+  margin: 0.2rem 0 0;
+  font-size: 0.9rem;
+  color: rgba(255, 255, 255, 0.86);
+}
+
+/* Botão de tocar sobre a capa: alvo grande, no centro óptico. */
+.botao-tocar-capa {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  transform: translate(-50%, -50%);
+  width: 72px;
+  height: 72px;
+  border-radius: 50%;
+  border: none;
+  background: var(--cor-tocar);
+  color: #fff;
+  font-size: 1.6rem;
+  cursor: pointer;
+  box-shadow: var(--sombra-alta);
+  display: grid;
+  place-items: center;
+}
+
+.botao-tocar-capa:hover {
+  filter: brightness(1.08);
+}
+
+/* ── Trilho de indicadores ───────────────────────────────────────────
+   Coluna à direita, sobre a capa, como nos mockups. À direita e não em
+   baixo porque é onde o polegar chega sem largar o telemóvel. */
+.trilho {
+  position: absolute;
+  right: 0.5rem;
+  bottom: 4.5rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.85rem;
+  align-items: center;
+}
+
+.trilho .indicador {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.1rem;
+  border: none;
+  background: transparent;
+  color: #fff;
+  font-size: 0.72rem;
+  font-weight: 600;
+  cursor: pointer;
+  padding: 0;
+  text-decoration: none;
+  text-shadow: 0 1px 4px rgba(0, 0, 0, 0.55);
+}
+
+.trilho .indicador .bolha {
+  width: 42px;
+  height: 42px;
+  border-radius: 50%;
+  display: grid;
+  place-items: center;
+  font-size: 1.15rem;
+  background: rgba(255, 255, 255, 0.16);
+  backdrop-filter: blur(6px);
+  border: 1px solid rgba(255, 255, 255, 0.25);
+}
+
+.trilho .indicador.curtido .bolha {
+  background: var(--cor-alerta);
+  border-color: transparent;
+}
+
+/* Visualizações não são accionáveis: mesma forma, sem afeto de botão. */
+.trilho .indicador.contagem {
+  cursor: default;
+}
+
+/* Quando não há capa, o trilho não tem onde assentar por cima. Cai para uma
+   fileira normal abaixo do conteúdo, com as cores do tema claro. */
+.trilho.sem-capa {
+  position: static;
+  flex-direction: row;
+  justify-content: space-around;
+  gap: 0.25rem;
+  margin: 0.75rem 0 0;
+}
+
+.trilho.sem-capa .indicador {
+  color: var(--cor-texto-suave);
+  text-shadow: none;
+}
+
+.trilho.sem-capa .indicador .bolha {
+  background: var(--cor-primaria-suave);
+  border-color: var(--cor-borda);
+  color: var(--cor-texto);
+}
+
+/* ── Selo PV sobre a capa ────────────────────────────────────────────── */
+.selo-pv-capa {
+  position: absolute;
+  top: 0.6rem;
+  right: 0.6rem;
+  background: var(--cor-pv);
+  color: #fff;
+  border-radius: 999px;
+  padding: 0.25rem 0.7rem;
+  font-size: 0.75rem;
+  font-weight: 700;
+  text-decoration: none;
+  box-shadow: var(--sombra);
+}
+
+/* ── Botão de acção verde, com contador ─────────────────────────────── */
+.botao-acao {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  background: var(--cor-acao);
+  color: #fff;
+  border: none;
+  border-radius: 999px;
+  padding: 0.6rem 1.1rem;
+  font-weight: 700;
+  font-size: 0.95rem;
+  cursor: pointer;
+  text-decoration: none;
+}
+
+.botao-acao:hover {
+  background: var(--cor-acao-escura);
+}
+
+.pilula-contador {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.3rem;
+  background: var(--cor-primaria);
+  color: #fff;
+  border-radius: 999px;
+  padding: 0.35rem 0.75rem;
+  font-size: 0.85rem;
+  font-weight: 700;
+}
+
+.linha-acoes {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  flex-wrap: wrap;
+  margin: 0.75rem 0 1.25rem;
+}
+
+/* ── Grade das 26 letras ─────────────────────────────────────────────
+   As letras por publicar continuam visíveis e trancadas, como ele pediu:
+   uma grade com buracos parece defeito, uma grade com cadeados parece
+   promessa. */
+.grade-letras {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 0.6rem;
+  margin: 0.75rem 0 1.5rem;
+}
+
+@media (max-width: 380px) {
+  .grade-letras {
+    grid-template-columns: repeat(3, 1fr);
+  }
+}
+
+.letra-bloco {
+  position: relative;
+  aspect-ratio: 1;
+  border-radius: 14px;
+  border: 1px solid var(--cor-borda);
+  background: var(--cor-superficie);
+  display: grid;
+  place-items: center;
+  font-size: 1.6rem;
+  font-weight: 800;
+  color: var(--cor-texto);
+  text-decoration: none;
+  overflow: hidden;
+}
+
+.letra-bloco.trancada {
+  color: #b6bcca;
+  background: #eef0f5;
+  border-style: dashed;
+}
+
+.letra-bloco .cadeado {
+  position: absolute;
+  top: 4px;
+  right: 6px;
+  font-size: 0.75rem;
+  opacity: 0.75;
+}
+
+.letra-bloco img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.letra-bloco .nome-curto {
+  position: absolute;
+  inset: auto 0 0 0;
+  background: linear-gradient(to top, rgba(10, 12, 18, 0.8), transparent);
+  color: #fff;
+  font-size: 0.6rem;
+  font-weight: 600;
+  padding: 0.6rem 0.25rem 0.25rem;
+  text-align: center;
+  line-height: 1.15;
+}
+
+/* ── Barra de progresso das letras ──────────────────────────────────── */
+.progresso-letras {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  margin: 0.5rem 0 0.75rem;
+  font-size: 0.85rem;
+  color: var(--cor-texto-suave);
+}
+
+.progresso-letras .trilha {
+  flex: 1;
+  height: 8px;
+  border-radius: 999px;
+  background: var(--cor-borda);
+  overflow: hidden;
+}
+
+.progresso-letras .preenchido {
+  display: block;
+  height: 100%;
+  border-radius: 999px;
+  background: var(--cor-acao);
+}
+
+/* ── Perfil com capa ────────────────────────────────────────────────── */
+.perfil-capa {
+  position: relative;
+  border-radius: var(--raio-grande);
+  overflow: hidden;
+  box-shadow: var(--sombra);
+  margin-bottom: 1rem;
+  background: linear-gradient(160deg, #dfe6f5, #cfd8ec);
+  min-height: 190px;
+}
+
+.perfil-capa .foto-capa {
+  display: block;
+  width: 100%;
+  aspect-ratio: 16 / 10;
+  object-fit: cover;
+}
+
+.perfil-capa .veu {
+  position: absolute;
+  inset: auto 0 0 0;
+  padding: 2.5rem 1rem 1rem;
+  background: linear-gradient(to top, rgba(10, 12, 18, 0.85), rgba(10, 12, 18, 0));
+  color: #fff;
+  display: flex;
+  align-items: flex-end;
+  gap: 0.7rem;
+}
+
+.perfil-capa .veu img.avatar,
+.perfil-capa .veu .avatar {
+  width: 52px;
+  height: 52px;
+  border-radius: 50%;
+  border: 2px solid #fff;
+  flex: 0 0 auto;
+  object-fit: cover;
+}
+
+.perfil-capa .veu h1 {
+  margin: 0;
+  font-size: 1.2rem;
+  color: #fff;
+}
+
+.perfil-capa .veu .responsavel-perfil {
+  color: #c7d2fe;
+  margin: 0.1rem 0 0;
+}
+
+.perfil-capa .veu .bio-perfil {
+  color: rgba(255, 255, 255, 0.85);
+  margin: 0.15rem 0 0;
+}
+
+/* ── Escudo de segurança ────────────────────────────────────────────── */
+.escudo {
+  display: inline-grid;
+  place-items: center;
+  width: 34px;
+  height: 34px;
+  border-radius: 50%;
+  border: 1px solid var(--cor-borda);
+  background: var(--cor-superficie);
+  color: var(--cor-alerta);
+  font-size: 1rem;
+  cursor: pointer;
+}
+
+/* Etiqueta no canto superior esquerdo da capa ("Minha Playlist"). */
+.etiqueta-capa {
+  position: absolute;
+  top: 0.6rem;
+  left: 0.6rem;
+  z-index: 1;
+  background: rgba(255, 255, 255, 0.9);
+  color: var(--cor-texto);
+  border-radius: 999px;
+  padding: 0.2rem 0.7rem;
+  font-size: 0.72rem;
+  font-weight: 700;
+}
+
+/* Placeholder da capa, igual ao mockup do modelo vazio. */
+.capa-vazia {
+  display: grid;
+  place-items: center;
+  text-align: center;
+  padding: 1rem;
+  color: var(--cor-texto-suave);
+  font-size: 0.85rem;
+}
+
+/* Identidade sobre a capa do perfil. */
+.perfil-capa .identidade {
+  min-width: 0;
+}
+
+.verificado {
+  display: inline-grid;
+  place-items: center;
+  width: 18px;
+  height: 18px;
+  border-radius: 50%;
+  background: var(--cor-primaria);
+  color: #fff;
+  font-size: 0.7rem;
+  margin-left: 0.35rem;
+  vertical-align: middle;
+}
+
+.perfil-capa .foto-capa.capa-vazia {
+  display: grid;
+  place-items: center;
+  gap: 0.25rem;
+  font-size: 1.6rem;
+  background: linear-gradient(160deg, #e9edf6, #dde3f0);
+}
+
+.perfil-capa .foto-capa.capa-vazia span:last-child {
+  font-size: 0.85rem;
+  color: var(--cor-texto-suave);
+}
+
+.nota-monitor {
+  font-size: 0.8rem;
+  color: var(--cor-primaria);
+  flex: 1 1 8rem;
+  min-width: 0;
+}
+
+/* Fileira de filtros, igual à dos mockups. */
+.filtros-linha {
+  display: flex;
+  gap: 0.5rem;
+  overflow-x: auto;
+  padding-bottom: 0.25rem;
+  margin: 0.5rem 0 1rem;
+}
+
+.filtros-linha .filtro-link {
+  flex: 0 0 auto;
+  border: 1px solid var(--cor-borda);
+  background: var(--cor-superficie);
+  border-radius: 999px;
+  padding: 0.5rem 0.9rem;
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: var(--cor-texto);
+  text-decoration: none;
+  white-space: nowrap;
+}
+
+.filtros-linha .filtro-link.destaque {
+  border-color: var(--cor-tocar);
+  color: var(--cor-tocar);
+}
+
+/* Cabeçalho de secção com acção à direita ("Conheça o alfabeto" + Imprimir). */
+.secao-com-acao {
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 0.75rem;
+  margin-top: 1.25rem;
+}
+
+.secao-com-acao h2 {
+  margin: 0;
+}
+
+.secao-com-acao .subtitulo {
+  margin: 0.1rem 0 0;
+}
+
+.linha-acoes.sem-margem {
+  margin: 0;
 }

@@ -1,5 +1,5 @@
 import { Injectable, NotFoundException } from '@nestjs/common'
-import { BlockType, ContentStatus } from '@pv/db'
+import { BlockType, ContentStatus, EventType } from '@pv/db'
 import { PrismaService } from '../prisma/prisma.service'
 import { ShortLinksService } from '../short-links/short-links.service'
 
@@ -36,13 +36,26 @@ export class ContentService {
     return project
   }
 
-  /** Índice do projeto: só o publicado, na ordem definida no painel. */
-
+  /**
+   * Índice do projeto: as 26 letras, publicadas e por publicar.
+   *
+   * Devolve também as que ainda não têm conteúdo, marcadas como trancadas.
+   * Foi decisão do cliente em 19/08 e é a correcta: uma grade com buracos
+   * parece defeito do site, uma grade com cadeados parece promessa — e é o
+   * cadeado que faz a família voltar na semana seguinte para ver se abriu.
+   *
+   * Do que está trancado sai só o nome e a posição. Capa, resumo e números
+   * ficam de fora: uma letra por publicar é material que ele ainda está a
+   * preparar, e a grade não é sítio para o mostrar antes de tempo.
+   */
   async listar(projectSlug: string) {
     const project = await this.projeto(projectSlug)
 
-    const contents = await this.prisma.content.findMany({
-      where: { projectId: project.id, status: ContentStatus.PUBLISHED },
+    const todas = await this.prisma.content.findMany({
+      where: {
+        projectId: project.id,
+        status: { in: [ContentStatus.PUBLISHED, ContentStatus.DRAFT] },
+      },
       orderBy: { position: 'asc' },
       select: {
         id: true,
@@ -51,11 +64,57 @@ export class ContentService {
         subtitle: true,
         coverUrl: true,
         position: true,
+        status: true,
         stats: { select: { views: true, likes: true, comments: true, shares: true } },
       },
     })
 
-    return { project, contents }
+    const contents = todas.map((c) => {
+      const publicado = c.status === ContentStatus.PUBLISHED
+      return {
+        id: c.id,
+        slug: c.slug,
+        title: c.title,
+        position: c.position,
+        publicado,
+        subtitle: publicado ? c.subtitle : null,
+        coverUrl: publicado ? c.coverUrl : null,
+        stats: publicado ? c.stats : null,
+      }
+    })
+
+    // Contadores públicos que o cliente pediu em 19/08: quantas famílias já
+    // criaram perfil e quantas vezes o material foi mandado imprimir.
+    //
+    // Os perfis contam-se pelo elo visitante → utilizador, e não pela tabela de
+    // utilizadores: a conta é global à plataforma, o visitante é que pertence a
+    // um projeto. Quando existir um segundo produto, este número continua a
+    // dizer a verdade sobre este.
+    //
+    // As impressões saem do log de eventos que já existe. Nenhuma tabela nova
+    // foi precisa — é o mesmo retorno da decisão de gravar evento bruto.
+    const [perfis, impressoes] = await Promise.all([
+      this.prisma.visitor
+        .findMany({
+          where: { projectId: project.id, userId: { not: null } },
+          distinct: ['userId'],
+          select: { userId: true },
+        })
+        .then((v) => v.length),
+      this.prisma.event.count({
+        where: { projectId: project.id, type: EventType.CUSTOM, props: { path: ['acao'], equals: 'imprimir' } },
+      }),
+    ])
+
+    return {
+      project,
+      contents,
+      progresso: {
+        liberadas: contents.filter((c) => c.publicado).length,
+        total: contents.length,
+      },
+      comunidade: { perfis, impressoes },
+    }
   }
 
   /**

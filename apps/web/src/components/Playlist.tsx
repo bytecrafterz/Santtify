@@ -34,13 +34,16 @@ export function Playlist({
   projectSlug,
   categorias,
   faixas,
+  filtroInicial = null,
 }: {
   projectId: string
   projectSlug: string
   categorias: CategoriaDeAudio[]
   faixas: Faixa[]
+  /** Escolha já feita na página inicial, quando a pessoa clicou "Só músicas". */
+  filtroInicial?: string | null
 }) {
-  const [filtro, definirFiltro] = useState<string | null>(null)
+  const [filtro, definirFiltro] = useState<string | null>(filtroInicial)
   const audio = useRef<HTMLAudioElement>(null)
   const [atual, definirAtual] = useState(0)
   const [tocando, definirTocando] = useState(false)

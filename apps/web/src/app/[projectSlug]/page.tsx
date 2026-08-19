@@ -4,7 +4,19 @@ import { api } from '@/lib/api'
 import { RastreadorDeVisita } from '@/components/RastreadorDeVisita'
 import { SeloProdutoVivo } from '@/components/SeloProdutoVivo'
 import { BannerDeConsentimento } from '@/components/BannerDeConsentimento'
+import { CabecalhoDePerfil } from '@/components/CabecalhoDePerfil'
+import { CartaoDoProjeto } from '@/components/CartaoDoProjeto'
+import { GradeDeLetras } from '@/components/GradeDeLetras'
+import { BotaoImprimir } from '@/components/BotaoImprimir'
 
+/**
+ * A página inicial do projeto, montada segundo os mockups de 19/08.
+ *
+ * A ordem é a que ele desenhou e faz sentido: primeiro quem a pessoa é, depois
+ * o que há para ouvir, e só então a grade das 26 letras. Perfil no topo porque
+ * o produto que se está a vender não é o conteúdo — é a família aparecer
+ * dentro dele.
+ */
 export default async function IndiceDoProjeto({
   params,
 }: {
@@ -14,24 +26,47 @@ export default async function IndiceDoProjeto({
   const dados = await api.indice(projectSlug)
   if (!dados) notFound()
 
-  const { project, contents } = dados
+  const { project, contents, progresso, comunidade } = dados
 
   return (
     <main className="envoltorio">
       <RastreadorDeVisita projectId={project.id} type="PAGE_VIEW" />
 
-      <h1>{project.name}</h1>
-      {project.description && <p className="subtitulo">{project.description}</p>}
+      <CabecalhoDePerfil projectSlug={projectSlug} perfisCriados={comunidade.perfis} />
 
-      {/* A porta de entrada da playlist fica antes da grade das letras: é o
-          jeito mais rápido de ouvir tudo, e quem chega pelo QR de uma letra só
-          descobre aqui que existem outras 25. */}
-      {contents.length > 0 && (
-        <Link className="bloco linha atalho-playlist" href={`/${projectSlug}/playlist`}>
-          <span>▶ Reproduzir todas</span>
-          <small>ouça as músicas em sequência, da letra A à letra Z</small>
+      <CartaoDoProjeto projectSlug={projectSlug} project={project} contents={contents} />
+
+      <div className="secao-com-acao">
+        <div>
+          <h2>Conheça o {project.name}</h2>
+          {project.description && <p className="subtitulo">{project.description}</p>}
+        </div>
+        <span className="escudo" title="Segurança e denúncia" aria-hidden>
+          🛡
+        </span>
+      </div>
+
+      <div className="secao-com-acao">
+        <div>
+          <h2>Conheça o alfabeto</h2>
+          <p className="subtitulo">Toque nas músicas em sequência, da letra A à letra Z</p>
+        </div>
+        <BotaoImprimir projectId={project.id} impressoes={comunidade.impressoes} />
+      </div>
+
+      {/* Os filtros levam à playlist já com a escolha feita, para o toque
+          daqui e o toque de lá significarem a mesma coisa. */}
+      <div className="filtros-linha">
+        <Link className="filtro-link destaque" href={`/${projectSlug}/playlist`}>
+          ▶ Ouvir tudo
         </Link>
-      )}
+        <Link className="filtro-link" href={`/${projectSlug}/playlist?filtro=explicacao`}>
+          ? Só explicações
+        </Link>
+        <Link className="filtro-link" href={`/${projectSlug}/playlist?filtro=musica`}>
+          ♪ Só músicas
+        </Link>
+      </div>
 
       {contents.length === 0 ? (
         <div className="vazio">
@@ -39,14 +74,7 @@ export default async function IndiceDoProjeto({
           <p>Volte em breve.</p>
         </div>
       ) : (
-        <div className="grade">
-          {contents.map((c) => (
-            <Link className="cartao" href={`/${projectSlug}/${c.slug}`} key={c.id}>
-              {c.title.replace(/^Letra\s+/i, '')}
-              <small>{c.subtitle ?? ''}</small>
-            </Link>
-          ))}
-        </div>
+        <GradeDeLetras projectSlug={projectSlug} contents={contents} progresso={progresso} />
       )}
 
       <SeloProdutoVivo projectSlug={projectSlug} />
