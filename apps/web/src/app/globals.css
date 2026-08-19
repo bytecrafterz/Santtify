@@ -2738,3 +2738,38 @@ img.avatar {
 button.escudo {
   cursor: pointer;
 }
+
+/* ── A letra aberta dentro da própria página ─────────────────────────── */
+.letra-aberta {
+  margin-top: 1.25rem;
+  padding-top: 1rem;
+  border-top: 2px solid var(--cor-borda);
+  scroll-margin-top: 1rem;
+}
+
+.letra-aberta .arte-letra {
+  width: 100%;
+  max-height: 420px;
+  object-fit: contain;
+  border-radius: var(--raio);
+  margin-bottom: 0.75rem;
+}
+
+.fechar-letra {
+  flex: 0 0 auto;
+}
+
+/* A letra escolhida fica marcada na grade, senão depois de rolar a pessoa não
+   sabe qual delas abriu. */
+.letra-bloco.escolhida {
+  outline: 3px solid var(--cor-tocar);
+  outline-offset: -3px;
+}
+
+/* O bloco da letra passou a ser botão nalguns sítios: sem isto herda o
+   tipo de letra do botão do sistema e destoa das outras. */
+button.letra-bloco {
+  font-family: inherit;
+  cursor: pointer;
+  padding: 0;
+}

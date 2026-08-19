@@ -6,17 +6,17 @@ import { SeloProdutoVivo } from '@/components/SeloProdutoVivo'
 import { BannerDeConsentimento } from '@/components/BannerDeConsentimento'
 import { CabecalhoDePerfil } from '@/components/CabecalhoDePerfil'
 import { CartaoDoProjeto } from '@/components/CartaoDoProjeto'
-import { GradeDeLetras } from '@/components/GradeDeLetras'
 import { BotaoImprimir } from '@/components/BotaoImprimir'
 import { BotaoDenunciar } from '@/components/BotaoDenunciar'
+import { ExperienciaContinua } from '@/components/ExperienciaContinua'
 
 /**
- * A página inicial do projeto, montada segundo os mockups de 19/08.
+ * A experiência inteira numa página só.
  *
- * A ordem é a que ele desenhou e faz sentido: primeiro quem a pessoa é, depois
- * o que há para ouvir, e só então a grade das 26 letras. Perfil no topo porque
- * o produto que se está a vender não é o conteúdo — é a família aparecer
- * dentro dele.
+ * A ordem é a que o cliente fixou em 20/08: perfil, capa do projeto, título,
+ * imprimir, filtros, progresso, alfabeto, e a letra escolhida por baixo de
+ * tudo. A regra que a governa é dele e é simples — a pessoa entra no perfil e
+ * fica lá.
  */
 export default async function IndiceDoProjeto({
   params,
@@ -33,26 +33,33 @@ export default async function IndiceDoProjeto({
     <main className="envoltorio">
       <RastreadorDeVisita projectId={project.id} type="PAGE_VIEW" />
 
+      {/* 1. Perfil */}
       <CabecalhoDePerfil
         projectSlug={projectSlug}
         projectId={project.id}
         perfisCriados={comunidade.perfis}
       />
 
+      {/* 2. Capa do projeto */}
       <CartaoDoProjeto projectSlug={projectSlug} project={project} contents={contents} />
 
+      {/* 3. Título e descrição */}
       <div className="secao-com-acao">
         <div>
           <h2>Conheça o {project.name}</h2>
           {project.description && <p className="subtitulo">{project.description}</p>}
         </div>
-        <BotaoDenunciar projectId={project.id} targetType="CONTENT" targetId={contents[0]?.id ?? project.id} />
+        <BotaoDenunciar
+          projectId={project.id}
+          targetType="CONTENT"
+          targetId={contents[0]?.id ?? project.id}
+        />
       </div>
 
+      {/* 4. Imprimir e exportar */}
       <BotaoImprimir projectId={project.id} impressoes={comunidade.impressoes} />
 
-      {/* Os filtros levam à playlist já com a escolha feita, para o toque
-          daqui e o toque de lá significarem a mesma coisa. */}
+      {/* 5. Filtros de áudio */}
       <div className="filtros-linha">
         <Link className="filtro-link destaque" href={`/${projectSlug}/playlist`}>
           ▶ Ouvir tudo
@@ -71,13 +78,19 @@ export default async function IndiceDoProjeto({
         </Link>
       </div>
 
+      {/* 6, 7 e 8. Progresso, alfabeto e a letra aberta — tudo aqui dentro. */}
       {contents.length === 0 ? (
         <div className="vazio">
           <p>Os conteúdos ainda estão sendo preparados.</p>
           <p>Volte em breve.</p>
         </div>
       ) : (
-        <GradeDeLetras projectSlug={projectSlug} contents={contents} progresso={progresso} />
+        <ExperienciaContinua
+          projectSlug={projectSlug}
+          projectId={project.id}
+          contents={contents}
+          progresso={progresso}
+        />
       )}
 
       <SeloProdutoVivo projectSlug={projectSlug} />
