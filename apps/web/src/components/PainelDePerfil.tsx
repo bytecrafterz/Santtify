@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from 'react'
 import { TrocarSenha } from './TrocarSenha'
+import { EditarPerfil } from './EditarPerfil'
 import { useRouter } from 'next/navigation'
 import { auth, type PerfilResposta } from '@/lib/auth'
 import { useAuth } from '@/components/ProvedorDeAuth'
@@ -41,11 +42,23 @@ export function PainelDePerfil({ projectSlug }: { projectSlug: string }) {
   return (
     <>
       <div className="perfil-topo">
-        <div className="avatar" aria-hidden>
-          {usuario.displayName.charAt(0).toUpperCase()}
-        </div>
+        {perfil?.user.avatarUrl ? (
+          // eslint-disable-next-line @next/next/no-img-element
+          <img className="avatar" src={perfil.user.avatarUrl} alt={perfil.user.displayName} />
+        ) : (
+          <div className="avatar" aria-hidden>
+            {usuario.displayName.charAt(0).toUpperCase()}
+          </div>
+        )}
         <div>
-          <h1>{usuario.displayName}</h1>
+          <h1>{perfil?.user.displayName ?? usuario.displayName}</h1>
+          {/* O responsável fica colado ao nome, e não no fim da página: numa
+              plataforma usada por crianças, quem acompanha o perfil é a
+              primeira coisa que outro pai quer saber. */}
+          {perfil?.user.guardianName && (
+            <p className="responsavel-perfil">{perfil.user.guardianName}</p>
+          )}
+          {perfil?.user.bio && <p className="bio-perfil">{perfil.user.bio}</p>}
           <p className="subtitulo">
             Na plataforma desde{' '}
             {new Date(perfil?.user.createdAt ?? usuario.createdAt).toLocaleDateString('pt-PT', {
@@ -65,6 +78,8 @@ export function PainelDePerfil({ projectSlug }: { projectSlug: string }) {
           <Numero valor={perfil.estatisticas.compartilhamentos} rotulo="Compartilhamentos" />
         </div>
       )}
+
+      {perfil && <EditarPerfil perfil={perfil} aoGravar={definirPerfil} />}
 
       <TrocarSenha />
 

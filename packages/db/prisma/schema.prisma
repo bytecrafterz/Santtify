@@ -578,6 +578,13 @@ model User {
   displayName  String
   avatarUrl    String?
   bio          String?
+  /// Quem acompanha um perfil infantil, mostrado junto ao nome.
+  ///
+  /// Campo próprio e não dentro da bio: numa plataforma usada por crianças,
+  /// dizer publicamente que existe um adulto responsável é informação de
+  /// segurança, e informação de segurança não pode depender de a pessoa se
+  /// lembrar de escrevê-la no meio de um texto livre.
+  guardianName String?
   role         UserRole @default(USER)
 
   emailVerifiedAt DateTime?

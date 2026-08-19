@@ -326,6 +326,11 @@ export class SocialService {
     ])
 
     return {
+      // `views` já era lido aqui e ficava pelo caminho. Passa a sair porque a
+      // contagem pública ao lado do conteúdo é o que dá a uma família a noção
+      // de que há mais gente do outro lado — e era a única das quatro que o
+      // número existia no banco mas não chegava à tela.
+      visualizacoes: stats?.views ?? 0,
       curtidas: stats?.likes ?? 0,
       comentarios: stats?.comments ?? 0,
       compartilhamentos: stats?.shares ?? 0,

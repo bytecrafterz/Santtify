@@ -3,13 +3,18 @@ import {
   Controller,
   Get,
   HttpCode,
+  Patch,
   Post,
   Query,
   Req,
   Res,
   UnauthorizedException,
+  UploadedFile,
   UseGuards,
+  UseInterceptors,
 } from '@nestjs/common'
+import { FileInterceptor } from '@nestjs/platform-express'
+import { TAMANHO_MAXIMO_IMAGEM } from '../admin/storage.service'
 import type { Request, Response } from 'express'
 import {
   IsBoolean,
@@ -49,6 +54,12 @@ class EntrarDto {
 
 class RenovarDto {
   @IsString() refreshToken!: string
+}
+
+class EditarPerfilDto {
+  @IsOptional() @IsString() @MinLength(2) @MaxLength(80) displayName?: string
+  @IsOptional() @IsString() @MaxLength(300) bio?: string
+  @IsOptional() @IsString() @MaxLength(80) guardianName?: string
 }
 
 class TrocarSenhaDto {
@@ -122,6 +133,24 @@ export class IdentityController {
   }
 
   // ── Perfil ───────────────────────────────────────────────────────
+
+  /**
+   * Edição do próprio perfil. Multipart porque a foto vai junto.
+   *
+   * Limite de imagem igual ao do My Post: um retrato tirado com telemóvel
+   * moderno passa dos dez megabytes com facilidade, e recusar a foto da mãe
+   * por causa disso é a maneira mais rápida de ela desistir do cadastro.
+   */
+  @Patch('me/profile')
+  @UseGuards(AuthGuard)
+  @UseInterceptors(FileInterceptor('foto', { limits: { fileSize: TAMANHO_MAXIMO_IMAGEM } }))
+  editarPerfil(
+    @Body() dto: EditarPerfilDto,
+    @Req() req: Request,
+    @UploadedFile() foto?: Express.Multer.File,
+  ) {
+    return this.profile.atualizarPerfil(req.usuario!.id, dto, foto)
+  }
 
   @Get('me/profile')
   @UseGuards(AuthGuard)

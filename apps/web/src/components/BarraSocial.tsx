@@ -33,6 +33,7 @@ export function BarraSocial({
    * empurrar o conteúdo para baixo quando chegavam.
    */
   const [estado, definirEstado] = useState<EstadoSocial>({
+    visualizacoes: 0,
     curtidas: 0,
     comentarios: 0,
     compartilhamentos: 0,
@@ -135,6 +136,14 @@ export function BarraSocial({
   return (
     <>
       <div className="barra-social">
+        {/* Visualizações primeiro, e sem botão: é o único indicador que a
+            pessoa não aciona — ela produz só por estar ali a ler. */}
+        <span className="acao contagem">
+          <span aria-hidden>👁</span>
+          {estado.visualizacoes}
+          <small>visualizações</small>
+        </span>
+
         <button
           type="button"
           onClick={curtir}

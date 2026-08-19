@@ -1,6 +1,7 @@
-import { Injectable, NotFoundException } from '@nestjs/common'
-import { EventType } from '@pv/db'
+import { BadRequestException, Injectable, NotFoundException } from '@nestjs/common'
+import { EventType, MediaKind } from '@pv/db'
 import { PrismaService } from '../prisma/prisma.service'
+import { StorageService } from '../admin/storage.service'
 
 /**
  * Perfil do usuário: os números do topo e "Meu Registro".
@@ -14,7 +15,54 @@ import { PrismaService } from '../prisma/prisma.service'
  */
 @Injectable()
 export class ProfileService {
-  constructor(private readonly prisma: PrismaService) {}
+  constructor(
+    private readonly prisma: PrismaService,
+    private readonly storage: StorageService,
+  ) {}
+
+  /**
+   * Edição do próprio perfil: foto, nome, descrição e responsável.
+   *
+   * Multipart numa chamada só, pelo mesmo motivo do My Post: enviar arquivo e
+   * dados em requisições separadas deixa foto órfã no disco sempre que a
+   * segunda falha.
+   *
+   * Campo ausente e campo vazio são coisas diferentes aqui. Não mandar `bio`
+   * significa "não mexi nisso"; mandar `bio` vazia significa "quero apagar".
+   * Sem essa distinção, guardar só o nome apagaria a descrição sem ninguém
+   * pedir.
+   */
+  async atualizarPerfil(
+    userId: string,
+    dados: { displayName?: string; bio?: string; guardianName?: string },
+    foto?: Express.Multer.File,
+  ) {
+    const dadosParaGravar: {
+      displayName?: string
+      bio?: string | null
+      guardianName?: string | null
+      avatarUrl?: string
+    } = {}
+
+    if (dados.displayName !== undefined) dadosParaGravar.displayName = dados.displayName.trim()
+    if (dados.bio !== undefined) dadosParaGravar.bio = dados.bio.trim() || null
+    if (dados.guardianName !== undefined) {
+      dadosParaGravar.guardianName = dados.guardianName.trim() || null
+    }
+
+    if (foto) {
+      if (this.storage.tipoDe(foto.mimetype) !== MediaKind.IMAGE) {
+        throw new BadRequestException('A foto do perfil precisa ser uma imagem.')
+      }
+      const salvo = await this.storage.salvar(foto)
+      dadosParaGravar.avatarUrl = salvo.url
+    }
+
+    if (Object.keys(dadosParaGravar).length === 0) return this.perfil(userId)
+
+    await this.prisma.user.update({ where: { id: userId }, data: dadosParaGravar })
+    return this.perfil(userId)
+  }
 
   /**
    * Filtro de "tudo o que esta pessoa fez", inclusive antes de ter conta.

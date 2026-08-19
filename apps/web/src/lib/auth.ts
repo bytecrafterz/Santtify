@@ -60,11 +60,16 @@ export class ErroDeApi extends Error {
 }
 
 async function chamar<T>(caminho: string, init: RequestInit = {}): Promise<T> {
+  // Com arquivo, o próprio navegador escreve o Content-Type com a fronteira que
+  // separa os campos. Escrever à mão aqui apagaria essa fronteira e o servidor
+  // receberia um envio que não consegue ler.
+  const ehArquivo = init.body instanceof FormData
+
   const res = await fetch(`${API_URL}${caminho}`, {
     ...init,
     credentials: 'include', // o cookie pv_anon precisa ir junto
     headers: {
-      'Content-Type': 'application/json',
+      ...(ehArquivo ? {} : { 'Content-Type': 'application/json' }),
       ...(tokens.access ? { Authorization: `Bearer ${tokens.access}` } : {}),
       ...init.headers,
     },
@@ -167,6 +172,21 @@ export const auth = {
     tokens.refresh = r.refreshToken
   },
 
+  /** Edição do próprio perfil. Vai como formulário porque leva a fotografia. */
+  async atualizarPerfil(dados: {
+    displayName?: string
+    bio?: string
+    guardianName?: string
+    foto?: File | null
+  }): Promise<PerfilResposta> {
+    const form = new FormData()
+    if (dados.displayName !== undefined) form.append('displayName', dados.displayName)
+    if (dados.bio !== undefined) form.append('bio', dados.bio)
+    if (dados.guardianName !== undefined) form.append('guardianName', dados.guardianName)
+    if (dados.foto) form.append('foto', dados.foto)
+    return chamarAutenticado<PerfilResposta>('/me/profile', { method: 'PATCH', body: form })
+  },
+
   me: () => chamarAutenticado<Usuario>('/auth/me'),
   perfil: () => chamarAutenticado<PerfilResposta>('/me/profile'),
   publicacoes: () => chamarAutenticado<Publicacao[]>('/me/posts'),
@@ -180,6 +200,7 @@ export interface PerfilResposta {
     email: string
     avatarUrl: string | null
     bio: string | null
+    guardianName: string | null
     createdAt: string
   }
   estatisticas: {

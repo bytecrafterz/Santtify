@@ -13,6 +13,7 @@ export interface Comentario {
 }
 
 export interface EstadoSocial {
+  visualizacoes: number
   curtidas: number
   comentarios: number
   compartilhamentos: number

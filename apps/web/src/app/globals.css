@@ -1896,3 +1896,35 @@ h3 {
 .troca-senha {
   margin-top: 1.5rem;
 }
+
+/* Quem acompanha um perfil infantil, logo abaixo do nome. */
+.responsavel-perfil {
+  color: #4338ca;
+  font-size: 0.85rem;
+  margin: 0.15rem 0 0;
+}
+
+.bio-perfil {
+  color: #475569;
+  font-size: 0.9rem;
+  margin: 0.35rem 0 0;
+}
+
+/* A foto do perfil ocupa o mesmo lugar da inicial que ela substitui. */
+img.avatar {
+  object-fit: cover;
+}
+
+.previa-avatar {
+  width: 96px;
+  height: 96px;
+  border-radius: 50%;
+  object-fit: cover;
+  margin-bottom: 0.5rem;
+}
+
+/* Visualizações não são clicáveis: mesma forma dos outros indicadores, sem
+   o afeto de botão. */
+.acao.contagem {
+  cursor: default;
+}
