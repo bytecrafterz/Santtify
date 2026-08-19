@@ -198,7 +198,15 @@ export function Playlist({
               projectId,
               contentId: faixa.contentId,
               type: 'MEDIA_PLAY',
-              props: { origem: 'playlist', faixa: faixa.rotulo, categoria: faixa.categoria },
+              // blockId vai junto: sem ele, tocar pela playlist não contava para as
+              // visualizações daquela faixa, e a playlist é onde mais se ouve.
+              // O número por faixa ficava a mentir sem nada acusar erro.
+              props: {
+                origem: 'playlist',
+                blockId: faixa.id,
+                faixa: faixa.rotulo,
+                categoria: faixa.categoria,
+              },
             })
           }}
           onPause={() => definirTocando(false)}
@@ -207,7 +215,15 @@ export function Playlist({
               projectId,
               contentId: faixa.contentId,
               type: 'MEDIA_COMPLETE',
-              props: { origem: 'playlist', faixa: faixa.rotulo, categoria: faixa.categoria },
+              // blockId vai junto: sem ele, tocar pela playlist não contava para as
+              // visualizações daquela faixa, e a playlist é onde mais se ouve.
+              // O número por faixa ficava a mentir sem nada acusar erro.
+              props: {
+                origem: 'playlist',
+                blockId: faixa.id,
+                faixa: faixa.rotulo,
+                categoria: faixa.categoria,
+              },
             })
             // Fim da fila: para, e não volta ao início. Recomeçar sozinho do A
             // depois do Z deixaria a música tocando sem ninguém pedir.
