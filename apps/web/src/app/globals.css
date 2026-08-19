@@ -2453,3 +2453,16 @@ img.avatar {
   font-size: 0.9rem;
   color: var(--cor-texto-suave);
 }
+
+/* Etiqueta que diz de que faixa veio o comentário, na fila de moderação. */
+.etiqueta-faixa {
+  display: inline-block;
+  margin-left: 0.4rem;
+  padding: 0.05rem 0.5rem;
+  border-radius: 999px;
+  background: var(--cor-primaria-suave);
+  color: var(--cor-primaria);
+  font-size: 0.72rem;
+  font-style: normal;
+  font-weight: 700;
+}

@@ -84,6 +84,8 @@ export interface ComentarioAdmin {
   createdAt: string
   user: { id: string; displayName: string; email: string; status: 'ACTIVE' | 'SUSPENDED' | 'DELETED' }
   content: { slug: string; title: string }
+  /** Presente quando o comentário é de uma faixa e não da letra inteira. */
+  block: { id: string; label: string | null; category: { name: string } | null } | null
 }
 
 export interface PublicacaoPendente {

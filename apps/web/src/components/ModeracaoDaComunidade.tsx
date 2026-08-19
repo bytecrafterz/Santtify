@@ -119,6 +119,14 @@ export function ModeracaoDaComunidade({ projectSlug }: { projectSlug: string }) 
               {bloqueado && <em className="etiqueta-bloqueado">conta bloqueada</em>} ·{' '}
               {formatarData(c.createdAt)} · em{' '}
               <Link href={`/${projectSlug}/${c.content.slug}`}>{c.content.title}</Link>
+              {/* Qual das quatro faixas, quando o comentário é de uma delas.
+                  Moderar um comentário da oração como se fosse da música é
+                  decidir sobre uma conversa que não se leu. */}
+              {c.block && (
+                <em className="etiqueta-faixa">
+                  {c.block.category?.name ?? c.block.label ?? 'faixa'}
+                </em>
+              )}
             </p>
 
             <p className={apagado ? 'bloco-texto comentario-apagado' : 'bloco-texto'}>{c.body}</p>
