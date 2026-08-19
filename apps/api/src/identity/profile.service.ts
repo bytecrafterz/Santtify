@@ -89,6 +89,7 @@ export class ProfileService {
         email: true,
         avatarUrl: true,
         bio: true,
+        guardianName: true,
         createdAt: true,
       },
     })
