@@ -49,13 +49,7 @@ export default async function IndiceDoProjeto({
         <BotaoDenunciar projectId={project.id} targetType="CONTENT" targetId={contents[0]?.id ?? project.id} />
       </div>
 
-      <div className="secao-com-acao">
-        <div>
-          <h2>Conheça o alfabeto</h2>
-          <p className="subtitulo">Toque nas músicas em sequência, da letra A à letra Z</p>
-        </div>
-        <BotaoImprimir projectId={project.id} impressoes={comunidade.impressoes} />
-      </div>
+      <BotaoImprimir projectId={project.id} impressoes={comunidade.impressoes} />
 
       {/* Os filtros levam à playlist já com a escolha feita, para o toque
           daqui e o toque de lá significarem a mesma coisa. */}
@@ -63,11 +57,17 @@ export default async function IndiceDoProjeto({
         <Link className="filtro-link destaque" href={`/${projectSlug}/playlist`}>
           ▶ Ouvir tudo
         </Link>
-        <Link className="filtro-link" href={`/${projectSlug}/playlist?filtro=explicacao`}>
-          ? Só explicações
-        </Link>
         <Link className="filtro-link" href={`/${projectSlug}/playlist?filtro=musica`}>
-          ♪ Só músicas
+          Só músicas
+        </Link>
+        <Link className="filtro-link" href={`/${projectSlug}/playlist?filtro=explicacao`}>
+          Só explicações
+        </Link>
+        <Link className="filtro-link" href={`/${projectSlug}/playlist?filtro=memorizacao`}>
+          Só memorizações
+        </Link>
+        <Link className="filtro-link" href={`/${projectSlug}/playlist?filtro=oracao`}>
+          Só orações
         </Link>
       </div>
 

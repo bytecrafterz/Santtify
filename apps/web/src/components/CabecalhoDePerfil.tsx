@@ -6,6 +6,7 @@ import { auth, type PerfilResposta } from '@/lib/auth'
 import { useAuth } from './ProvedorDeAuth'
 import { abreviar } from '@/lib/numeros'
 import { BotaoDenunciar } from './BotaoDenunciar'
+import { IconeOlho, IconeCoracao, IconeComentario, IconePartilhar } from './Icones'
 
 /**
  * O cartão de perfil no topo da página.

@@ -1,6 +1,7 @@
 import Link from 'next/link'
 import type { ItemIndice, Projeto } from '@/lib/api'
 import { abreviar } from '@/lib/numeros'
+import { IconeOlho, IconeCoracao, IconeComentario, IconePartilhar } from './Icones'
 
 /**
  * O card grande do projeto, como nos mockups de 19/08.
@@ -71,26 +72,26 @@ export function CartaoDoProjeto({
 
       <div className="trilho">
         <span className="indicador contagem">
-          <span className="bolha" aria-hidden>
-            👁
+          <span className="bolha">
+            <IconeOlho />
           </span>
           {abreviar(totais.views)}
         </span>
         <span className="indicador contagem">
-          <span className="bolha" aria-hidden>
-            ♥
+          <span className="bolha">
+            <IconeCoracao cheio />
           </span>
           {abreviar(totais.likes)}
         </span>
         <span className="indicador contagem">
-          <span className="bolha" aria-hidden>
-            💬
+          <span className="bolha">
+            <IconeComentario />
           </span>
           {abreviar(totais.comments)}
         </span>
         <span className="indicador contagem">
-          <span className="bolha" aria-hidden>
-            ↗
+          <span className="bolha">
+            <IconePartilhar />
           </span>
           {abreviar(totais.shares)}
         </span>

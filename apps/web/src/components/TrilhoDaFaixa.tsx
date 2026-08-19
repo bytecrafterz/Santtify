@@ -5,6 +5,7 @@ import { social, type ComentarioDaFaixa, type EstadoDaFaixa } from '@/lib/social
 import { useAuth } from './ProvedorDeAuth'
 import { abreviar } from '@/lib/numeros'
 import { rastrear } from '@/lib/track'
+import { IconeOlho, IconeCoracao, IconeComentario, IconePartilhar } from './Icones'
 
 /**
  * Os indicadores próprios de cada faixa: música, explicação, memorização e
@@ -113,8 +114,8 @@ export function TrilhoDaFaixa({
     <div className="faixa-social" id={`faixa-${blockId}`}>
       <div className="trilho sem-capa">
         <span className="indicador contagem">
-          <span className="bolha" aria-hidden>
-            👁
+          <span className="bolha">
+            <IconeOlho />
           </span>
           {abreviar(estado.visualizacoes)}
         </span>
@@ -126,8 +127,8 @@ export function TrilhoDaFaixa({
           disabled={ocupado}
           aria-pressed={estado.curtidoPorMim}
         >
-          <span className="bolha" aria-hidden>
-            {estado.curtidoPorMim ? '♥' : '♡'}
+          <span className="bolha">
+            <IconeCoracao cheio={estado.curtidoPorMim} />
           </span>
           {abreviar(estado.curtidas)}
         </button>
@@ -137,15 +138,15 @@ export function TrilhoDaFaixa({
           className="indicador"
           onClick={() => definirComentariosAbertos((v) => !v)}
         >
-          <span className="bolha" aria-hidden>
-            💬
+          <span className="bolha">
+            <IconeComentario />
           </span>
           {abreviar(estado.comentarios)}
         </button>
 
         <button type="button" className="indicador" onClick={partilhar} disabled={ocupado}>
-          <span className="bolha" aria-hidden>
-            ↗
+          <span className="bolha">
+            <IconePartilhar />
           </span>
           {abreviar(estado.compartilhamentos)}
         </button>
