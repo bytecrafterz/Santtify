@@ -5,6 +5,7 @@ import { useRouter } from 'next/navigation'
 import { useEffect, useState } from 'react'
 import { admin, type ComentarioAdmin } from '@/lib/admin'
 import { useAuth } from '@/components/ProvedorDeAuth'
+import { FilaDeDenuncias } from './FilaDeDenuncias'
 
 /**
  * Moderação da comunidade: apagar comentário impróprio e bloquear conta.
@@ -96,19 +97,27 @@ export function ModeracaoDaComunidade({ projectSlug }: { projectSlug: string }) 
   if (erro) return <p className="erro">{erro}</p>
   if (carregando || comentarios === null) return <p className="vazio">Carregando...</p>
 
+  // A fila de denúncias aparece nos dois casos. Sem isto, um projeto sem
+  // comentários escondia as denúncias — e é precisamente aí que uma denúncia
+  // esquecida faz mais estrago.
   if (comentarios.length === 0) {
     return (
-      <div className="bloco">
-        <p className="bloco-vazio">
-          Ainda não há comentários. Quando alguém comentar em uma letra, o comentário aparece
-          aqui e você pode apagá-lo ou bloquear a conta.
-        </p>
-      </div>
+      <>
+        <FilaDeDenuncias projectSlug={projectSlug} />
+        <div className="bloco">
+          <p className="bloco-vazio">
+            Ainda não há comentários. Quando alguém comentar em uma letra, o comentário aparece
+            aqui e você pode apagá-lo ou bloquear a conta.
+          </p>
+        </div>
+      </>
     )
   }
 
   return (
-    <ul className="lista">
+    <>
+      <FilaDeDenuncias projectSlug={projectSlug} />
+      <ul className="lista">
       {comentarios.map((c) => {
         const apagado = c.status !== 'PUBLISHED'
         const bloqueado = c.user.status === 'SUSPENDED'
@@ -153,6 +162,7 @@ export function ModeracaoDaComunidade({ projectSlug }: { projectSlug: string }) 
         )
       })}
     </ul>
+    </>
   )
 }
 

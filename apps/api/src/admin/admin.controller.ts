@@ -53,6 +53,10 @@ class SalvarBlocoDto {
   @IsOptional() @IsString() assetId?: string | null
 }
 
+class DecidirDenunciaDto {
+  @IsIn(['REVIEWED', 'DISMISSED']) status!: 'REVIEWED' | 'DISMISSED'
+}
+
 class CategoriaDto {
   @IsString() @MaxLength(60) nome!: string
 }
@@ -217,6 +221,22 @@ export class AdminController {
     @Req() req: Request,
   ) {
     return this.conteudo.definirCategoriaDoBloco(id, dto.categoryId ?? null, req.usuario!.id)
+  }
+
+  /** Fila de denúncias do projeto. */
+  @Get('projects/:projectSlug/reports')
+  denuncias(@Param('projectSlug') projectSlug: string) {
+    return this.conteudo.denuncias(projectSlug)
+  }
+
+  /** Marca uma denúncia como tratada ou descartada. */
+  @Post('reports/:id/decide')
+  decidirDenuncia(
+    @Param('id') id: string,
+    @Body() dto: DecidirDenunciaDto,
+    @Req() req: Request,
+  ) {
+    return this.conteudo.decidirDenuncia(id, dto.status, req.usuario!.id)
   }
 
   // ── Moderação da comunidade ──────────────────────────────────────

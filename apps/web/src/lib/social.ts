@@ -86,7 +86,30 @@ export interface EstadoDaFaixa {
   lista: ComentarioDaFaixa[]
 }
 
+export type MotivoDeDenuncia =
+  | 'IMPROPRIO'
+  | 'SENSUAL'
+  | 'BULLYING'
+  | 'SPAM'
+  | 'DADOS_PESSOAIS'
+  | 'OUTRO'
+
+export type AlvoDeDenuncia = 'CONTENT' | 'BLOCK' | 'COMMENT' | 'POST' | 'PROFILE'
+
 export const social = {
+  denunciar: (dados: {
+    projectId: string
+    targetType: AlvoDeDenuncia
+    targetId: string
+    reason: MotivoDeDenuncia
+    note?: string
+    bloquear?: boolean
+  }) =>
+    chamar<{ id: string; bloqueado: boolean }>('/reports', {
+      method: 'POST',
+      body: JSON.stringify(dados),
+    }),
+
   // ── Por faixa (19/08) ─────────────────────────────────────────────
   estadoDaFaixa: (blockId: string) => chamar<EstadoDaFaixa>(`/blocks/${blockId}/social`),
 

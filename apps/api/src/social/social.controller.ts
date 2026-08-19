@@ -13,8 +13,16 @@ import {
 } from '@nestjs/common'
 import { FileInterceptor } from '@nestjs/platform-express'
 import type { Request } from 'express'
-import { Platform } from '@pv/db'
-import { IsEnum, IsOptional, IsString, IsUUID, MaxLength, MinLength } from 'class-validator'
+import { Platform, ReportReason, ReportTarget } from '@pv/db'
+import {
+  IsBoolean,
+  IsEnum,
+  IsOptional,
+  IsString,
+  IsUUID,
+  MaxLength,
+  MinLength,
+} from 'class-validator'
 import { SocialService } from './social.service'
 import { PostsService } from './posts.service'
 import { AuthGuard, AuthOpcional } from '../identity/auth.guard'
@@ -93,8 +101,8 @@ export class SocialController {
   @Get('comments')
   @AuthOpcional()
   @UseGuards(AuthGuard)
-  comentarios(@Param('contentId') contentId: string) {
-    return this.social.listarComentarios(contentId)
+  comentarios(@Param('contentId') contentId: string, @Req() req: Request) {
+    return this.social.listarComentarios(contentId, 100, req.usuario?.id ?? null)
   }
 
   @Post('comments')
@@ -246,8 +254,10 @@ export class FaixasController {
   }
 
   @Get('comments')
-  comentarios(@Param('blockId') blockId: string) {
-    return this.social.listarComentariosDaFaixa(blockId)
+  @AuthOpcional()
+  @UseGuards(AuthGuard)
+  comentarios(@Param('blockId') blockId: string, @Req() req: Request) {
+    return this.social.listarComentariosDaFaixa(blockId, req.usuario?.id ?? null)
   }
 
   @Post('comments')
@@ -259,5 +269,31 @@ export class FaixasController {
       dto.body,
       contextoDaVisita(dto.projectId, req),
     )
+  }
+}
+
+
+class DenunciarDto {
+  @IsUUID() projectId!: string
+  @IsEnum(ReportTarget) targetType!: ReportTarget
+  @IsUUID() targetId!: string
+  @IsEnum(ReportReason) reason!: ReportReason
+  @IsOptional() @IsString() @MaxLength(1000) note?: string
+  @IsOptional() @IsBoolean() bloquear?: boolean
+}
+
+/**
+ * Denúncias. Fora do prefixo de conteúdo porque se pode denunciar um
+ * comentário, uma faixa, uma publicação ou um perfil.
+ */
+@Controller('reports')
+export class DenunciasController {
+  constructor(private readonly social: SocialService) {}
+
+  @Post()
+  @AuthOpcional()
+  @UseGuards(AuthGuard)
+  denunciar(@Body() dto: DenunciarDto, @Req() req: Request) {
+    return this.social.denunciar(dto, req.usuario?.id ?? null)
   }
 }

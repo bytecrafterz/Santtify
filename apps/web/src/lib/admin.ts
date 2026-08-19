@@ -132,7 +132,27 @@ async function chamar<T>(
   return corpo as T
 }
 
+export interface DenunciaAdmin {
+  id: string
+  targetType: 'CONTENT' | 'BLOCK' | 'COMMENT' | 'POST' | 'PROFILE'
+  targetId: string
+  reason: string
+  note: string | null
+  status: 'PENDING' | 'REVIEWED' | 'DISMISSED'
+  createdAt: string
+  reporter: { id: string; displayName: string } | null
+}
+
 export const admin = {
+  denuncias: (projectSlug: string) =>
+    chamar<{ reports: DenunciaAdmin[] }>(`/admin/projects/${projectSlug}/reports`),
+
+  decidirDenuncia: (id: string, status: 'REVIEWED' | 'DISMISSED') =>
+    chamar<{ id: string; status: string }>(`/admin/reports/${id}/decide`, {
+      method: 'POST',
+      body: JSON.stringify({ status }),
+    }),
+
   listar: (projectSlug: string) =>
     chamar<{
       project: {

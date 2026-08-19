@@ -6,6 +6,7 @@ import {
   ComentariosController,
   MinhasPublicacoesController,
   PublicacoesController,
+  DenunciasController,
 } from './social.controller'
 import { ShortLinksModule } from '../short-links/short-links.module'
 import { TrackingModule } from '../tracking/tracking.module'
@@ -20,6 +21,7 @@ import { PostsModule } from './posts.module'
     ComentariosController,
     MinhasPublicacoesController,
     PublicacoesController,
+    DenunciasController,
   ],
   providers: [SocialService],
   exports: [SocialService],

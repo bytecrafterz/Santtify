@@ -1,5 +1,5 @@
 import { BadRequestException, Injectable, ForbiddenException, NotFoundException } from '@nestjs/common'
-import { EventType, Platform, ReactionType } from '@pv/db'
+import { EventType, Platform, ReactionType, ReportReason, ReportTarget } from '@pv/db'
 import { PrismaService } from '../prisma/prisma.service'
 import { ShortLinksService } from '../short-links/short-links.service'
 import { EventsService } from '../tracking/events.service'
@@ -70,9 +70,21 @@ export class SocialService {
 
   // ── Comentar ──────────────────────────────────────────────────────
 
-  async listarComentarios(contentId: string, limite = 100) {
+  /**
+   * Comentários da letra, já sem os de quem esta pessoa bloqueou.
+   *
+   * O filtro é aplicado na leitura e não no momento de bloquear: apagar o que
+   * o outro escreveu seria censura global a partir da decisão de uma pessoa.
+   * Bloquear é "não me mostres", não "apaga para todos".
+   */
+  async listarComentarios(contentId: string, limite = 100, leitorId: string | null = null) {
+    const escondidos = await this.bloqueadosPor(leitorId)
     return this.prisma.comment.findMany({
-      where: { contentId, status: 'PUBLISHED' },
+      where: {
+        contentId,
+        status: 'PUBLISHED',
+        ...(escondidos.length ? { userId: { notIn: escondidos } } : {}),
+      },
       orderBy: { createdAt: 'asc' },
       take: limite,
       select: {
@@ -322,7 +334,7 @@ export class SocialService {
             })
             .then(Boolean)
         : Promise.resolve(false),
-      this.listarComentarios(contentId),
+      this.listarComentarios(contentId, 100, userId),
     ])
 
     return {
@@ -339,6 +351,61 @@ export class SocialService {
     }
   }
 
+
+
+  // ── Denúncia e bloqueio ──────────────────────────────────────────────
+  //
+  // Os seis motivos são os que ele listou. O alvo vai como tipo + id porque
+  // denunciar é raro e cinco colunas opcionais custariam mais a ler do que o
+  // par. E o autor é opcional: exigir conta para avisar que há algo errado
+  // numa plataforma de crianças é pedir que a mãe se registe primeiro,
+  // enquanto o conteúdo continua no ar.
+
+  async denunciar(dados: {
+    projectId: string
+    targetType: ReportTarget
+    targetId: string
+    reason: ReportReason
+    note?: string
+    bloquear?: boolean
+  }, userId: string | null) {
+    const denuncia = await this.prisma.report.create({
+      data: {
+        projectId: dados.projectId,
+        reporterId: userId,
+        targetType: dados.targetType,
+        targetId: dados.targetId,
+        reason: dados.reason,
+        note: dados.note?.trim() || null,
+      },
+      select: { id: true, createdAt: true },
+    })
+
+    // O bloqueio é do denunciante, e é imediato: quem denuncia não deve ter de
+    // esperar pela decisão do administrador para deixar de ver quem o
+    // incomodou. A denúncia segue o seu caminho em paralelo.
+    let bloqueado = false
+    if (dados.bloquear && userId && dados.targetType === 'PROFILE' && dados.targetId !== userId) {
+      await this.prisma.userBlock.upsert({
+        where: { blockerId_blockedId: { blockerId: userId, blockedId: dados.targetId } },
+        create: { blockerId: userId, blockedId: dados.targetId },
+        update: {},
+      })
+      bloqueado = true
+    }
+
+    return { id: denuncia.id, bloqueado }
+  }
+
+  /** Ids que esta pessoa bloqueou — usado para esconder o que eles escrevem. */
+  private async bloqueadosPor(userId: string | null): Promise<string[]> {
+    if (!userId) return []
+    const linhas = await this.prisma.userBlock.findMany({
+      where: { blockerId: userId },
+      select: { blockedId: true },
+    })
+    return linhas.map((l) => l.blockedId)
+  }
 
   // ── Engajamento por faixa ────────────────────────────────────────────
   //
@@ -393,7 +460,7 @@ export class SocialService {
               })
               .then(Boolean)
           : Promise.resolve(false),
-        this.listarComentariosDaFaixa(blockId),
+        this.listarComentariosDaFaixa(blockId, userId),
       ])
 
     return { visualizacoes, curtidas, comentarios, compartilhamentos, curtidoPorMim: curtido, lista }
@@ -434,9 +501,14 @@ export class SocialService {
     }
   }
 
-  listarComentariosDaFaixa(blockId: string) {
+  async listarComentariosDaFaixa(blockId: string, leitorId: string | null = null) {
+    const escondidos = await this.bloqueadosPor(leitorId)
     return this.prisma.comment.findMany({
-      where: { blockId, status: 'PUBLISHED' },
+      where: {
+        blockId,
+        status: 'PUBLISHED',
+        ...(escondidos.length ? { userId: { notIn: escondidos } } : {}),
+      },
       orderBy: { createdAt: 'desc' },
       take: 50,
       select: {

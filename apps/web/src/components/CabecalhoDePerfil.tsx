@@ -5,6 +5,7 @@ import { useEffect, useRef, useState } from 'react'
 import { auth, type PerfilResposta } from '@/lib/auth'
 import { useAuth } from './ProvedorDeAuth'
 import { abreviar } from '@/lib/numeros'
+import { BotaoDenunciar } from './BotaoDenunciar'
 
 /**
  * O cartão de perfil no topo da página.
@@ -23,9 +24,11 @@ import { abreviar } from '@/lib/numeros'
  */
 export function CabecalhoDePerfil({
   projectSlug,
+  projectId,
   perfisCriados,
 }: {
   projectSlug: string
+  projectId: string
   perfisCriados: number
 }) {
   const { usuario, carregando } = useAuth()
@@ -185,9 +188,12 @@ export function CabecalhoDePerfil({
       </div>
 
       <div className="linha-acoes">
-        <span className="escudo" title="Segurança e denúncia" aria-hidden>
-          🛡
-        </span>
+        <BotaoDenunciar
+          projectId={projectId}
+          targetType="PROFILE"
+          targetId={perfil?.user.id ?? ''}
+          podeBloquear={Boolean(perfil?.user.id)}
+        />
 
         <span className="nota-monitor">
           {perfil?.user.guardianName

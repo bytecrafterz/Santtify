@@ -656,6 +656,41 @@ export class AdminContentService {
    * o que já resolveu, e uma lista onde o item some no instante da ação deixa
    * a dúvida de se a ação funcionou.
    */
+
+  /**
+   * Denúncias à espera de decisão.
+   *
+   * Ordenadas pelas pendentes primeiro e mais recentes no topo: a fila existe
+   * para agir, e o que já foi decidido só interessa como histórico.
+   */
+  async denuncias(projectSlug: string, limite = 100) {
+    const project = await this.projeto(projectSlug)
+    const reports = await this.prisma.report.findMany({
+      where: { projectId: project.id },
+      orderBy: [{ status: 'asc' }, { createdAt: 'desc' }],
+      take: limite,
+      select: {
+        id: true,
+        targetType: true,
+        targetId: true,
+        reason: true,
+        note: true,
+        status: true,
+        createdAt: true,
+        reporter: { select: { id: true, displayName: true } },
+      },
+    })
+    return { project, reports }
+  }
+
+  async decidirDenuncia(id: string, status: 'REVIEWED' | 'DISMISSED', adminId: string) {
+    return this.prisma.report.update({
+      where: { id },
+      data: { status, reviewedAt: new Date(), reviewedById: adminId },
+      select: { id: true, status: true },
+    })
+  }
+
   async comentariosRecentes(projectSlug: string, limite = 100) {
     const project = await this.projeto(projectSlug)
     const comments = await this.prisma.comment.findMany({

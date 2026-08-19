@@ -69,6 +69,7 @@ model Project {
   launches   Launch[]
   posts      Post[]
   categories BlockCategory[]
+  reports    Report[]
 
   @@map("projects")
 }
@@ -595,20 +596,23 @@ model User {
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
-  visitors       Visitor[]
-  referredUsers  Visitor[]       @relation("UserReferrals")
-  shareLinks     ShortLink[]     @relation("UserShareLinks")
-  reactions      Reaction[]
-  blockReactions BlockReaction[]
-  comments       Comment[]
-  shares         Share[]
-  events         Event[]
-  sessions       VisitSession[]
-  consents       Consent[]
-  uploads        MediaAsset[]
-  refreshTokens  RefreshToken[]
-  auditLogs      AdminAuditLog[]
-  posts          Post[]
+  visitors           Visitor[]
+  referredUsers      Visitor[]       @relation("UserReferrals")
+  shareLinks         ShortLink[]     @relation("UserShareLinks")
+  reactions          Reaction[]
+  blockReactions     BlockReaction[]
+  comments           Comment[]
+  denuncias          Report[]        @relation("DenunciasFeitas")
+  bloqueiosFeitos    UserBlock[]     @relation("BloqueiosFeitos")
+  bloqueiosRecebidos UserBlock[]     @relation("BloqueiosRecebidos")
+  shares             Share[]
+  events             Event[]
+  sessions           VisitSession[]
+  consents           Consent[]
+  uploads            MediaAsset[]
+  refreshTokens      RefreshToken[]
+  auditLogs          AdminAuditLog[]
+  posts              Post[]
 
   @@map("users")
 }
@@ -892,6 +896,74 @@ model BlockReaction {
   @@unique([blockId, userId, type])
   @@index([blockId])
   @@map("block_reactions")
+}
+
+/// Motivos de denúncia, exactamente os seis que o cliente listou em 19/08.
+enum ReportReason {
+  IMPROPRIO
+  SENSUAL
+  BULLYING
+  SPAM
+  DADOS_PESSOAIS
+  OUTRO
+}
+
+/// O que está a ser denunciado. Guardado como tipo + id em vez de uma relação
+/// por cada alvo: denunciar é raro, e cinco colunas opcionais numa tabela
+/// destas custam mais a ler do que o par tipo/id.
+enum ReportTarget {
+  CONTENT
+  BLOCK
+  COMMENT
+  POST
+  PROFILE
+}
+
+enum ReportStatus {
+  PENDING
+  REVIEWED
+  DISMISSED
+}
+
+/// Denúncia feita por uma pessoa, para o dono do projeto decidir.
+///
+/// O autor é opcional de propósito. Numa plataforma usada por crianças, exigir
+/// conta para denunciar é pedir que a mãe se registe antes de avisar que há
+/// algo errado — e nesse intervalo o conteúdo continua no ar. Denúncia sem
+/// conta vale menos como prova, mas vale mais como aviso.
+model Report {
+  id         String  @id @default(uuid()) @db.Uuid
+  projectId  String  @db.Uuid
+  project    Project @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  reporterId String? @db.Uuid
+  reporter   User?   @relation("DenunciasFeitas", fields: [reporterId], references: [id], onDelete: SetNull)
+
+  targetType ReportTarget
+  targetId   String       @db.Uuid
+  reason     ReportReason
+  note       String?
+  status     ReportStatus @default(PENDING)
+
+  createdAt    DateTime  @default(now())
+  reviewedAt   DateTime?
+  reviewedById String?   @db.Uuid
+
+  @@index([projectId, status, createdAt])
+  @@map("reports")
+}
+
+/// Bloqueio entre pessoas: quem bloqueia deixa de ver o outro.
+model UserBlock {
+  id        String   @id @default(uuid()) @db.Uuid
+  blockerId String   @db.Uuid
+  blocker   User     @relation("BloqueiosFeitos", fields: [blockerId], references: [id], onDelete: Cascade)
+  blockedId String   @db.Uuid
+  blocked   User     @relation("BloqueiosRecebidos", fields: [blockedId], references: [id], onDelete: Cascade)
+  createdAt DateTime @default(now())
+
+  @@unique([blockerId, blockedId])
+  @@index([blockerId])
+  @@map("user_blocks")
 }
 
 enum CommentStatus {

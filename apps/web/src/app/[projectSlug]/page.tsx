@@ -8,6 +8,7 @@ import { CabecalhoDePerfil } from '@/components/CabecalhoDePerfil'
 import { CartaoDoProjeto } from '@/components/CartaoDoProjeto'
 import { GradeDeLetras } from '@/components/GradeDeLetras'
 import { BotaoImprimir } from '@/components/BotaoImprimir'
+import { BotaoDenunciar } from '@/components/BotaoDenunciar'
 
 /**
  * A página inicial do projeto, montada segundo os mockups de 19/08.
@@ -32,7 +33,11 @@ export default async function IndiceDoProjeto({
     <main className="envoltorio">
       <RastreadorDeVisita projectId={project.id} type="PAGE_VIEW" />
 
-      <CabecalhoDePerfil projectSlug={projectSlug} perfisCriados={comunidade.perfis} />
+      <CabecalhoDePerfil
+        projectSlug={projectSlug}
+        projectId={project.id}
+        perfisCriados={comunidade.perfis}
+      />
 
       <CartaoDoProjeto projectSlug={projectSlug} project={project} contents={contents} />
 
@@ -41,9 +46,7 @@ export default async function IndiceDoProjeto({
           <h2>Conheça o {project.name}</h2>
           {project.description && <p className="subtitulo">{project.description}</p>}
         </div>
-        <span className="escudo" title="Segurança e denúncia" aria-hidden>
-          🛡
-        </span>
+        <BotaoDenunciar projectId={project.id} targetType="CONTENT" targetId={contents[0]?.id ?? project.id} />
       </div>
 
       <div className="secao-com-acao">

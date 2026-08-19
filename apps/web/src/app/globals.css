@@ -2608,3 +2608,133 @@ img.avatar {
 .capa-vazia {
   padding-top: 2.5rem;
 }
+
+/* ── Bloquear e denunciar ────────────────────────────────────────────
+   Folha que sobe de baixo, como no mockup dele. Fundo escurecido para a
+   decisão ficar isolada do resto da página: denunciar não é uma acção
+   para se tomar de passagem. */
+.fundo-modal {
+  position: fixed;
+  inset: 0;
+  z-index: 60;
+  display: flex;
+  align-items: flex-end;
+  justify-content: center;
+}
+
+.fundo-clicavel {
+  position: absolute;
+  inset: 0;
+  border: none;
+  background: rgba(10, 12, 18, 0.55);
+  cursor: pointer;
+}
+
+.folha-denuncia {
+  position: relative;
+  width: min(560px, 100%);
+  max-height: 88vh;
+  overflow-y: auto;
+  background: var(--cor-superficie);
+  border-radius: 22px 22px 0 0;
+  padding: 1rem 1rem 1.25rem;
+  box-shadow: 0 -10px 40px rgba(10, 12, 18, 0.3);
+}
+
+.folha-denuncia header {
+  display: flex;
+  align-items: center;
+  gap: 0.7rem;
+  margin-bottom: 0.75rem;
+}
+
+.folha-denuncia header h2 {
+  margin: 0;
+  font-size: 1.05rem;
+}
+
+.folha-denuncia header .nota {
+  margin: 0;
+}
+
+.escudo.grande {
+  width: 42px;
+  height: 42px;
+  font-size: 1.3rem;
+  flex: 0 0 auto;
+}
+
+.fechar-x {
+  margin-left: auto;
+  border: none;
+  background: transparent;
+  font-size: 1.1rem;
+  cursor: pointer;
+  color: var(--cor-texto-suave);
+}
+
+.motivos {
+  list-style: none;
+  margin: 0 0 0.75rem;
+  padding: 0;
+  display: grid;
+  gap: 0.4rem;
+}
+
+.motivos .motivo {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  gap: 0.7rem;
+  padding: 0.8rem 0.9rem;
+  border: 1px solid var(--cor-borda);
+  border-radius: 14px;
+  background: var(--cor-superficie);
+  color: var(--cor-texto);
+  font-size: 0.95rem;
+  cursor: pointer;
+  text-align: left;
+}
+
+.motivos .motivo .rotulo {
+  flex: 1;
+}
+
+.motivos .motivo.escolhido {
+  border-color: var(--cor-tocar);
+  background: #f5f1ff;
+  font-weight: 600;
+}
+
+.alternar-bloqueio {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.6rem;
+  padding: 0.7rem 0.2rem;
+}
+
+.alternar-bloqueio small {
+  display: block;
+  color: var(--cor-texto-suave);
+}
+
+.acoes-denuncia {
+  display: flex;
+  gap: 0.6rem;
+  margin-top: 0.5rem;
+}
+
+.acoes-denuncia button {
+  flex: 1;
+}
+
+.nota-ok {
+  color: #15803d;
+  font-size: 0.85rem;
+  margin-left: 0.4rem;
+}
+
+/* O escudo passa a ser botão a sério. */
+button.escudo {
+  cursor: pointer;
+}
