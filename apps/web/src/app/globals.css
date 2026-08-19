@@ -2466,3 +2466,125 @@ img.avatar {
   font-style: normal;
   font-weight: 700;
 }
+
+/* ── Painel deslizante do perfil (bottom sheet) ──────────────────────
+   Fechado, mostra só a pega e a fotografia fica limpa. Aberto, sobe um
+   painel branco com texto escuro.
+
+   Nasceu de um erro meu: a descrição estava escrita por cima do retrato,
+   com um véu escuro por baixo. Funcionava com uma linha de texto e
+   deixava de funcionar com quatro — que é o que o cliente realmente
+   escreveu. Texto sobre fotografia só é legível quando é curto e quando
+   se sabe de antemão que é curto. */
+.painel-perfil {
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: var(--cor-superficie);
+  border-radius: 18px 18px 0 0;
+  box-shadow: 0 -6px 24px rgba(10, 12, 18, 0.18);
+  /* Fechado, sobra à vista exactamente a altura da pega. */
+  transform: translateY(calc(100% - 34px));
+  transition: transform 0.28s ease;
+  z-index: 3;
+}
+
+.perfil-capa.com-painel .painel-perfil {
+  transform: translateY(0);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .painel-perfil {
+    transition: none;
+  }
+}
+
+.painel-perfil .pega {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.1rem;
+  width: 100%;
+  height: 34px;
+  border: none;
+  background: transparent;
+  cursor: pointer;
+  padding: 0.5rem 0 0;
+  color: var(--cor-texto-suave);
+  /* Alvo de toque confortável mesmo sendo uma barra fina. */
+  touch-action: none;
+}
+
+.painel-perfil .traco {
+  display: block;
+  width: 44px;
+  height: 4px;
+  border-radius: 999px;
+  background: #c9cedb;
+}
+
+.painel-perfil .seta {
+  font-size: 0.75rem;
+  line-height: 1;
+}
+
+.conteudo-painel {
+  padding: 0.25rem 1rem 1.1rem;
+  color: var(--cor-texto);
+}
+
+.conteudo-painel h2 {
+  margin: 0 0 0.2rem;
+  font-size: 1.1rem;
+}
+
+.conteudo-painel .bio-perfil,
+.conteudo-painel .responsavel-perfil {
+  color: var(--cor-texto-suave);
+}
+
+.conteudo-painel .responsavel-perfil {
+  color: var(--cor-primaria);
+}
+
+/* Toque fora fecha. Transparente e sem moldura: é uma zona, não um botão. */
+.veu-do-painel {
+  position: absolute;
+  inset: 0;
+  border: none;
+  background: rgba(10, 12, 18, 0.25);
+  cursor: pointer;
+  z-index: 2;
+}
+
+/* Nome sobre a fotografia: uma linha só, com reticências se não couber.
+   É o único texto que fica por cima, e por isso pode ter sombra sem
+   escurecer o retrato inteiro. */
+.faixa-nome {
+  position: absolute;
+  left: 0.9rem;
+  right: 5rem;
+  bottom: 2.6rem;
+  z-index: 1;
+}
+
+.faixa-nome h1 {
+  margin: 0;
+  font-size: 1.15rem;
+  color: #fff;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  text-shadow: 0 2px 8px rgba(0, 0, 0, 0.75);
+}
+
+/* O trilho sobe para não colidir com a pega do painel. */
+.perfil-capa .trilho {
+  bottom: 3.2rem;
+}
+
+/* A etiqueta da capa deixa de cair em cima do texto do placeholder. */
+.capa-vazia {
+  padding-top: 2.5rem;
+}
