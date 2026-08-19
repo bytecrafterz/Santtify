@@ -190,7 +190,9 @@ export function CabecalhoDePerfil({
         </span>
 
         <span className="nota-monitor">
-          {perfil?.user.guardianName ?? 'Descreva quem monitora este perfil'}
+          {perfil?.user.guardianName
+            ? 'Perfil acompanhado por um adulto'
+            : 'Descreva quem monitora este perfil'}
         </span>
 
         <Link
