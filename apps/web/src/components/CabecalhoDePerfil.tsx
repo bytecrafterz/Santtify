@@ -112,26 +112,26 @@ export function CabecalhoDePerfil({
 
         <div className="trilho">
           <span className="indicador contagem">
-            <span className="bolha" aria-hidden>
-              👁
+            <span className="bolha">
+              <IconeOlho />
             </span>
             {abreviar(e?.conteudosVistos ?? 0)}
           </span>
           <span className="indicador contagem">
-            <span className="bolha" aria-hidden>
-              ♥
+            <span className="bolha">
+              <IconeCoracao cheio />
             </span>
             {abreviar(e?.curtidas ?? 0)}
           </span>
           <span className="indicador contagem">
-            <span className="bolha" aria-hidden>
-              💬
+            <span className="bolha">
+              <IconeComentario />
             </span>
             {abreviar(e?.comentarios ?? 0)}
           </span>
           <span className="indicador contagem">
-            <span className="bolha" aria-hidden>
-              ↗
+            <span className="bolha">
+              <IconePartilhar />
             </span>
             {abreviar(e?.compartilhamentos ?? 0)}
           </span>
