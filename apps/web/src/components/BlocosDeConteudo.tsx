@@ -3,6 +3,7 @@
 import { useRef } from 'react'
 import type { Bloco } from '@/lib/api'
 import { rastrear } from '@/lib/track'
+import { TrilhoDaFaixa } from './TrilhoDaFaixa'
 
 /**
  * Renderiza os blocos que o admin montou no painel.
@@ -74,6 +75,7 @@ function CorpoDoBloco({
             contentId={contentId}
             elemento="audio"
           />
+          <TrilhoDaFaixa blockId={bloco.id} projectId={projectId} titulo={bloco.label ?? 'faixa'} />
         </>
       ) : (
         <p className="bloco-vazio">Áudio ainda não enviado.</p>
@@ -145,7 +147,10 @@ function MidiaRastreada({
   elemento: 'audio' | 'video'
 }) {
   const jaTocou = useRef(false)
-  const props = { bloco: bloco.label ?? bloco.type, assetId: bloco.asset?.id }
+  // blockId vai junto porque é por ele que se contam as visualizações de cada
+  // faixa. Sem isto, os quatro áudios da letra partilhariam um número só — que
+  // é exactamente o que o cliente pediu para deixar de acontecer.
+  const props = { bloco: bloco.label ?? bloco.type, assetId: bloco.asset?.id, blockId: bloco.id }
 
   const aoTocar = () => {
     if (jaTocou.current) return

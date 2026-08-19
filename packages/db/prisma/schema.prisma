@@ -55,19 +55,19 @@ model Project {
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
-  contents  Content[]
-  campaigns Campaign[]
-  shortLink ShortLink[]
-  visitors  Visitor[]
-  sessions  VisitSession[]
-  events    Event[]
-  metrics   DailyMetric[]
-  baselines BaselineSnapshot[]
-  comments  Comment[]
-  reactions Reaction[]
-  auditLogs AdminAuditLog[]
-  launches  Launch[]
-  posts     Post[]
+  contents   Content[]
+  campaigns  Campaign[]
+  shortLink  ShortLink[]
+  visitors   Visitor[]
+  sessions   VisitSession[]
+  events     Event[]
+  metrics    DailyMetric[]
+  baselines  BaselineSnapshot[]
+  comments   Comment[]
+  reactions  Reaction[]
+  auditLogs  AdminAuditLog[]
+  launches   Launch[]
+  posts      Post[]
   categories BlockCategory[]
 
   @@map("projects")
@@ -86,9 +86,9 @@ enum ProjectStatus {
 /// Unidade genérica de conteúdo. No alfabeto, cada letra é um Content.
 /// Num próximo projeto, pode ser um produto, um vídeo, um episódio.
 model Content {
-  id        String        @id @default(uuid()) @db.Uuid
-  projectId String        @db.Uuid
-  project   Project       @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  id        String  @id @default(uuid()) @db.Uuid
+  projectId String  @db.Uuid
+  project   Project @relation(fields: [projectId], references: [id], onDelete: Cascade)
   slug      String
   title     String
   subtitle  String?
@@ -100,8 +100,8 @@ model Content {
   /// Fica no conteúdo e não numa lista fixa: o cliente quer a demonstração
   /// grátis só na letra A por enquanto, e o botão aparece apenas onde existe
   /// arquivo. Liberar outra letra depois é subir o PDF dela, sem tocar no código.
-  freeFileUrl   String?
-  freeFileName  String?
+  freeFileUrl  String?
+  freeFileName String?
 
   /// Cartão 1200x630 da capa, para a prévia do link nas redes.
   ///
@@ -109,9 +109,9 @@ model Content {
   /// o robô do WhatsApp busca a prévia com pressa, e uma consulta a mais no
   /// meio disso é a diferença entre o cartão aparecer e o link sair pelado.
   shareCardUrl String?
-  status    ContentStatus @default(DRAFT)
+  status       ContentStatus @default(DRAFT)
   /// Ordem de exibição dentro do projeto (A=1, B=2, ... no alfabeto).
-  position  Int           @default(0)
+  position     Int           @default(0)
 
   publishedAt DateTime?
   createdAt   DateTime  @default(now())
@@ -141,10 +141,13 @@ enum ContentStatus {
 /// fixos. É isso que impede o formato "música + letra + texto educativo" do
 /// alfabeto de virar o schema da plataforma inteira.
 model ContentBlock {
-  id        String    @id @default(uuid()) @db.Uuid
-  contentId String    @db.Uuid
-  content   Content   @relation(fields: [contentId], references: [id], onDelete: Cascade)
-  position  Int       @default(0)
+  id        String          @id @default(uuid()) @db.Uuid
+  /// Engajamento próprio da faixa (decisão de 19/08).
+  reactions BlockReaction[]
+  comments  Comment[]
+  contentId String          @db.Uuid
+  content   Content         @relation(fields: [contentId], references: [id], onDelete: Cascade)
+  position  Int             @default(0)
   type      BlockType
 
   /// Categoria do áudio: Explicação, Música, Memorização, Oração...
@@ -155,11 +158,11 @@ model ContentBlock {
   categoryId String?        @db.Uuid
   category   BlockCategory? @relation(fields: [categoryId], references: [id], onDelete: SetNull)
   /// Rótulo livre definido pelo admin: "Letra da música", "Conteúdo educativo".
-  label     String?
+  label      String?
   /// Corpo textual, para TEXT e RICH_TEXT.
-  text      String?
-  assetId   String?     @db.Uuid
-  asset     MediaAsset? @relation(fields: [assetId], references: [id], onDelete: SetNull)
+  text       String?
+  assetId    String?        @db.Uuid
+  asset      MediaAsset?    @relation(fields: [assetId], references: [id], onDelete: SetNull)
 
   /// Arte própria desta faixa.
   ///
@@ -170,8 +173,8 @@ model ContentBlock {
   imageAssetId String?     @db.Uuid
   imageAsset   MediaAsset? @relation("BlockImage", fields: [imageAssetId], references: [id], onDelete: SetNull)
   /// URL externa, para EMBED e LINK.
-  url       String?
-  meta      Json        @default("{}")
+  url          String?
+  meta         Json        @default("{}")
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -184,10 +187,8 @@ model ContentBlock {
 
 /**
  * Categoria de áudio dentro de um projeto.
- *
  * Existe para a playlist poder ser filtrada — "só músicas", "só orações" — e
  * para o cliente criar categorias novas sem tocar no código.
- *
  * `onDelete: SetNull` no bloco: apagar uma categoria não pode apagar o áudio
  * que estava nela. O áudio volta a ser "sem categoria" e continua tocando.
  */
@@ -197,11 +198,11 @@ model BlockCategory {
   project   Project @relation(fields: [projectId], references: [id], onDelete: Cascade)
 
   /// Nome como aparece na tela: "Música", "Memorização do versículo".
-  name String
+  name     String
   /// Identificador estável na URL do filtro: "musica", "memorizacao".
-  slug String
+  slug     String
   /// Ordem dos filtros na playlist.
-  position Int @default(0)
+  position Int    @default(0)
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -308,17 +309,17 @@ model ContentMetadata {
 /// Identificador próprio por campanha / publicação / vídeo.
 /// É o que permite ler "Instagram → Vídeo 03 → 850 visitas → 120 cadastros".
 model Campaign {
-  id        String   @id @default(uuid()) @db.Uuid
-  projectId String   @db.Uuid
-  project   Project  @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  id          String    @id @default(uuid()) @db.Uuid
+  projectId   String    @db.Uuid
+  project     Project   @relation(fields: [projectId], references: [id], onDelete: Cascade)
   /// Código curto usado na URL (?pv=<code>).
-  code      String   @unique
-  platform  Platform
-  name      String
+  code        String    @unique
+  platform    Platform
+  name        String
   /// Formato da publicação: reel, short, story, post, vídeo longo...
-  format    String?
-  theme     String?
-  cta       String?
+  format      String?
+  theme       String?
+  cta         String?
   testVariant String?
   /// Link do post/vídeo original, para conferência humana.
   externalUrl String?
@@ -331,9 +332,9 @@ model Campaign {
 
   shortLinks       ShortLink[]
   events           Event[]
-  visitorsFirst    Visitor[]        @relation("VisitorFirstTouchCampaign")
-  visitorsLast     Visitor[]        @relation("VisitorLastTouchCampaign")
-  visitorsRoot     Visitor[]        @relation("VisitorRootCampaign")
+  visitorsFirst    Visitor[]         @relation("VisitorFirstTouchCampaign")
+  visitorsLast     Visitor[]         @relation("VisitorLastTouchCampaign")
+  visitorsRoot     Visitor[]         @relation("VisitorRootCampaign")
   contentMetadatas ContentMetadata[]
   sessions         VisitSession[]
 
@@ -411,22 +412,22 @@ model ShortLink {
   /// QR gerado no momento da publicação. Nulo para links de compartilhamento.
   qrSvg String?
 
-  clickCount Int      @default(0)
-  active     Boolean  @default(true)
+  clickCount Int       @default(0)
+  active     Boolean   @default(true)
   expiresAt  DateTime?
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
-  events            Event[]
-  eventsAsParent    Event[]        @relation("EventParentShortLink")
-  eventsAsRoot      Event[]        @relation("EventRootShortLink")
-  visitorsFirst     Visitor[]      @relation("VisitorFirstTouchLink")
-  visitorsLast      Visitor[]      @relation("VisitorLastTouchLink")
-  visitorsAcquired  Visitor[]      @relation("VisitorAcquiredVia")
-  visitorsRoot      Visitor[]      @relation("VisitorRootLink")
-  sessions          VisitSession[]
-  shares            Share[]
+  events           Event[]
+  eventsAsParent   Event[]        @relation("EventParentShortLink")
+  eventsAsRoot     Event[]        @relation("EventRootShortLink")
+  visitorsFirst    Visitor[]      @relation("VisitorFirstTouchLink")
+  visitorsLast     Visitor[]      @relation("VisitorLastTouchLink")
+  visitorsAcquired Visitor[]      @relation("VisitorAcquiredVia")
+  visitorsRoot     Visitor[]      @relation("VisitorRootLink")
+  sessions         VisitSession[]
+  shares           Share[]
 
   @@index([projectId, kind])
   @@index([rootShortLinkId])
@@ -572,8 +573,8 @@ enum ConsentStatus {
 /// Perfil global, NÃO por projeto — o cliente foi explícito: um só perfil,
 /// interagindo com várias empresas.
 model User {
-  id           String  @id @default(uuid()) @db.Uuid
-  email        String  @unique
+  id           String   @id @default(uuid()) @db.Uuid
+  email        String   @unique
   passwordHash String
   displayName  String
   avatarUrl    String?
@@ -594,19 +595,20 @@ model User {
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
-  visitors      Visitor[]
-  referredUsers Visitor[]       @relation("UserReferrals")
-  shareLinks    ShortLink[]     @relation("UserShareLinks")
-  reactions     Reaction[]
-  comments      Comment[]
-  shares        Share[]
-  events        Event[]
-  sessions      VisitSession[]
-  consents      Consent[]
-  uploads       MediaAsset[]
-  refreshTokens RefreshToken[]
-  auditLogs     AdminAuditLog[]
-  posts         Post[]
+  visitors       Visitor[]
+  referredUsers  Visitor[]       @relation("UserReferrals")
+  shareLinks     ShortLink[]     @relation("UserShareLinks")
+  reactions      Reaction[]
+  blockReactions BlockReaction[]
+  comments       Comment[]
+  shares         Share[]
+  events         Event[]
+  sessions       VisitSession[]
+  consents       Consent[]
+  uploads        MediaAsset[]
+  refreshTokens  RefreshToken[]
+  auditLogs      AdminAuditLog[]
+  posts          Post[]
 
   @@map("users")
 }
@@ -623,13 +625,13 @@ enum UserStatus {
 }
 
 model RefreshToken {
-  id        String   @id @default(uuid()) @db.Uuid
-  userId    String   @db.Uuid
-  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
-  tokenHash String   @unique
+  id        String    @id @default(uuid()) @db.Uuid
+  userId    String    @db.Uuid
+  user      User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  tokenHash String    @unique
   expiresAt DateTime
   revokedAt DateTime?
-  createdAt DateTime @default(now())
+  createdAt DateTime  @default(now())
 
   @@index([userId])
   @@map("refresh_tokens")
@@ -694,36 +696,36 @@ model Event {
   // eventos — seria destruir em silêncio exatamente o dado que o cliente
   // contratou. Para o direito ao apagamento da LGPD/GDPR, anonimiza-se o
   // registro do usuário e preserva-se o id; ver docs/ARQUITETURA.md.
-  visitorId String  @db.Uuid
-  visitor   Visitor @relation(fields: [visitorId], references: [id], onDelete: Cascade)
-  userId    String? @db.Uuid
-  user      User?   @relation(fields: [userId], references: [id], onDelete: Restrict)
-  sessionId String? @db.Uuid
+  visitorId String        @db.Uuid
+  visitor   Visitor       @relation(fields: [visitorId], references: [id], onDelete: Cascade)
+  userId    String?       @db.Uuid
+  user      User?         @relation(fields: [userId], references: [id], onDelete: Restrict)
+  sessionId String?       @db.Uuid
   session   VisitSession? @relation(fields: [sessionId], references: [id], onDelete: Restrict)
 
   contentId String?  @db.Uuid
   content   Content? @relation(fields: [contentId], references: [id], onDelete: Restrict)
 
   // ── Snapshot de atribuição no momento do evento ────────────────────
-  platform   Platform?
-  source     String?
-  medium     String?
-  campaignId String?   @db.Uuid
-  campaign   Campaign? @relation(fields: [campaignId], references: [id], onDelete: Restrict)
+  platform    Platform?
+  source      String?
+  medium      String?
+  campaignId  String?   @db.Uuid
+  campaign    Campaign? @relation(fields: [campaignId], references: [id], onDelete: Restrict)
   /// Referência externa da publicação (id do post, do vídeo).
   campaignRef String?
 
   /// referral_id — o link pelo qual esta pessoa chegou.
-  shortLinkId String?    @db.Uuid
-  shortLink   ShortLink? @relation(fields: [shortLinkId], references: [id], onDelete: Restrict)
+  shortLinkId       String?    @db.Uuid
+  shortLink         ShortLink? @relation(fields: [shortLinkId], references: [id], onDelete: Restrict)
   /// parent_referral — o elo anterior da cadeia.
   parentShortLinkId String?    @db.Uuid
   parentShortLink   ShortLink? @relation("EventParentShortLink", fields: [parentShortLinkId], references: [id], onDelete: Restrict)
   /// Raiz da cadeia. Permite somar o valor gerado por uma cadeia inteira.
-  rootShortLinkId String?    @db.Uuid
-  rootShortLink   ShortLink? @relation("EventRootShortLink", fields: [rootShortLinkId], references: [id], onDelete: Restrict)
-  rootPlatform    Platform?
-  chainDepth      Int        @default(0)
+  rootShortLinkId   String?    @db.Uuid
+  rootShortLink     ShortLink? @relation("EventRootShortLink", fields: [rootShortLinkId], references: [id], onDelete: Restrict)
+  rootPlatform      Platform?
+  chainDepth        Int        @default(0)
 
   // ── Comércio: RESERVADO. Nenhum evento destes é gerado na Fase 1. ──
   // A integração do checkout externo (Fase 2) liga a entrada e não toca
@@ -843,6 +845,15 @@ model Comment {
   userId    String  @db.Uuid
   user      User    @relation(fields: [userId], references: [id], onDelete: Cascade)
 
+  /// Faixa comentada, quando o comentário é de um áudio e não da letra inteira.
+  ///
+  /// Coluna nova na MESMA tabela, e não uma tabela à parte, porque a moderação
+  /// do cliente lê daqui. Separar em duas tabelas obrigaria a fila dele a
+  /// juntar duas origens, e o comentário que escapasse a essa junção ficaria
+  /// publicado sem ninguém o ver.
+  blockId String?       @db.Uuid
+  block   ContentBlock? @relation(fields: [blockId], references: [id], onDelete: Cascade)
+
   /// Respostas a comentários.
   parentId String?   @db.Uuid
   parent   Comment?  @relation("CommentThread", fields: [parentId], references: [id], onDelete: Cascade)
@@ -859,6 +870,28 @@ model Comment {
   @@index([userId])
   @@index([parentId])
   @@map("comments")
+}
+
+/// Curtida de uma FAIXA (bloco), separada da curtida da letra inteira.
+///
+/// Tabela própria em vez de uma coluna opcional em Reaction: aquela tabela tem
+/// uma unicidade em (conteúdo, pessoa, tipo) que impede a mesma pessoa de
+/// curtir duas faixas da mesma letra. Mexer nessa unicidade num banco já com
+/// dados é risco sem retorno — a curtida de faixa não precisa de moderação nem
+/// de conviver com a da letra, então vive melhor ao lado.
+model BlockReaction {
+  id      String       @id @default(uuid()) @db.Uuid
+  blockId String       @db.Uuid
+  block   ContentBlock @relation(fields: [blockId], references: [id], onDelete: Cascade)
+  userId  String       @db.Uuid
+  user    User         @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  type      ReactionType @default(LIKE)
+  createdAt DateTime     @default(now())
+
+  @@unique([blockId, userId, type])
+  @@index([blockId])
+  @@map("block_reactions")
 }
 
 enum CommentStatus {
@@ -922,7 +955,7 @@ model Post {
   content   Content @relation(fields: [contentId], references: [id], onDelete: Restrict)
 
   /// Legenda escrita pela pessoa. Opcional: publicar sem texto é válido.
-  body   String?
+  body String?
 
   /// Foto enviada pela pessoa. Opcional — a publicação pode ser só o conteúdo
   /// da plataforma com legenda, que é como funcionava antes da foto entrar.
@@ -935,9 +968,9 @@ model Post {
   status PostStatus @default(PUBLISHED)
 
   /// Quem moderou e quando, para a decisão ser auditável.
-  moderatedAt     DateTime?
-  moderatedById   String?   @db.Uuid
-  moderationNote  String?
+  moderatedAt    DateTime?
+  moderatedById  String?   @db.Uuid
+  moderationNote String?
 
   createdAt DateTime  @default(now())
   updatedAt DateTime  @updatedAt
@@ -967,9 +1000,9 @@ enum PostStatus {
 /// A "fotografia diária". Recalculável a partir de Event a qualquer momento.
 /// Se divergir, recalcula-se. O inverso jamais acontece.
 model DailyMetric {
-  id        String  @id @default(uuid()) @db.Uuid
-  projectId String  @db.Uuid
-  project   Project @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  id        String   @id @default(uuid()) @db.Uuid
+  projectId String   @db.Uuid
+  project   Project  @relation(fields: [projectId], references: [id], onDelete: Cascade)
   /// Dia em UTC.
   date      DateTime @db.Date
 
@@ -994,10 +1027,10 @@ model DailyMetric {
   signupsFromShares  Int @default(0)
 
   /// Reservado — Fase 2.
-  checkoutClicks     Int     @default(0)
-  purchases          Int     @default(0)
-  purchasesFromShares Int    @default(0)
-  revenue            Decimal @default(0) @db.Decimal(14, 2)
+  checkoutClicks      Int     @default(0)
+  purchases           Int     @default(0)
+  purchasesFromShares Int     @default(0)
+  revenue             Decimal @default(0) @db.Decimal(14, 2)
 
   computedAt DateTime @default(now())
 
@@ -1017,19 +1050,19 @@ enum MetricDimension {
 /// Registra a linha de base fora da plataforma — seguidores de cada rede no
 /// lançamento — para a curva de crescimento ter um ponto de partida real.
 model BaselineSnapshot {
-  id        String   @id @default(uuid()) @db.Uuid
-  projectId String   @db.Uuid
-  project   Project  @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  id         String   @id @default(uuid()) @db.Uuid
+  projectId  String   @db.Uuid
+  project    Project  @relation(fields: [projectId], references: [id], onDelete: Cascade)
   /// "Dia Zero", "Dia 7", "Dia 30"...
-  label     String
+  label      String
   capturedAt DateTime
-  platform  Platform
+  platform   Platform
   /// Seguidores/inscritos na rede, ou usuários no caso do PRODUTO_VIVO.
-  followers Int?
+  followers  Int?
   /// Métrica secundária livre (visualizações acumuladas, por exemplo).
-  reach     Int?
-  notes     String?
-  attributes Json @default("{}")
+  reach      Int?
+  notes      String?
+  attributes Json     @default("{}")
 
   createdAt DateTime @default(now())
 
@@ -1045,11 +1078,11 @@ model BaselineSnapshot {
 /// Consentimento por visitante, com versão da política e finalidades
 /// granulares. Cliente está em Portugal: GDPR é o piso.
 model Consent {
-  id        String   @id @default(uuid()) @db.Uuid
-  visitorId String   @db.Uuid
-  visitor   Visitor  @relation(fields: [visitorId], references: [id], onDelete: Cascade)
-  userId    String?  @db.Uuid
-  user      User?    @relation(fields: [userId], references: [id], onDelete: SetNull)
+  id        String  @id @default(uuid()) @db.Uuid
+  visitorId String  @db.Uuid
+  visitor   Visitor @relation(fields: [visitorId], references: [id], onDelete: Cascade)
+  userId    String? @db.Uuid
+  user      User?   @relation(fields: [userId], references: [id], onDelete: SetNull)
 
   policyVersion String
   /// { essential: true, analytics: true, marketing: false }

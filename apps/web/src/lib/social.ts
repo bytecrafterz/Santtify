@@ -67,7 +67,41 @@ export interface PublicacaoCriada {
   content: { slug: string; title: string; subtitle: string | null; project: { slug: string } }
 }
 
+
+/** Um comentário de faixa, como a API o devolve. */
+export interface ComentarioDaFaixa {
+  id: string
+  body: string
+  createdAt: string
+  user: { id: string; displayName: string; avatarUrl: string | null }
+}
+
+/** Os quatro números próprios de uma faixa, mais o que a pessoa já fez nela. */
+export interface EstadoDaFaixa {
+  visualizacoes: number
+  curtidas: number
+  comentarios: number
+  compartilhamentos: number
+  curtidoPorMim: boolean
+  lista: ComentarioDaFaixa[]
+}
+
 export const social = {
+  // ── Por faixa (19/08) ─────────────────────────────────────────────
+  estadoDaFaixa: (blockId: string) => chamar<EstadoDaFaixa>(`/blocks/${blockId}/social`),
+
+  curtirFaixa: (blockId: string, projectId: string) =>
+    chamar<{ curtido: boolean; total: number }>(`/blocks/${blockId}/like`, {
+      method: 'POST',
+      body: JSON.stringify({ projectId }),
+    }),
+
+  comentarNaFaixa: (blockId: string, projectId: string, body: string) =>
+    chamar<ComentarioDaFaixa>(`/blocks/${blockId}/comments`, {
+      method: 'POST',
+      body: JSON.stringify({ projectId, body }),
+    }),
+
   /**
    * "My Post": publica no perfil.
    *

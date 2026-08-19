@@ -339,6 +339,145 @@ export class SocialService {
     }
   }
 
+
+  // ── Engajamento por faixa ────────────────────────────────────────────
+  //
+  // Pedido dele em 19/08: cada áudio da letra — música, explicação,
+  // memorização, oração — precisa dos seus próprios números, e não de uma
+  // barra só no fim da página. Tem razão: são quatro peças com propósitos
+  // diferentes, e saber que a oração é ouvida mais vezes do que a explicação
+  // é justamente o tipo de coisa que este produto existe para revelar.
+  //
+  // Visualizações e partilhas saem do log de eventos, que já as regista;
+  // curtidas e comentários têm tabela. Contar na hora, em vez de manter um
+  // contador por bloco, evita ter dois números sobre a mesma coisa a
+  // divergirem — são quatro faixas por letra, a consulta é barata.
+
+  private async faixaExiste(blockId: string) {
+    const bloco = await this.prisma.contentBlock.findUnique({
+      where: { id: blockId },
+      select: { id: true, contentId: true, content: { select: { projectId: true, status: true } } },
+    })
+    if (!bloco || bloco.content.status !== 'PUBLISHED') {
+      throw new NotFoundException('Faixa não encontrada')
+    }
+    return bloco
+  }
+
+  private contarEventoDaFaixa(blockId: string, tipo: EventType, acao?: string) {
+    return this.prisma.event.count({
+      where: {
+        type: tipo,
+        AND: [
+          { props: { path: ['blockId'], equals: blockId } },
+          ...(acao ? [{ props: { path: ['acao'], equals: acao } }] : []),
+        ],
+      },
+    })
+  }
+
+  async estadoDaFaixa(blockId: string, userId: string | null) {
+    await this.faixaExiste(blockId)
+
+    const [visualizacoes, curtidas, comentarios, compartilhamentos, curtido, lista] =
+      await Promise.all([
+        this.contarEventoDaFaixa(blockId, EventType.MEDIA_PLAY),
+        this.prisma.blockReaction.count({ where: { blockId, type: ReactionType.LIKE } }),
+        this.prisma.comment.count({ where: { blockId, status: 'PUBLISHED' } }),
+        this.contarEventoDaFaixa(blockId, EventType.CUSTOM, 'partilhar_faixa'),
+        userId
+          ? this.prisma.blockReaction
+              .findUnique({
+                where: { blockId_userId_type: { blockId, userId, type: ReactionType.LIKE } },
+                select: { id: true },
+              })
+              .then(Boolean)
+          : Promise.resolve(false),
+        this.listarComentariosDaFaixa(blockId),
+      ])
+
+    return { visualizacoes, curtidas, comentarios, compartilhamentos, curtidoPorMim: curtido, lista }
+  }
+
+  async alternarCurtidaDaFaixa(blockId: string, userId: string, ctx: VisitContext) {
+    const bloco = await this.faixaExiste(blockId)
+    const existente = await this.prisma.blockReaction.findUnique({
+      where: { blockId_userId_type: { blockId, userId, type: ReactionType.LIKE } },
+    })
+
+    const visita = await this.attribution.resolveVisit({ ...ctx, userId })
+    const atribuicao = { ...visita.attribution, userId }
+
+    if (existente) {
+      await this.prisma.blockReaction.delete({ where: { id: existente.id } })
+      await this.events.registrar({
+        type: EventType.UNLIKE,
+        attribution: atribuicao,
+        contentId: bloco.contentId,
+        props: { blockId },
+      })
+    } else {
+      await this.prisma.blockReaction.create({
+        data: { blockId, userId, type: ReactionType.LIKE },
+      })
+      await this.events.registrar({
+        type: EventType.LIKE,
+        attribution: atribuicao,
+        contentId: bloco.contentId,
+        props: { blockId },
+      })
+    }
+
+    return {
+      curtido: !existente,
+      total: await this.prisma.blockReaction.count({ where: { blockId, type: ReactionType.LIKE } }),
+    }
+  }
+
+  listarComentariosDaFaixa(blockId: string) {
+    return this.prisma.comment.findMany({
+      where: { blockId, status: 'PUBLISHED' },
+      orderBy: { createdAt: 'desc' },
+      take: 50,
+      select: {
+        id: true,
+        body: true,
+        createdAt: true,
+        user: { select: { id: true, displayName: true, avatarUrl: true } },
+      },
+    })
+  }
+
+  async comentarNaFaixa(blockId: string, userId: string, corpo: string, ctx: VisitContext) {
+    const bloco = await this.faixaExiste(blockId)
+    const visita = await this.attribution.resolveVisit({ ...ctx, userId })
+
+    const comentario = await this.prisma.comment.create({
+      data: {
+        projectId: bloco.content.projectId,
+        contentId: bloco.contentId,
+        blockId,
+        userId,
+        body: corpo.trim(),
+      },
+      select: {
+        id: true,
+        body: true,
+        createdAt: true,
+        user: { select: { id: true, displayName: true, avatarUrl: true } },
+      },
+    })
+
+    await this.events.registrar({
+      type: EventType.COMMENT,
+      attribution: { ...visita.attribution, userId },
+      contentId: bloco.contentId,
+      props: { blockId },
+    })
+
+    return comentario
+  }
+
   private async conteudoPublicado(contentId: string) {
     const content = await this.prisma.content.findUnique({
       where: { id: contentId },

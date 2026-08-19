@@ -215,3 +215,49 @@ export class PublicacoesController {
     return this.posts.remover(id, req.usuario!.id, req.usuario!.role === 'ADMIN')
   }
 }
+
+/**
+ * Engajamento por FAIXA, fora do prefixo de conteúdo.
+ *
+ * Rotas próprias e não parâmetros das de conteúdo: a faixa é a unidade que o
+ * cliente quer medir a partir de 19/08, e dar-lhe endereço próprio deixa o
+ * caminho legível tanto no código como nos registos do servidor.
+ */
+@Controller('blocks/:blockId')
+export class FaixasController {
+  constructor(private readonly social: SocialService) {}
+
+  @Get('social')
+  @AuthOpcional()
+  @UseGuards(AuthGuard)
+  estado(@Param('blockId') blockId: string, @Req() req: Request) {
+    return this.social.estadoDaFaixa(blockId, req.usuario?.id ?? null)
+  }
+
+  @Post('like')
+  @HttpCode(200)
+  @UseGuards(AuthGuard)
+  curtir(@Param('blockId') blockId: string, @Body() dto: CurtirDto, @Req() req: Request) {
+    return this.social.alternarCurtidaDaFaixa(
+      blockId,
+      req.usuario!.id,
+      contextoDaVisita(dto.projectId, req),
+    )
+  }
+
+  @Get('comments')
+  comentarios(@Param('blockId') blockId: string) {
+    return this.social.listarComentariosDaFaixa(blockId)
+  }
+
+  @Post('comments')
+  @UseGuards(AuthGuard)
+  comentar(@Param('blockId') blockId: string, @Body() dto: ComentarDto, @Req() req: Request) {
+    return this.social.comentarNaFaixa(
+      blockId,
+      req.usuario!.id,
+      dto.body,
+      contextoDaVisita(dto.projectId, req),
+    )
+  }
+}

@@ -2424,3 +2424,32 @@ img.avatar {
 .linha-acoes.sem-margem {
   margin: 0;
 }
+
+/* Indicadores da faixa, logo abaixo do respectivo player. */
+.faixa-social {
+  margin: 0.25rem 0 1.25rem;
+}
+
+.comentarios-faixa {
+  margin-top: 0.6rem;
+  padding-top: 0.6rem;
+  border-top: 1px solid var(--cor-borda);
+}
+
+.lista-comentarios {
+  list-style: none;
+  margin: 0.6rem 0 0;
+  padding: 0;
+  display: grid;
+  gap: 0.6rem;
+}
+
+.lista-comentarios li strong {
+  font-size: 0.85rem;
+}
+
+.lista-comentarios li p {
+  margin: 0.1rem 0 0;
+  font-size: 0.9rem;
+  color: var(--cor-texto-suave);
+}
