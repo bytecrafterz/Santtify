@@ -11,11 +11,14 @@ export const metadata: Metadata = {
   // encontra, e escreve um erro no console de todo visitante. O ícone já
   // existia; faltava dizer onde ele está.
   icons: {
-    icon: '/icone.svg',
-    apple: '/icone.svg',
-    shortcut: '/icone.svg',
-  },
-  appleWebApp: { capable: true, statusBarStyle: 'default', title: 'Alfabeto Saudável' },
+      icon: [
+        { url: '/icone-192.png', sizes: '192x192', type: 'image/png' },
+        { url: '/icone-512.png', sizes: '512x512', type: 'image/png' },
+      ],
+      apple: [{ url: '/apple-touch-icon.png', sizes: '180x180' }],
+      shortcut: ['/favicon.ico'],
+    },
+  appleWebApp: { capable: true, statusBarStyle: 'default', title: 'Santtify' },
 }
 
 export const viewport: Viewport = {

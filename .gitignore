@@ -26,3 +26,8 @@ tsconfig.tsbuildinfo
 !apps/web/public/*.jpg
 IMG_*.png
 ABBC*.png
+
+# Mockups e artes que o cliente envia por chat: material dele, não do código.
+*.png
+*.jpeg
+!apps/web/public/*.png
