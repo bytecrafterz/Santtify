@@ -35,6 +35,8 @@ export function Playlist({
   categorias,
   faixas,
   filtroInicial = null,
+  mostrarFiltros = true,
+  autoIniciar = false,
 }: {
   projectId: string
   projectSlug: string
@@ -42,6 +44,14 @@ export function Playlist({
   faixas: Faixa[]
   /** Escolha já feita na página inicial, quando a pessoa clicou "Só músicas". */
   filtroInicial?: string | null
+  /**
+   * Embutida na página do perfil, os filtros vivem lá fora e são partilhados
+   * com a capa. Duas fileiras de filtros na mesma tela, a dizer o mesmo, é
+   * como a pessoa perde a confiança no que está a carregar.
+   */
+  mostrarFiltros?: boolean
+  /** Começa a tocar sozinha: só quando alguém tocou no play da capa. */
+  autoIniciar?: boolean
 }) {
   const [filtro, definirFiltro] = useState<string | null>(filtroInicial)
   const audio = useRef<HTMLAudioElement>(null)
@@ -63,6 +73,23 @@ export function Playlist({
    * para o começo a cada pausa.
    */
   const querTocar = useRef(false)
+
+  // Autoplay só existe porque houve um toque humano imediatamente antes — no
+  // play da capa. O navegador exige esse gesto, e nós exigimos o mesmo por
+  // outra razão: som que começa sem ninguém pedir é a forma mais rápida de
+  // alguém fechar a página.
+  useEffect(() => {
+    if (!autoIniciar) return
+    querTocar.current = true
+    const el = audio.current
+    if (!el) return
+    void el.play().then(
+      () => definirTocando(true),
+      () => definirErro('Toque em tocar para começar.'),
+    )
+    // Só na montagem: reiniciar a cada render voltaria a música ao princípio.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [])
 
   useEffect(() => {
     if (!querTocar.current) return
@@ -146,7 +173,7 @@ export function Playlist({
 
   return (
     <>
-      {categorias.length > 1 && (
+      {mostrarFiltros && categorias.length > 1 && (
         <div className="filtros-playlist" role="group" aria-label="O que ouvir">
           <button
             type="button"

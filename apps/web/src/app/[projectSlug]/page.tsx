@@ -1,11 +1,10 @@
-import Link from 'next/link'
 import { notFound } from 'next/navigation'
 import { api } from '@/lib/api'
 import { RastreadorDeVisita } from '@/components/RastreadorDeVisita'
 import { SeloProdutoVivo } from '@/components/SeloProdutoVivo'
 import { BannerDeConsentimento } from '@/components/BannerDeConsentimento'
 import { CabecalhoDePerfil } from '@/components/CabecalhoDePerfil'
-import { CartaoDoProjeto } from '@/components/CartaoDoProjeto'
+import { CapaComPlaylist } from '@/components/CapaComPlaylist'
 import { BotaoImprimir } from '@/components/BotaoImprimir'
 import { BotaoDenunciar } from '@/components/BotaoDenunciar'
 import { ExperienciaContinua } from '@/components/ExperienciaContinua'
@@ -24,7 +23,12 @@ export default async function IndiceDoProjeto({
   params: Promise<{ projectSlug: string }>
 }) {
   const { projectSlug } = await params
-  const dados = await api.indice(projectSlug)
+  // As duas leituras vão em paralelo: a playlist é precisa logo na primeira
+  // pintura, porque o play da capa passou a tocar aqui dentro.
+  const [dados, tocador] = await Promise.all([
+    api.indice(projectSlug),
+    api.playlist(projectSlug),
+  ])
   if (!dados) notFound()
 
   const { project, contents, progresso, comunidade } = dados
@@ -40,8 +44,14 @@ export default async function IndiceDoProjeto({
         perfisCriados={comunidade.perfis}
       />
 
-      {/* 2. Capa do projeto */}
-      <CartaoDoProjeto projectSlug={projectSlug} project={project} contents={contents} />
+      {/* 2 e 5. Capa que toca aqui mesmo, com os filtros que a comandam */}
+      <CapaComPlaylist
+        projectSlug={projectSlug}
+        project={project}
+        contents={contents}
+        categorias={tocador?.categorias ?? []}
+        faixas={tocador?.faixas ?? []}
+      />
 
       {/* 3. Título e descrição */}
       <div className="secao-com-acao">
@@ -58,25 +68,6 @@ export default async function IndiceDoProjeto({
 
       {/* 4. Imprimir e exportar */}
       <BotaoImprimir projectId={project.id} impressoes={comunidade.impressoes} />
-
-      {/* 5. Filtros de áudio */}
-      <div className="filtros-linha">
-        <Link className="filtro-link destaque" href={`/${projectSlug}/playlist`}>
-          ▶ Ouvir tudo
-        </Link>
-        <Link className="filtro-link" href={`/${projectSlug}/playlist?filtro=musica`}>
-          Só músicas
-        </Link>
-        <Link className="filtro-link" href={`/${projectSlug}/playlist?filtro=explicacao`}>
-          Só explicações
-        </Link>
-        <Link className="filtro-link" href={`/${projectSlug}/playlist?filtro=memorizacao`}>
-          Só memorizações
-        </Link>
-        <Link className="filtro-link" href={`/${projectSlug}/playlist?filtro=oracao`}>
-          Só orações
-        </Link>
-      </div>
 
       {/* 6, 7 e 8. Progresso, alfabeto e a letra aberta — tudo aqui dentro. */}
       {contents.length === 0 ? (
