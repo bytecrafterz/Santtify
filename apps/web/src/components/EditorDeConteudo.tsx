@@ -566,6 +566,26 @@ function EditorDeBloco({
             />
             <span>{enviando ? 'Enviando...' : bloco.asset ? 'Trocar arquivo' : 'Enviar arquivo'}</span>
           </label>
+          {bloco.asset && (
+            /* Tirar só o ficheiro, mantendo título, texto, imagem e posição.
+               Sem isto, quem enviava o áudio errado tinha de apagar o bloco
+               inteiro e refazer tudo à volta — foi o que lhe aconteceu. */
+            <button
+              type="button"
+              className="secundario"
+              disabled={enviando}
+              onClick={async () => {
+                await admin.salvarBloco(bloco.id, { assetId: null })
+                aoMudar()
+              }}
+            >
+              {bloco.type === 'IMAGE'
+                ? 'Remover imagem'
+                : bloco.type === 'VIDEO'
+                  ? 'Remover vídeo'
+                  : 'Remover áudio'}
+            </button>
+          )}
           {enviando && (
             <small>Não feche esta tela. Arquivos grandes podem demorar no dado móvel.</small>
           )}
