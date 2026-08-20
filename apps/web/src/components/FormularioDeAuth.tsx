@@ -2,7 +2,7 @@
 
 import { useRouter, useSearchParams } from 'next/navigation'
 import Link from 'next/link'
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { auth, ErroDeApi } from '@/lib/auth'
 import { useAuth } from '@/components/ProvedorDeAuth'
 
@@ -24,6 +24,22 @@ export function FormularioDeAuth({
   const { definirUsuario } = useAuth()
   const [erro, definirErro] = useState<string | null>(null)
   const [enviando, definirEnviando] = useState(false)
+  const [senhaAberta, definirSenhaAberta] = useState(false)
+  /**
+   * "Lembrar meu login" guarda apenas o E-MAIL, nunca a senha.
+   *
+   * É a diferença entre poupar uma digitação e deixar a conta aberta no
+   * telemóvel de quem o encontrar. Guardar senha no aparelho é o género de
+   * comodidade que só se percebe como má ideia depois de acontecer.
+   */
+  const [lembrar, definirLembrar] = useState(true)
+  const [emailGuardado, definirEmailGuardado] = useState('')
+
+  useEffect(() => {
+    const guardado = window.localStorage.getItem('pv_email')
+    if (guardado) definirEmailGuardado(guardado)
+    else definirLembrar(false)
+  }, [])
 
   const cadastro = modo === 'cadastrar'
   /** Chegou aqui redirecionado de uma página protegida. */
@@ -37,6 +53,9 @@ export function FormularioDeAuth({
     const dados = new FormData(evento.currentTarget)
     const email = String(dados.get('email') ?? '')
     const password = String(dados.get('password') ?? '')
+
+    if (lembrar) window.localStorage.setItem('pv_email', email)
+    else window.localStorage.removeItem('pv_email')
 
     try {
       const usuario = cadastro
@@ -87,19 +106,45 @@ export function FormularioDeAuth({
       <label>
         E-mail
         <input name="email" type="email" required autoComplete="email"
-               inputMode="email" placeholder="voce@exemplo.com" />
+               inputMode="email" placeholder="voce@exemplo.com"
+                 defaultValue={emailGuardado} key={emailGuardado} />
       </label>
 
       <label>
         Senha
-        <input name="password" type="password" required
-               minLength={cadastro ? 10 : undefined}
-               autoComplete={cadastro ? 'new-password' : 'current-password'}
-               placeholder={cadastro ? 'No mínimo 10 caracteres' : ''} />
+        <span className="campo-com-olho">
+          <input name="password" type={senhaAberta ? 'text' : 'password'} required
+                 minLength={cadastro ? 10 : undefined}
+                 autoComplete={cadastro ? 'new-password' : 'current-password'}
+                 placeholder={cadastro ? 'No mínimo 10 caracteres' : ''} />
+          {/* Ver a senha resolve o erro mais comum de todos: escrevê-la certa e
+              não notar que o teclado do telemóvel trocou uma letra. */}
+          <button
+            type="button"
+            className="olho"
+            onClick={() => definirSenhaAberta((v) => !v)}
+            aria-label={senhaAberta ? 'Ocultar a senha' : 'Mostrar a senha'}
+            aria-pressed={senhaAberta}
+          >
+            {senhaAberta ? '🙈' : '👁'}
+          </button>
+        </span>
         {cadastro && (
           <small>Use pelo menos 10 caracteres. Uma frase curta funciona bem e é fácil de lembrar.</small>
         )}
       </label>
+
+        <div className="linha-lembrar">
+          <label className="lembrar">
+            <input
+              type="checkbox"
+              checked={lembrar}
+              onChange={(e) => definirLembrar(e.target.checked)}
+            />
+            Lembrar meu login
+          </label>
+          {!cadastro && <Link href={`/${projectSlug}/recuperar`}>Esqueci minha senha</Link>}
+        </div>
 
       {erro && <p className="erro" role="alert">{erro}</p>}
 

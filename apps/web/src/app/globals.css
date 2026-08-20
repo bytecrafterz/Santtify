@@ -3052,3 +3052,51 @@ button.letra-bloco {
 .escrever-comentario button[type='submit']:disabled {
   opacity: 0.45;
 }
+
+/* ── Campo de senha com o olho ───────────────────────────────────────── */
+.campo-com-olho {
+  position: relative;
+  display: block;
+}
+
+.campo-com-olho input {
+  width: 100%;
+  padding-right: 3rem;
+}
+
+.campo-com-olho .olho {
+  position: absolute;
+  right: 0.35rem;
+  top: 50%;
+  transform: translateY(-50%);
+  border: none;
+  background: none;
+  font-size: 1.15rem;
+  cursor: pointer;
+  padding: 0.35rem 0.5rem;
+  line-height: 1;
+}
+
+/* ── Lembrar o login e o link de recuperação ─────────────────────────── */
+.linha-lembrar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+  flex-wrap: wrap;
+  margin: -0.25rem 0 0.25rem;
+  font-size: 0.88rem;
+}
+
+.linha-lembrar .lembrar {
+  display: flex;
+  align-items: center;
+  gap: 0.45rem;
+  margin: 0;
+  font-weight: 500;
+}
+
+.linha-lembrar .lembrar input {
+  width: auto;
+  margin: 0;
+}
