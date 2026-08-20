@@ -94,7 +94,7 @@ export class AdminContentService {
 
   async criarConteudo(
     projectSlug: string,
-    dados: { slug: string; title: string; subtitle?: string },
+    dados: { slug: string; title: string; subtitle?: string; position?: number },
     adminId: string,
   ) {
     const project = await this.projeto(projectSlug)
@@ -111,6 +111,27 @@ export class AdminContentService {
       orderBy: { position: 'desc' },
       select: { position: true },
     })
+
+    /**
+     * Entrar no meio da fila empurra os outros para baixo.
+     *
+     * Ele quis publicar uma Introdução na posição 1 com quatro conteúdos já
+     * feitos. Sem isto, a alternativa era refazer os quatro à mão — apagar
+     * textos, reenviar áudios — só para mudar a ordem por que aparecem. A
+     * ordem é uma propriedade da lista, não do conteúdo, e mexer nela não pode
+     * obrigar a tocar no que está lá dentro.
+     */
+    const posicaoPedida =
+      dados.position && dados.position > 0
+        ? Math.min(dados.position, (ultimo?.position ?? 0) + 1)
+        : null
+
+    if (posicaoPedida !== null) {
+      await this.prisma.content.updateMany({
+        where: { projectId: project.id, position: { gte: posicaoPedida } },
+        data: { position: { increment: 1 } },
+      })
+    }
 
     const content = await this.prisma.content.create({
       data: {

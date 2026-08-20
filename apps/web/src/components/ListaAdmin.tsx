@@ -5,6 +5,7 @@ import { useRouter } from 'next/navigation'
 import { useEffect, useState } from 'react'
 import { admin, type ItemAdmin } from '@/lib/admin'
 import { useAuth } from '@/components/ProvedorDeAuth'
+import { NovaPublicacao } from './NovaPublicacao'
 
 /**
  * Índice do painel: o que já está preenchido e o que falta.
@@ -18,7 +19,7 @@ export function ListaAdmin({ projectSlug }: { projectSlug: string }) {
   const { usuario, carregando } = useAuth()
   const [dados, definirDados] = useState<Awaited<ReturnType<typeof admin.listar>> | null>(null)
   const [erro, definirErro] = useState<string | null>(null)
-  const [criando, definirCriando] = useState(false)
+  const [aPublicar, definirAPublicar] = useState(false)
   const [aguardando, definirAguardando] = useState<number | null>(null)
 
   useEffect(() => {
@@ -44,24 +45,7 @@ export function ListaAdmin({ projectSlug }: { projectSlug: string }) {
       .catch(() => definirAguardando(null))
   }, [usuario, carregando, projectSlug, router])
 
-  async function criar(evento: React.FormEvent<HTMLFormElement>) {
-    evento.preventDefault()
-    const form = evento.currentTarget
-    const fd = new FormData(form)
-    definirCriando(true)
-    try {
-      await admin.criarConteudo(projectSlug, {
-        slug: String(fd.get('slug') ?? ''),
-        title: String(fd.get('title') ?? ''),
-      })
-      form.reset()
-      definirDados(await admin.listar(projectSlug))
-    } catch (e) {
-      definirErro(e instanceof Error ? e.message : 'Erro ao criar')
-    } finally {
-      definirCriando(false)
-    }
-  }
+
 
   if (erro) return <p className="erro">{erro}</p>
   if (carregando || !dados) return <p className="vazio">Carregando...</p>
@@ -137,21 +121,21 @@ export function ListaAdmin({ projectSlug }: { projectSlug: string }) {
         })}
       </ul>
 
-      <form className="formulario criar-conteudo" onSubmit={criar}>
-        <h2>Novo conteúdo</h2>
-        <label>
-          Título
-          <input name="title" required maxLength={160} placeholder="Letra Ç, Episódio 1..." />
-        </label>
-        <label>
-          Endereço na web
-          <input name="slug" required maxLength={80} placeholder="letra-c-cedilha" />
-          <small>Aparece no link e no QR Code. Use apenas letras, números e hífen.</small>
-        </label>
-        <button type="submit" disabled={criando}>
-          {criando ? 'Criando...' : 'Criar conteúdo'}
+      {aPublicar ? (
+        <NovaPublicacao
+          projectSlug={projectSlug}
+          totalExistente={dados.contents.length}
+          aoTerminar={async () => {
+            definirAPublicar(false)
+            definirDados(await admin.listar(projectSlug))
+          }}
+          aoCancelar={() => definirAPublicar(false)}
+        />
+      ) : (
+        <button type="button" className="botao-publicar" onClick={() => definirAPublicar(true)}>
+          + Novo conteúdo
         </button>
-      </form>
+      )}
     </>
   )
 }

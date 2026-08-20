@@ -145,6 +145,28 @@ export interface DenunciaAdmin {
 }
 
 export const admin = {
+  // ── Publicação numa tela só (20/08) ───────────────────────────────
+  //
+  // Estes três embrulham a sequência que o painel antigo obrigava a fazer à
+  // mão: enviar o ficheiro, criar o bloco, ligar um ao outro. Quem publica não
+  // tem de saber que existem blocos.
+
+  async definirCapaComArquivo(contentId: string, arquivo: File) {
+    const asset = await this.enviarArquivo(arquivo)
+    return this.definirCapa(contentId, asset.id)
+  },
+
+  async criarBlocoDeTexto(contentId: string, texto: string) {
+    const bloco = await this.criarBloco(contentId, { type: 'RICH_TEXT', label: 'Texto' })
+    return this.salvarBloco(bloco.id, { text: texto })
+  },
+
+  async criarBlocoDeAudio(contentId: string, arquivo: File) {
+    const asset = await this.enviarArquivo(arquivo)
+    const bloco = await this.criarBloco(contentId, { type: 'AUDIO', label: 'Áudio' })
+    return this.salvarBloco(bloco.id, { assetId: asset.id })
+  },
+
   /**
    * Material grátis num só passo: o servidor aceita PDF ou fotografia e
    * converte a fotografia em PDF pelo caminho.
@@ -189,8 +211,11 @@ export const admin = {
   detalhe: (projectSlug: string, contentSlug: string) =>
     chamar<DetalheAdmin>(`/projects/${projectSlug}/contents/${contentSlug}`),
 
-  criarConteudo: (projectSlug: string, dados: { slug: string; title: string; subtitle?: string }) =>
-    chamar(`/projects/${projectSlug}/contents`, { method: 'POST', body: JSON.stringify(dados) }),
+  criarConteudo: (
+    projectSlug: string,
+    dados: { slug: string; title: string; subtitle?: string; position?: number },
+  ) =>
+    chamar<{ id: string; slug: string }>(`/projects/${projectSlug}/contents`, { method: 'POST', body: JSON.stringify(dados) }),
 
   atualizarConteudo: (id: string, dados: Record<string, unknown>) =>
     chamar(`/contents/${id}`, { method: 'PATCH', body: JSON.stringify(dados) }),

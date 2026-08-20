@@ -27,6 +27,8 @@ class CriarConteudoDto {
   @IsString() @MaxLength(80) slug!: string
   @IsString() @MaxLength(160) title!: string
   @IsOptional() @IsString() @MaxLength(200) subtitle?: string
+  /** Lugar na sequência. Sem isto, entra no fim. */
+  @IsOptional() @IsInt() @Min(1) position?: number
 }
 
 class AtualizarConteudoDto {

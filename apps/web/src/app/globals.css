@@ -3100,3 +3100,161 @@ button.letra-bloco {
   width: auto;
   margin: 0;
 }
+
+/* ── Publicação numa tela só (20/08) ─────────────────────────────────
+   O painel antigo espalhava título, imagem e áudio por sítios
+   diferentes, e o cliente foi publicar uma introdução e não encontrou
+   onde pôr o áudio. Aqui está tudo à vista, pela ordem em que se pensa
+   numa publicação. */
+.publicacao-nova {
+  display: grid;
+  gap: 1.1rem;
+  padding-bottom: 2rem;
+}
+
+.cabecalho-publicacao {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+}
+
+.cabecalho-publicacao h1 {
+  margin: 0;
+  font-size: 1.25rem;
+}
+
+.voltar-publicacao {
+  border: none;
+  background: none;
+  font-size: 1.4rem;
+  color: var(--cor-primaria);
+  cursor: pointer;
+  padding: 0;
+  line-height: 1;
+}
+
+.publicacao-nova .campo {
+  display: grid;
+  gap: 0.4rem;
+  font-weight: 600;
+  font-size: 0.92rem;
+}
+
+.publicacao-nova .campo .rotulo {
+  font-weight: 600;
+}
+
+.publicacao-nova input[type='text'],
+.publicacao-nova input[type='number'],
+.publicacao-nova textarea {
+  width: 100%;
+  border: 1px solid var(--cor-borda);
+  border-radius: 12px;
+  padding: 0.75rem 0.9rem;
+  font-size: 1rem;
+  font-family: inherit;
+  font-weight: 400;
+  background: var(--cor-superficie);
+  color: var(--cor-texto);
+}
+
+.linha-posicao {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+}
+
+.linha-posicao input {
+  width: 6rem;
+  flex: 0 0 auto;
+}
+
+.linha-posicao small {
+  font-weight: 400;
+  color: var(--cor-texto-suave);
+  line-height: 1.35;
+}
+
+.linha-imagem {
+  display: flex;
+  gap: 0.75rem;
+  align-items: flex-start;
+}
+
+.previa-publicacao {
+  width: 120px;
+  height: 120px;
+  flex: 0 0 auto;
+  border-radius: 12px;
+  border: 1px solid var(--cor-borda);
+  background: var(--cor-fundo);
+  overflow: hidden;
+  display: grid;
+  place-items: center;
+}
+
+.previa-publicacao img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.botoes-imagem {
+  display: grid;
+  gap: 0.6rem;
+  flex: 1;
+}
+
+.botao-escolher {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  border: 1px solid var(--cor-borda);
+  border-radius: 12px;
+  padding: 0.85rem 0.9rem;
+  background: var(--cor-superficie);
+  color: var(--cor-primaria);
+  font-weight: 600;
+  font-size: 0.95rem;
+  cursor: pointer;
+  text-align: center;
+}
+
+.botao-escolher.largo {
+  width: 100%;
+}
+
+.botao-previsualizar {
+  border: none;
+  border-radius: 12px;
+  padding: 0.9rem;
+  background: var(--cor-primaria-suave);
+  color: var(--cor-primaria);
+  font-weight: 700;
+  font-size: 1rem;
+  font-family: inherit;
+  cursor: pointer;
+}
+
+/* Azul antes, verde depois: ele quis que o próprio botão dissesse em que
+   estado está a publicação, sem ter de procurar noutro sítio. */
+.botao-publicar {
+  border: none;
+  border-radius: 12px;
+  padding: 1rem;
+  background: var(--cor-primaria);
+  color: #fff;
+  font-weight: 700;
+  font-size: 1.05rem;
+  font-family: inherit;
+  cursor: pointer;
+}
+
+.botao-publicar.publicado {
+  background: var(--cor-acao);
+}
+
+.botao-publicar:disabled {
+  opacity: 0.75;
+}
