@@ -3258,3 +3258,34 @@ button.letra-bloco {
 .botao-publicar:disabled {
   opacity: 0.75;
 }
+
+/* ── Tocador colado à imagem (20/08) ─────────────────────────────────
+   Saiu o cartão grande com "Tocando agora": era uma moldura à volta do
+   que interessa, e o que interessa é a arte. */
+.tocador-integrado {
+  margin-bottom: 1.25rem;
+}
+
+.capa-tocador {
+  display: block;
+  width: 100%;
+  aspect-ratio: 3 / 4;
+  object-fit: cover;
+  background: var(--cor-borda);
+}
+
+.linha-faixa {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 0.75rem;
+  padding: 0.6rem 0 0.35rem;
+}
+
+.linha-faixa strong {
+  font-size: 1rem;
+}
+
+.linha-faixa small {
+  color: var(--cor-texto-suave);
+}

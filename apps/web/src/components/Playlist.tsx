@@ -196,22 +196,24 @@ export function Playlist({
         </div>
       )}
 
-      <div className="bloco tocador">
-        <span className="bloco-rotulo">Tocando agora</span>
-        {/* A arte troca junto com a faixa. É o que faz "só memorizações" ficar
-            visualmente coerente da letra A à Z. */}
+      <div className="tocador-integrado">
+        {/* A arte encosta às bordas e os controlos ficam logo por baixo. O
+            cartão grande com "Tocando agora" saiu a pedido dele em 20/08: era
+            uma moldura à volta do que interessa, e o que interessa é a
+            imagem. */}
         {faixa.coverUrl && (
           // eslint-disable-next-line @next/next/no-img-element
-          <img className="arte-tocador" src={faixa.coverUrl} alt={faixa.title} />
+          <img className="capa-tocador sangria" src={faixa.coverUrl} alt={faixa.title} />
         )}
-        <p className="tocador-titulo">
-          {faixa.title}
-          {faixa.subtitle && <small> — {faixa.subtitle}</small>}
-        </p>
-        {faixa.rotulo && <p className="tocador-rotulo">{faixa.rotulo}</p>}
-        <p className="nota">
-          {atual + 1} de {fila.length}
-        </p>
+        <div className="linha-faixa">
+          <div>
+            <strong>{faixa.title}</strong>
+            {faixa.rotulo && <small> · {faixa.rotulo}</small>}
+          </div>
+          <small className="nota">
+            {atual + 1} de {fila.length}
+          </small>
+        </div>
 
         <audio
           ref={audio}

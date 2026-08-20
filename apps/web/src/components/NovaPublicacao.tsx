@@ -38,7 +38,26 @@ export function NovaPublicacao({
   const [previaImagem, definirPreviaImagem] = useState<string | null>(null)
   const [audio, definirAudio] = useState<File | null>(null)
   const [estado, definirEstado] = useState<'rascunho' | 'a-publicar' | 'publicado'>('rascunho')
+  const [previa, definirPrevia] = useState(false)
+  const [previaAudio, definirPreviaAudio] = useState<string | null>(null)
   const [erro, definirErro] = useState<string | null>(null)
+
+  /**
+   * A pré-visualização mostra a publicação com os ficheiros que ainda estão no
+   * telemóvel, sem os enviar.
+   *
+   * É por isso que ela existe: ver antes de publicar só serve se for antes
+   * mesmo. Se fosse preciso publicar para ver, a pessoa acabava a publicar
+   * coisas erradas para as corrigir a seguir — e cada correcção dessas fica
+   * visível a quem estiver a ver naquele momento.
+   */
+  function abrirPrevia() {
+    if (audio) {
+      if (previaAudio) URL.revokeObjectURL(previaAudio)
+      definirPreviaAudio(URL.createObjectURL(audio))
+    }
+    definirPrevia(true)
+  }
 
   function escolherImagem(f: File | null) {
     definirImagem(f)
@@ -180,9 +199,55 @@ export function NovaPublicacao({
 
       {erro && <p className="erro">{erro}</p>}
 
-      <button type="button" className="botao-previsualizar" disabled={!titulo.trim()}>
+      <button
+        type="button"
+        className="botao-previsualizar"
+        disabled={!titulo.trim()}
+        onClick={abrirPrevia}
+      >
         👁 Pré-visualizar
       </button>
+
+      {previa && (
+        <div className="fundo-modal" role="dialog" aria-modal="true" aria-label="Pré-visualização">
+          <button
+            type="button"
+            className="fundo-clicavel"
+            aria-label="Fechar"
+            onClick={() => definirPrevia(false)}
+          />
+          <div className="folha-denuncia">
+            <header>
+              <div>
+                <h2>Pré-visualização</h2>
+                <p className="nota">É assim que a publicação vai aparecer.</p>
+              </div>
+              <button
+                type="button"
+                className="fechar-x"
+                aria-label="Fechar"
+                onClick={() => definirPrevia(false)}
+              >
+                ✕
+              </button>
+            </header>
+
+            {previaImagem && (
+              // eslint-disable-next-line @next/next/no-img-element
+              <img className="arte-letra" src={previaImagem} alt={titulo} />
+            )}
+            <h3>{titulo}</h3>
+            {texto.trim() && <p className="bloco-texto">{texto}</p>}
+            {previaAudio && (
+              // eslint-disable-next-line jsx-a11y/media-has-caption
+              <audio controls preload="metadata" src={previaAudio} style={{ width: '100%' }} />
+            )}
+            {!previaImagem && !texto.trim() && !previaAudio && (
+              <p className="nota">Ainda não há imagem, texto nem áudio para mostrar.</p>
+            )}
+          </div>
+        </div>
+      )}
 
       <button
         type="button"
