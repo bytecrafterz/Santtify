@@ -28,7 +28,22 @@ export async function generateMetadata({
   // As dimensões vão declaradas porque sem elas alguns leitores de prévia
   // desistem da imagem em vez de baixá-la para descobrir o tamanho.
   const imagem = dados.content.shareCardUrl ?? dados.content.coverUrl
-  const descricao = dados.content.summary ?? dados.project.description ?? undefined
+  /**
+   * A descrição da prévia é a DESTE conteúdo, e só depois a do projeto.
+   *
+   * Antes caía logo no texto do projeto, e então todas as 26 letras
+   * partilhavam a mesma frase — a prévia dizia sempre a mesma coisa fosse qual
+   * fosse a letra. O primeiro texto da própria letra diz muito mais a quem
+   * recebe o link.
+   */
+  const textoProprio = dados.content.blocks
+    .find((b) => (b.type === 'RICH_TEXT' || b.type === 'TEXT') && b.text?.trim())
+    ?.text?.trim()
+    .replace(/\s+/g, ' ')
+    .slice(0, 200)
+
+  const descricao =
+    dados.content.summary ?? textoProprio ?? dados.project.description ?? undefined
 
   return {
     title: `${dados.content.title} — ${dados.project.name}`,

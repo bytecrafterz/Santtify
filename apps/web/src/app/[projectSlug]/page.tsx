@@ -17,6 +17,53 @@ import { ExperienciaContinua } from '@/components/ExperienciaContinua'
  * tudo. A regra que a governa é dele e é simples — a pessoa entra no perfil e
  * fica lá.
  */
+import type { Metadata } from 'next'
+
+/**
+ * A prévia que aparece no WhatsApp quando alguém partilha a página inicial.
+ *
+ * Sem isto, o WhatsApp não encontrava nada e mostrava o ícone do Santtify —
+ * a mesma imagem preta para todos os links, que não diz a ninguém o que está
+ * do outro lado. O cliente apanhou-o ao partilhar o endereço no grupo.
+ *
+ * A imagem é a capa do projeto, e a descrição é a dele. Quem recebe o link vê
+ * o produto, e não a marca da plataforma que o serve.
+ */
+export async function generateMetadata({
+  params,
+}: {
+  params: Promise<{ projectSlug: string }>
+}): Promise<Metadata> {
+  const { projectSlug } = await params
+  const dados = await api.indice(projectSlug)
+  if (!dados) return { title: 'Projeto não encontrado' }
+
+  const logo = dados.project.branding?.logoUrl
+  const capa =
+    (typeof logo === 'string' && logo) ||
+    dados.contents.find((c) => c.coverUrl)?.coverUrl ||
+    undefined
+  const descricao = dados.project.description ?? undefined
+
+  return {
+    title: dados.project.name,
+    description: descricao,
+    openGraph: {
+      title: dados.project.name,
+      description: descricao,
+      siteName: dados.project.name,
+      images: capa ? [{ url: capa, alt: dados.project.name }] : undefined,
+      type: 'website',
+    },
+    twitter: {
+      card: 'summary_large_image',
+      title: dados.project.name,
+      description: descricao,
+      images: capa ? [capa] : undefined,
+    },
+  }
+}
+
 export default async function IndiceDoProjeto({
   params,
 }: {
