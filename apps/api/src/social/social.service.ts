@@ -494,6 +494,50 @@ export class SocialService {
     return { visualizacoes, curtidas, comentarios, compartilhamentos, curtidoPorMim: curtido, lista }
   }
 
+
+  /**
+   * Quem curtiu este perfil, com cara e nome.
+   *
+   * Ele quis, com razão, que os números tivessem pessoas por trás: cem
+   * curtidas sem ninguém a quem associá-las parecem inventadas.
+   *
+   * A lista é só de quem CURTIU ou COMENTOU. Quem apenas viu não entra, e não
+   * é limitação técnica: ver uma página não é um acto público, a pessoa não
+   * escolheu aparecer em lista nenhuma, e a política de privacidade publicada
+   * em nome dele promete exactamente o contrário — que a visita fica anónima.
+   * Numa plataforma usada por crianças, uma lista de quem andou a ver o perfil
+   * de um menino é a espécie de coisa que não se constrói.
+   */
+  async quemInteragiuComOPerfil(profileUserId: string) {
+    const [curtiram, comentaram, visualizacoes] = await Promise.all([
+      this.prisma.profileReaction.findMany({
+        where: { profileUserId },
+        orderBy: { createdAt: 'desc' },
+        take: 100,
+        select: { user: { select: { id: true, displayName: true, avatarUrl: true } } },
+      }),
+      this.prisma.comment.findMany({
+        where: { profileUserId, status: 'PUBLISHED' },
+        orderBy: { createdAt: 'desc' },
+        take: 100,
+        distinct: ['userId'],
+        select: { user: { select: { id: true, displayName: true, avatarUrl: true } } },
+      }),
+      this.prisma.event.count({
+        where: {
+          type: EventType.PAGE_VIEW,
+          AND: [{ props: { path: ['perfilId'], equals: profileUserId } }],
+        },
+      }),
+    ])
+
+    return {
+      curtiram: curtiram.map((c) => c.user),
+      comentaram: comentaram.map((c) => c.user),
+      visualizacoes,
+    }
+  }
+
   async listarComentariosDoPerfil(profileUserId: string, leitorId: string | null = null) {
     const escondidos = await this.bloqueadosPor(leitorId)
     return this.prisma.comment.findMany({

@@ -5,6 +5,7 @@ import { useEffect, useRef, useState } from 'react'
 import type { PerfilAnfitriao } from '@/lib/api'
 import { social, type EstadoDaFaixa } from '@/lib/social'
 import { PainelDeComentarios } from './PainelDeComentarios'
+import { PainelDePessoas } from './PainelDePessoas'
 import { rastrear } from '@/lib/track'
 import { useAuth } from './ProvedorDeAuth'
 import { abreviar } from '@/lib/numeros'
@@ -48,6 +49,7 @@ export function CabecalhoDePerfil({
     lista: [],
   })
   const [comentariosAbertos, definirComentariosAbertos] = useState(false)
+  const [pessoasAbertas, definirPessoasAbertas] = useState(false)
   const [aviso, definirAviso] = useState<string | null>(null)
   const [aberto, definirAberto] = useState(false)
   const inicioDoToque = useRef<number | null>(null)
@@ -170,12 +172,17 @@ export function CabecalhoDePerfil({
         </div>
 
         <div className="trilho">
-          <span className="indicador contagem">
+          <button
+            type="button"
+            className="indicador"
+            onClick={() => definirPessoasAbertas(true)}
+            aria-label="Ver quem interagiu"
+          >
             <span className="bolha">
               <IconeOlho />
             </span>
             {abreviar(estado.visualizacoes)}
-          </span>
+          </button>
 
           <button
             type="button"
@@ -261,6 +268,10 @@ export function CabecalhoDePerfil({
       </div>
 
       {aviso && <p className="nota">{aviso}</p>}
+
+      {pessoasAbertas && anfitriao && (
+        <PainelDePessoas userId={anfitriao.id} aoFechar={() => definirPessoasAbertas(false)} />
+      )}
 
       {comentariosAbertos && (
         <PainelDeComentarios

@@ -3289,3 +3289,68 @@ button.letra-bloco {
 .linha-faixa small {
   color: var(--cor-texto-suave);
 }
+
+/* ── Quem interagiu ──────────────────────────────────────────────────── */
+.abas-pessoas {
+  display: flex;
+  gap: 0.5rem;
+  padding: 0 0.9rem 0.6rem;
+}
+
+.abas-pessoas .aba {
+  flex: 1;
+  border: 1px solid var(--cor-borda);
+  background: var(--cor-superficie);
+  border-radius: 999px;
+  padding: 0.5rem;
+  font-size: 0.85rem;
+  font-weight: 600;
+  font-family: inherit;
+  color: var(--cor-texto-suave);
+  cursor: pointer;
+}
+
+.abas-pessoas .aba.atual {
+  border-color: var(--cor-primaria);
+  color: var(--cor-primaria);
+  background: var(--cor-primaria-suave);
+}
+
+.busca-pessoas {
+  margin: 0 0.9rem 0.6rem;
+  border: 1px solid var(--cor-borda);
+  border-radius: 999px;
+  padding: 0.55rem 0.9rem;
+  font-size: 0.92rem;
+  font-family: inherit;
+  background: var(--cor-fundo);
+  color: var(--cor-texto);
+}
+
+.lista-pessoas {
+  list-style: none;
+  margin: 0;
+  padding: 0 0.9rem;
+  overflow-y: auto;
+  flex: 1;
+}
+
+.lista-pessoas li {
+  display: flex;
+  align-items: center;
+  gap: 0.7rem;
+  padding: 0.5rem 0;
+}
+
+.lista-pessoas li strong {
+  font-size: 0.92rem;
+}
+
+/* A nota que explica porque as visitas não têm nome. Fica no rodapé e não
+   escondida: é uma promessa da política de privacidade, e promessas que só
+   se cumprem em silêncio não contam para quem lê. */
+.rodape-pessoas {
+  border-top: 1px solid var(--cor-borda);
+  padding: 0.7rem 0.9rem;
+  margin: 0;
+}

@@ -99,7 +99,23 @@ export type MotivoDeDenuncia =
 
 export type AlvoDeDenuncia = 'CONTENT' | 'BLOCK' | 'COMMENT' | 'POST' | 'PROFILE'
 
+export interface PessoaQueInteragiu {
+  id: string
+  displayName: string
+  avatarUrl: string | null
+}
+
 export const social = {
+  /** Quem curtiu e quem comentou o perfil. Quem só viu não entra — ver não é
+   *  um acto público, e a política de privacidade promete o anonimato da
+   *  visita. */
+  quemInteragiu: (userId: string) =>
+    chamar<{
+      curtiram: PessoaQueInteragiu[]
+      comentaram: PessoaQueInteragiu[]
+      visualizacoes: number
+    }>(`/profiles/${userId}/people`),
+
   // ── O comentário como objecto social (20/08) ──────────────────────
   curtirComentario: (id: string) =>
     chamar<{ curtido: boolean; total: number }>(`/comments/${id}/like`, { method: 'POST' }),
