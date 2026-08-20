@@ -8,6 +8,7 @@ import { rastrear } from '@/lib/track'
 import { abreviar } from '@/lib/numeros'
 import { useAuth } from './ProvedorDeAuth'
 import { PainelDeComentarios } from './PainelDeComentarios'
+import { OlhoGrande, CoracaoGrande, BalaoGrande, SetaGrande } from './IconesGrandes'
 
 /**
  * O cartão de uma publicação, segundo o mockup de 20/08.
@@ -210,8 +211,8 @@ export function CartaoDePublicacao({
       {/* Fora da imagem, grandes e coloridos, com o número em preto por baixo. */}
       <div className="indicadores-publicacao">
         <span className="indicador-grande vista">
-          <span className="simbolo" aria-hidden>
-            👁
+          <span className="simbolo">
+            <OlhoGrande />
           </span>
           <strong>{abreviar(estado.visualizacoes)}</strong>
         </span>
@@ -223,8 +224,8 @@ export function CartaoDePublicacao({
           aria-pressed={estado.curtidoPorMim}
           aria-label="Curtir"
         >
-          <span className="simbolo" aria-hidden>
-            ♥
+          <span className="simbolo">
+            <CoracaoGrande cheio={estado.curtidoPorMim} />
           </span>
           <strong>{abreviar(estado.curtidas)}</strong>
         </button>
@@ -235,8 +236,8 @@ export function CartaoDePublicacao({
           onClick={() => definirComentariosAbertos(true)}
           aria-label="Comentários"
         >
-          <span className="simbolo" aria-hidden>
-            💬
+          <span className="simbolo">
+            <BalaoGrande />
           </span>
           <strong>{abreviar(estado.comentarios)}</strong>
         </button>
@@ -247,8 +248,8 @@ export function CartaoDePublicacao({
           onClick={partilhar}
           aria-label="Partilhar"
         >
-          <span className="simbolo" aria-hidden>
-            ➦
+          <span className="simbolo">
+            <SetaGrande />
           </span>
           <strong>{abreviar(estado.compartilhamentos)}</strong>
         </button>

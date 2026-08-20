@@ -33,17 +33,27 @@ export function BlocosDeConteudo({
 
   return (
     <>
-      {blocos.map((bloco) => (
-        <div className="bloco" key={bloco.id}>
-          {bloco.label && <span className="bloco-rotulo">{bloco.label}</span>}
+      {blocos.map((bloco) => {
+        // O audio traz o seu proprio cartao, com moldura e rotulo la dentro.
+        // Embrulha-lo outra vez dava duas caixas e a categoria repetida.
+        const proprioCartao = bloco.type === 'AUDIO' && Boolean(bloco.asset?.url)
+        const corpo = (
           <CorpoDoBloco
-              bloco={bloco}
-              projectId={projectId}
-              contentId={contentId}
-              projectSlug={projectSlug}
-            />
-        </div>
-      ))}
+            bloco={bloco}
+            projectId={projectId}
+            contentId={contentId}
+            projectSlug={projectSlug}
+          />
+        )
+        return proprioCartao ? (
+          <div key={bloco.id}>{corpo}</div>
+        ) : (
+          <div className="bloco" key={bloco.id}>
+            {bloco.label && <span className="bloco-rotulo">{bloco.label}</span>}
+            {corpo}
+          </div>
+        )
+      })}
     </>
   )
 }

@@ -3677,3 +3677,29 @@ button.letra-bloco {
   font-size: 0.65rem;
   font-weight: 800;
 }
+
+/* Ajustes vistos no ecrã montado (20/08): a folga entre o rótulo e a
+   imagem, e o tocador que não encostava mesmo. */
+.cartao-publicacao .chip-categoria {
+  margin-bottom: 0.75rem;
+}
+
+.cartao-publicacao .imagem-publicacao + .player-onda {
+  margin-top: 0;
+}
+
+.imagem-publicacao {
+  vertical-align: bottom; /* mata a linha de base que deixava um risco branco */
+}
+
+.player-onda {
+  margin-top: 0;
+}
+
+/* Os ícones desenhados já trazem a sua cor; o quadrado à volta some. */
+.indicadores-publicacao .simbolo {
+  display: grid;
+  place-items: center;
+  font-size: 0;
+  line-height: 0;
+}
