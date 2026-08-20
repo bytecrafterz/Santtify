@@ -3,7 +3,7 @@
 import { useRef } from 'react'
 import type { Bloco } from '@/lib/api'
 import { rastrear } from '@/lib/track'
-import { TrilhoDaFaixa } from './TrilhoDaFaixa'
+import { CartaoDePublicacao } from './CartaoDePublicacao'
 
 /**
  * Renderiza os blocos que o admin montou no painel.
@@ -16,10 +16,12 @@ export function BlocosDeConteudo({
   blocos,
   projectId,
   contentId,
+  projectSlug,
 }: {
   blocos: Bloco[]
   projectId: string
   contentId: string
+  projectSlug: string
 }) {
   if (blocos.length === 0) {
     return (
@@ -34,7 +36,12 @@ export function BlocosDeConteudo({
       {blocos.map((bloco) => (
         <div className="bloco" key={bloco.id}>
           {bloco.label && <span className="bloco-rotulo">{bloco.label}</span>}
-          <CorpoDoBloco bloco={bloco} projectId={projectId} contentId={contentId} />
+          <CorpoDoBloco
+              bloco={bloco}
+              projectId={projectId}
+              contentId={contentId}
+              projectSlug={projectSlug}
+            />
         </div>
       ))}
     </>
@@ -45,10 +52,12 @@ function CorpoDoBloco({
   bloco,
   projectId,
   contentId,
+  projectSlug,
 }: {
   bloco: Bloco
   projectId: string
   contentId: string
+  projectSlug: string
 }) {
   switch (bloco.type) {
     case 'TEXT':
@@ -61,22 +70,14 @@ function CorpoDoBloco({
 
     case 'AUDIO':
       return bloco.asset?.url ? (
-        <>
-          {/* A arte desta faixa, quando existe. Cada áudio tem a sua: o palco
-              na música, o versículo na memorização, a cena da oração. Vem
-              antes do player porque é o que a pessoa olha enquanto ouve. */}
-          {bloco.arte && (
-            // eslint-disable-next-line @next/next/no-img-element
-            <img className="arte-faixa" src={bloco.arte} alt={bloco.label ?? 'Arte da faixa'} />
-          )}
-          <MidiaRastreada
-            bloco={bloco}
-            projectId={projectId}
-            contentId={contentId}
-            elemento="audio"
-          />
-          <TrilhoDaFaixa blockId={bloco.id} projectId={projectId} titulo={bloco.label ?? 'faixa'} />
-        </>
+        <CartaoDePublicacao
+          bloco={bloco}
+          projectId={projectId}
+          contentId={contentId}
+          projectSlug={projectSlug}
+          titulo={bloco.label ?? 'Faixa'}
+          descricao={bloco.text ?? null}
+        />
       ) : (
         <p className="bloco-vazio">Áudio ainda não enviado.</p>
       )

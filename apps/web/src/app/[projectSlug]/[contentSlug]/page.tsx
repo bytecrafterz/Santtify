@@ -104,7 +104,12 @@ export default async function PaginaDeConteudo({
         />
       )}
 
-      <BlocosDeConteudo blocos={content.blocks} projectId={project.id} contentId={content.id} />
+      <BlocosDeConteudo
+        blocos={content.blocks}
+        projectId={project.id}
+        contentId={content.id}
+        projectSlug={projectSlug}
+      />
 
       <BarraSocial
         contentId={content.id}

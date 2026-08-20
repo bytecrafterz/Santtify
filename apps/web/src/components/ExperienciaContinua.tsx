@@ -164,6 +164,7 @@ export function ExperienciaContinua({
             blocos={aberta.content.blocks}
             projectId={projectId}
             contentId={aberta.content.id}
+            projectSlug={projectSlug}
           />
         </section>
       )}
