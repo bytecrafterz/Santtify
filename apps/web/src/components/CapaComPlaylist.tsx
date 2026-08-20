@@ -58,7 +58,7 @@ export function CapaComPlaylist({
 
   return (
     <>
-      <div className="card-capa">
+      <div className="card-capa sangria">
         <span className="etiqueta-capa" aria-hidden>
           ♪ Minha Playlist
         </span>

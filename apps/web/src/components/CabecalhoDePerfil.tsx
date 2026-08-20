@@ -112,6 +112,19 @@ export function CabecalhoDePerfil({
   async function partilhar() {
     if (!anfitriao) return
     const url = window.location.origin + window.location.pathname
+
+    // Conta depois, e só se a partilha for concluída: cancelar não é partilhar.
+    try {
+      if (navigator.share) {
+        await navigator.share({ title: nome, url })
+      } else {
+        await navigator.clipboard?.writeText(url)
+        definirAviso('Link copiado.')
+      }
+    } catch {
+      return
+    }
+
     try {
       await rastrear({
         projectId,
@@ -120,14 +133,10 @@ export function CabecalhoDePerfil({
       })
       definirEstado((x) => ({ ...x, compartilhamentos: x.compartilhamentos + 1 }))
     } catch {
-      // Contar é bom; partilhar é o que a pessoa pediu.
-    }
-    if (navigator.share) await navigator.share({ title: nome, url }).catch(() => {})
-    else {
-      await navigator.clipboard?.writeText(url).catch(() => {})
-      definirAviso('Link copiado.')
+      // Falhar a contar não desfaz uma partilha que já aconteceu.
     }
   }
+
 
   async function comentar(ev: React.FormEvent) {
     ev.preventDefault()
@@ -149,7 +158,7 @@ export function CabecalhoDePerfil({
 
   return (
     <>
-      <div className={aberto ? 'perfil-capa com-painel' : 'perfil-capa'}>
+      <div className={aberto ? 'perfil-capa sangria com-painel' : 'perfil-capa sangria'}>
         {anfitriao?.avatarUrl ? (
           // eslint-disable-next-line @next/next/no-img-element
           <img className="foto-capa" src={anfitriao.avatarUrl} alt={nome} />

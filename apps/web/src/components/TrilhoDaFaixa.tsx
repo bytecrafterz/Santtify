@@ -68,6 +68,23 @@ export function TrilhoDaFaixa({
     // O endereço aponta para a âncora da própria faixa, e não para o topo da
     // letra: quem recebe o link veio por causa daquela oração, não da página.
     const url = `${window.location.origin}${window.location.pathname}#faixa-${blockId}`
+
+    // CONTA DEPOIS, E SÓ SE FOR ATÉ AO FIM. A versão anterior registava antes
+    // de abrir o menu do telemóvel, e então cancelar contava na mesma — foi o
+    // que o cliente apanhou em 20/08. `navigator.share` rejeita a promessa
+    // quando a pessoa desiste, e é essa rejeição que separa partilhar de
+    // pensar em partilhar.
+    try {
+      if (navigator.share) {
+        await navigator.share({ title: titulo, url })
+      } else {
+        await navigator.clipboard?.writeText(url)
+        definirAviso('Link copiado.')
+      }
+    } catch {
+      return
+    }
+
     try {
       await rastrear({
         projectId,
@@ -76,15 +93,10 @@ export function TrilhoDaFaixa({
       })
       definirEstado((e) => ({ ...e, compartilhamentos: e.compartilhamentos + 1 }))
     } catch {
-      // Contar é bom; partilhar é o que a pessoa pediu.
-    }
-    if (navigator.share) {
-      await navigator.share({ title: titulo, url }).catch(() => {})
-    } else {
-      await navigator.clipboard?.writeText(url).catch(() => {})
-      definirAviso('Link copiado.')
+      // Falhar a contar não desfaz uma partilha que já aconteceu.
     }
   }
+
 
   async function comentar(e: React.FormEvent) {
     e.preventDefault()

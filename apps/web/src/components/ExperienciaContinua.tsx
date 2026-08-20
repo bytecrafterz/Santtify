@@ -157,7 +157,7 @@ export function ExperienciaContinua({
 
           {aberta.content.coverUrl && (
             // eslint-disable-next-line @next/next/no-img-element
-            <img className="arte-letra" src={aberta.content.coverUrl} alt={aberta.content.title} />
+            <img className="arte-letra sangria" src={aberta.content.coverUrl} alt={aberta.content.title} />
           )}
 
           <BlocosDeConteudo

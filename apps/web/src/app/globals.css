@@ -2784,3 +2784,77 @@ button.letra-bloco {
   font-family: inherit;
   cursor: pointer;
 }
+
+/* ═══════════════════════════════════════════════════════════════════
+   Imagem de fora a fora (20/08)
+
+   Regra única para toda a plataforma, a pedido do cliente: a imagem
+   encosta nas duas laterais, sem margem branca nem moldura. Enquanto
+   cada capa vivia dentro de uma caixa com folga à volta, a página lia-se
+   como um site com fotografias; encostada às bordas, lê-se como uma rede
+   social. É a mesma imagem — muda só onde ela acaba.
+
+   A sangria é feita com margem negativa igual ao padding do envoltório,
+   e não com largura de viewport, porque o envoltório tem largura máxima:
+   num ecrã grande, 100vw faria a imagem fugir para fora da coluna.
+   ═══════════════════════════════════════════════════════════════════ */
+.sangria {
+  margin-left: -20px;
+  margin-right: -20px;
+  border-radius: 0;
+}
+
+@media (min-width: 760px) {
+  /* Acima da largura da coluna já não há bordas para encostar: aí a
+     imagem volta a ter cantos, senão fica um retângulo solto no branco. */
+  .sangria {
+    margin-left: 0;
+    margin-right: 0;
+    border-radius: var(--raio-grande);
+  }
+}
+
+/* Os cartões de capa passam a ser sangrados e sem sombra de caixa: a
+   sombra existia para separar a caixa do fundo, e já não há caixa. */
+.perfil-capa.sangria,
+.card-capa.sangria {
+  box-shadow: none;
+}
+
+/* ── Ícones sobre a imagem, sem o círculo pesado ─────────────────────
+   O círculo era uma muleta: garantia leitura sobre qualquer fotografia à
+   custa de tapar parte dela. A sombra faz o mesmo trabalho ocupando o
+   espaço do próprio traço. */
+.trilho .indicador .bolha {
+  width: auto;
+  height: auto;
+  background: none;
+  border: none;
+  backdrop-filter: none;
+  filter: drop-shadow(0 1px 3px rgba(0, 0, 0, 0.65));
+}
+
+.trilho .indicador.curtido .bolha {
+  background: none;
+  color: #ef4444;
+}
+
+.trilho {
+  right: 0.35rem;
+  gap: 0.9rem;
+}
+
+.trilho .indicador {
+  font-size: 0.75rem;
+  gap: 0.15rem;
+}
+
+/* Fora da imagem (trilho da faixa) não há fotografia por baixo, então a
+   sombra branca não serve: aí o ícone volta a ter fundo suave. */
+.trilho.sem-capa .indicador .bolha {
+  width: 42px;
+  height: 42px;
+  background: var(--cor-primaria-suave);
+  border: 1px solid var(--cor-borda);
+  filter: none;
+}
