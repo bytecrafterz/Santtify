@@ -97,6 +97,18 @@ export type MotivoDeDenuncia =
 export type AlvoDeDenuncia = 'CONTENT' | 'BLOCK' | 'COMMENT' | 'POST' | 'PROFILE'
 
 export const social = {
+  // ── Perfil como objecto social ────────────────────────────────────
+  estadoDoPerfil: (userId: string) => chamar<EstadoDaFaixa>(`/profiles/${userId}/social`),
+
+  curtirPerfil: (userId: string) =>
+    chamar<{ curtido: boolean; total: number }>(`/profiles/${userId}/like`, { method: 'POST' }),
+
+  comentarNoPerfil: (userId: string, projectId: string, body: string) =>
+    chamar<ComentarioDaFaixa>(`/profiles/${userId}/comments`, {
+      method: 'POST',
+      body: JSON.stringify({ projectId, body }),
+    }),
+
   denunciar: (dados: {
     projectId: string
     targetType: AlvoDeDenuncia

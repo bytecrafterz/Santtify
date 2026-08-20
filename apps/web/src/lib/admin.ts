@@ -83,7 +83,8 @@ export interface ComentarioAdmin {
   status: 'PUBLISHED' | 'HIDDEN' | 'DELETED'
   createdAt: string
   user: { id: string; displayName: string; email: string; status: 'ACTIVE' | 'SUSPENDED' | 'DELETED' }
-  content: { slug: string; title: string }
+  /** Nulo quando o comentário é de um perfil e não de uma letra. */
+  content: { slug: string; title: string } | null
   /** Presente quando o comentário é de uma faixa e não da letra inteira. */
   block: { id: string; label: string | null; category: { name: string } | null } | null
 }

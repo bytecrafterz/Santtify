@@ -127,7 +127,11 @@ export function ModeracaoDaComunidade({ projectSlug }: { projectSlug: string }) 
               {c.user.displayName}
               {bloqueado && <em className="etiqueta-bloqueado">conta bloqueada</em>} ·{' '}
               {formatarData(c.createdAt)} · em{' '}
-              <Link href={`/${projectSlug}/${c.content.slug}`}>{c.content.title}</Link>
+              {c.content ? (
+                  <Link href={`/${projectSlug}/${c.content.slug}`}>{c.content.title}</Link>
+                ) : (
+                  <em className="etiqueta-faixa">no perfil</em>
+                )}
               {/* Qual das quatro faixas, quando o comentário é de uma delas.
                   Moderar um comentário da oração como se fosse da música é
                   decidir sobre uma conversa que não se leu. */}

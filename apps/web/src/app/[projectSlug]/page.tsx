@@ -31,17 +31,22 @@ export default async function IndiceDoProjeto({
   ])
   if (!dados) notFound()
 
-  const { project, contents, progresso, comunidade } = dados
+  const { project, anfitriao, contents, progresso, comunidade } = dados
 
   return (
     <main className="envoltorio">
-      <RastreadorDeVisita projectId={project.id} type="PAGE_VIEW" />
+      <RastreadorDeVisita
+        projectId={project.id}
+        type="PAGE_VIEW"
+        props={anfitriao ? { perfilId: anfitriao.id } : undefined}
+      />
 
       {/* 1. Perfil */}
       <CabecalhoDePerfil
         projectSlug={projectSlug}
         projectId={project.id}
         perfisCriados={comunidade.perfis}
+        anfitriao={anfitriao}
       />
 
       {/* 2 e 5. Capa que toca aqui mesmo, com os filtros que a comandam */}

@@ -75,6 +75,16 @@ export interface ItemIndice {
   stats: { views: number; likes: number; comments: number; shares: number } | null
 }
 
+/** O perfil que hospeda a experiência: o rosto do projeto. */
+export interface PerfilAnfitriao {
+  id: string
+  displayName: string
+  avatarUrl: string | null
+  bio: string | null
+  guardianName: string | null
+  createdAt: string
+}
+
 export interface ProgressoDasLetras {
   liberadas: number
   total: number
@@ -139,6 +149,7 @@ export const api = {
   indice: (slug: string) =>
     buscar<{
       project: Projeto
+      anfitriao: PerfilAnfitriao | null
       contents: ItemIndice[]
       progresso: ProgressoDasLetras
       comunidade: { perfis: number; impressoes: number }

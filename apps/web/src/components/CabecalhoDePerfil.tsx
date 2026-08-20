@@ -2,7 +2,9 @@
 
 import Link from 'next/link'
 import { useEffect, useRef, useState } from 'react'
-import { auth, type PerfilResposta } from '@/lib/auth'
+import type { PerfilAnfitriao } from '@/lib/api'
+import { social, type EstadoDaFaixa } from '@/lib/social'
+import { rastrear } from '@/lib/track'
 import { useAuth } from './ProvedorDeAuth'
 import { abreviar } from '@/lib/numeros'
 import { BotaoDenunciar } from './BotaoDenunciar'
@@ -27,23 +29,33 @@ export function CabecalhoDePerfil({
   projectSlug,
   projectId,
   perfisCriados,
+  anfitriao,
 }: {
   projectSlug: string
   projectId: string
   perfisCriados: number
+  /** O rosto do projeto: o mesmo para toda a gente que chega. */
+  anfitriao: PerfilAnfitriao | null
 }) {
-  const { usuario, carregando } = useAuth()
-  const [perfil, definirPerfil] = useState<PerfilResposta | null>(null)
+  const { usuario } = useAuth()
+  const [estado, definirEstado] = useState<EstadoDaFaixa>({
+    visualizacoes: 0,
+    curtidas: 0,
+    comentarios: 0,
+    compartilhamentos: 0,
+    curtidoPorMim: false,
+    lista: [],
+  })
+  const [comentariosAbertos, definirComentariosAbertos] = useState(false)
+  const [texto, definirTexto] = useState('')
+  const [aviso, definirAviso] = useState<string | null>(null)
   const [aberto, definirAberto] = useState(false)
   const inicioDoToque = useRef<number | null>(null)
 
   useEffect(() => {
-    if (carregando || !usuario) {
-      definirPerfil(null)
-      return
-    }
-    void auth.perfil().then(definirPerfil).catch(() => definirPerfil(null))
-  }, [usuario, carregando])
+    if (!anfitriao) return
+    void social.estadoDoPerfil(anfitriao.id).then(definirEstado).catch(() => {})
+  }, [anfitriao])
 
   // Escape fecha, como em qualquer painel. Sem isto, quem abre sem querer no
   // computador fica sem saída óbvia.
@@ -77,16 +89,70 @@ export function CabecalhoDePerfil({
   }
 
   const temConta = Boolean(usuario)
-  const e = perfil?.estatisticas
-  const nome = perfil?.user.displayName ?? usuario?.displayName ?? 'Escreva seu nome aqui'
-  const descricao = perfil?.user.bio ?? 'Faça o seu descritivo pessoal'
+  // O dono do perfil edita-o; quem chega de fora é convidado a criar o seu.
+  const souOAnfitriao = Boolean(usuario && anfitriao && usuario.id === anfitriao.id)
+  const nome = anfitriao?.displayName ?? 'Escreva seu nome aqui'
+  const descricao = anfitriao?.bio ?? 'Faça o seu descritivo pessoal'
+
+  async function curtir() {
+    if (!anfitriao) return
+    if (!usuario) {
+      definirAviso('Entre na sua conta para curtir.')
+      return
+    }
+    try {
+      const r = await social.curtirPerfil(anfitriao.id)
+      definirEstado((x) => ({ ...x, curtidoPorMim: r.curtido, curtidas: r.total }))
+      definirAviso(null)
+    } catch {
+      definirAviso('Não foi possível curtir agora.')
+    }
+  }
+
+  async function partilhar() {
+    if (!anfitriao) return
+    const url = window.location.origin + window.location.pathname
+    try {
+      await rastrear({
+        projectId,
+        type: 'CUSTOM',
+        props: { acao: 'partilhar_perfil', perfilId: anfitriao.id },
+      })
+      definirEstado((x) => ({ ...x, compartilhamentos: x.compartilhamentos + 1 }))
+    } catch {
+      // Contar é bom; partilhar é o que a pessoa pediu.
+    }
+    if (navigator.share) await navigator.share({ title: nome, url }).catch(() => {})
+    else {
+      await navigator.clipboard?.writeText(url).catch(() => {})
+      definirAviso('Link copiado.')
+    }
+  }
+
+  async function comentar(ev: React.FormEvent) {
+    ev.preventDefault()
+    if (!anfitriao) return
+    if (!usuario) {
+      definirAviso('Entre na sua conta para comentar.')
+      return
+    }
+    if (!texto.trim()) return
+    try {
+      const novo = await social.comentarNoPerfil(anfitriao.id, projectId, texto)
+      definirEstado((x) => ({ ...x, comentarios: x.comentarios + 1, lista: [novo, ...x.lista] }))
+      definirTexto('')
+      definirAviso(null)
+    } catch {
+      definirAviso('Não foi possível comentar agora.')
+    }
+  }
 
   return (
     <>
       <div className={aberto ? 'perfil-capa com-painel' : 'perfil-capa'}>
-        {perfil?.user.avatarUrl ? (
+        {anfitriao?.avatarUrl ? (
           // eslint-disable-next-line @next/next/no-img-element
-          <img className="foto-capa" src={perfil.user.avatarUrl} alt={nome} />
+          <img className="foto-capa" src={anfitriao.avatarUrl} alt={nome} />
         ) : (
           <div className="foto-capa capa-vazia">
             <span aria-hidden>📷</span>
@@ -102,7 +168,7 @@ export function CabecalhoDePerfil({
         <div className="faixa-nome">
           <h1 title={nome}>
             {nome}
-            {temConta && (
+            {anfitriao && (
               <span className="verificado" aria-label="Perfil confirmado">
                 ✓
               </span>
@@ -115,26 +181,39 @@ export function CabecalhoDePerfil({
             <span className="bolha">
               <IconeOlho />
             </span>
-            {abreviar(e?.conteudosVistos ?? 0)}
+            {abreviar(estado.visualizacoes)}
           </span>
-          <span className="indicador contagem">
+
+          <button
+            type="button"
+            className={estado.curtidoPorMim ? 'indicador curtido' : 'indicador'}
+            onClick={curtir}
+            aria-pressed={estado.curtidoPorMim}
+          >
             <span className="bolha">
-              <IconeCoracao cheio />
+              <IconeCoracao cheio={estado.curtidoPorMim} />
             </span>
-            {abreviar(e?.curtidas ?? 0)}
-          </span>
-          <span className="indicador contagem">
+            {abreviar(estado.curtidas)}
+          </button>
+
+          <button
+            type="button"
+            className="indicador"
+            onClick={() => definirComentariosAbertos((v) => !v)}
+            aria-expanded={comentariosAbertos}
+          >
             <span className="bolha">
               <IconeComentario />
             </span>
-            {abreviar(e?.comentarios ?? 0)}
-          </span>
-          <span className="indicador contagem">
+            {abreviar(estado.comentarios)}
+          </button>
+
+          <button type="button" className="indicador" onClick={partilhar}>
             <span className="bolha">
               <IconePartilhar />
             </span>
-            {abreviar(e?.compartilhamentos ?? 0)}
-          </span>
+            {abreviar(estado.compartilhamentos)}
+          </button>
         </div>
 
         {/* Véu para fechar tocando fora. Só existe com o painel aberto, senão
@@ -170,14 +249,14 @@ export function CabecalhoDePerfil({
 
           <div className="conteudo-painel" aria-hidden={!aberto}>
             <h2>{nome}</h2>
-            {perfil?.user.guardianName && (
-              <p className="responsavel-perfil">{perfil.user.guardianName}</p>
+            {anfitriao?.guardianName && (
+              <p className="responsavel-perfil">{anfitriao.guardianName}</p>
             )}
             <p className="bio-perfil">{descricao}</p>
-            {perfil?.user.createdAt && (
+            {anfitriao?.createdAt && (
               <p className="nota">
                 Na plataforma desde{' '}
-                {new Date(perfil.user.createdAt).toLocaleDateString('pt-PT', {
+                {new Date(anfitriao.createdAt).toLocaleDateString('pt-PT', {
                   day: '2-digit',
                   month: 'long',
                   year: 'numeric',
@@ -188,25 +267,60 @@ export function CabecalhoDePerfil({
         </div>
       </div>
 
+      {aviso && <p className="nota">{aviso}</p>}
+
+      {comentariosAbertos && (
+        <div className="bloco comentarios-faixa">
+          {usuario ? (
+            <form className="formulario-comentario" onSubmit={comentar}>
+              <textarea
+                rows={2}
+                maxLength={2000}
+                placeholder={`Deixe uma mensagem para ${nome}`}
+                value={texto}
+                onChange={(ev) => definirTexto(ev.target.value)}
+              />
+              <button type="submit" disabled={!texto.trim()}>
+                Comentar
+              </button>
+            </form>
+          ) : (
+            <p className="nota">Entre na sua conta para comentar neste perfil.</p>
+          )}
+
+          <ul className="lista-comentarios">
+            {estado.lista.map((c) => (
+              <li key={c.id}>
+                <strong>{c.user.displayName}</strong>
+                <p>{c.body}</p>
+              </li>
+            ))}
+            {estado.lista.length === 0 && (
+              <li className="nota">Ainda ninguém deixou mensagem.</li>
+            )}
+          </ul>
+        </div>
+      )}
+
       <div className="linha-acoes">
         <BotaoDenunciar
           projectId={projectId}
           targetType="PROFILE"
-          targetId={perfil?.user.id ?? ''}
-          podeBloquear={Boolean(perfil?.user.id)}
+          targetId={anfitriao?.id ?? ''}
+          podeBloquear={Boolean(anfitriao?.id)}
         />
 
         <span className="nota-monitor">
-          {perfil?.user.guardianName
+          {anfitriao?.guardianName
             ? 'Perfil acompanhado por um adulto'
             : 'Descreva quem monitora este perfil'}
         </span>
 
         <Link
           className="botao-acao"
-          href={temConta ? `/${projectSlug}/perfil` : `/${projectSlug}/cadastrar`}
+          href={souOAnfitriao ? `/${projectSlug}/perfil` : `/${projectSlug}/cadastrar`}
         >
-          👤 {temConta ? 'EDITAR MEU PERFIL' : 'CRIAR MEU PERFIL'}
+          👤 {souOAnfitriao ? 'EDITAR MEU PERFIL' : 'CRIAR MEU PERFIL'}
         </Link>
 
         <span className="pilula-contador" title="Perfis criados">

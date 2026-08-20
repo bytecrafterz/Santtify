@@ -704,6 +704,7 @@ export class AdminContentService {
         createdAt: true,
         user: { select: { id: true, displayName: true, email: true, status: true } },
         content: { select: { slug: true, title: true } },
+        profileUser: { select: { id: true, displayName: true } },
         // De QUAL faixa veio o comentário. Sem isto, um comentário da oração e
         // um da música chegam à fila indistinguíveis, e moderar sem saber sobre
         // o que a pessoa falava é decidir no escuro.
