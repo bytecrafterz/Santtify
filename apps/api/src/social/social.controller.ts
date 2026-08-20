@@ -297,3 +297,47 @@ export class DenunciasController {
     return this.social.denunciar(dto, req.usuario?.id ?? null)
   }
 }
+
+class ComentarNoPerfilDto {
+  @IsUUID() projectId!: string
+  @IsString() @MinLength(1) @MaxLength(2000) body!: string
+}
+
+/**
+ * O perfil como objecto social: ver, curtir, comentar, partilhar.
+ */
+@Controller('profiles/:userId')
+export class PerfisController {
+  constructor(private readonly social: SocialService) {}
+
+  @Get('social')
+  @AuthOpcional()
+  @UseGuards(AuthGuard)
+  estado(@Param('userId') userId: string, @Req() req: Request) {
+    return this.social.estadoDoPerfil(userId, req.usuario?.id ?? null)
+  }
+
+  @Post('like')
+  @HttpCode(200)
+  @UseGuards(AuthGuard)
+  curtir(@Param('userId') userId: string, @Req() req: Request) {
+    return this.social.alternarCurtidaDoPerfil(userId, req.usuario!.id)
+  }
+
+  @Get('comments')
+  @AuthOpcional()
+  @UseGuards(AuthGuard)
+  comentarios(@Param('userId') userId: string, @Req() req: Request) {
+    return this.social.listarComentariosDoPerfil(userId, req.usuario?.id ?? null)
+  }
+
+  @Post('comments')
+  @UseGuards(AuthGuard)
+  comentar(
+    @Param('userId') userId: string,
+    @Body() dto: ComentarNoPerfilDto,
+    @Req() req: Request,
+  ) {
+    return this.social.comentarNoPerfil(userId, req.usuario!.id, dto.projectId, dto.body)
+  }
+}

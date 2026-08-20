@@ -71,6 +71,14 @@ model Project {
   categories BlockCategory[]
   reports    Report[]
 
+  /// Perfil que hospeda a experiência: é o que toda a gente vê no topo.
+  ///
+  /// O projeto tem um rosto, e é sempre o mesmo para quem chega. Mostrar a
+  /// cada visitante o seu próprio perfil vazio faz da porta de entrada um
+  /// formulário; mostrar o do dono faz dela uma pessoa.
+  hostUserId String? @db.Uuid
+  host       User?   @relation("PerfilAnfitriao", fields: [hostUserId], references: [id], onDelete: SetNull)
+
   @@map("projects")
 }
 
@@ -614,6 +622,11 @@ model User {
   auditLogs          AdminAuditLog[]
   posts              Post[]
 
+  projetosAnfitriao   Project[]         @relation("PerfilAnfitriao")
+  comentariosNoPerfil Comment[]         @relation("ComentariosNoPerfil")
+  curtidasNoPerfil    ProfileReaction[] @relation("CurtidasNoPerfil")
+  curtidasQueFiz      ProfileReaction[] @relation("CurtidasQueFiz")
+
   @@map("users")
 }
 
@@ -841,13 +854,20 @@ enum ReactionType {
 }
 
 model Comment {
-  id        String  @id @default(uuid()) @db.Uuid
-  projectId String  @db.Uuid
-  project   Project @relation(fields: [projectId], references: [id], onDelete: Cascade)
-  contentId String  @db.Uuid
-  content   Content @relation(fields: [contentId], references: [id], onDelete: Cascade)
-  userId    String  @db.Uuid
-  user      User    @relation(fields: [userId], references: [id], onDelete: Cascade)
+  id        String   @id @default(uuid()) @db.Uuid
+  projectId String   @db.Uuid
+  project   Project  @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  /// Nulo quando o comentário é de um perfil e não de uma letra.
+  contentId String?  @db.Uuid
+  content   Content? @relation(fields: [contentId], references: [id], onDelete: Cascade)
+  userId    String   @db.Uuid
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  /// Perfil comentado. Mesma tabela dos outros comentários, e não uma à parte,
+  /// pela mesma razão de sempre: a fila de moderação dele lê daqui, e o que
+  /// ficasse fora dela seria publicado sem ninguém ver.
+  profileUserId String? @db.Uuid
+  profileUser   User?   @relation("ComentariosNoPerfil", fields: [profileUserId], references: [id], onDelete: Cascade)
 
   /// Faixa comentada, quando o comentário é de um áudio e não da letra inteira.
   ///
@@ -953,6 +973,21 @@ model Report {
 }
 
 /// Bloqueio entre pessoas: quem bloqueia deixa de ver o outro.
+/// Curtida num PERFIL.
+model ProfileReaction {
+  id            String       @id @default(uuid()) @db.Uuid
+  profileUserId String       @db.Uuid
+  profileUser   User         @relation("CurtidasNoPerfil", fields: [profileUserId], references: [id], onDelete: Cascade)
+  userId        String       @db.Uuid
+  user          User         @relation("CurtidasQueFiz", fields: [userId], references: [id], onDelete: Cascade)
+  type          ReactionType @default(LIKE)
+  createdAt     DateTime     @default(now())
+
+  @@unique([profileUserId, userId, type])
+  @@index([profileUserId])
+  @@map("profile_reactions")
+}
+
 model UserBlock {
   id        String   @id @default(uuid()) @db.Uuid
   blockerId String   @db.Uuid

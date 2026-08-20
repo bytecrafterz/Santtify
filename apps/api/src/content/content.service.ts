@@ -50,6 +50,10 @@ export class ContentService {
    */
   async listar(projectSlug: string) {
     const project = await this.projeto(projectSlug)
+    const projeto = await this.prisma.project.findUnique({
+      where: { id: project.id },
+      select: { hostUserId: true },
+    })
 
     const todas = await this.prisma.content.findMany({
       where: {
@@ -106,8 +110,27 @@ export class ContentService {
       }),
     ])
 
+    // O perfil anfitrião: o rosto do projeto, igual para toda a gente que chega.
+    // Sem um escolhido, usa-se o administrador — é quem já é dono disto, e é
+    // melhor um rosto por omissão do que uma porta de entrada anónima.
+    const anfitriao = await this.prisma.user.findFirst({
+      where: projeto?.hostUserId
+        ? { id: projeto.hostUserId }
+        : { role: 'ADMIN', status: 'ACTIVE' },
+      orderBy: { createdAt: 'asc' },
+      select: {
+        id: true,
+        displayName: true,
+        avatarUrl: true,
+        bio: true,
+        guardianName: true,
+        createdAt: true,
+      },
+    })
+
     return {
       project,
+      anfitriao,
       contents,
       progresso: {
         liberadas: contents.filter((c) => c.publicado).length,

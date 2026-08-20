@@ -170,10 +170,15 @@ export class SocialService {
       where: { id: commentId },
       data: { status: 'DELETED', deletedAt: new Date() },
     })
-    await this.prisma.contentStats.update({
-      where: { contentId: comment.contentId },
-      data: { comments: { decrement: 1 } },
-    })
+    // Comentário de perfil não pertence a letra nenhuma, e por isso não há
+    // contador de letra para descontar. Desde que o comentário passou a poder
+    // ser de um perfil, este passo deixou de valer sempre.
+    if (comment.contentId) {
+      await this.prisma.contentStats.update({
+        where: { contentId: comment.contentId },
+        data: { comments: { decrement: 1 } },
+      })
+    }
   }
 
   // ── Compartilhar ──────────────────────────────────────────────────
@@ -352,6 +357,122 @@ export class SocialService {
   }
 
 
+
+
+  // ── Engajamento do PERFIL anfitrião ──────────────────────────────────
+  //
+  // O projeto tem um rosto, e é sempre o mesmo para quem chega. Esse perfil
+  // comporta-se como qualquer outro objecto social: vê-se, curte-se,
+  // comenta-se e partilha-se.
+  //
+  // As visualizações saem das visitas à página do projeto, que já eram
+  // gravadas: a página inicial É o perfil anfitrião, então contar duas vezes
+  // a mesma chegada seria inventar público.
+
+  async estadoDoPerfil(profileUserId: string, leitorId: string | null) {
+    const pessoa = await this.prisma.user.findUnique({
+      where: { id: profileUserId },
+      select: { id: true, status: true },
+    })
+    if (!pessoa || pessoa.status !== 'ACTIVE') throw new NotFoundException('Perfil não encontrado')
+
+    const [visualizacoes, curtidas, comentarios, compartilhamentos, curtido, lista] =
+      await Promise.all([
+        this.prisma.event.count({
+          where: {
+            type: EventType.PAGE_VIEW,
+            AND: [{ props: { path: ['perfilId'], equals: profileUserId } }],
+          },
+        }),
+        this.prisma.profileReaction.count({
+          where: { profileUserId, type: ReactionType.LIKE },
+        }),
+        this.prisma.comment.count({ where: { profileUserId, status: 'PUBLISHED' } }),
+        this.prisma.event.count({
+          where: {
+            type: EventType.CUSTOM,
+            AND: [
+              { props: { path: ['perfilId'], equals: profileUserId } },
+              { props: { path: ['acao'], equals: 'partilhar_perfil' } },
+            ],
+          },
+        }),
+        leitorId
+          ? this.prisma.profileReaction
+              .findUnique({
+                where: {
+                  profileUserId_userId_type: {
+                    profileUserId,
+                    userId: leitorId,
+                    type: ReactionType.LIKE,
+                  },
+                },
+                select: { id: true },
+              })
+              .then(Boolean)
+          : Promise.resolve(false),
+        this.listarComentariosDoPerfil(profileUserId, leitorId),
+      ])
+
+    return { visualizacoes, curtidas, comentarios, compartilhamentos, curtidoPorMim: curtido, lista }
+  }
+
+  async listarComentariosDoPerfil(profileUserId: string, leitorId: string | null = null) {
+    const escondidos = await this.bloqueadosPor(leitorId)
+    return this.prisma.comment.findMany({
+      where: {
+        profileUserId,
+        status: 'PUBLISHED',
+        ...(escondidos.length ? { userId: { notIn: escondidos } } : {}),
+      },
+      orderBy: { createdAt: 'desc' },
+      take: 50,
+      select: {
+        id: true,
+        body: true,
+        createdAt: true,
+        user: { select: { id: true, displayName: true, avatarUrl: true } },
+      },
+    })
+  }
+
+  async alternarCurtidaDoPerfil(profileUserId: string, userId: string) {
+    if (profileUserId === userId) {
+      throw new BadRequestException('Não dá para curtir o próprio perfil')
+    }
+    const existente = await this.prisma.profileReaction.findUnique({
+      where: {
+        profileUserId_userId_type: { profileUserId, userId, type: ReactionType.LIKE },
+      },
+    })
+
+    if (existente) await this.prisma.profileReaction.delete({ where: { id: existente.id } })
+    else await this.prisma.profileReaction.create({ data: { profileUserId, userId } })
+
+    return {
+      curtido: !existente,
+      total: await this.prisma.profileReaction.count({
+        where: { profileUserId, type: ReactionType.LIKE },
+      }),
+    }
+  }
+
+  async comentarNoPerfil(
+    profileUserId: string,
+    userId: string,
+    projectId: string,
+    corpo: string,
+  ) {
+    return this.prisma.comment.create({
+      data: { projectId, profileUserId, userId, body: corpo.trim() },
+      select: {
+        id: true,
+        body: true,
+        createdAt: true,
+        user: { select: { id: true, displayName: true, avatarUrl: true } },
+      },
+    })
+  }
 
   // ── Denúncia e bloqueio ──────────────────────────────────────────────
   //
