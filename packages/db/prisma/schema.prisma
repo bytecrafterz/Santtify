@@ -622,10 +622,11 @@ model User {
   auditLogs          AdminAuditLog[]
   posts              Post[]
 
-  projetosAnfitriao   Project[]         @relation("PerfilAnfitriao")
-  comentariosNoPerfil Comment[]         @relation("ComentariosNoPerfil")
-  curtidasNoPerfil    ProfileReaction[] @relation("CurtidasNoPerfil")
-  curtidasQueFiz      ProfileReaction[] @relation("CurtidasQueFiz")
+  projetosAnfitriao     Project[]         @relation("PerfilAnfitriao")
+  comentariosNoPerfil   Comment[]         @relation("ComentariosNoPerfil")
+  curtidasNoPerfil      ProfileReaction[] @relation("CurtidasNoPerfil")
+  curtidasQueFiz        ProfileReaction[] @relation("CurtidasQueFiz")
+  curtidasEmComentarios CommentReaction[] @relation("CurtidasEmComentarios")
 
   @@map("users")
 }
@@ -879,12 +880,16 @@ model Comment {
   block   ContentBlock? @relation(fields: [blockId], references: [id], onDelete: Cascade)
 
   /// Respostas a comentários.
-  parentId String?   @db.Uuid
-  parent   Comment?  @relation("CommentThread", fields: [parentId], references: [id], onDelete: Cascade)
-  replies  Comment[] @relation("CommentThread")
+  parentId  String?           @db.Uuid
+  parent    Comment?          @relation("CommentThread", fields: [parentId], references: [id], onDelete: Cascade)
+  replies   Comment[]         @relation("CommentThread")
+  reactions CommentReaction[]
 
-  body   String
-  status CommentStatus @default(PUBLISHED)
+  body     String
+  status   CommentStatus @default(PUBLISHED)
+  /// Quando foi editado. A tela mostra "editado" para o leitor saber que o
+  /// texto mudou depois de alguém já lhe ter respondido.
+  editedAt DateTime?
 
   createdAt DateTime  @default(now())
   updatedAt DateTime  @updatedAt
@@ -986,6 +991,23 @@ model ProfileReaction {
   @@unique([profileUserId, userId, type])
   @@index([profileUserId])
   @@map("profile_reactions")
+}
+
+/// Curtida num comentário.
+///
+/// Tabela própria pela mesma razão das outras curtidas deste projeto: a tabela
+/// antiga tem unicidade por conteúdo, e um comentário não é um conteúdo.
+model CommentReaction {
+  id        String   @id @default(uuid()) @db.Uuid
+  commentId String   @db.Uuid
+  comment   Comment  @relation(fields: [commentId], references: [id], onDelete: Cascade)
+  userId    String   @db.Uuid
+  user      User     @relation("CurtidasEmComentarios", fields: [userId], references: [id], onDelete: Cascade)
+  createdAt DateTime @default(now())
+
+  @@unique([commentId, userId])
+  @@index([commentId])
+  @@map("comment_reactions")
 }
 
 model UserBlock {

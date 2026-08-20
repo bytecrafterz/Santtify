@@ -359,6 +359,83 @@ export class SocialService {
 
 
 
+
+  // ── O comentário como objecto social ─────────────────────────────────
+  //
+  // Pedido dele em 20/08: curtir, responder, editar e apagar. Responder já
+  // existia no modelo desde o início (parentId); faltava o resto.
+
+  /** Selecção comum a todas as listas de comentários, agora com o social. */
+  private get selecaoDeComentario() {
+    return {
+      id: true,
+      body: true,
+      createdAt: true,
+      editedAt: true,
+      parentId: true,
+      user: { select: { id: true, displayName: true, avatarUrl: true } },
+      _count: { select: { reactions: true } },
+    }
+  }
+
+  async alternarCurtidaDoComentario(commentId: string, userId: string) {
+    const comentario = await this.prisma.comment.findUnique({
+      where: { id: commentId },
+      select: { id: true, status: true },
+    })
+    if (!comentario || comentario.status !== 'PUBLISHED') {
+      throw new NotFoundException('Comentário não encontrado')
+    }
+
+    const existente = await this.prisma.commentReaction.findUnique({
+      where: { commentId_userId: { commentId, userId } },
+    })
+    if (existente) await this.prisma.commentReaction.delete({ where: { id: existente.id } })
+    else await this.prisma.commentReaction.create({ data: { commentId, userId } })
+
+    return {
+      curtido: !existente,
+      total: await this.prisma.commentReaction.count({ where: { commentId } }),
+    }
+  }
+
+  /**
+   * Editar o próprio comentário.
+   *
+   * Só o autor, e nem o administrador: apagar o que está fora do lugar é
+   * moderar, reescrever o que outra pessoa disse é pôr palavras na boca dela.
+   * A marca de edição fica gravada porque pode já haver respostas penduradas a
+   * um texto que deixou de existir.
+   */
+  async editarComentario(commentId: string, userId: string, corpo: string) {
+    const comentario = await this.prisma.comment.findUnique({
+      where: { id: commentId },
+      select: { id: true, userId: true, status: true },
+    })
+    if (!comentario || comentario.status !== 'PUBLISHED') {
+      throw new NotFoundException('Comentário não encontrado')
+    }
+    if (comentario.userId !== userId) {
+      throw new ForbiddenException('Você só pode editar os seus comentários')
+    }
+
+    return this.prisma.comment.update({
+      where: { id: commentId },
+      data: { body: corpo.trim(), editedAt: new Date() },
+      select: this.selecaoDeComentario,
+    })
+  }
+
+  /** Quais destes comentários esta pessoa já curtiu. */
+  async curtidasDe(userId: string | null, ids: string[]): Promise<string[]> {
+    if (!userId || ids.length === 0) return []
+    const linhas = await this.prisma.commentReaction.findMany({
+      where: { userId, commentId: { in: ids } },
+      select: { commentId: true },
+    })
+    return linhas.map((l) => l.commentId)
+  }
+
   // ── Engajamento do PERFIL anfitrião ──────────────────────────────────
   //
   // O projeto tem um rosto, e é sempre o mesmo para quem chega. Esse perfil
@@ -427,12 +504,7 @@ export class SocialService {
       },
       orderBy: { createdAt: 'desc' },
       take: 50,
-      select: {
-        id: true,
-        body: true,
-        createdAt: true,
-        user: { select: { id: true, displayName: true, avatarUrl: true } },
-      },
+      select: this.selecaoDeComentario,
     })
   }
 
@@ -462,15 +534,11 @@ export class SocialService {
     userId: string,
     projectId: string,
     corpo: string,
+    parentId?: string,
   ) {
     return this.prisma.comment.create({
-      data: { projectId, profileUserId, userId, body: corpo.trim() },
-      select: {
-        id: true,
-        body: true,
-        createdAt: true,
-        user: { select: { id: true, displayName: true, avatarUrl: true } },
-      },
+      data: { projectId, profileUserId, userId, body: corpo.trim(), parentId },
+      select: this.selecaoDeComentario,
     })
   }
 
@@ -632,12 +700,7 @@ export class SocialService {
       },
       orderBy: { createdAt: 'desc' },
       take: 50,
-      select: {
-        id: true,
-        body: true,
-        createdAt: true,
-        user: { select: { id: true, displayName: true, avatarUrl: true } },
-      },
+      select: this.selecaoDeComentario,
     })
   }
 
@@ -653,12 +716,7 @@ export class SocialService {
         userId,
         body: corpo.trim(),
       },
-      select: {
-        id: true,
-        body: true,
-        createdAt: true,
-        user: { select: { id: true, displayName: true, avatarUrl: true } },
-      },
+      select: this.selecaoDeComentario,
     })
 
     await this.events.registrar({

@@ -5,6 +5,7 @@ import {
   Get,
   HttpCode,
   Param,
+  Patch,
   Post,
   Req,
   UploadedFile,
@@ -181,9 +182,26 @@ export class SocialController {
 }
 
 /** Remoção de comentário, fora do prefixo de conteúdo. */
+class EditarComentarioDto {
+  @IsString() @MinLength(1) @MaxLength(2000) body!: string
+}
+
 @Controller('comments')
 export class ComentariosController {
   constructor(private readonly social: SocialService) {}
+
+  @Post(':id/like')
+  @HttpCode(200)
+  @UseGuards(AuthGuard)
+  curtir(@Param('id') id: string, @Req() req: Request) {
+    return this.social.alternarCurtidaDoComentario(id, req.usuario!.id)
+  }
+
+  @Patch(':id')
+  @UseGuards(AuthGuard)
+  editar(@Param('id') id: string, @Body() dto: EditarComentarioDto, @Req() req: Request) {
+    return this.social.editarComentario(id, req.usuario!.id, dto.body)
+  }
 
   @Delete(':id')
   @HttpCode(204)
@@ -301,6 +319,7 @@ export class DenunciasController {
 class ComentarNoPerfilDto {
   @IsUUID() projectId!: string
   @IsString() @MinLength(1) @MaxLength(2000) body!: string
+  @IsOptional() @IsUUID() parentId?: string
 }
 
 /**
@@ -338,6 +357,12 @@ export class PerfisController {
     @Body() dto: ComentarNoPerfilDto,
     @Req() req: Request,
   ) {
-    return this.social.comentarNoPerfil(userId, req.usuario!.id, dto.projectId, dto.body)
+    return this.social.comentarNoPerfil(
+      userId,
+      req.usuario!.id,
+      dto.projectId,
+      dto.body,
+      dto.parentId,
+    )
   }
 }
