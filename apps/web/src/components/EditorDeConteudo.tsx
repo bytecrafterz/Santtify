@@ -177,8 +177,8 @@ function MaterialGratis({
     definirErro(null)
     definirEnviando(true)
     try {
-      const asset = await admin.enviarArquivo(arquivo)
-      await admin.definirMaterialGratis(content.id, asset.id)
+      // Uma chamada só: o servidor converte a fotografia em PDF se for preciso.
+      await admin.enviarMaterialGratis(content.id, arquivo)
       aoMudar()
     } catch (e) {
       definirErro(e instanceof Error ? e.message : 'Não foi possível enviar')
@@ -193,7 +193,7 @@ function MaterialGratis({
 
       {content.freeFileUrl ? (
         <p className="nota">
-          <strong>{content.freeFileName ?? 'PDF enviado'}</strong>
+          <strong>{content.freeFileName ?? 'Material enviado'}</strong>
           <br />O botão de baixar já aparece nesta letra.
         </p>
       ) : (

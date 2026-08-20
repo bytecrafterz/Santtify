@@ -4,6 +4,7 @@ import { randomBytes } from 'node:crypto'
 import { mkdir, writeFile } from 'node:fs/promises'
 import { extname, join } from 'node:path'
 import sharp from 'sharp'
+import { PDFDocument } from 'pdf-lib'
 import { MediaKind } from '@pv/db'
 
 /**
@@ -120,6 +121,62 @@ export class StorageService {
     } catch {
       return bruto
     }
+  }
+
+
+  /**
+   * Guarda material para imprimir, aceitando PDF ou fotografia.
+   *
+   * Pedido dele em 20/08, e a razão é prática: os cartões dele estão guardados
+   * como imagens no telemóvel, e o iPhone, quando o campo só aceita PDF, abre
+   * os Ficheiros em vez das Fotos. A pessoa fica a olhar para uma pasta vazia
+   * sem perceber porquê.
+   *
+   * A fotografia é convertida aqui e não no telemóvel dele. Pedir a alguém que
+   * converta imagem em PDF antes de enviar é pedir que desista.
+   *
+   * A página é A4 e a imagem entra inteira, centrada, sem cortar. Quem vai
+   * imprimir isto é uma gráfica ou uma impressora de casa, e ambas trabalham
+   * em folha; uma página do tamanho da fotografia sairia com margens
+   * imprevisíveis conforme o aparelho.
+   */
+  async salvarComoPdf(arquivo: Express.Multer.File): Promise<ArquivoSalvo> {
+    if (arquivo.mimetype === 'application/pdf') return this.salvar(arquivo)
+
+    if (this.tipoDe(arquivo.mimetype) !== MediaKind.IMAGE) {
+      throw new BadRequestException(
+        'Envie um PDF ou uma imagem (JPG, PNG, HEIC) para o material grátis.',
+      )
+    }
+
+    // Passa sempre por JPEG: o PDF só sabe embutir JPEG e PNG, e o HEIC do
+    // iPhone não é nenhum dos dois.
+    const jpeg = await sharp(arquivo.buffer).rotate().jpeg({ quality: 90 }).toBuffer()
+
+    const pdf = await PDFDocument.create()
+    const A4 = { largura: 595.28, altura: 841.89 }
+    const pagina = pdf.addPage([A4.largura, A4.altura])
+    const imagem = await pdf.embedJpg(jpeg)
+
+    const escala = Math.min(A4.largura / imagem.width, A4.altura / imagem.height)
+    const l = imagem.width * escala
+    const a = imagem.height * escala
+    pagina.drawImage(imagem, {
+      x: (A4.largura - l) / 2,
+      y: (A4.altura - a) / 2,
+      width: l,
+      height: a,
+    })
+
+    const bytes = Buffer.from(await pdf.save())
+    const base = this.nomeLegivel(arquivo.originalname).replace(/\.[^.]+$/, '')
+    return this.salvar({
+      ...arquivo,
+      buffer: bytes,
+      size: bytes.length,
+      mimetype: 'application/pdf',
+      originalname: `${base}.pdf`,
+    } as Express.Multer.File)
   }
 
   async salvar(arquivo: Express.Multer.File): Promise<ArquivoSalvo> {

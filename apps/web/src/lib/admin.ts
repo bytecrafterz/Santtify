@@ -145,6 +145,19 @@ export interface DenunciaAdmin {
 }
 
 export const admin = {
+  /**
+   * Material grátis num só passo: o servidor aceita PDF ou fotografia e
+   * converte a fotografia em PDF pelo caminho.
+   */
+  enviarMaterialGratis: (contentId: string, arquivo: File) => {
+    const form = new FormData()
+    form.append('file', arquivo)
+    return chamar<unknown>(`/admin/contents/${contentId}/free-file/upload`, {
+      method: 'POST',
+      body: form,
+    })
+  },
+
   denuncias: (projectSlug: string) =>
     chamar<{ reports: DenunciaAdmin[] }>(`/admin/projects/${projectSlug}/reports`),
 

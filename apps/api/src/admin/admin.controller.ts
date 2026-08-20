@@ -373,6 +373,35 @@ export class AdminController {
     return asset
   }
 
+  /**
+   * Material grátis num só passo: envia, converte se for preciso, e liga.
+   *
+   * Antes eram duas chamadas — enviar o ficheiro e depois apontá-lo — e o
+   * painel tinha de aceitar só PDF para não trocar as voltas. Numa chamada só,
+   * a conversão de fotografia em PDF acontece pelo caminho e o iPhone deixa de
+   * abrir os Ficheiros quando a pessoa queria as Fotos.
+   */
+  @Post('contents/:id/free-file/upload')
+  @UseInterceptors(FileInterceptor('file', { limits: { fileSize: TAMANHO_MAXIMO } }))
+  async enviarMaterialGratis(
+    @Param('id') id: string,
+    @UploadedFile() file: Express.Multer.File,
+    @Req() req: Request,
+  ) {
+    const salvo = await this.storage.salvarComoPdf(file)
+    const asset = await this.conteudo.registrarMidia(
+      {
+        url: salvo.url,
+        kind: salvo.kind,
+        mimeType: salvo.mimeType,
+        sizeBytes: salvo.sizeBytes,
+        title: salvo.nomeOriginal,
+      },
+      req.usuario!.id,
+    )
+    return this.conteudo.definirMaterialGratis(id, asset.id, req.usuario!.id)
+  }
+
   /** Define (ou remove) o PDF gratuito da letra. */
   @Patch('contents/:id/free-file')
   definirMaterialGratis(
