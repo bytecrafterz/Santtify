@@ -23,3 +23,24 @@ export function abreviar(n: number): string {
   if (n < 1_000_000) return `${Math.round(milhares)} mil`
   return `${(n / 1_000_000).toFixed(1).replace('.', ',')} mi`
 }
+
+/**
+ * Plural das categorias, para os filtros lerem como o cliente os escreveu:
+ * "Só orações" e não "Só oração".
+ *
+ * O nome da categoria é singular porque é assim que ele a escreve no painel e
+ * é assim que ela aparece colada a cada faixa. No filtro, porém, a pessoa está
+ * a escolher um conjunto, e um conjunto no singular soa a erro.
+ *
+ * A regra do -ão para -ões cobre exactamente os casos deste projeto — oração,
+ * explicação, memorização — e é a regra certa para substantivos terminados em
+ * -ção, que são a maioria esmagadora dos -ão em português.
+ */
+export function plural(palavra: string): string {
+  const p = palavra.trim()
+  if (!p) return p
+  if (/ção$/i.test(p)) return p.replace(/ção$/i, 'ções')
+  if (/[rzs]$/i.test(p)) return `${p}es`
+  if (/m$/i.test(p)) return p.replace(/m$/i, 'ns')
+  return `${p}s`
+}

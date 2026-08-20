@@ -2,7 +2,7 @@
 
 import { useState } from 'react'
 import type { CategoriaDeAudio, Faixa, ItemIndice, Projeto } from '@/lib/api'
-import { abreviar } from '@/lib/numeros'
+import { abreviar, plural } from '@/lib/numeros'
 import { IconeOlho, IconeCoracao, IconeComentario, IconePartilhar } from './Icones'
 import { Playlist } from './Playlist'
 
@@ -128,7 +128,7 @@ export function CapaComPlaylist({
             className={filtro === c.slug ? 'filtro-link destaque' : 'filtro-link'}
             onClick={() => escolherFiltro(c.slug)}
           >
-            Só {c.nome.toLocaleLowerCase('pt')}
+            Só {plural(c.nome).toLocaleLowerCase('pt')}
           </button>
         ))}
       </div>

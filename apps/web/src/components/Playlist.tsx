@@ -4,6 +4,7 @@ import Link from 'next/link'
 import { useEffect, useRef, useState } from 'react'
 import type { CategoriaDeAudio, Faixa } from '@/lib/api'
 import { rastrear } from '@/lib/track'
+import { plural } from '@/lib/numeros'
 
 /**
  * "Reproduzir todas": as músicas do projeto tocando em sequência, do A ao Z.
@@ -189,7 +190,7 @@ export function Playlist({
               className={filtro === c.slug ? 'filtro atual' : 'filtro'}
               onClick={() => trocarFiltro(c.slug)}
             >
-              Só {c.nome.toLocaleLowerCase('pt')}
+              Só {plural(c.nome).toLocaleLowerCase('pt')}
             </button>
           ))}
         </div>
