@@ -704,7 +704,13 @@ export class SocialService {
     })
   }
 
-  async comentarNaFaixa(blockId: string, userId: string, corpo: string, ctx: VisitContext) {
+  async comentarNaFaixa(
+    blockId: string,
+    userId: string,
+    corpo: string,
+    ctx: VisitContext,
+    parentId?: string,
+  ) {
     const bloco = await this.faixaExiste(blockId)
     const visita = await this.attribution.resolveVisit({ ...ctx, userId })
 
@@ -715,6 +721,7 @@ export class SocialService {
         blockId,
         userId,
         body: corpo.trim(),
+        parentId,
       },
       select: this.selecaoDeComentario,
     })

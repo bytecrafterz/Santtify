@@ -73,7 +73,10 @@ export interface ComentarioDaFaixa {
   id: string
   body: string
   createdAt: string
+  editedAt?: string | null
+  parentId?: string | null
   user: { id: string; displayName: string; avatarUrl: string | null }
+  _count?: { reactions: number }
 }
 
 /** Os quatro números próprios de uma faixa, mais o que a pessoa já fez nela. */
@@ -97,16 +100,28 @@ export type MotivoDeDenuncia =
 export type AlvoDeDenuncia = 'CONTENT' | 'BLOCK' | 'COMMENT' | 'POST' | 'PROFILE'
 
 export const social = {
+  // ── O comentário como objecto social (20/08) ──────────────────────
+  curtirComentario: (id: string) =>
+    chamar<{ curtido: boolean; total: number }>(`/comments/${id}/like`, { method: 'POST' }),
+
+  editarComentario: (id: string, body: string) =>
+    chamar<ComentarioDaFaixa>(`/comments/${id}`, {
+      method: 'PATCH',
+      body: JSON.stringify({ body }),
+    }),
+
+  apagarComentario: (id: string) => chamar<void>(`/comments/${id}`, { method: 'DELETE' }),
+
   // ── Perfil como objecto social ────────────────────────────────────
   estadoDoPerfil: (userId: string) => chamar<EstadoDaFaixa>(`/profiles/${userId}/social`),
 
   curtirPerfil: (userId: string) =>
     chamar<{ curtido: boolean; total: number }>(`/profiles/${userId}/like`, { method: 'POST' }),
 
-  comentarNoPerfil: (userId: string, projectId: string, body: string) =>
+  comentarNoPerfil: (userId: string, projectId: string, body: string, parentId?: string) =>
     chamar<ComentarioDaFaixa>(`/profiles/${userId}/comments`, {
       method: 'POST',
-      body: JSON.stringify({ projectId, body }),
+      body: JSON.stringify({ projectId, body, parentId }),
     }),
 
   denunciar: (dados: {
@@ -131,10 +146,10 @@ export const social = {
       body: JSON.stringify({ projectId }),
     }),
 
-  comentarNaFaixa: (blockId: string, projectId: string, body: string) =>
+  comentarNaFaixa: (blockId: string, projectId: string, body: string, parentId?: string) =>
     chamar<ComentarioDaFaixa>(`/blocks/${blockId}/comments`, {
       method: 'POST',
-      body: JSON.stringify({ projectId, body }),
+      body: JSON.stringify({ projectId, body, parentId }),
     }),
 
   /**

@@ -3,6 +3,7 @@
 import { useEffect, useState } from 'react'
 import { social, type ComentarioDaFaixa, type EstadoDaFaixa } from '@/lib/social'
 import { useAuth } from './ProvedorDeAuth'
+import { PainelDeComentarios } from './PainelDeComentarios'
 import { abreviar } from '@/lib/numeros'
 import { rastrear } from '@/lib/track'
 import { IconeOlho, IconeCoracao, IconeComentario, IconePartilhar } from './Icones'
@@ -39,7 +40,6 @@ export function TrilhoDaFaixa({
     lista: [],
   })
   const [comentariosAbertos, definirComentariosAbertos] = useState(false)
-  const [texto, definirTexto] = useState('')
   const [ocupado, definirOcupado] = useState(false)
   const [aviso, definirAviso] = useState<string | null>(null)
 
@@ -98,29 +98,7 @@ export function TrilhoDaFaixa({
   }
 
 
-  async function comentar(e: React.FormEvent) {
-    e.preventDefault()
-    if (!usuario) {
-      definirAviso('Entre na sua conta para comentar.')
-      return
-    }
-    if (!texto.trim()) return
-    definirOcupado(true)
-    try {
-      const novo: ComentarioDaFaixa = await social.comentarNaFaixa(blockId, projectId, texto)
-      definirEstado((e2) => ({
-        ...e2,
-        comentarios: e2.comentarios + 1,
-        lista: [novo, ...e2.lista],
-      }))
-      definirTexto('')
-      definirAviso(null)
-    } catch {
-      definirAviso('Não foi possível comentar agora.')
-    } finally {
-      definirOcupado(false)
-    }
-  }
+
 
   return (
     <div className="faixa-social" id={`faixa-${blockId}`}>
@@ -167,36 +145,32 @@ export function TrilhoDaFaixa({
       {aviso && <p className="nota">{aviso}</p>}
 
       {comentariosAbertos && (
-        <div className="comentarios-faixa">
-          {usuario ? (
-            <form className="formulario-comentario" onSubmit={comentar}>
-              <textarea
-                rows={2}
-                maxLength={2000}
-                placeholder={`Comente sobre ${titulo.toLocaleLowerCase('pt')}`}
-                value={texto}
-                onChange={(e) => definirTexto(e.target.value)}
-              />
-              <button type="submit" disabled={ocupado || !texto.trim()}>
-                Comentar
-              </button>
-            </form>
-          ) : (
-            <p className="nota">Entre na sua conta para comentar nesta faixa.</p>
-          )}
-
-          <ul className="lista-comentarios">
-            {estado.lista.map((c) => (
-              <li key={c.id}>
-                <strong>{c.user.displayName}</strong>
-                <p>{c.body}</p>
-              </li>
-            ))}
-            {estado.lista.length === 0 && (
-              <li className="nota">Ainda ninguém comentou esta faixa.</li>
-            )}
-          </ul>
-        </div>
+        <PainelDeComentarios
+          titulo={titulo}
+          comentarios={estado.lista}
+          usuarioId={usuario?.id ?? null}
+          avatarUrl={usuario?.avatarUrl ?? null}
+          aoFechar={() => definirComentariosAbertos(false)}
+          aoComentar={async (t, parentId) => {
+            const novo = await social.comentarNaFaixa(blockId, projectId, t, parentId)
+            definirEstado((x) => ({
+              ...x,
+              comentarios: x.comentarios + 1,
+              lista: [novo, ...x.lista],
+            }))
+          }}
+          aoApagar={async (id) => {
+            await social.apagarComentario(id)
+            definirEstado((x) => ({
+              ...x,
+              comentarios: Math.max(0, x.comentarios - 1),
+              lista: x.lista.filter((c) => c.id !== id),
+            }))
+          }}
+          aoActualizar={(c) =>
+            definirEstado((x) => ({ ...x, lista: x.lista.map((y) => (y.id === c.id ? c : y)) }))
+          }
+        />
       )}
     </div>
   )

@@ -2858,3 +2858,197 @@ button.letra-bloco {
   border: 1px solid var(--cor-borda);
   filter: none;
 }
+
+/* ── Comentários como rede social (20/08) ────────────────────────────
+   O que estava lá era um formulário: caixa grande, botão separado por
+   baixo. Aqui o campo é uma linha fixa em baixo e o ecrã é da conversa. */
+.folha-comentarios {
+  position: relative;
+  width: min(560px, 100%);
+  height: 78vh;
+  display: flex;
+  flex-direction: column;
+  background: var(--cor-superficie);
+  border-radius: 22px 22px 0 0;
+  box-shadow: 0 -10px 40px rgba(10, 12, 18, 0.3);
+}
+
+.folha-comentarios > h2 {
+  margin: 0 0 0.5rem;
+  text-align: center;
+  font-size: 1rem;
+}
+
+.folha-comentarios .pega {
+  width: 100%;
+  padding: 0.6rem 0 0.35rem;
+  border: none;
+  background: transparent;
+  cursor: pointer;
+  display: flex;
+  justify-content: center;
+}
+
+.lista-comentarios-social {
+  list-style: none;
+  margin: 0;
+  padding: 0 0.9rem 0.75rem;
+  overflow-y: auto;
+  flex: 1;
+}
+
+.comentario {
+  display: flex;
+  gap: 0.6rem;
+  padding: 0.55rem 0;
+  align-items: flex-start;
+}
+
+/* A resposta recua para se ver de quem é filha. */
+.comentario.resposta {
+  margin-left: 2.4rem;
+}
+
+.avatar-comentario {
+  width: 34px;
+  height: 34px;
+  border-radius: 50%;
+  object-fit: cover;
+  flex: 0 0 auto;
+}
+
+.avatar-comentario.vazio {
+  display: grid;
+  place-items: center;
+  background: var(--cor-primaria-suave);
+  color: var(--cor-primaria);
+  font-weight: 700;
+  font-size: 0.9rem;
+}
+
+.corpo-comentario {
+  flex: 1;
+  min-width: 0;
+}
+
+.corpo-comentario strong {
+  font-size: 0.85rem;
+}
+
+.corpo-comentario p {
+  margin: 0.05rem 0 0.2rem;
+  font-size: 0.92rem;
+  overflow-wrap: anywhere;
+}
+
+.corpo-comentario .editado {
+  color: var(--cor-texto-suave);
+  font-size: 0.75rem;
+}
+
+.acoes-comentario {
+  display: flex;
+  gap: 0.9rem;
+}
+
+.acoes-comentario button {
+  border: none;
+  background: none;
+  padding: 0;
+  font-size: 0.78rem;
+  font-weight: 600;
+  color: var(--cor-texto-suave);
+  cursor: pointer;
+  font-family: inherit;
+}
+
+.acoes-comentario button.perigo {
+  color: var(--cor-alerta);
+}
+
+.curtir-comentario {
+  border: none;
+  background: none;
+  cursor: pointer;
+  color: var(--cor-texto-suave);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.1rem;
+  font-size: 0.72rem;
+  padding: 0;
+}
+
+.curtir-comentario.curtido {
+  color: var(--cor-alerta);
+}
+
+/* ── Rodapé fixo: emojis e a linha de escrever ───────────────────────── */
+.rodape-comentarios {
+  border-top: 1px solid var(--cor-borda);
+  padding: 0.5rem 0.9rem 0.9rem;
+  background: var(--cor-superficie);
+}
+
+.rodape-comentarios .contexto {
+  display: flex;
+  justify-content: space-between;
+  margin: 0 0 0.4rem;
+}
+
+.rodape-comentarios .contexto button {
+  border: none;
+  background: none;
+  color: var(--cor-primaria);
+  cursor: pointer;
+  font-family: inherit;
+}
+
+.fila-emojis {
+  display: flex;
+  justify-content: space-between;
+  gap: 0.25rem;
+  margin-bottom: 0.5rem;
+}
+
+.fila-emojis button {
+  border: none;
+  background: none;
+  font-size: 1.3rem;
+  cursor: pointer;
+  padding: 0.1rem;
+}
+
+.escrever-comentario {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.escrever-comentario input {
+  flex: 1;
+  min-width: 0;
+  border: 1px solid var(--cor-borda);
+  border-radius: 999px;
+  padding: 0.6rem 0.9rem;
+  font-size: 0.95rem;
+  font-family: inherit;
+  background: var(--cor-fundo);
+  color: var(--cor-texto);
+}
+
+.escrever-comentario button[type='submit'] {
+  border: none;
+  background: var(--cor-primaria);
+  color: #fff;
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  font-size: 1rem;
+  cursor: pointer;
+  flex: 0 0 auto;
+}
+
+.escrever-comentario button[type='submit']:disabled {
+  opacity: 0.45;
+}

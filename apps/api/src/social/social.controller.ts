@@ -286,6 +286,7 @@ export class FaixasController {
       req.usuario!.id,
       dto.body,
       contextoDaVisita(dto.projectId, req),
+      dto.parentId,
     )
   }
 }

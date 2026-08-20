@@ -4,6 +4,7 @@ import Link from 'next/link'
 import { useEffect, useRef, useState } from 'react'
 import type { PerfilAnfitriao } from '@/lib/api'
 import { social, type EstadoDaFaixa } from '@/lib/social'
+import { PainelDeComentarios } from './PainelDeComentarios'
 import { rastrear } from '@/lib/track'
 import { useAuth } from './ProvedorDeAuth'
 import { abreviar } from '@/lib/numeros'
@@ -47,7 +48,6 @@ export function CabecalhoDePerfil({
     lista: [],
   })
   const [comentariosAbertos, definirComentariosAbertos] = useState(false)
-  const [texto, definirTexto] = useState('')
   const [aviso, definirAviso] = useState<string | null>(null)
   const [aberto, definirAberto] = useState(false)
   const inicioDoToque = useRef<number | null>(null)
@@ -138,23 +138,7 @@ export function CabecalhoDePerfil({
   }
 
 
-  async function comentar(ev: React.FormEvent) {
-    ev.preventDefault()
-    if (!anfitriao) return
-    if (!usuario) {
-      definirAviso('Entre na sua conta para comentar.')
-      return
-    }
-    if (!texto.trim()) return
-    try {
-      const novo = await social.comentarNoPerfil(anfitriao.id, projectId, texto)
-      definirEstado((x) => ({ ...x, comentarios: x.comentarios + 1, lista: [novo, ...x.lista] }))
-      definirTexto('')
-      definirAviso(null)
-    } catch {
-      definirAviso('Não foi possível comentar agora.')
-    }
-  }
+
 
   return (
     <>
@@ -279,36 +263,36 @@ export function CabecalhoDePerfil({
       {aviso && <p className="nota">{aviso}</p>}
 
       {comentariosAbertos && (
-        <div className="bloco comentarios-faixa">
-          {usuario ? (
-            <form className="formulario-comentario" onSubmit={comentar}>
-              <textarea
-                rows={2}
-                maxLength={2000}
-                placeholder={`Deixe uma mensagem para ${nome}`}
-                value={texto}
-                onChange={(ev) => definirTexto(ev.target.value)}
-              />
-              <button type="submit" disabled={!texto.trim()}>
-                Comentar
-              </button>
-            </form>
-          ) : (
-            <p className="nota">Entre na sua conta para comentar neste perfil.</p>
-          )}
-
-          <ul className="lista-comentarios">
-            {estado.lista.map((c) => (
-              <li key={c.id}>
-                <strong>{c.user.displayName}</strong>
-                <p>{c.body}</p>
-              </li>
-            ))}
-            {estado.lista.length === 0 && (
-              <li className="nota">Ainda ninguém deixou mensagem.</li>
-            )}
-          </ul>
-        </div>
+        <PainelDeComentarios
+          titulo={nome}
+          comentarios={estado.lista}
+          usuarioId={usuario?.id ?? null}
+          avatarUrl={usuario ? (anfitriao?.avatarUrl ?? null) : null}
+          aoFechar={() => definirComentariosAbertos(false)}
+          aoComentar={async (t, parentId) => {
+            if (!anfitriao) return
+            const novo = await social.comentarNoPerfil(anfitriao.id, projectId, t, parentId)
+            definirEstado((x) => ({
+              ...x,
+              comentarios: x.comentarios + 1,
+              lista: [novo, ...x.lista],
+            }))
+          }}
+          aoApagar={async (id) => {
+            await social.apagarComentario(id)
+            definirEstado((x) => ({
+              ...x,
+              comentarios: Math.max(0, x.comentarios - 1),
+              lista: x.lista.filter((c) => c.id !== id),
+            }))
+          }}
+          aoActualizar={(c) =>
+            definirEstado((x) => ({
+              ...x,
+              lista: x.lista.map((y) => (y.id === c.id ? c : y)),
+            }))
+          }
+        />
       )}
 
       <div className="linha-acoes">
