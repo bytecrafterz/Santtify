@@ -322,7 +322,7 @@ export function CabecalhoDePerfil({
 
         <Link
           className="botao-acao"
-          href={souOAnfitriao ? `/${projectSlug}/perfil` : `/${projectSlug}/cadastrar`}
+          href={souOAnfitriao ? `/${projectSlug}/perfil` : `/${projectSlug}/instalar`}
         >
           👤 {souOAnfitriao ? 'EDITAR MEU PERFIL' : 'CRIAR MEU PERFIL'}
         </Link>
