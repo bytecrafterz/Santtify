@@ -3713,3 +3713,23 @@ button.letra-bloco {
 .nome-de-quem-falou:hover strong {
   text-decoration: underline;
 }
+
+/* A folha abre mais abaixo, deixando ver parte da imagem — é isso que diz
+   à pessoa que a página continua lá por trás e que dá para voltar. */
+.folha-comentarios {
+  height: 68vh;
+  transition: transform 0.22s ease;
+  touch-action: none;
+}
+
+.folha-comentarios .pega {
+  touch-action: none;
+  padding: 0.8rem 0 0.4rem;
+}
+
+/* A zona que rola volta a aceitar o gesto: sem isto, rolar os comentários
+   arrastava a folha inteira. */
+.lista-comentarios-social,
+.rodape-comentarios {
+  touch-action: auto;
+}

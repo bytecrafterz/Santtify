@@ -1,6 +1,6 @@
 'use client'
 
-import { useState } from 'react'
+import { useRef, useState } from 'react'
 import Link from 'next/link'
 import { social, type ComentarioDaFaixa } from '@/lib/social'
 import { IconeCoracao } from './Icones'
@@ -48,6 +48,39 @@ export function PainelDeComentarios({
   const [curtidos, definirCurtidos] = useState<Record<string, boolean>>({})
   const [totais, definirTotais] = useState<Record<string, number>>({})
   const [ocupado, definirOcupado] = useState(false)
+
+  /**
+   * Arrastar a alça para baixo fecha, como em qualquer aplicação.
+   *
+   * O cliente reparou que a barra de cima parecia uma alça e não era. Aqui ela
+   * passa a ser: a folha acompanha o dedo enquanto desce e fecha se a pessoa
+   * arrastar o suficiente.
+   *
+   * Os 90 pixéis de limiar existem para separar arrastar de tocar. Sem eles,
+   * um toque na alça — que é o gesto de quem quer FECHAR pelo botão — mexia a
+   * folha alguns pixéis e ela voltava, parecendo que o toque falhou.
+   */
+  const folha = useRef<HTMLDivElement>(null)
+  const inicioY = useRef<number | null>(null)
+
+  function arrastarInicio(e: React.TouchEvent) {
+    inicioY.current = e.touches[0]?.clientY ?? null
+  }
+
+  function arrastando(e: React.TouchEvent) {
+    if (inicioY.current === null || !folha.current) return
+    const delta = (e.touches[0]?.clientY ?? 0) - inicioY.current
+    // Só para baixo: puxar para cima não estica a folha.
+    folha.current.style.transform = `translateY(${Math.max(0, delta)}px)`
+  }
+
+  function arrastarFim(e: React.TouchEvent) {
+    if (inicioY.current === null || !folha.current) return
+    const delta = (e.changedTouches[0]?.clientY ?? 0) - inicioY.current
+    inicioY.current = null
+    folha.current.style.transform = ''
+    if (delta > 90) aoFechar()
+  }
 
   function curtidasDe(c: ComentarioDaFaixa) {
     return totais[c.id] ?? c._count?.reactions ?? 0
@@ -204,8 +237,16 @@ export function PainelDeComentarios({
     <div className="fundo-modal" role="dialog" aria-modal="true" aria-label={`Comentários — ${titulo}`}>
       <button type="button" className="fundo-clicavel" aria-label="Fechar" onClick={aoFechar} />
 
-      <div className="folha-comentarios">
-        <button type="button" className="pega" aria-label="Fechar comentários" onClick={aoFechar}>
+      <div className="folha-comentarios" ref={folha}>
+        <button
+          type="button"
+          className="pega"
+          aria-label="Fechar comentários"
+          onClick={aoFechar}
+          onTouchStart={arrastarInicio}
+          onTouchMove={arrastando}
+          onTouchEnd={arrastarFim}
+        >
           <span className="traco" aria-hidden />
         </button>
         <h2>Comentários</h2>

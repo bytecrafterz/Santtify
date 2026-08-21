@@ -119,11 +119,10 @@ export function ExperienciaContinua({
               aria-pressed={escolhida === c.slug}
             >
               {c.coverUrl ? (
-                <>
-                  {/* eslint-disable-next-line @next/next/no-img-element */}
-                  <img src={c.coverUrl} alt={c.title} />
-                  <span className="nome-curto">{c.subtitle ?? c.title}</span>
-                </>
+                // Só a capa, sem legenda por cima: a arte da letra já traz o
+                // nome dela desenhado, e a legenda ficava a tapar o desenho.
+                // eslint-disable-next-line @next/next/no-img-element
+                <img src={c.coverUrl} alt={c.title} />
               ) : (
                 letra
               )}
@@ -139,27 +138,16 @@ export function ExperienciaContinua({
 
       {aberta && !carregando && (
         <section className="letra-aberta">
-          <header className="secao-com-acao">
-            <div>
-              <h2>{aberta.content.title}</h2>
-              {aberta.content.subtitle && (
-                <p className="subtitulo">{aberta.content.subtitle}</p>
-              )}
-            </div>
-            <button
-              type="button"
-              className="secundario fechar-letra"
-              onClick={() => definirEscolhida(null)}
-            >
-              Fechar
-            </button>
-          </header>
-
-          {aberta.content.coverUrl && (
-            // eslint-disable-next-line @next/next/no-img-element
-            <img className="arte-letra sangria" src={aberta.content.coverUrl} alt={aberta.content.title} />
-          )}
-
+          {/* Sem capa nem título repetidos aqui: a introdução do projeto já
+              está em cima da página, e cada conteúdo traz a sua própria
+              imagem. Repetir era ver a mesma coisa duas vezes seguidas. */}
+          <button
+            type="button"
+            className="secundario fechar-letra"
+            onClick={() => definirEscolhida(null)}
+          >
+            Fechar {aberta.content.title}
+          </button>
           <BlocosDeConteudo
             blocos={aberta.content.blocks}
             projectId={projectId}

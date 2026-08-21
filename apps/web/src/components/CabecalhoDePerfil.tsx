@@ -10,7 +10,7 @@ import { rastrear } from '@/lib/track'
 import { useAuth } from './ProvedorDeAuth'
 import { abreviar } from '@/lib/numeros'
 import { BotaoDenunciar } from './BotaoDenunciar'
-import { IconeOlho, IconeCoracao, IconeComentario, IconePartilhar } from './Icones'
+import { OlhoGrande, CoracaoGrande, BalaoGrande, SetaGrande } from './IconesGrandes'
 
 /**
  * O cartão de perfil no topo da página.
@@ -155,9 +155,9 @@ export function CabecalhoDePerfil({
           </div>
         )}
 
-        <span className="selo-pv-capa" aria-hidden>
+        <Link className="selo-pv-capa" href={`/${projectSlug}/produto-vivo`}>
           PV
-        </span>
+        </Link>
 
         {/* Só nome e selo sobre a foto, numa linha, com sombra própria. */}
         <div className="faixa-nome">
@@ -171,50 +171,7 @@ export function CabecalhoDePerfil({
           </h1>
         </div>
 
-        <div className="trilho">
-          <button
-            type="button"
-            className="indicador"
-            onClick={() => definirPessoasAbertas(true)}
-            aria-label="Ver quem interagiu"
-          >
-            <span className="bolha">
-              <IconeOlho />
-            </span>
-            {abreviar(estado.visualizacoes)}
-          </button>
-
-          <button
-            type="button"
-            className={estado.curtidoPorMim ? 'indicador curtido' : 'indicador'}
-            onClick={curtir}
-            aria-pressed={estado.curtidoPorMim}
-          >
-            <span className="bolha">
-              <IconeCoracao cheio={estado.curtidoPorMim} />
-            </span>
-            {abreviar(estado.curtidas)}
-          </button>
-
-          <button
-            type="button"
-            className="indicador"
-            onClick={() => definirComentariosAbertos((v) => !v)}
-            aria-expanded={comentariosAbertos}
-          >
-            <span className="bolha">
-              <IconeComentario />
-            </span>
-            {abreviar(estado.comentarios)}
-          </button>
-
-          <button type="button" className="indicador" onClick={partilhar}>
-            <span className="bolha">
-              <IconePartilhar />
-            </span>
-            {abreviar(estado.compartilhamentos)}
-          </button>
-        </div>
+        
 
         {/* Véu para fechar tocando fora. Só existe com o painel aberto, senão
             comeria os toques na própria fotografia. */}
@@ -265,6 +222,54 @@ export function CabecalhoDePerfil({
             )}
           </div>
         </div>
+      </div>
+
+      {/* Fora da fotografia, no mesmo formato dos cartões que ele aprovou:
+          imagem limpa, e os quatro indicadores organizados por baixo. */}
+      <div className="indicadores-publicacao">
+        <button
+          type="button"
+          className="indicador-grande"
+          onClick={() => definirPessoasAbertas(true)}
+          aria-label="Ver quem interagiu"
+        >
+          <span className="simbolo">
+            <OlhoGrande />
+          </span>
+          <strong>{abreviar(estado.visualizacoes)}</strong>
+        </button>
+
+        <button
+          type="button"
+          className={estado.curtidoPorMim ? 'indicador-grande activo' : 'indicador-grande'}
+          onClick={curtir}
+          aria-pressed={estado.curtidoPorMim}
+          aria-label="Curtir"
+        >
+          <span className="simbolo">
+            <CoracaoGrande cheio={estado.curtidoPorMim} />
+          </span>
+          <strong>{abreviar(estado.curtidas)}</strong>
+        </button>
+
+        <button
+          type="button"
+          className="indicador-grande"
+          onClick={() => definirComentariosAbertos((v) => !v)}
+          aria-label="Comentários"
+        >
+          <span className="simbolo">
+            <BalaoGrande />
+          </span>
+          <strong>{abreviar(estado.comentarios)}</strong>
+        </button>
+
+        <button type="button" className="indicador-grande" onClick={partilhar} aria-label="Partilhar">
+          <span className="simbolo">
+            <SetaGrande />
+          </span>
+          <strong>{abreviar(estado.compartilhamentos)}</strong>
+        </button>
       </div>
 
       {aviso && <p className="nota">{aviso}</p>}

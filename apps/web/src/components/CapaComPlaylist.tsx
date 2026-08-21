@@ -3,7 +3,7 @@
 import { useState } from 'react'
 import type { CategoriaDeAudio, Faixa, ItemIndice, Projeto } from '@/lib/api'
 import { abreviar, plural } from '@/lib/numeros'
-import { IconeOlho, IconeCoracao, IconeComentario, IconePartilhar } from './Icones'
+import { OlhoGrande, CoracaoGrande, BalaoGrande, SetaGrande } from './IconesGrandes'
 import { Playlist } from './Playlist'
 
 /**
@@ -59,13 +59,7 @@ export function CapaComPlaylist({
   return (
     <>
       <div className="card-capa sangria">
-        <span className="etiqueta-capa" aria-hidden>
-          ♪ Minha Playlist
-        </span>
-
-        <a className="selo-pv-capa" href={`/${projectSlug}/produto-vivo`}>
-          PV
-        </a>
+        
 
         {capa ? (
           // eslint-disable-next-line @next/next/no-img-element
@@ -85,32 +79,36 @@ export function CapaComPlaylist({
           {aberta ? '❚❚' : '▶'}
         </button>
 
-        <div className="trilho">
-          <span className="indicador contagem">
-            <span className="bolha">
-              <IconeOlho />
-            </span>
-            {abreviar(totais.views)}
+        
+      </div>
+
+      {/* Nada por cima da capa: imagem limpa, e os quatro indicadores
+          organizados por baixo, como nos cartões que ele aprovou. */}
+      <div className="indicadores-publicacao">
+        <span className="indicador-grande">
+          <span className="simbolo">
+            <OlhoGrande />
           </span>
-          <span className="indicador contagem">
-            <span className="bolha">
-              <IconeCoracao cheio />
-            </span>
-            {abreviar(totais.likes)}
+          <strong>{abreviar(totais.views)}</strong>
+        </span>
+        <span className="indicador-grande">
+          <span className="simbolo">
+            <CoracaoGrande cheio />
           </span>
-          <span className="indicador contagem">
-            <span className="bolha">
-              <IconeComentario />
-            </span>
-            {abreviar(totais.comments)}
+          <strong>{abreviar(totais.likes)}</strong>
+        </span>
+        <span className="indicador-grande">
+          <span className="simbolo">
+            <BalaoGrande />
           </span>
-          <span className="indicador contagem">
-            <span className="bolha">
-              <IconePartilhar />
-            </span>
-            {abreviar(totais.shares)}
+          <strong>{abreviar(totais.comments)}</strong>
+        </span>
+        <span className="indicador-grande">
+          <span className="simbolo">
+            <SetaGrande />
           </span>
-        </div>
+          <strong>{abreviar(totais.shares)}</strong>
+        </span>
       </div>
 
       <div className="filtros-linha" role="group" aria-label="O que ouvir">
