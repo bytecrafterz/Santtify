@@ -275,6 +275,7 @@ export function CabecalhoDePerfil({
 
       {comentariosAbertos && (
         <PainelDeComentarios
+          projectSlug={projectSlug}
           titulo={nome}
           comentarios={estado.lista}
           usuarioId={usuario?.id ?? null}

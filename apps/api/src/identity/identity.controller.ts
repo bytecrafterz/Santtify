@@ -58,7 +58,9 @@ class RenovarDto {
 
 class EditarPerfilDto {
   @IsOptional() @IsString() @MinLength(2) @MaxLength(80) displayName?: string
-  @IsOptional() @IsString() @MaxLength(300) bio?: string
+  /** Mil caracteres: ele quis contar a história do projeto aqui, e trezentos
+   *  não chegavam para uma frase inteira sobre o filho. */
+  @IsOptional() @IsString() @MaxLength(1000) bio?: string
   @IsOptional() @IsString() @MaxLength(80) guardianName?: string
 }
 

@@ -77,6 +77,9 @@ export interface ComentarioDaFaixa {
   parentId?: string | null
   user: { id: string; displayName: string; avatarUrl: string | null }
   _count?: { reactions: number }
+  /** Se ESTA pessoa já curtiu. Vem do servidor: sem isto o coração vinha
+   *  sempre vazio ao recarregar. */
+  curtidoPorMim?: boolean
 }
 
 /** Os quatro números próprios de uma faixa, mais o que a pessoa já fez nela. */

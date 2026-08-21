@@ -79,7 +79,7 @@ export class SocialService {
    */
   async listarComentarios(contentId: string, limite = 100, leitorId: string | null = null) {
     const escondidos = await this.bloqueadosPor(leitorId)
-    return this.prisma.comment.findMany({
+    const lista = await this.prisma.comment.findMany({
       where: {
         contentId,
         status: 'PUBLISHED',
@@ -95,6 +95,7 @@ export class SocialService {
         user: { select: { id: true, displayName: true, avatarUrl: true } },
       },
     })
+    return this.comSinalDeCurtida(lista, leitorId)
   }
 
   async comentar(
@@ -426,6 +427,22 @@ export class SocialService {
     })
   }
 
+  /**
+   * Junta a cada comentário se ESTA pessoa já o curtiu.
+   *
+   * Sem isto o coração vinha sempre vazio ao recarregar: o número estava certo,
+   * mas quem tinha curtido não se reconhecia na tela e voltava a curtir. O
+   * cliente apanhou-o em 20/08 e descreveu-o como a curtida a desaparecer —
+   * era o que parecia.
+   */
+  private async comSinalDeCurtida<T extends { id: string }>(
+    lista: T[],
+    leitorId: string | null,
+  ): Promise<(T & { curtidoPorMim: boolean })[]> {
+    const meus = new Set(await this.curtidasDe(leitorId, lista.map((c) => c.id)))
+    return lista.map((c) => ({ ...c, curtidoPorMim: meus.has(c.id) }))
+  }
+
   /** Quais destes comentários esta pessoa já curtiu. */
   async curtidasDe(userId: string | null, ids: string[]): Promise<string[]> {
     if (!userId || ids.length === 0) return []
@@ -445,6 +462,26 @@ export class SocialService {
   // As visualizações saem das visitas à página do projeto, que já eram
   // gravadas: a página inicial É o perfil anfitrião, então contar duas vezes
   // a mesma chegada seria inventar público.
+
+  /** O perfil público de qualquer pessoa, para se poder abrir a partir de um
+   *  comentário. Só o que a própria escolheu mostrar. */
+  async perfilPublico(userId: string) {
+    const pessoa = await this.prisma.user.findUnique({
+      where: { id: userId },
+      select: {
+        id: true,
+        displayName: true,
+        avatarUrl: true,
+        bio: true,
+        guardianName: true,
+        createdAt: true,
+        status: true,
+      },
+    })
+    if (!pessoa || pessoa.status !== 'ACTIVE') throw new NotFoundException('Perfil não encontrado')
+    const { status: _ignorado, ...publico } = pessoa
+    return publico
+  }
 
   async estadoDoPerfil(profileUserId: string, leitorId: string | null) {
     const pessoa = await this.prisma.user.findUnique({
@@ -540,7 +577,7 @@ export class SocialService {
 
   async listarComentariosDoPerfil(profileUserId: string, leitorId: string | null = null) {
     const escondidos = await this.bloqueadosPor(leitorId)
-    return this.prisma.comment.findMany({
+    const lista = await this.prisma.comment.findMany({
       where: {
         profileUserId,
         status: 'PUBLISHED',
@@ -550,6 +587,7 @@ export class SocialService {
       take: 50,
       select: this.selecaoDeComentario,
     })
+    return this.comSinalDeCurtida(lista, leitorId)
   }
 
   async alternarCurtidaDoPerfil(profileUserId: string, userId: string) {
@@ -736,7 +774,7 @@ export class SocialService {
 
   async listarComentariosDaFaixa(blockId: string, leitorId: string | null = null) {
     const escondidos = await this.bloqueadosPor(leitorId)
-    return this.prisma.comment.findMany({
+    const lista = await this.prisma.comment.findMany({
       where: {
         blockId,
         status: 'PUBLISHED',
@@ -746,6 +784,7 @@ export class SocialService {
       take: 50,
       select: this.selecaoDeComentario,
     })
+    return this.comSinalDeCurtida(lista, leitorId)
   }
 
   async comentarNaFaixa(

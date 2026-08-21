@@ -351,6 +351,11 @@ export class PerfisController {
     return this.social.listarComentariosDoPerfil(userId, req.usuario?.id ?? null)
   }
 
+  @Get()
+  perfil(@Param('userId') userId: string) {
+    return this.social.perfilPublico(userId)
+  }
+
   /** Quem curtiu e quem comentou, com cara e nome. */
   @Get('people')
   quemInteragiu(@Param('userId') userId: string) {

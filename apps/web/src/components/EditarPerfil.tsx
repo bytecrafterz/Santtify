@@ -114,8 +114,8 @@ export function EditarPerfil({
       <label htmlFor="perfil-descricao">Descrição</label>
       <textarea
         id="perfil-descricao"
-        maxLength={300}
-        rows={3}
+        maxLength={1000}
+        rows={5}
         value={descricao}
         onChange={(e) => definirDescricao(e.target.value)}
       />

@@ -279,6 +279,7 @@ export function CartaoDePublicacao({
 
       {comentariosAbertos && (
         <PainelDeComentarios
+          projectSlug={projectSlug}
           titulo={titulo}
           comentarios={estado.lista}
           usuarioId={usuario?.id ?? null}

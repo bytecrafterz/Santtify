@@ -1,6 +1,7 @@
 'use client'
 
 import { useState } from 'react'
+import Link from 'next/link'
 import { social, type ComentarioDaFaixa } from '@/lib/social'
 import { IconeCoracao } from './Icones'
 
@@ -21,6 +22,7 @@ const EMOJIS = ['❤️', '🙌', '🔥', '👏', '😢', '😍', '😮', '😂'
  * conversa é sobre a letra, não sobre quando alguém falou.
  */
 export function PainelDeComentarios({
+  projectSlug,
   titulo,
   comentarios,
   usuarioId,
@@ -30,6 +32,7 @@ export function PainelDeComentarios({
   aoApagar,
   aoActualizar,
 }: {
+  projectSlug: string
   titulo: string
   comentarios: ComentarioDaFaixa[]
   usuarioId: string | null
@@ -48,6 +51,11 @@ export function PainelDeComentarios({
 
   function curtidasDe(c: ComentarioDaFaixa) {
     return totais[c.id] ?? c._count?.reactions ?? 0
+  }
+
+  /** O que o servidor sabe, a não ser que a pessoa tenha mexido agora. */
+  function euCurti(c: ComentarioDaFaixa) {
+    return curtidos[c.id] ?? c.curtidoPorMim ?? false
   }
 
   async function curtir(c: ComentarioDaFaixa) {
@@ -94,25 +102,65 @@ export function PainelDeComentarios({
 
   // As respostas ficam agrupadas debaixo do comentário a que respondem: uma
   // lista plana faz perder o fio à conversa logo na terceira resposta.
+  /**
+   * Duas alturas de recuo, e nada se perde por baixo delas.
+   *
+   * Antes só se desenhavam dois níveis: uma resposta a uma resposta era
+   * gravada e nunca aparecia. O cliente respondeu três vezes, não viu nada e
+   * concluiu que o sistema recusava a mensagem — e a mensagem estava lá, só
+   * não tinha onde ser mostrada.
+   *
+   * A sugestão dele é a certa: se o recuo não pode continuar, a resposta fica
+   * ao mesmo nível, mas aparece. Recuar sem fim também não serve — ao quinto
+   * nível a conversa sai do ecrã de um telemóvel.
+   */
+  const porId = new Map(comentarios.map((c) => [c.id, c]))
+
+  function raizDe(c: ComentarioDaFaixa): string | null {
+    let actual = c
+    const vistos = new Set<string>()
+    while (actual.parentId && !vistos.has(actual.id)) {
+      vistos.add(actual.id) // um ciclo de dados corrompidos não pode pendurar a tela
+      const pai = porId.get(actual.parentId)
+      if (!pai) return actual.parentId
+      actual = pai
+    }
+    return actual.id === c.id ? null : actual.id
+  }
+
   const raiz = comentarios.filter((c) => !c.parentId)
-  const respostasDe = (id: string) => comentarios.filter((c) => c.parentId === id)
+  const respostasDe = (id: string) => comentarios.filter((c) => c.parentId && raizDe(c) === id)
 
   function Linha({ c, resposta = false }: { c: ComentarioDaFaixa; resposta?: boolean }) {
     const meu = usuarioId === c.user.id
-    const curtido = curtidos[c.id] ?? false
+    const curtido = euCurti(c)
     return (
       <li className={resposta ? 'comentario resposta' : 'comentario'} id={`comentario-${c.id}`}>
-        {c.user.avatarUrl ? (
-          // eslint-disable-next-line @next/next/no-img-element
-          <img className="avatar-comentario" src={c.user.avatarUrl} alt={c.user.displayName} />
-        ) : (
-          <span className="avatar-comentario vazio" aria-hidden>
-            {c.user.displayName.charAt(0).toUpperCase()}
-          </span>
-        )}
+        {/* Fechar o painel antes de sair: deixá-lo aberto por cima da página
+            nova é como se perde a noção de onde se está. */}
+        <Link
+          href={`/${projectSlug}/pessoa/${c.user.id}`}
+          onClick={aoFechar}
+          aria-label={`Ver o perfil de ${c.user.displayName}`}
+        >
+          {c.user.avatarUrl ? (
+            // eslint-disable-next-line @next/next/no-img-element
+            <img className="avatar-comentario" src={c.user.avatarUrl} alt={c.user.displayName} />
+          ) : (
+            <span className="avatar-comentario vazio" aria-hidden>
+              {c.user.displayName.charAt(0).toUpperCase()}
+            </span>
+          )}
+        </Link>
 
         <div className="corpo-comentario">
-          <strong>{c.user.displayName}</strong>
+          <Link
+            className="nome-de-quem-falou"
+            href={`/${projectSlug}/pessoa/${c.user.id}`}
+            onClick={aoFechar}
+          >
+            <strong>{c.user.displayName}</strong>
+          </Link>
           <p>
             {c.body}
             {c.editedAt && <small className="editado"> · editado</small>}

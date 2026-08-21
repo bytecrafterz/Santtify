@@ -3703,3 +3703,13 @@ button.letra-bloco {
   font-size: 0;
   line-height: 0;
 }
+
+/* O nome de quem comentou leva ao perfil dessa pessoa. */
+.nome-de-quem-falou {
+  color: inherit;
+  text-decoration: none;
+}
+
+.nome-de-quem-falou:hover strong {
+  text-decoration: underline;
+}
