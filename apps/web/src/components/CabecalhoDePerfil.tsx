@@ -52,6 +52,9 @@ export function CabecalhoDePerfil({
   const [comentariosAbertos, definirComentariosAbertos] = useState(false)
   const [pessoasAbertas, definirPessoasAbertas] = useState(false)
   const [aviso, definirAviso] = useState<string | null>(null)
+  /** Trava contra toque repetido: dois pedidos cruzados deixam o coração
+   *  a dizer uma coisa e o número outra. */
+  const [aCurtir, definirACurtir] = useState(false)
   const [aberto, definirAberto] = useState(false)
   const inicioDoToque = useRef<number | null>(null)
 
@@ -98,11 +101,13 @@ export function CabecalhoDePerfil({
   const descricao = anfitriao?.bio ?? 'Faça o seu descritivo pessoal'
 
   async function curtir() {
+    if (aCurtir) return
     if (!anfitriao) return
     if (!usuario) {
       definirAviso('Entre na sua conta para curtir.')
       return
     }
+    definirACurtir(true)
     try {
       const r = await social.curtirPerfil(anfitriao.id)
       definirEstado((x) => ({ ...x, curtidoPorMim: r.curtido, curtidas: r.total }))
@@ -112,10 +117,12 @@ export function CabecalhoDePerfil({
       // explica-o; a mensagem genérica transformava uma regra compreensível
       // numa avaria, e o cliente passou a achar que o botão estava partido.
       definirAviso(e instanceof ErroDeApi ? e.message : 'Não foi possível curtir agora.')
+    } finally {
+      definirACurtir(false)
+      }
     }
-  }
 
-  async function partilhar() {
+    async function partilhar() {
     if (!anfitriao) return
     const url = window.location.origin + window.location.pathname
 
@@ -255,7 +262,17 @@ export function CabecalhoDePerfil({
           <span className="simbolo">
             <CoracaoGrande cheio={estado.curtidoPorMim} />
           </span>
-          <strong>{abreviar(estado.curtidas)}</strong>
+          <strong
+            onClick={(ev) => {
+              // Tocar no NÚMERO mostra quem curtiu; tocar no coração curte.
+              // São duas intenções diferentes no mesmo sítio, e separá-las
+              // pelo alvo do toque é o que as redes sociais fazem.
+              ev.stopPropagation()
+              definirPessoasAbertas(true)
+            }}
+          >
+            {abreviar(estado.curtidas)}
+          </strong>
         </button>
 
         <button

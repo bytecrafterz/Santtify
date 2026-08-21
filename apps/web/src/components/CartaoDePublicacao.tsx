@@ -68,6 +68,9 @@ export function CartaoDePublicacao({
   const [expandido, definirExpandido] = useState(false)
   const [comentariosAbertos, definirComentariosAbertos] = useState(false)
   const [aviso, definirAviso] = useState<string | null>(null)
+  /** Trava contra toque repetido: dois pedidos cruzados deixam o coração
+   *  a dizer uma coisa e o número outra. */
+  const [aCurtir, definirACurtir] = useState(false)
   const [estado, definirEstado] = useState<EstadoDaFaixa>({
     visualizacoes: 0,
     curtidas: 0,
@@ -92,20 +95,24 @@ export function CartaoDePublicacao({
   }
 
   async function curtir() {
+    if (aCurtir) return
     if (!usuario) {
       definirAviso('Entre na sua conta para curtir.')
       return
     }
+    definirACurtir(true)
     try {
       const r = await social.curtirFaixa(bloco.id, projectId)
       definirEstado((e) => ({ ...e, curtidoPorMim: r.curtido, curtidas: r.total }))
       definirAviso(null)
     } catch {
       definirAviso('Não foi possível curtir agora.')
+    } finally {
+      definirACurtir(false)
+      }
     }
-  }
 
-  async function partilhar() {
+    async function partilhar() {
     const url = `${window.location.origin}${window.location.pathname}#faixa-${bloco.id}`
     try {
       if (navigator.share) await navigator.share({ title: titulo, url })

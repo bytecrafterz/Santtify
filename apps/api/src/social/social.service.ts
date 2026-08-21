@@ -591,9 +591,9 @@ export class SocialService {
   }
 
   async alternarCurtidaDoPerfil(profileUserId: string, userId: string) {
-    if (profileUserId === userId) {
-      throw new BadRequestException('Não dá para curtir o próprio perfil')
-    }
+    // O dono pode curtir o próprio perfil. Eu tinha-o proibido — um número que
+    // o dono sobe sozinho vale menos — e ele pediu duas vezes o contrário. É
+    // decisão de produto e é dele; fica registado que o aviso foi dado.
     const existente = await this.prisma.profileReaction.findUnique({
       where: {
         profileUserId_userId_type: { profileUserId, userId, type: ReactionType.LIKE },

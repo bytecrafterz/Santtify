@@ -70,14 +70,8 @@ export function CapaComPlaylist({
           </div>
         )}
 
-        <button
-          type="button"
-          className="botao-tocar-capa"
-          aria-label={aberta ? 'Fechar o tocador' : 'Ouvir todas as músicas'}
-          onClick={() => definirAberta((v) => !v)}
-        >
-          {aberta ? '❚❚' : '▶'}
-        </button>
+        {/* Sem botão no meio da imagem: a imagem fica limpa e quem manda
+            tocar é o player que está logo por baixo, como na Oração. */}
 
         
       </div>
@@ -131,7 +125,7 @@ export function CapaComPlaylist({
         ))}
       </div>
 
-      {aberta && faixas.length > 0 && (
+      {faixas.length > 0 && (
         <div className="tocador-embutido">
           <Playlist
             key={filtro ?? 'tudo'}
@@ -142,7 +136,7 @@ export function CapaComPlaylist({
             filtroInicial={filtro}
             mostrarFiltros={false}
             compacto
-            autoIniciar
+            autoIniciar={aberta}
           />
         </div>
       )}
