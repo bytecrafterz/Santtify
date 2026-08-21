@@ -3758,3 +3758,27 @@ button.letra-bloco {
   opacity: 0.45;
   cursor: default;
 }
+
+/* Saídas secundárias do convite de instalação. */
+.continuar-navegador.discreto {
+  color: var(--cor-texto-suave);
+  font-weight: 600;
+  font-size: 0.85rem;
+}
+
+.instrucao-iphone {
+  text-align: left;
+}
+
+.instrucao-iphone ol {
+  margin: 0.4rem 0 0.4rem 1.1rem;
+  padding: 0;
+  display: grid;
+  gap: 0.25rem;
+}
+
+.instrucao-iphone small {
+  display: block;
+  color: var(--cor-texto-suave);
+  margin-top: 0.4rem;
+}

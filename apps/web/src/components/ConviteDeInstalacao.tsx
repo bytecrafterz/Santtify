@@ -76,10 +76,25 @@ export function ConviteDeInstalacao({ projectSlug }: { projectSlug: string }) {
             {instalando ? 'A instalar...' : 'INSTALAR SANTTIFY'}
           </button>
         ) : ehIphone ? (
-          <p className="instrucao-iphone">
-            No iPhone: toque em <strong>Compartilhar</strong> <span aria-hidden>⬆</span> e depois em{' '}
-            <strong>Adicionar à Tela de Início</strong>.
-          </p>
+          <div className="instrucao-iphone">
+            <strong>Como instalar no iPhone</strong>
+            <ol>
+              <li>
+                Toque em <strong>Compartilhar</strong> <span aria-hidden>⬆</span>, na barra de baixo
+                do Safari.
+              </li>
+              <li>
+                Deslize e toque em <strong>Adicionar à Tela de Início</strong>.
+              </li>
+              <li>
+                Toque em <strong>Adicionar</strong>, no canto superior direito.
+              </li>
+            </ol>
+            <small>
+              O iPhone não deixa nenhum site instalar-se sozinho. Este é o único caminho, e é da
+              Apple, não nosso.
+            </small>
+          </div>
         ) : (
           <p className="nota">
             O seu navegador ainda não ofereceu a instalação. Pode continuar no navegador e instalar
@@ -87,7 +102,24 @@ export function ConviteDeInstalacao({ projectSlug }: { projectSlug: string }) {
           </p>
         )}
 
+        {/* Quem já tem conta tem de conseguir entrar daqui.
+            Sem esta saída, uma sessão expirada empurrava um utilizador antigo
+            para o cadastro, e ele concluía que a conta se tinha perdido — foi
+            o que aconteceu ao cliente em 21/08. Instalar nunca pode ser
+            condição para entrar. */}
+        <Link className="botao-acao largo" href={`/${projectSlug}/entrar`}>
+          JÁ TENHO UMA CONTA — ENTRAR
+        </Link>
+
         <Link className="continuar-navegador" href={`/${projectSlug}/cadastrar`}>
+          CRIAR CONTA GRÁTIS
+        </Link>
+
+        <Link className="continuar-navegador discreto" href={`/${projectSlug}/recuperar`}>
+          ESQUECI MINHA SENHA
+        </Link>
+
+        <Link className="continuar-navegador discreto" href={`/${projectSlug}`}>
           CONTINUAR NO NAVEGADOR
         </Link>
       </div>
