@@ -141,13 +141,8 @@ export function ExperienciaContinua({
           {/* Sem capa nem título repetidos aqui: a introdução do projeto já
               está em cima da página, e cada conteúdo traz a sua própria
               imagem. Repetir era ver a mesma coisa duas vezes seguidas. */}
-          <button
-            type="button"
-            className="secundario fechar-letra"
-            onClick={() => definirEscolhida(null)}
-          >
-            Fechar {aberta.content.title}
-          </button>
+          {/* Sem botão de fechar: a letra faz parte da página e não é uma janela
+                por cima dela. Quem quiser outra letra toca noutra. */}
           <BlocosDeConteudo
             blocos={aberta.content.blocks}
             projectId={projectId}

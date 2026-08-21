@@ -141,6 +141,7 @@ export function CapaComPlaylist({
             faixas={faixas}
             filtroInicial={filtro}
             mostrarFiltros={false}
+            compacto
             autoIniciar
           />
         </div>

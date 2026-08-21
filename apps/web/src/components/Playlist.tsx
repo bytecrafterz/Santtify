@@ -38,6 +38,7 @@ export function Playlist({
   filtroInicial = null,
   mostrarFiltros = true,
   autoIniciar = false,
+  compacto = false,
 }: {
   projectId: string
   projectSlug: string
@@ -53,6 +54,14 @@ export function Playlist({
   mostrarFiltros?: boolean
   /** Começa a tocar sozinha: só quando alguém tocou no play da capa. */
   autoIniciar?: boolean
+  /**
+   * Embutida por baixo de uma capa que já está à vista.
+   *
+   * Nesse caso não desenha arte nenhuma: a imagem já está ali em cima, e
+   * repeti-la faz aparecer uma segunda fotografia a meio da página quando a
+   * pessoa carrega em tocar — foi o que o cliente viu em 21/08.
+   */
+  compacto?: boolean
 }) {
   const [filtro, definirFiltro] = useState<string | null>(filtroInicial)
   const audio = useRef<HTMLAudioElement>(null)
@@ -201,7 +210,7 @@ export function Playlist({
             cartão grande com "Tocando agora" saiu a pedido dele em 20/08: era
             uma moldura à volta do que interessa, e o que interessa é a
             imagem. */}
-        {faixa.coverUrl && (
+        {!compacto && faixa.coverUrl && (
           // eslint-disable-next-line @next/next/no-img-element
           <img className="capa-tocador sangria" src={faixa.coverUrl} alt={faixa.title} />
         )}

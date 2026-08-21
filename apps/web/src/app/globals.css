@@ -3733,3 +3733,20 @@ button.letra-bloco {
 .rodape-comentarios {
   touch-action: auto;
 }
+
+/* Ícones e números a preto, a pedido dele (21/08): quatro cores fortes lado
+   a lado tiravam o contraste aos números, que são o que interessa ler. */
+.indicadores-publicacao .indicador-grande {
+  color: #101114;
+}
+
+/* O coração só ganha cor quando está marcado. Aí a cor diz algo. */
+.indicadores-publicacao .indicador-grande.activo,
+.indicadores-publicacao .indicador-grande.coracao.activo {
+  color: #ef4444;
+}
+
+.indicadores-publicacao .indicador-grande:disabled {
+  opacity: 0.45;
+  cursor: default;
+}

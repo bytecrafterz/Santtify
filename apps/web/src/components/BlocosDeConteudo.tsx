@@ -23,7 +23,20 @@ export function BlocosDeConteudo({
   contentId: string
   projectSlug: string
 }) {
-  if (blocos.length === 0) {
+  /**
+   * Blocos por preencher não aparecem a quem visita.
+   *
+   * "Texto ainda não cadastrado" é um recado para o administrador, e estava a
+   * ser mostrado às famílias no meio do conteúdo. Quem chega não precisa de
+   * saber o que falta lá dentro — precisa de ver o que já existe.
+   */
+  const visiveis = blocos.filter((b) => {
+    if (b.type === 'TEXT' || b.type === 'RICH_TEXT') return Boolean(b.text?.trim())
+    if (b.type === 'AUDIO' || b.type === 'VIDEO' || b.type === 'IMAGE') return Boolean(b.asset?.url)
+    return true
+  })
+
+  if (visiveis.length === 0) {
     return (
       <div className="bloco">
         <p className="bloco-vazio">Este conteúdo ainda não foi preenchido.</p>

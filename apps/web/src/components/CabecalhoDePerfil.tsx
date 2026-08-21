@@ -4,6 +4,7 @@ import Link from 'next/link'
 import { useEffect, useRef, useState } from 'react'
 import type { PerfilAnfitriao } from '@/lib/api'
 import { social, type EstadoDaFaixa } from '@/lib/social'
+import { ErroDeApi } from '@/lib/auth'
 import { PainelDeComentarios } from './PainelDeComentarios'
 import { PainelDePessoas } from './PainelDePessoas'
 import { rastrear } from '@/lib/track'
@@ -106,8 +107,11 @@ export function CabecalhoDePerfil({
       const r = await social.curtirPerfil(anfitriao.id)
       definirEstado((x) => ({ ...x, curtidoPorMim: r.curtido, curtidas: r.total }))
       definirAviso(null)
-    } catch {
-      definirAviso('Não foi possível curtir agora.')
+    } catch (e) {
+      // Dizer o motivo verdadeiro. O servidor recusa curtir o próprio perfil e
+      // explica-o; a mensagem genérica transformava uma regra compreensível
+      // numa avaria, e o cliente passou a achar que o botão estava partido.
+      definirAviso(e instanceof ErroDeApi ? e.message : 'Não foi possível curtir agora.')
     }
   }
 
@@ -243,6 +247,8 @@ export function CabecalhoDePerfil({
           type="button"
           className={estado.curtidoPorMim ? 'indicador-grande activo' : 'indicador-grande'}
           onClick={curtir}
+          disabled={souOAnfitriao}
+          title={souOAnfitriao ? 'Este é o seu perfil' : 'Curtir'}
           aria-pressed={estado.curtidoPorMim}
           aria-label="Curtir"
         >
