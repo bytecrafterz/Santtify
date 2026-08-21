@@ -56,7 +56,7 @@ export default async function PaginaDePessoa({
             <span>Sem fotografia</span>
           </div>
         )}
-        <div className="faixa-nome">
+        <div className="nome-no-retrato">
           <h1 title={pessoa.displayName}>{pessoa.displayName}</h1>
         </div>
       </div>

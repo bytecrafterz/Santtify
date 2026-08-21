@@ -171,7 +171,7 @@ export function CabecalhoDePerfil({
         </Link>
 
         {/* Só nome e selo sobre a foto, numa linha, com sombra própria. */}
-        <div className="faixa-nome">
+        <div className="nome-no-retrato">
           <h1 title={nome}>
             {nome}
             {anfitriao && (

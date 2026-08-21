@@ -2578,10 +2578,15 @@ img.avatar {
   z-index: 2;
 }
 
-/* Nome sobre a fotografia: uma linha só, com reticências se não couber.
-   É o único texto que fica por cima, e por isso pode ter sombra sem
-   escurecer o retrato inteiro. */
-.faixa-nome {
+/* Nome sobre a fotografia do perfil: uma linha só, com reticências se não
+   couber. É o único texto que fica por cima, e por isso pode ter sombra sem
+   escurecer o retrato inteiro.
+
+   O nome desta classe era `.faixa-nome` e chocava com a lista da playlist,
+   que já usava esse nome desde o início. A minha regra, posicionada em
+   absoluto, arrancava os nomes das faixas do sítio e atirava-os para cima do
+   botão de criar perfil. Nada acusava erro: só se via olhando. */
+.nome-no-retrato {
   position: absolute;
   left: 0.9rem;
   right: 5rem;
@@ -2589,7 +2594,7 @@ img.avatar {
   z-index: 1;
 }
 
-.faixa-nome h1 {
+.nome-no-retrato h1 {
   margin: 0;
   font-size: 1.15rem;
   color: #fff;
@@ -3608,7 +3613,10 @@ button.letra-bloco {
 .indicadores-publicacao strong {
   font-size: 0.95rem;
   font-weight: 800;
-  color: #101114;
+  /* A cor do texto do tema, e não um preto fixo. Com preto fixo os ícones e
+     os números desapareciam no modo escuro do telemóvel — foi o que o cliente
+     viu em 21/08 e descreveu como "sumiram os ícones". */
+  color: var(--cor-texto);
 }
 
 .indicador-grande.vista {
@@ -3737,7 +3745,7 @@ button.letra-bloco {
 /* Ícones e números a preto, a pedido dele (21/08): quatro cores fortes lado
    a lado tiravam o contraste aos números, que são o que interessa ler. */
 .indicadores-publicacao .indicador-grande {
-  color: #101114;
+  color: var(--cor-texto);
 }
 
 /* O coração só ganha cor quando está marcado. Aí a cor diz algo. */
