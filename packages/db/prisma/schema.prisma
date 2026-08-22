@@ -95,7 +95,19 @@ enum ProjectStatus {
 /// Unidade genérica de conteúdo. No alfabeto, cada letra é um Content.
 /// Num próximo projeto, pode ser um produto, um vídeo, um episódio.
 model Content {
-  id        String  @id @default(uuid()) @db.Uuid
+  id String @id @default(uuid()) @db.Uuid
+
+  /// A LETRA a que este conteúdo pertence: "A", "B"... ou nulo.
+  ///
+  /// A grade era montada pela posição na lista, e bastou o cliente criar uma
+  /// Introdução para tudo escorregar uma casa: a introdução passou a ocupar o
+  /// lugar do A, e o A o lugar do B. Posição é ordem de exibição, não
+  /// identidade — e a ordem muda sempre que alguém publica.
+  ///
+  /// Nulo de propósito para o que não é letra: a introdução do projeto existe,
+  /// aparece, e não conta para as 26.
+  letra String? @db.Char(1)
+
   projectId String  @db.Uuid
   project   Project @relation(fields: [projectId], references: [id], onDelete: Cascade)
   slug      String

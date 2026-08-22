@@ -70,6 +70,8 @@ export interface ItemIndice {
   subtitle: string | null
   coverUrl: string | null
   position: number
+  /** A letra a que pertence: "A".."Z", ou nulo quando não é uma letra. */
+  letra: string | null
   /** Falso enquanto a letra ainda não tem conteúdo: aparece trancada na grade. */
   publicado: boolean
   stats: { views: number; likes: number; comments: number; shares: number } | null

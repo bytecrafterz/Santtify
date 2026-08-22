@@ -68,6 +68,7 @@ export class ContentService {
         subtitle: true,
         coverUrl: true,
         position: true,
+        letra: true,
         status: true,
         stats: { select: { views: true, likes: true, comments: true, shares: true } },
       },
@@ -80,6 +81,7 @@ export class ContentService {
         slug: c.slug,
         title: c.title,
         position: c.position,
+        letra: c.letra,
         publicado,
         subtitle: publicado ? c.subtitle : null,
         coverUrl: publicado ? c.coverUrl : null,
@@ -132,9 +134,16 @@ export class ContentService {
       project,
       anfitriao,
       contents,
+      /**
+       * A contagem é das LETRAS, e só delas.
+       *
+       * Antes contava tudo o que existisse na lista, e por isso a introdução
+       * do projeto entrava nas 26 e empurrava o alfabeto uma casa. O que não
+       * tem letra existe, aparece, e não conta.
+       */
       progresso: {
-        liberadas: contents.filter((c) => c.publicado).length,
-        total: contents.length,
+        liberadas: contents.filter((c) => c.publicado && c.letra).length,
+        total: 26,
       },
       comunidade: { perfis, impressoes },
     }

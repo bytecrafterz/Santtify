@@ -21,6 +21,9 @@ import { rastrear } from '@/lib/track'
  * depois disso. Carregar as 26 de uma vez seria dezenas de áudios e artes que
  * quase ninguém vai ouvir — no telemóvel da mãe isso é dinheiro de dados dela.
  */
+/** As 26 casas, sempre as mesmas e sempre nesta ordem. */
+const ALFABETO = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ'.split('')
+
 export function ExperienciaContinua({
   projectSlug,
   projectId,
@@ -92,16 +95,20 @@ export function ExperienciaContinua({
       <p className="subtitulo">Aprenda com fé, saúde, música e diversão</p>
 
       <div className="grade-letras">
-        {contents.map((c) => {
-          const letra = c.title.replace(/^Letra\s+/i, '').trim().charAt(0).toUpperCase()
+        {ALFABETO.map((letra) => {
+          /**
+           * A grade tem sempre 26 casas, uma por letra, e cada conteúdo entra
+           * na casa da SUA letra.
+           *
+           * Antes era a lista por ordem de posição, e por isso bastou existir
+           * uma introdução para o A cair no lugar do B e tudo escorregar. A
+           * casa do A é do A mesmo que nada esteja publicado nela.
+           */
+          const dela = contents.find((c) => c.letra === letra && c.publicado)
 
-          if (!c.publicado) {
+          if (!dela) {
             return (
-              <div
-                className="letra-bloco trancada"
-                key={c.id}
-                aria-label={`${c.title}, ainda bloqueada`}
-              >
+              <div className="letra-bloco trancada" key={letra} aria-label={`Letra ${letra}, ainda bloqueada`}>
                 {letra}
                 <span className="cadeado" aria-hidden>
                   🔒
@@ -113,16 +120,14 @@ export function ExperienciaContinua({
           return (
             <button
               type="button"
-              className={escolhida === c.slug ? 'letra-bloco escolhida' : 'letra-bloco'}
-              key={c.id}
-              onClick={() => escolher(c)}
-              aria-pressed={escolhida === c.slug}
+              className={escolhida === dela.slug ? 'letra-bloco escolhida' : 'letra-bloco'}
+              key={letra}
+              onClick={() => escolher(dela)}
+              aria-pressed={escolhida === dela.slug}
             >
-              {c.coverUrl ? (
-                // Só a capa, sem legenda por cima: a arte da letra já traz o
-                // nome dela desenhado, e a legenda ficava a tapar o desenho.
+              {dela.coverUrl ? (
                 // eslint-disable-next-line @next/next/no-img-element
-                <img src={c.coverUrl} alt={c.title} />
+                <img src={dela.coverUrl} alt={dela.title} />
               ) : (
                 letra
               )}
