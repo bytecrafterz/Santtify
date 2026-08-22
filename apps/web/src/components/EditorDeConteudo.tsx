@@ -207,7 +207,7 @@ function MaterialGratis({
         {enviando ? 'Enviando...' : content.freeFileUrl ? 'Trocar PDF' : 'Enviar PDF'}
         <input
           type="file"
-          accept="application/pdf"
+          accept="application/pdf,image/*,.pdf,.jpg,.jpeg,.png,.heic,.webp"
           hidden
           disabled={enviando}
           onChange={(e) => enviar(e.target.files?.[0])}
@@ -283,7 +283,7 @@ function Capa({ content, aoMudar }: { content: DetalheAdmin['content']; aoMudar:
         {enviando ? 'Enviando...' : content.coverUrl ? 'Trocar imagem' : 'Enviar imagem'}
         <input
           type="file"
-          accept="image/*"
+          accept="image/*,.jpg,.jpeg,.png,.heic,.webp"
           hidden
           disabled={enviando}
           onChange={(e) => enviar(e.target.files?.[0])}
@@ -350,7 +350,7 @@ function ArteDaFaixa({ bloco, aoMudar }: { bloco: BlocoAdmin; aoMudar: () => Pro
         {enviando ? 'Enviando...' : bloco.imageAsset?.url ? 'Trocar arte' : 'Enviar arte da faixa'}
         <input
           type="file"
-          accept="image/*"
+          accept="image/*,.jpg,.jpeg,.png,.heic,.webp"
           hidden
           disabled={enviando}
           onChange={(e) => enviar(e.target.files?.[0])}
@@ -558,8 +558,15 @@ function EditorDeBloco({
           <label className="enviar-arquivo">
             <input
               type="file"
+              /* As extensões vão à letra além do tipo geral. No iPhone, um ficheiro
+                 descarregado para Ficheiros aparece a cinzento se o campo só pedir
+                 `audio/*`: o sistema não lhe reconhece o tipo e não deixa escolher. */
               accept={
-                bloco.type === 'IMAGE' ? 'image/*' : bloco.type === 'VIDEO' ? 'video/*' : 'audio/*'
+                bloco.type === 'IMAGE'
+                  ? 'image/*,.jpg,.jpeg,.png,.heic,.webp'
+                  : bloco.type === 'VIDEO'
+                    ? 'video/*,.mp4,.mov,.m4v'
+                    : 'audio/*,.mp3,.m4a,.aac,.wav,.ogg'
               }
               onChange={enviar}
               disabled={enviando}

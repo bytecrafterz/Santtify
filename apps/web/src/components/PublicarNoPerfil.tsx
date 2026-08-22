@@ -128,7 +128,7 @@ export function PublicarNoPerfil({
       <input
         ref={seletor}
         type="file"
-        accept="image/*"
+        accept="image/*,.jpg,.jpeg,.png,.heic,.webp"
         hidden
         onChange={(e) => escolher(e.target.files?.[0])}
       />

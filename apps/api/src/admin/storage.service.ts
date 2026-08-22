@@ -179,7 +179,35 @@ export class StorageService {
     } as Express.Multer.File)
   }
 
+  /**
+   * Descobre o tipo pela EXTENSÃO quando o aparelho não o declara.
+   *
+   * O iPhone, ao escolher um ficheiro em Ficheiros em vez de na galeria,
+   * manda-o muitas vezes como `application/octet-stream` — quer dizer apenas
+   * "uns bytes", não é um tipo. O servidor recusava, e do lado dele parecia
+   * que o áudio não era aceite. Eu próprio bati nisto ao enviar um mp3 por
+   * linha de comando.
+   *
+   * O nome do ficheiro é o que sobra, e chega: só se aceita se a extensão for
+   * uma das que já estavam na lista.
+   */
+  private tipoPelaExtensao(nome: string): string | null {
+    const ext = extname(this.nomeLegivel(nome)).toLowerCase()
+    if (!ext) return null
+    for (const [mime, dados] of Object.entries(PERMITIDOS)) {
+      if (dados.exts.includes(ext)) return mime
+    }
+    return null
+  }
+
   async salvar(arquivo: Express.Multer.File): Promise<ArquivoSalvo> {
+    const generico =
+      arquivo.mimetype === 'application/octet-stream' || !arquivo.mimetype
+    if (generico) {
+      const adivinhado = this.tipoPelaExtensao(arquivo.originalname)
+      if (adivinhado) arquivo = { ...arquivo, mimetype: adivinhado } as Express.Multer.File
+    }
+
     const permitido = PERMITIDOS[arquivo.mimetype]
     if (!permitido) {
       throw new BadRequestException(

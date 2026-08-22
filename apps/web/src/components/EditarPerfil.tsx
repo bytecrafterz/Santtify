@@ -97,7 +97,7 @@ export function EditarPerfil({
       <input
         id="perfil-foto"
         type="file"
-        accept="image/*"
+        accept="image/*,.jpg,.jpeg,.png,.heic,.webp"
         onChange={(e) => escolherFoto(e.target.files?.[0] ?? null)}
       />
 

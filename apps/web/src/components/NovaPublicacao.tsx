@@ -167,7 +167,7 @@ export function NovaPublicacao({
               🖼 Escolher das Fotos
               <input
                 type="file"
-                accept="image/*"
+                accept="image/*,.jpg,.jpeg,.png,.heic,.webp"
                 hidden
                 onChange={(e) => escolherImagem(e.target.files?.[0] ?? null)}
               />
@@ -190,7 +190,7 @@ export function NovaPublicacao({
           🎵 {audio ? audio.name : 'Escolher ficheiro'}
           <input
             type="file"
-            accept="audio/*"
+            accept="audio/*,.mp3,.m4a,.aac,.wav,.ogg"
             hidden
             onChange={(e) => definirAudio(e.target.files?.[0] ?? null)}
           />
