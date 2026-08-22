@@ -75,7 +75,7 @@ body {
   font-family:
     system-ui,
     -apple-system,
-    'Segoe UI',
+    "Segoe UI",
     Roboto,
     sans-serif;
   line-height: 1.6;
@@ -141,7 +141,9 @@ h1 {
   color: var(--cor-texto);
   font-size: 34px;
   font-weight: 700;
-  transition: transform 0.15s ease, border-color 0.15s ease;
+  transition:
+    transform 0.15s ease,
+    border-color 0.15s ease;
 }
 
 .cartao:hover,
@@ -362,7 +364,7 @@ h1 {
   font-size: 13px;
 }
 
-.formulario button[type='submit'],
+.formulario button[type="submit"],
 .acoes-perfil button {
   font-size: 16px;
   font-weight: 700;
@@ -735,7 +737,7 @@ h3 {
   position: relative;
 }
 
-.enviar-arquivo input[type='file'] {
+.enviar-arquivo input[type="file"] {
   position: absolute;
   inset: 0;
   opacity: 0;
@@ -1989,7 +1991,11 @@ img.avatar {
   position: absolute;
   inset: auto 0 0 0;
   padding: 2.5rem 1rem 1rem;
-  background: linear-gradient(to top, rgba(10, 12, 18, 0.82), rgba(10, 12, 18, 0));
+  background: linear-gradient(
+    to top,
+    rgba(10, 12, 18, 0.82),
+    rgba(10, 12, 18, 0)
+  );
   color: #fff;
 }
 
@@ -2269,7 +2275,11 @@ img.avatar {
   position: absolute;
   inset: auto 0 0 0;
   padding: 2.5rem 1rem 1rem;
-  background: linear-gradient(to top, rgba(10, 12, 18, 0.85), rgba(10, 12, 18, 0));
+  background: linear-gradient(
+    to top,
+    rgba(10, 12, 18, 0.85),
+    rgba(10, 12, 18, 0)
+  );
   color: #fff;
   display: flex;
   align-items: flex-end;
@@ -3042,7 +3052,7 @@ button.letra-bloco {
   color: var(--cor-texto);
 }
 
-.escrever-comentario button[type='submit'] {
+.escrever-comentario button[type="submit"] {
   border: none;
   background: var(--cor-primaria);
   color: #fff;
@@ -3054,7 +3064,7 @@ button.letra-bloco {
   flex: 0 0 auto;
 }
 
-.escrever-comentario button[type='submit']:disabled {
+.escrever-comentario button[type="submit"]:disabled {
   opacity: 0.45;
 }
 
@@ -3149,8 +3159,8 @@ button.letra-bloco {
   font-weight: 600;
 }
 
-.publicacao-nova input[type='text'],
-.publicacao-nova input[type='number'],
+.publicacao-nova input[type="text"],
+.publicacao-nova input[type="number"],
 .publicacao-nova textarea {
   width: 100%;
   border: 1px solid var(--cor-borda);
@@ -3360,95 +3370,259 @@ button.letra-bloco {
   margin: 0;
 }
 
-/* ── Convite para instalar (20/08) ───────────────────────────────────
-   Duas etapas à vista: instalar uma aplicação a meio de um cadastro
-   parece um desvio; numerado, parece o primeiro passo de dois. */
-.convite-instalar {
-  display: grid;
-  gap: 1rem;
+/* ── A tela de entrada e a folha de instalação (mockup de 22/08) ─────
+   Ele mandou o desenho do Android e escreveu "quero exatamente este
+   design": a instalação por cima, o cadastro por baixo, e depois de
+   instalar a folha desaparece e o cadastro continua visível, sem sair
+   da página.
+
+   Por isso é uma FOLHA SOBREPOSTA e não outra tela, que era o que
+   estava aqui antes. Mudar de tela perde o que a pessoa estava a
+   fazer, e obriga-a a voltar por onde veio. A folha sobe, faz o seu
+   papel, e desce deixando o formulário exactamente onde estava.
+   ─────────────────────────────────────────────────────────────────── */
+.tela-boas-vindas {
+  position: relative;
+  min-height: 100dvh;
+  background: var(--cor-fundo);
+  padding: 2rem 1.15rem calc(2.5rem + env(safe-area-inset-bottom));
+  overflow: hidden;
 }
 
-.passos {
-  list-style: none;
-  display: flex;
-  align-items: center;
-  gap: 0.75rem;
+.decoracao-pastel {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  z-index: 0;
+  pointer-events: none;
+}
+
+/* No escuro as manchas pastel ficariam a gritar sobre o fundo quase
+   preto. Não mudo as cores — baixo a presença. */
+@media (prefers-color-scheme: dark) {
+  .decoracao-pastel {
+    opacity: 0.3;
+  }
+}
+
+.boas-vindas-conteudo {
+  position: relative;
+  z-index: 1;
+  width: 100%;
+  max-width: 420px;
+  margin: 0 auto;
+  display: grid;
+  gap: 0.9rem;
+  justify-items: center;
+  text-align: center;
+}
+
+.marca-boas-vindas {
+  width: 200px;
+  max-width: 62%;
+  height: auto;
+}
+
+.tela-boas-vindas h1 {
   margin: 0;
-  padding: 0;
+  font-size: 1.22rem;
+  letter-spacing: 0.02em;
+}
+
+/* A palavra em vermelho, como no desenho. Vermelho aqui é a marca, e
+   não o alerta — é a única excepção, e é dele. */
+.realce {
+  color: #d64545;
+}
+
+.tela-boas-vindas .subtitulo {
+  margin: 0;
+  color: var(--cor-texto-suave);
+  font-size: 0.92rem;
+}
+
+.tela-boas-vindas .formulario {
+  width: 100%;
+  text-align: left;
+}
+
+.saidas-entrada {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  align-items: center;
+  gap: 0.5rem;
+  margin: 0;
   font-size: 0.85rem;
   color: var(--cor-texto-suave);
 }
 
-.passos .passo {
+.saidas-entrada a {
+  color: var(--cor-texto-suave);
+  font-weight: 600;
+}
+
+/* ── A folha ─────────────────────────────────────────────────────── */
+.folha-instalar {
+  position: fixed;
+  inset: 0;
+  z-index: 60;
+  display: grid;
+  align-items: end;
+  pointer-events: none;
+}
+
+.folha-sombra {
+  position: absolute;
+  inset: 0;
+  background: rgba(15, 18, 25, 0.45);
+  opacity: 0;
+  transition: opacity 0.28s ease;
+}
+
+.folha-instalar.aberta .folha-sombra {
+  opacity: 1;
+}
+
+.folha-corpo {
+  position: relative;
+  pointer-events: auto;
+  width: 100%;
+  max-width: 520px;
+  margin: 0 auto;
+  overflow: hidden;
+  background: var(--cor-superficie);
+  border-radius: 26px 26px 0 0;
+  padding: 0.7rem 1.15rem calc(1.4rem + env(safe-area-inset-bottom));
+  box-shadow: 0 -12px 40px rgba(15, 18, 25, 0.22);
+  transform: translateY(100%);
+  transition: transform 0.34s cubic-bezier(0.22, 0.9, 0.3, 1);
+}
+
+.folha-instalar.aberta .folha-corpo {
+  transform: translateY(0);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .folha-corpo,
+  .folha-sombra {
+    transition: none;
+  }
+}
+
+.folha-pega {
+  position: relative;
+  z-index: 1;
+  display: block;
+  width: 44px;
+  height: 4px;
+  border-radius: 99px;
+  background: var(--cor-borda);
+  margin: 0 auto 0.9rem;
+}
+
+.folha-conteudo {
+  position: relative;
+  z-index: 1;
+  display: grid;
+  gap: 0.65rem;
+  justify-items: center;
+  text-align: center;
+}
+
+.folha-marca {
+  width: 190px;
+  max-width: 60%;
+  height: auto;
+}
+
+.folha-corpo h2 {
+  margin: 0;
+  font-size: 1.05rem;
+  letter-spacing: 0.02em;
+}
+
+.folha-corpo p {
+  margin: 0;
+  color: var(--cor-texto-suave);
+  font-size: 0.92rem;
+}
+
+.botao-baixar {
+  width: 100%;
   display: flex;
   align-items: center;
-  gap: 0.4rem;
-}
-
-.passos .passo + .passo::before {
-  content: '';
-  width: 28px;
-  height: 1px;
-  background: var(--cor-borda);
-  margin-right: 0.35rem;
-}
-
-.passos .numero {
-  display: grid;
-  place-items: center;
-  width: 22px;
-  height: 22px;
-  border-radius: 50%;
-  background: var(--cor-borda);
-  color: var(--cor-texto-suave);
-  font-weight: 700;
-  font-size: 0.75rem;
-}
-
-.passos .passo.atual {
-  color: var(--cor-acao);
-  font-weight: 700;
-}
-
-.passos .passo.atual .numero {
+  justify-content: center;
+  gap: 0.55rem;
+  margin-top: 0.35rem;
+  border: 0;
+  border-radius: 14px;
+  padding: 1rem;
   background: var(--cor-acao);
   color: #fff;
+  font-weight: 800;
+  font-size: 1rem;
+  letter-spacing: 0.03em;
+  cursor: pointer;
 }
 
-.cartao-instalar {
+.botao-baixar:disabled {
+  opacity: 0.7;
+}
+
+.botao-baixar .seta {
   display: grid;
-  justify-items: center;
-  gap: 0.75rem;
-  text-align: center;
-  background: var(--cor-superficie);
-  border-radius: var(--raio-grande);
-  padding: 1.5rem 1.1rem;
-  box-shadow: var(--sombra);
+  place-items: center;
 }
 
-.icone-santtify {
-  width: 88px;
-  height: 88px;
-  border-radius: 20px;
+.folha-sair {
+  background: none;
+  border: 0;
+  padding: 0.45rem 0.6rem;
+  color: var(--cor-acao);
+  font-weight: 800;
+  font-size: 0.85rem;
+  letter-spacing: 0.04em;
+  cursor: pointer;
 }
 
-.cartao-instalar h1 {
+.folha-passos {
   margin: 0;
-  font-size: 1.2rem;
+  padding-left: 1.2rem;
+  display: grid;
+  gap: 0.5rem;
+  text-align: left;
+  font-size: 0.92rem;
+}
+
+.folha-nota {
+  font-size: 0.8rem !important;
+}
+
+/* Depois de instalar, a folha sai. Se saísse em silêncio, o
+   desaparecimento parecia avaria — esta tira diz que foi de propósito e
+   que correu bem, sem tapar o formulário. */
+.aviso-instalado {
+  position: fixed;
+  left: 50%;
+  bottom: calc(1rem + env(safe-area-inset-bottom));
+  transform: translateX(-50%);
+  z-index: 60;
+  margin: 0;
+  padding: 0.65rem 1.1rem;
+  border-radius: 999px;
+  background: var(--cor-acao);
+  color: #fff;
+  font-weight: 700;
+  font-size: 0.85rem;
+  box-shadow: var(--sombra-alta);
 }
 
 .botao-acao.largo {
   width: 100%;
   justify-content: center;
   padding: 0.9rem;
-}
-
-.instrucao-iphone {
-  background: var(--cor-primaria-suave);
-  border-radius: 12px;
-  padding: 0.75rem 0.9rem;
-  font-size: 0.9rem;
-  margin: 0;
 }
 
 .continuar-navegador {
