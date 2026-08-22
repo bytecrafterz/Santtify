@@ -75,7 +75,7 @@ body {
   font-family:
     system-ui,
     -apple-system,
-    "Segoe UI",
+    'Segoe UI',
     Roboto,
     sans-serif;
   line-height: 1.6;
@@ -364,7 +364,7 @@ h1 {
   font-size: 13px;
 }
 
-.formulario button[type="submit"],
+.formulario button[type='submit'],
 .acoes-perfil button {
   font-size: 16px;
   font-weight: 700;
@@ -737,7 +737,7 @@ h3 {
   position: relative;
 }
 
-.enviar-arquivo input[type="file"] {
+.enviar-arquivo input[type='file'] {
   position: absolute;
   inset: 0;
   opacity: 0;
@@ -1991,11 +1991,7 @@ img.avatar {
   position: absolute;
   inset: auto 0 0 0;
   padding: 2.5rem 1rem 1rem;
-  background: linear-gradient(
-    to top,
-    rgba(10, 12, 18, 0.82),
-    rgba(10, 12, 18, 0)
-  );
+  background: linear-gradient(to top, rgba(10, 12, 18, 0.82), rgba(10, 12, 18, 0));
   color: #fff;
 }
 
@@ -2275,11 +2271,7 @@ img.avatar {
   position: absolute;
   inset: auto 0 0 0;
   padding: 2.5rem 1rem 1rem;
-  background: linear-gradient(
-    to top,
-    rgba(10, 12, 18, 0.85),
-    rgba(10, 12, 18, 0)
-  );
+  background: linear-gradient(to top, rgba(10, 12, 18, 0.85), rgba(10, 12, 18, 0));
   color: #fff;
   display: flex;
   align-items: flex-end;
@@ -3052,7 +3044,7 @@ button.letra-bloco {
   color: var(--cor-texto);
 }
 
-.escrever-comentario button[type="submit"] {
+.escrever-comentario button[type='submit'] {
   border: none;
   background: var(--cor-primaria);
   color: #fff;
@@ -3064,7 +3056,7 @@ button.letra-bloco {
   flex: 0 0 auto;
 }
 
-.escrever-comentario button[type="submit"]:disabled {
+.escrever-comentario button[type='submit']:disabled {
   opacity: 0.45;
 }
 
@@ -3159,8 +3151,8 @@ button.letra-bloco {
   font-weight: 600;
 }
 
-.publicacao-nova input[type="text"],
-.publicacao-nova input[type="number"],
+.publicacao-nova input[type='text'],
+.publicacao-nova input[type='number'],
 .publicacao-nova textarea {
   width: 100%;
   border: 1px solid var(--cor-borda);
@@ -3621,6 +3613,180 @@ button.letra-bloco {
 
 .folha-nota {
   font-size: 0.8rem !important;
+}
+
+/* ── Os passos de instalação (desenho dele, 22/08) ────────────────────
+   Ele mandou o processo do iPhone em quatro cartões, dois a dois, com um
+   número verde em cada um e um desenho do ecrã por cima da legenda.
+
+   Os desenhos são feitos com caixas e texto, e não são capturas. Uma
+   captura do iOS envelhece a cada versão e traz o telemóvel dele dentro
+   — hora, bateria, operadora. O que a pessoa precisa de reconhecer é a
+   FORMA da coisa, e essa não muda quando a Apple muda o cinzento. */
+.folha-corpo.alta {
+  max-height: 92dvh;
+  overflow-y: auto;
+}
+
+.realce-verde {
+  color: var(--cor-acao);
+}
+
+.folha-conta-passos {
+  font-weight: 700;
+  color: var(--cor-texto) !important;
+}
+
+.passos-instalar {
+  list-style: none;
+  margin: 0.2rem 0 0;
+  padding: 0;
+  width: 100%;
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 0.6rem;
+}
+
+/* Num ecrã estreito dois cartões lado a lado ficariam com quatro palavras
+   por linha. Aí passam a um por linha. */
+@media (max-width: 359px) {
+  .passos-instalar {
+    grid-template-columns: 1fr;
+  }
+}
+
+.passos-instalar li {
+  position: relative;
+  display: grid;
+  gap: 0.4rem;
+  align-content: start;
+  padding: 0.65rem 0.5rem 0.5rem;
+  border: 1px solid var(--cor-borda);
+  border-radius: 12px;
+  background: var(--cor-superficie);
+}
+
+.passos-instalar li p {
+  margin: 0;
+  font-size: 0.72rem;
+  line-height: 1.25;
+  text-align: center;
+  color: var(--cor-texto) !important;
+}
+
+.numero-passo {
+  position: absolute;
+  top: -9px;
+  left: -6px;
+  display: grid;
+  place-items: center;
+  width: 22px;
+  height: 22px;
+  border-radius: 50%;
+  background: var(--cor-acao);
+  color: #fff;
+  font-size: 0.75rem;
+  font-weight: 800;
+}
+
+.passos-instalar .figura {
+  display: grid;
+  gap: 0.25rem;
+  min-height: 54px;
+  align-content: center;
+  padding: 0.4rem;
+  border-radius: 8px;
+  background: var(--cor-fundo);
+  font-size: 0.62rem;
+}
+
+/* 1 — a barra do Safari, com o símbolo de partilhar dentro de um círculo. */
+.figura.barra-safari {
+  grid-template-columns: auto auto 1fr auto;
+  align-items: center;
+  gap: 0.3rem;
+}
+
+.figura.barra-safari .aa {
+  font-weight: 700;
+  font-size: 0.55rem;
+}
+
+.figura.barra-safari .endereco {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.figura.barra-safari .alvo-partilhar {
+  display: grid;
+  place-items: center;
+  width: 26px;
+  height: 26px;
+  border-radius: 50%;
+  border: 2px solid #f0b429;
+  color: var(--cor-texto);
+}
+
+/* 2 — o "Ver mais". */
+.figura.ver-mais {
+  justify-items: center;
+}
+
+.figura.ver-mais .pastilha {
+  display: grid;
+  place-items: center;
+  width: 30px;
+  height: 30px;
+  border-radius: 50%;
+  background: var(--cor-borda);
+  color: var(--cor-texto);
+}
+
+/* 3 e 4 — as listas e a caixa de confirmação. */
+.figura.menu-ios .linha,
+.figura.caixa-adicionar .linha-app {
+  display: flex;
+  align-items: center;
+  gap: 0.3rem;
+  padding: 0.22rem 0.3rem;
+  border-radius: 5px;
+}
+
+.figura.menu-ios .linha.destacada {
+  background: var(--cor-borda);
+  font-weight: 700;
+}
+
+.figura.caixa-adicionar {
+  gap: 0.3rem;
+}
+
+.figura.caixa-adicionar .topo {
+  display: flex;
+  align-items: center;
+  gap: 0.3rem;
+}
+
+.figura.caixa-adicionar .titulo {
+  flex: 1;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.figura.caixa-adicionar .botao {
+  padding: 0.1rem 0.35rem;
+  border-radius: 99px;
+  background: #3b7dd8;
+  color: #fff;
+  font-weight: 700;
+}
+
+.figura.caixa-adicionar .linha-app img {
+  width: 16px;
+  height: 16px;
+  border-radius: 4px;
 }
 
 /* Depois de instalar, a folha sai. Se saísse em silêncio, o

@@ -4,30 +4,38 @@ import { useCallback, useEffect, useRef, useState } from 'react'
 import { DecoracaoPastel } from '@/components/DecoracaoPastel'
 
 /**
- * A folha de instalação, sobre a tela de entrada — o desenho que ele mandou
- * em 22/08 e sobre o qual escreveu "quero exatamente este design".
+ * A folha de instalação, sobre a tela de entrada — os dois desenhos que ele
+ * mandou em 22/08, o do Android e o do iPhone.
  *
- * A regra que ele deu é toda sobre NÃO SAIR DA PÁGINA: a instalação aparece
- * por cima, o cadastro fica por baixo, e depois de instalar a folha desaparece
- * e o cadastro continua ali. Por isso isto é uma folha sobreposta e não outra
- * tela: quem instala não perde o que estava a fazer, e quem não quer instalar
- * afasta-a e continua.
+ * A regra que ele deu é a mesma nos dois: NÃO SAIR DA PÁGINA. A instalação
+ * aparece por cima, o cadastro fica por baixo, e quando a instalação termina a
+ * folha desaparece e o cadastro continua ali. Por isso isto é uma folha
+ * sobreposta e não outra tela: quem instala não perde o que estava a fazer, e
+ * quem não quer instalar afasta-a e continua.
  *
- * SOBRE O BOTÃO VERDE. Ele só abre a caixa do Android quando o navegador nos
- * avisou antes que a instalação é possível (`beforeinstallprompt`), e esse
- * aviso não vem sempre: não vem no iPhone, não vem se a aplicação já estiver
- * instalada, e no Android pode demorar. A tentação era esconder o botão nesses
- * casos. Não escondo: um botão que aparece e desaparece obriga a pessoa a
- * adivinhar. O botão está sempre, e quando não há caixa do Android para abrir
- * ele abre, aqui dentro, o caminho manual daquele telemóvel. Nunca é um botão
- * morto — foi exactamente isso que já nos custou uma queixa neste projecto.
+ * OS DOIS TELEMÓVEIS NÃO INSTALAM DA MESMA MANEIRA, e é essa a razão de haver
+ * dois ecrãs aqui em vez de um botão só.
+ *
+ * O Android avisa o site de que a instalação é possível (`beforeinstallprompt`)
+ * e deixa-nos abrir a caixa dele — ali há mesmo um botão que instala.
+ *
+ * O iPhone nunca avisa nada e não deixa nenhum site iniciar a instalação. Lá o
+ * caminho é o menu de partilha do Safari, e a única coisa honesta é mostrar
+ * onde tocar. Foi o que ele desenhou: quatro passos e um "JÁ BAIXEI" no fim,
+ * porque só a pessoa sabe se chegou ao fim — o site não tem como saber.
+ *
+ * O botão verde nunca desaparece. O aviso do Android não vem sempre: não vem
+ * se a aplicação já estiver instalada e às vezes demora. A tentação era
+ * escondê-lo nesses casos, mas um botão que aparece e desaparece obriga a
+ * adivinhar, e adivinhar num botão já nos custou uma queixa neste projecto.
+ * Quando não há caixa para abrir, ele abre aqui dentro o caminho manual.
  */
 type Aviso = Event & {
   prompt: () => Promise<void>
   userChoice: Promise<{ outcome: 'accepted' | 'dismissed' }>
 }
 
-type Estado = 'convite' | 'instrucoes' | 'fechada' | 'instalado'
+type Estado = 'convite' | 'passos' | 'fechada' | 'instalado'
 
 const CHAVE = 'pv_folha_instalar_fechada'
 
@@ -40,31 +48,27 @@ export function FolhaDeInstalacao() {
 
   useEffect(() => {
     const ua = window.navigator.userAgent
-    definirEhIphone(/iPad|iPhone|iPod/.test(ua) && !('MSStream' in window))
+    const iphone = /iPad|iPhone|iPod/.test(ua) && !('MSStream' in window)
+    definirEhIphone(iphone)
 
-    // Já a correr como aplicação instalada: convidar a instalar outra vez seria
-    // pedir a alguém que já entrou que abra a porta.
     const instalada =
       window.matchMedia('(display-mode: standalone)').matches ||
       ('standalone' in window.navigator && Boolean(window.navigator.standalone))
 
     if (instalada) definirEstado('fechada')
     else if (window.sessionStorage.getItem(CHAVE) === 'sim') definirEstado('fechada')
+    // No iPhone não há caixa nenhuma para abrir, e um botão "Baixar aplicativo"
+    // que não baixa nada é pior do que não existir. Lá entra-se logo nos passos.
+    else if (iphone) definirEstado('passos')
 
-    // A folha entra a subir, e só depois de o ecrã estar pintado — se subir no
-    // mesmo instante em que a página aparece, o movimento perde-se.
     const t = window.setTimeout(() => definirPronta(true), 60)
 
     function guardar(e: Event) {
-      // Sem o preventDefault o Android mostra a sua própria barrinha em baixo e
-      // depois esquece-a. Guardando o aviso, é este botão que manda.
       e.preventDefault()
       aviso.current = e as Aviso
     }
 
     function instalou() {
-      // Foi ao fim: a folha sai e o formulário fica, sem navegar. É a frase
-      // dele — "a tela de cima desaparece e o cadastro continua visível".
       definirEstado('instalado')
       window.sessionStorage.setItem(CHAVE, 'sim')
     }
@@ -83,20 +87,21 @@ export function FolhaDeInstalacao() {
     window.sessionStorage.setItem(CHAVE, 'sim')
   }, [])
 
+  const jaBaixei = useCallback(() => {
+    definirEstado('instalado')
+    window.sessionStorage.setItem(CHAVE, 'sim')
+  }, [])
+
   async function baixar() {
     const guardado = aviso.current
     if (!guardado) {
-      // Nada para abrir neste telemóvel. Em vez de não acontecer nada, mostro
-      // o caminho que existe mesmo.
-      definirEstado('instrucoes')
+      definirEstado('passos')
       return
     }
     definirAbrindo(true)
     try {
       await guardado.prompt()
       const escolha = await guardado.userChoice.catch(() => null)
-      // O aviso só serve uma vez. Se ele recusou, deixo a folha aberta: pode
-      // querer tentar outra vez, e aí já não há caixa — passa às instruções.
       aviso.current = null
       if (escolha?.outcome === 'accepted') {
         // O `appinstalled` costuma chegar sozinho, mas em alguns Android chega
@@ -114,7 +119,7 @@ export function FolhaDeInstalacao() {
   if (estado === 'instalado') {
     return (
       <p className="aviso-instalado" role="status">
-        <span aria-hidden>✓</span> Aplicativo instalado. Agora é só entrar.
+        <span aria-hidden>✓</span> Pronto. Agora é só entrar.
       </p>
     )
   }
@@ -126,7 +131,7 @@ export function FolhaDeInstalacao() {
           desapareceu. Fecha-se pelo texto verde, que diz o que faz. */}
       <div className="folha-sombra" aria-hidden />
 
-      <section className="folha-corpo">
+      <section className={`folha-corpo ${estado === 'passos' ? 'alta' : ''}`}>
         <DecoracaoPastel variante="folha" />
         <span className="folha-pega" aria-hidden />
 
@@ -153,40 +158,21 @@ export function FolhaDeInstalacao() {
             </>
           ) : (
             <>
-              <h2>COMO INSTALAR NESTE TELEFONE</h2>
-              {ehIphone ? (
-                <ol className="folha-passos">
-                  <li>
-                    Toque em <strong>Compartilhar</strong> <span aria-hidden>⬆</span>, na barra de
-                    baixo do Safari.
-                  </li>
-                  <li>
-                    Deslize e toque em <strong>Adicionar à Tela de Início</strong>.
-                  </li>
-                  <li>
-                    Toque em <strong>Adicionar</strong>, no canto superior direito.
-                  </li>
-                </ol>
-              ) : (
-                <ol className="folha-passos">
-                  <li>
-                    Toque nos <strong>três pontinhos</strong> <span aria-hidden>⋮</span>, no canto
-                    de cima do navegador.
-                  </li>
-                  <li>
-                    Toque em <strong>Instalar aplicativo</strong> ou{' '}
-                    <strong>Adicionar à tela inicial</strong>.
-                  </li>
-                  <li>
-                    Confirme em <strong>Instalar</strong>.
-                  </li>
-                </ol>
-              )}
-              <p className="folha-nota">
-                {ehIphone
-                  ? 'O iPhone não deixa nenhum site instalar-se sozinho. Este caminho é da Apple, não nosso.'
-                  : 'Este navegador ainda não ofereceu a instalação automática. Por aqui funciona sempre.'}
-              </p>
+              <h2>
+                INSTALE <span className="realce-verde">GRÁTIS</span> O{' '}
+                <span className="realce">WEB APP</span>
+              </h2>
+              <p>É o site da Santtify instalado no seu telefone.</p>
+              <p className="folha-conta-passos">Siga estes {ehIphone ? '4' : '3'} passos:</p>
+
+              {ehIphone ? <PassosDoIphone /> : <PassosDoAndroid />}
+
+              {/* Só a pessoa sabe se chegou ao fim: nem o iPhone nem o Android
+                  nos contam nada quando a instalação é feita pelo menu. É por
+                  isso que este botão existe e é ela que o toca. */}
+              <button type="button" className="botao-baixar" onClick={jaBaixei}>
+                JÁ BAIXEI
+              </button>
             </>
           )}
 
@@ -196,5 +182,136 @@ export function FolhaDeInstalacao() {
         </div>
       </section>
     </div>
+  )
+}
+
+/**
+ * Os quatro passos do iPhone, com um desenho de cada ecrã.
+ *
+ * Os desenhos são feitos aqui, com caixas e texto, e não são capturas. Uma
+ * captura do iOS envelhece a cada versão e fica com o telemóvel dele dentro —
+ * hora, bateria, operadora. Isto é a forma das coisas, que é o que a pessoa
+ * precisa de reconhecer, e não muda quando a Apple muda o cinzento.
+ */
+function PassosDoIphone() {
+  return (
+    <ol className="passos-instalar">
+      <li>
+        <span className="numero-passo">1</span>
+        <div className="figura barra-safari">
+          <span className="aa">AA</span>
+          <span className="cadeado" aria-hidden>
+            🔒
+          </span>
+          <span className="endereco">santtify.com</span>
+          <span className="alvo-partilhar">
+            <svg
+              viewBox="0 0 24 24"
+              width="17"
+              height="17"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="1.8"
+              strokeLinecap="round"
+              strokeLinejoin="round"
+            >
+              <path d="M12 3v11" />
+              <path d="M8.5 6.5 12 3l3.5 3.5" />
+              <path d="M6 12v8h12v-8" />
+            </svg>
+          </span>
+        </div>
+        <p>Toque no símbolo Compartilhar.</p>
+      </li>
+
+      <li>
+        <span className="numero-passo">2</span>
+        <div className="figura ver-mais">
+          <span className="pastilha" aria-hidden>
+            <svg
+              viewBox="0 0 24 24"
+              width="20"
+              height="20"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="2.4"
+              strokeLinecap="round"
+              strokeLinejoin="round"
+            >
+              <path d="m6 9 6 6 6-6" />
+            </svg>
+          </span>
+          <span className="rotulo">Ver mais</span>
+        </div>
+        <p>Toque em Ver mais.</p>
+      </li>
+
+      <li>
+        <span className="numero-passo">3</span>
+        <div className="figura menu-ios">
+          <span className="linha">Imprimir</span>
+          <span className="linha destacada">Adicionar ao ecrã principal</span>
+          <span className="linha">Adicionar a uma nota rápida</span>
+        </div>
+        <p>Toque em Adicionar ao ecrã principal.</p>
+      </li>
+
+      <li>
+        <span className="numero-passo">4</span>
+        <div className="figura caixa-adicionar">
+          <span className="topo">
+            <span className="x" aria-hidden>
+              ✕
+            </span>
+            <span className="titulo">Adicionar a...</span>
+            <span className="botao">Adicionar</span>
+          </span>
+          <span className="linha-app">
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img src="/icone-192.png" alt="" aria-hidden />
+            <span className="nome">Santtify</span>
+          </span>
+        </div>
+        <p>Confirme Santtify e toque em Adicionar.</p>
+      </li>
+    </ol>
+  )
+}
+
+/** O mesmo, para quem está no Android e o navegador não ofereceu a caixa. */
+function PassosDoAndroid() {
+  return (
+    <ol className="passos-instalar">
+      <li>
+        <span className="numero-passo">1</span>
+        <div className="figura menu-ios">
+          <span className="linha destacada">⋮ Menu do navegador</span>
+        </div>
+        <p>Toque nos três pontinhos, no canto de cima.</p>
+      </li>
+      <li>
+        <span className="numero-passo">2</span>
+        <div className="figura menu-ios">
+          <span className="linha destacada">Instalar aplicativo</span>
+          <span className="linha">Adicionar à tela inicial</span>
+        </div>
+        <p>Toque em Instalar aplicativo.</p>
+      </li>
+      <li>
+        <span className="numero-passo">3</span>
+        <div className="figura caixa-adicionar">
+          <span className="topo">
+            <span className="titulo">Instalar aplicativo</span>
+            <span className="botao">Instalar</span>
+          </span>
+          <span className="linha-app">
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img src="/icone-192.png" alt="" aria-hidden />
+            <span className="nome">Santtify</span>
+          </span>
+        </div>
+        <p>Confirme em Instalar.</p>
+      </li>
+    </ol>
   )
 }

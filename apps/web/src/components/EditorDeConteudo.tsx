@@ -41,7 +41,9 @@ export function EditorDeConteudo({
   useEffect(() => {
     if (carregando) return
     if (!usuario) {
-      router.replace(`/${projectSlug}/entrar?voltar=` + encodeURIComponent(window.location.pathname))
+      router.replace(
+        `/${projectSlug}/entrar?voltar=` + encodeURIComponent(window.location.pathname),
+      )
       return
     }
     if (usuario.role !== 'ADMIN') {
@@ -126,12 +128,7 @@ export function EditorDeConteudo({
 
       <h2>Blocos da página</h2>
       {content.blocks.map((bloco) => (
-        <EditorDeBloco
-          key={bloco.id}
-          bloco={bloco}
-          categorias={categorias}
-          aoMudar={recarregar}
-        />
+        <EditorDeBloco key={bloco.id} bloco={bloco} categorias={categorias} aoMudar={recarregar} />
       ))}
 
       <AdicionarBloco contentId={content.id} aoMudar={recarregar} />
@@ -198,8 +195,7 @@ function MaterialGratis({
         </p>
       ) : (
         <p className="bloco-vazio">
-          Sem arquivo. Suba o PDF do cartão e o botão de baixar aparece nesta letra — só
-          nela.
+          Sem arquivo. Suba o PDF do cartão e o botão de baixar aparece nesta letra — só nela.
         </p>
       )}
 
@@ -268,14 +264,14 @@ function Capa({ content, aoMudar }: { content: DetalheAdmin['content']; aoMudar:
           {/* eslint-disable-next-line @next/next/no-img-element */}
           <img className="capa-previa" src={content.coverUrl} alt={`Capa de ${content.title}`} />
           <p className="nota">
-            É esta imagem que aparece na página e na prévia do link quando alguém compartilha
-            no WhatsApp.
+            É esta imagem que aparece na página e na prévia do link quando alguém compartilha no
+            WhatsApp.
           </p>
         </>
       ) : (
         <p className="bloco-vazio">
-          Sem imagem ainda. É ela que aparece na página da letra e na prévia do link quando
-          alguém compartilha.
+          Sem imagem ainda. É ela que aparece na página da letra e na prévia do link quando alguém
+          compartilha.
         </p>
       )}
 
@@ -302,15 +298,13 @@ function Capa({ content, aoMudar }: { content: DetalheAdmin['content']; aoMudar:
       )}
 
       <p className="nota">
-        Pode mandar a imagem grande, do arquivo de impressão. O sistema reduz sozinho para o
-        tamanho certo do site e monta o cartão do compartilhamento.
+        Pode mandar a imagem grande, do arquivo de impressão. O sistema reduz sozinho para o tamanho
+        certo do site e monta o cartão do compartilhamento.
       </p>
       {/* O site guarda a página pronta por meio minuto para não pesar no
           servidor a cada visita. Sem este aviso, quem acabou de trocar a imagem
           abre a letra, vê a antiga e acha que não salvou. */}
-      <p className="nota">
-        Na página da letra a troca aparece em até meio minuto.
-      </p>
+      <p className="nota">Na página da letra a troca aparece em até meio minuto.</p>
 
       {erro && <p className="erro">{erro}</p>}
     </div>
@@ -492,7 +486,12 @@ function EditorDeBloco({
             type="button"
             className="remover"
             onClick={async () => {
-              if (confirm('Remover este bloco? O conteúdo dele será perdido.')) {
+              // O nome do ficheiro, e não "este bloco".
+              // Em 22/08 ele apagou um áudio a pensar que era outro. A caixa
+              // dizia "este bloco", e "este" só quer dizer alguma coisa a quem
+              // já sabe qual é — que é justamente quem não precisa de perguntar.
+              const nome = bloco.asset?.title || bloco.label || 'este bloco'
+              if (confirm(`Remover "${nome}"? Só este será removido; os outros ficam.`)) {
                 await admin.removerBloco(bloco.id)
                 await aoMudar()
               }
@@ -571,7 +570,9 @@ function EditorDeBloco({
               onChange={enviar}
               disabled={enviando}
             />
-            <span>{enviando ? 'Enviando...' : bloco.asset ? 'Trocar arquivo' : 'Enviar arquivo'}</span>
+            <span>
+              {enviando ? 'Enviando...' : bloco.asset ? 'Trocar arquivo' : 'Enviar arquivo'}
+            </span>
           </label>
           {bloco.asset && (
             /* Tirar só o ficheiro, mantendo título, texto, imagem e posição.
