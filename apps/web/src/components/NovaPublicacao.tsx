@@ -190,7 +190,10 @@ export function NovaPublicacao({
           🎵 {audio ? audio.name : 'Escolher ficheiro'}
           <input
             type="file"
-            accept="audio/*,.mp3,.m4a,.aac,.wav,.ogg"
+            /* Sem filtro de propósito: no iPhone, um ficheiro descarregado
+               aparece a cinzento mesmo com a extensão listada, porque o sistema
+               não lhe reconhece o tipo. Filtrar aqui é apostar contra o
+               telemóvel. O servidor valida e explica se não servir. */
             hidden
             onChange={(e) => definirAudio(e.target.files?.[0] ?? null)}
           />

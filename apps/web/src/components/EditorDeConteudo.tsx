@@ -566,7 +566,7 @@ function EditorDeBloco({
                   ? 'image/*,.jpg,.jpeg,.png,.heic,.webp'
                   : bloco.type === 'VIDEO'
                     ? 'video/*,.mp4,.mov,.m4v'
-                    : 'audio/*,.mp3,.m4a,.aac,.wav,.ogg'
+                    : undefined /* áudio: sem filtro, ver nota acima */
               }
               onChange={enviar}
               disabled={enviando}
