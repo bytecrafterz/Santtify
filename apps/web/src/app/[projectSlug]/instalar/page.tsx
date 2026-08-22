@@ -1,12 +1,12 @@
-import Link from "next/link";
-import { Suspense } from "react";
-import { notFound } from "next/navigation";
-import { api } from "@/lib/api";
-import { FormularioDeAuth } from "@/components/FormularioDeAuth";
-import { FolhaDeInstalacao } from "@/components/FolhaDeInstalacao";
-import { DecoracaoPastel } from "@/components/DecoracaoPastel";
+import Link from 'next/link'
+import { Suspense } from 'react'
+import { notFound } from 'next/navigation'
+import { api } from '@/lib/api'
+import { FormularioDeAuth } from '@/components/FormularioDeAuth'
+import { FolhaDeInstalacao } from '@/components/FolhaDeInstalacao'
+import { DecoracaoPastel } from '@/components/DecoracaoPastel'
 
-export const metadata = { title: "Bem-vindo à Santtify" };
+export const metadata = { title: 'Bem-vindo à Santtify' }
 
 /**
  * A tela de entrada com a folha de instalação por cima — o desenho de 22/08.
@@ -20,11 +20,11 @@ export const metadata = { title: "Bem-vindo à Santtify" };
 export default async function PaginaDeInstalacao({
   params,
 }: {
-  params: Promise<{ projectSlug: string }>;
+  params: Promise<{ projectSlug: string }>
 }) {
-  const { projectSlug } = await params;
-  const project = await api.projeto(projectSlug);
-  if (!project) notFound();
+  const { projectSlug } = await params
+  const project = await api.projeto(projectSlug)
+  if (!project) notFound()
 
   return (
     <main className="tela-boas-vindas">
@@ -32,11 +32,7 @@ export default async function PaginaDeInstalacao({
 
       <div className="boas-vindas-conteudo">
         {/* eslint-disable-next-line @next/next/no-img-element */}
-        <img
-          className="marca-boas-vindas"
-          src="/logo-santtify.png"
-          alt="Santtify"
-        />
+        <img className="marca-boas-vindas" src="/logo-santtify.png" alt="Santtify" />
 
         <h1>
           BEM-VINDO À <span className="realce">SANTTIFY</span>
@@ -44,11 +40,7 @@ export default async function PaginaDeInstalacao({
         <p className="subtitulo">Entre para continuar</p>
 
         <Suspense fallback={null}>
-          <FormularioDeAuth
-            modo="entrar"
-            projectId={project.id}
-            projectSlug={projectSlug}
-          />
+          <FormularioDeAuth modo="entrar" projectId={project.id} projectSlug={projectSlug} />
         </Suspense>
 
         <p className="saidas-entrada">
@@ -68,5 +60,5 @@ export default async function PaginaDeInstalacao({
 
       <FolhaDeInstalacao />
     </main>
-  );
+  )
 }

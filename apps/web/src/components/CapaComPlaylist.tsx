@@ -1,8 +1,6 @@
 'use client'
 
 import type { ItemIndice, Projeto } from '@/lib/api'
-import { abreviar } from '@/lib/numeros'
-import { OlhoGrande, CoracaoGrande, BalaoGrande, SetaGrande } from './IconesGrandes'
 
 /**
  * A capa do projeto, como um cartão e nada mais.
@@ -22,16 +20,6 @@ export function CapaComPlaylist({
   project: Projeto
   contents: ItemIndice[]
 }) {
-  const totais = contents.reduce(
-    (acc, c) => ({
-      views: acc.views + (c.stats?.views ?? 0),
-      likes: acc.likes + (c.stats?.likes ?? 0),
-      comments: acc.comments + (c.stats?.comments ?? 0),
-      shares: acc.shares + (c.stats?.shares ?? 0),
-    }),
-    { views: 0, likes: 0, comments: 0, shares: 0 },
-  )
-
   const logo = project.branding?.logoUrl
   const capa =
     (typeof logo === 'string' && logo) || contents.find((c) => c.coverUrl)?.coverUrl || null
@@ -43,33 +31,20 @@ export function CapaComPlaylist({
       {/* eslint-disable-next-line @next/next/no-img-element */}
       <img className="imagem-publicacao" src={capa} alt={project.name} />
 
-      <div className="indicadores-publicacao">
-        <span className="indicador-grande">
-          <span className="simbolo">
-            <OlhoGrande />
-          </span>
-          <strong>{abreviar(totais.views)}</strong>
-        </span>
-        <span className="indicador-grande">
-          <span className="simbolo">
-            <CoracaoGrande />
-          </span>
-          <strong>{abreviar(totais.likes)}</strong>
-        </span>
-        <span className="indicador-grande">
-          <span className="simbolo">
-            <BalaoGrande />
-          </span>
-          <strong>{abreviar(totais.comments)}</strong>
-        </span>
-        <span className="indicador-grande">
-          <span className="simbolo">
-            <SetaGrande />
-          </span>
-          <strong>{abreviar(totais.shares)}</strong>
-        </span>
-      </div>
+      {/* AQUI NÃO HÁ INDICADORES, e isso é a correção de 22/08.
 
+          Havia quatro — olho, coração, balão e seta — com a soma de todas as
+          letras. Mas eram números pintados: nenhum deles tinha o que fazer ao
+          toque. E logo por cima, no perfil, está uma fila igual que funciona.
+          Duas filas iguais no mesmo ecrã, uma viva e outra morta, e a pessoa
+          toca na que está sobre a imagem porque é a maior. "O like não
+          funciona" não era um botão avariado: era um número que nunca tinha
+          sido botão.
+
+          Somar as 26 letras num só coração também não dava para curtir — não
+          há nada para curtir numa soma. Quem quer curtir o projecto curte o
+          perfil, ali em cima; quem quer curtir uma letra curte a letra. Cada
+          coração passa a ter um dono. */}
       <h3 className="titulo-publicacao">{project.name}</h3>
     </article>
   )

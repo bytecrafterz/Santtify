@@ -60,7 +60,10 @@ export function CabecalhoDePerfil({
 
   useEffect(() => {
     if (!anfitriao) return
-    void social.estadoDoPerfil(anfitriao.id).then(definirEstado).catch(() => {})
+    void social
+      .estadoDoPerfil(anfitriao.id)
+      .then(definirEstado)
+      .catch(() => {})
   }, [anfitriao])
 
   // Escape fecha, como em qualquer painel. Sem isto, quem abre sem querer no
@@ -119,10 +122,10 @@ export function CabecalhoDePerfil({
       definirAviso(e instanceof ErroDeApi ? e.message : 'Não foi possível curtir agora.')
     } finally {
       definirACurtir(false)
-      }
     }
+  }
 
-    async function partilhar() {
+  async function partilhar() {
     if (!anfitriao) return
     const url = window.location.origin + window.location.pathname
 
@@ -149,9 +152,6 @@ export function CabecalhoDePerfil({
       // Falhar a contar não desfaz uma partilha que já aconteceu.
     }
   }
-
-
-
 
   return (
     <>
@@ -182,8 +182,6 @@ export function CabecalhoDePerfil({
           </h1>
         </div>
 
-        
-
         {/* Véu para fechar tocando fora. Só existe com o painel aberto, senão
             comeria os toques na própria fotografia. */}
         {aberto && (
@@ -195,11 +193,7 @@ export function CabecalhoDePerfil({
           />
         )}
 
-        <div
-          className="painel-perfil"
-          role="region"
-          aria-label="Informações do perfil"
-        >
+        <div className="painel-perfil" role="region" aria-label="Informações do perfil">
           <button
             type="button"
             className="pega"
@@ -286,7 +280,12 @@ export function CabecalhoDePerfil({
           <strong>{abreviar(estado.comentarios)}</strong>
         </button>
 
-        <button type="button" className="indicador-grande" onClick={partilhar} aria-label="Partilhar">
+        <button
+          type="button"
+          className="indicador-grande"
+          onClick={partilhar}
+          aria-label="Partilhar"
+        >
           <span className="simbolo">
             <SetaGrande />
           </span>
@@ -348,11 +347,17 @@ export function CabecalhoDePerfil({
             : 'Descreva quem monitora este perfil'}
         </span>
 
+        {/* Três estados, e não dois.
+            Eu só distinguia o anfitrião de toda a gente, e por isso quem já
+            tinha conta e não era ele lia "CRIAR MEU PERFIL" — com a sessão
+            aberta, a olhar para um convite para se inscrever. Foi o que ele
+            descreveu em 22/08: "não reconhece meu login e pede novo cadastro".
+            Quem já entrou nunca pode ser convidado a entrar outra vez. */}
         <Link
           className="botao-acao"
-          href={souOAnfitriao ? `/${projectSlug}/perfil` : `/${projectSlug}/instalar`}
+          href={temConta ? `/${projectSlug}/perfil` : `/${projectSlug}/instalar`}
         >
-          👤 {souOAnfitriao ? 'EDITAR MEU PERFIL' : 'CRIAR MEU PERFIL'}
+          👤 {souOAnfitriao ? 'EDITAR MEU PERFIL' : temConta ? 'MEU PERFIL' : 'CRIAR MEU PERFIL'}
         </Link>
 
         <span className="pilula-contador" title="Perfis criados">
