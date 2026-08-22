@@ -123,6 +123,17 @@ export function ConviteDeInstalacao({ projectSlug }: { projectSlug: string }) {
           CONTINUAR NO NAVEGADOR
         </Link>
       </div>
+
+      {/* Os dois logotipos, recortados do desenho que ele enviou. Ficam no
+          rodapé porque é ali que ele os pôs, e porque assinam a tela sem
+          disputar espaço com o que a pessoa veio fazer. */}
+      <div className="assinatura-marcas">
+        {/* eslint-disable-next-line @next/next/no-img-element */}
+        <img src="/logo-santtify.png" alt="Santtify" />
+        <span className="risco" aria-hidden />
+        {/* eslint-disable-next-line @next/next/no-img-element */}
+        <img src="/logo-produto-vivo.png" alt="Produto Vivo" />
+      </div>
     </div>
   )
 }

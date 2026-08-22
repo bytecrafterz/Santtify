@@ -3810,3 +3810,26 @@ button.letra-bloco {
   text-decoration: none;
   display: block;
 }
+
+/* Assinatura das duas marcas no rodapé do convite de instalação. */
+.assinatura-marcas {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.9rem;
+  margin-top: 1.1rem;
+  padding: 0.9rem 0.5rem;
+  background: #fff;
+  border-radius: var(--raio);
+}
+
+.assinatura-marcas img {
+  height: 30px;
+  width: auto;
+}
+
+.assinatura-marcas .risco {
+  width: 1px;
+  height: 26px;
+  background: #d9cfc2;
+}
