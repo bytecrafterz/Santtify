@@ -3553,8 +3553,7 @@ button.letra-bloco {
    uma plaquinha clara por baixo da marca. */
 @media (prefers-color-scheme: dark) {
   .marca-boas-vindas,
-  .folha-marca,
-  .assinatura-marcas img {
+  .folha-marca {
     background: #fbf7f2;
     border-radius: 12px;
     padding: 0.35rem 0.6rem;
