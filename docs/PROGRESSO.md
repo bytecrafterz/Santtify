@@ -714,6 +714,65 @@ nova curta dá 400, troca válida dá 200 com par novo, senha velha deixa de
 entrar, senha nova entra, refresh antigo fica revogado e a sessão de quem trocou
 continua de pé.
 
+### 20-21/08 — A experiência passa a ser uma página só, feita de cartões
+
+Duas semanas de trabalho couberam nestes dois dias porque ele começou a usar
+a plataforma a sério, num iPhone, e a apontar o que não batia certo. Quase
+tudo o que apareceu era invisível fora de um telemóvel real.
+
+**O cartão é agora a unidade de tudo.** Imagem de lado a lado sem nada por
+cima, tocador colado a ela, os quatro indicadores por baixo, título e selo.
+Eu tinha posto os indicadores SOBRE a imagem, em coordenadas fixas: funcionou
+com as artes que existiam e partiu-se na primeira imagem de outro formato,
+com os ícones em cima das caras. Fixar posições sobre uma imagem cujo formato
+não se controla é uma aposta que se perde.
+
+**Tudo acontece sem sair do perfil.** Tocar numa letra abre o conteúdo por
+baixo da grade, sem mudar de endereço. As páginas próprias de cada letra
+continuam vivas porque é para elas que apontam os QR Codes impressos — um QR
+já impresso não se corrige.
+
+**Defeitos que só se viam olhando, e que nenhum teste apanha:**
+
+- Cor fixa quase preta nos ícones. No modo escuro do telemóvel dele ficavam
+  preto sobre preto e desapareciam. Numa interface com dois modos, cor fixa
+  perde em metade dos aparelhos.
+- Choque de nomes: chamei `.faixa-nome` ao nome sobre o retrato, e a playlist
+  já usava esse nome. A minha regra, posicionada em absoluto, arrancou os
+  títulos das faixas e atirou-os para cima do botão de criar perfil.
+- A resposta a uma resposta era gravada e nunca desenhada: o painel só tinha
+  dois níveis. Ele tentou três vezes e concluiu que o sistema recusava.
+- O coração vinha sempre vazio ao recarregar: o servidor nunca dizia se
+  aquela pessoa em particular já tinha curtido. A consulta existia e não
+  estava ligada.
+
+**O contador de impressões contava toques.** Qualquer pessoa o inflacionava
+com o dedo, e é o número que ele quer mostrar em público. Passa a contar só
+acção concluída, e o rótulo fala de material exportado — não há forma honesta
+de saber se saiu papel.
+
+**Visitante sem conta deixa de bater em botões mudos.** Curtir sem sessão
+respondia com uma linha cinzenta ao lado de um botão que não fazia nada, e
+isso lê-se como avaria. Abre agora o convite para criar conta grátis, com o
+texto dele. No fim da música o convite aparece sozinho — a meio nunca.
+
+**Uma sessão expirada não pode parecer uma conta perdida.** O botão do perfil
+voltava a dizer "criar meu perfil" e eu tinha-o ligado à tela de instalação,
+que não tinha saída para quem já tem conta. Ele seguiu a tela e concluiu que
+a conta desaparecera. Instalar deixou de ser condição para entrar.
+
+### Decisões dele que contrariam recomendações minhas (registadas)
+
+- **Curtir o próprio perfil**: eu tinha-o proibido, porque um número que o
+  dono sobe sozinho vale menos perante quem o lê. Ele pediu duas vezes o
+  contrário. Está como ele quis.
+- **Filtros de áudio**: pedidos por ele a 20/08, retirados por ele a 21/08.
+- **Lista de quem VIU o perfil**: recusada, e não por limitação técnica. Ver
+  uma página não é escolher aparecer, a política publicada em nome dele
+  promete anonimato da visita, e numa plataforma de crianças uma lista de
+  quem andou a ver o perfil de um menino não se constrói. Mostram-se os actos
+  públicos: quem curtiu e quem comentou.
+
 ### Implantação pronta para rodar (14/08)
 
 Escrita enquanto o domínio não existe, para que no dia seja um comando e não uma
