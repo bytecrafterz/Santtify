@@ -25,7 +25,7 @@ export function DecoracaoPastel({
   return (
     <svg
       className={`decoracao-pastel ${variante}`}
-      viewBox={folha ? "0 0 390 300" : "0 0 390 844"}
+      viewBox={folha ? "0 0 390 160" : "0 0 390 844"}
       preserveAspectRatio="xMidYMid slice"
       aria-hidden
       focusable="false"
