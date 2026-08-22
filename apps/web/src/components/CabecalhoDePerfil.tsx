@@ -238,17 +238,16 @@ export function CabecalhoDePerfil({
       {/* Fora da fotografia, no mesmo formato dos cartões que ele aprovou:
           imagem limpa, e os quatro indicadores organizados por baixo. */}
       <div className="indicadores-publicacao">
-        <button
-          type="button"
-          className="indicador-grande"
-          onClick={() => definirPessoasAbertas(true)}
-          aria-label="Ver quem interagiu"
-        >
+        {/* O olho é só contagem. Ele foi claro em 22/08: ver mostra o número,
+            curtir mostra quem curtiu. Eu tinha posto a lista no olho porque o
+            coração já tinha outra função — mas isso obriga a pessoa a
+            adivinhar, e adivinhar num botão é o mesmo que ele não existir. */}
+        <span className="indicador-grande">
           <span className="simbolo">
             <OlhoGrande />
           </span>
           <strong>{abreviar(estado.visualizacoes)}</strong>
-        </button>
+        </span>
 
         <button
           type="button"

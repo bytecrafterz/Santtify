@@ -70,6 +70,14 @@ else
 fi
 
 # ── Subida ──────────────────────────────────────────────────────────
+# Carimba a versão no service worker ANTES de compilar. O nome do cache sai
+# daqui, e é ele que faz a publicação nova apagar a anterior nos telemóveis
+# que já têm a aplicação instalada.
+info "Carimbando a versão no service worker"
+VERSAO="$(date +%Y%m%d%H%M%S)"
+sed -i "s/self.__VERSAO__ || '[^']*'/self.__VERSAO__ || '${VERSAO}'/" apps/web/public/sw.js
+ok "versão ${VERSAO}"
+
 info "Construindo as imagens"
 echo "  (a primeira vez demora — compila a API e o site)"
 $COMPOSE build
