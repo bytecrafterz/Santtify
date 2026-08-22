@@ -52,8 +52,6 @@ export default async function PaginaDeInstalacao({
         </Suspense>
 
         <p className="saidas-entrada">
-          <Link href={`/${projectSlug}/recuperar`}>Esqueci minha senha</Link>
-          <span aria-hidden>·</span>
           <Link href={`/${projectSlug}`}>Continuar no navegador</Link>
         </p>
 

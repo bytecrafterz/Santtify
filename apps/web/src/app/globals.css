@@ -3537,6 +3537,21 @@ button.letra-bloco {
   height: auto;
 }
 
+/* Os logotipos dele são desenho escuro sobre papel claro, e passaram a ter
+   fundo transparente para não trazerem um rectângulo creme para cima do
+   pastel. No escuro isso deixá-los-ia invisíveis — foi exactamente o que já
+   aconteceu com os ícones em 21/08. Aqui o papel volta, e volta de propósito:
+   uma plaquinha clara por baixo da marca. */
+@media (prefers-color-scheme: dark) {
+  .marca-boas-vindas,
+  .folha-marca,
+  .assinatura-marcas img {
+    background: #fbf7f2;
+    border-radius: 12px;
+    padding: 0.35rem 0.6rem;
+  }
+}
+
 .folha-corpo h2 {
   margin: 0;
   font-size: 1.05rem;
