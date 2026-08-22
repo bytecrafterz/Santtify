@@ -3833,3 +3833,31 @@ button.letra-bloco {
   height: 26px;
   background: #d9cfc2;
 }
+
+/* Subtítulo da publicação, logo abaixo do título. */
+.subtitulo-publicacao {
+  margin: 0.1rem 0.9rem 0.3rem;
+  color: var(--cor-primaria);
+  font-size: 0.88rem;
+  font-weight: 600;
+}
+
+/* Rótulo da faixa, só quando a publicação tem mais de um áudio. */
+.rotulo-faixa {
+  display: inline-block;
+  margin: 0.75rem 0.9rem 0.35rem;
+  padding: 0.2rem 0.65rem;
+  border-radius: 999px;
+  background: var(--cor-primaria-suave);
+  color: var(--cor-primaria);
+  font-size: 0.7rem;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+/* Com mais de um tocador no mesmo cartão, o segundo em diante já não encosta
+   à imagem — encosta ao rótulo dele. */
+.rotulo-faixa + .player-onda {
+  margin-top: 0;
+}

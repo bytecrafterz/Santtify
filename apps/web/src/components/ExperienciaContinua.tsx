@@ -2,7 +2,7 @@
 
 import { useEffect, useRef, useState } from 'react'
 import type { ItemIndice, PaginaConteudo, ProgressoDasLetras } from '@/lib/api'
-import { BlocosDeConteudo } from './BlocosDeConteudo'
+import { CartaoDeConteudo } from './CartaoDeConteudo'
 import { rastrear } from '@/lib/track'
 
 /**
@@ -148,11 +148,14 @@ export function ExperienciaContinua({
               imagem. Repetir era ver a mesma coisa duas vezes seguidas. */}
           {/* Sem botão de fechar: a letra faz parte da página e não é uma janela
                 por cima dela. Quem quiser outra letra toca noutra. */}
-          <BlocosDeConteudo
-            blocos={aberta.content.blocks}
-            projectId={projectId}
+          <CartaoDeConteudo
             contentId={aberta.content.id}
+            projectId={projectId}
             projectSlug={projectSlug}
+            titulo={aberta.content.title}
+            subtitulo={aberta.content.subtitle}
+            capa={aberta.content.coverUrl}
+            blocos={aberta.content.blocks}
           />
         </section>
       )}

@@ -4,12 +4,22 @@ import { tokens, ErroDeApi, renovarSessao } from '@/lib/auth'
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL ?? 'http://localhost:3333/api'
 
+/**
+ * O comentário, um só tipo.
+ *
+ * Havia dois — um para o conteúdo, outro para a faixa — que descreviam a mesma
+ * coisa e diferiam num pormenor de nulos. Desde que a publicação passou a ser
+ * a unidade, manter dois tipos era só uma forma de os deixar divergir.
+ */
 export interface Comentario {
   id: string
   body: string
   createdAt: string
-  parentId: string | null
+  editedAt?: string | null
+  parentId?: string | null
   user: { id: string; displayName: string; avatarUrl: string | null }
+  _count?: { reactions: number }
+  curtidoPorMim?: boolean
 }
 
 export interface EstadoSocial {
@@ -68,19 +78,8 @@ export interface PublicacaoCriada {
 }
 
 
-/** Um comentário de faixa, como a API o devolve. */
-export interface ComentarioDaFaixa {
-  id: string
-  body: string
-  createdAt: string
-  editedAt?: string | null
-  parentId?: string | null
-  user: { id: string; displayName: string; avatarUrl: string | null }
-  _count?: { reactions: number }
-  /** Se ESTA pessoa já curtiu. Vem do servidor: sem isto o coração vinha
-   *  sempre vazio ao recarregar. */
-  curtidoPorMim?: boolean
-}
+/** Mantido como nome antigo: é o mesmo tipo. */
+export type ComentarioDaFaixa = Comentario
 
 /** Os quatro números próprios de uma faixa, mais o que a pessoa já fez nela. */
 export interface EstadoDaFaixa {

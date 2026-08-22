@@ -2,7 +2,7 @@ import Link from 'next/link'
 import { notFound } from 'next/navigation'
 import type { Metadata } from 'next'
 import { api } from '@/lib/api'
-import { BlocosDeConteudo } from '@/components/BlocosDeConteudo'
+import { CartaoDeConteudo } from '@/components/CartaoDeConteudo'
 import { RastreadorDeVisita } from '@/components/RastreadorDeVisita'
 import { SeloProdutoVivo } from '@/components/SeloProdutoVivo'
 import { BannerDeConsentimento } from '@/components/BannerDeConsentimento'
@@ -104,11 +104,14 @@ export default async function PaginaDeConteudo({
         />
       )}
 
-      <BlocosDeConteudo
-        blocos={content.blocks}
-        projectId={project.id}
+      <CartaoDeConteudo
         contentId={content.id}
+        projectId={project.id}
         projectSlug={projectSlug}
+        titulo={content.title}
+        subtitulo={content.subtitle}
+        capa={content.coverUrl}
+        blocos={content.blocks}
       />
 
       <BarraSocial
