@@ -32,62 +32,45 @@ export function DecoracaoPastel({
     >
       {folha ? (
         <>
-          {/* Dentro da folha só entram os cantos de cima: o resto do espaço é
-              todo do botão verde e do texto. */}
+          {/* A FAIXA DE CIMA da folha, e só ela. O desenho vive numa caixa de
+              altura fixa presa ao topo, e não esticada pela folha inteira: a
+              folha cresce quando mostra o caminho manual, e a esticar com ela
+              o coração acabava a meio da frase "COMO INSTALAR NESTE TELEFONE".
+              Aqui o desenho fica do mesmo tamanho seja qual for a altura. */}
           <ellipse
-            cx="34"
-            cy="16"
-            rx="82"
-            ry="44"
+            cx="30"
+            cy="4"
+            rx="84"
+            ry="46"
             fill="#cfe0f5"
             opacity="0.7"
           />
           <ellipse
-            cx="352"
-            cy="10"
-            rx="76"
-            ry="40"
+            cx="356"
+            cy="0"
+            rx="78"
+            ry="44"
             fill="#f7d9e3"
             opacity="0.75"
           />
-          <ellipse
-            cx="14"
-            cy="292"
-            rx="70"
-            ry="38"
-            fill="#fde8c8"
-            opacity="0.7"
-          />
-          <ellipse
-            cx="376"
-            cy="288"
-            rx="72"
-            ry="40"
-            fill="#d7edd5"
-            opacity="0.7"
-          />
           <path
-            d="M40 62c0-7 5.5-12.5 12.5-12.5 4.6 0 8.6 2.4 11 6 2.4-3.6 6.4-6 11-6C81.5 49.5 87 55 87 62c0 13-16.5 22.5-23.5 28C56.5 84.5 40 75 40 62z"
+            d="M36 58c0-6.6 5.2-11.8 11.8-11.8 4.3 0 8.1 2.3 10.3 5.7 2.2-3.4 6-5.7 10.3-5.7C75 46.2 80.2 51.4 80.2 58c0 12.2-15.6 21.2-22.1 26.4C51.6 79.2 36 70.2 36 58z"
             fill="#d64545"
           />
           <path
-            d="M330 46l5.5 11.5L348 59l-9 9 2.2 12.4L330 74.5 318.8 80.4 321 68l-9-9 12.5-1.5z"
+            d="M334 44l5.2 10.9 11.8 1.4-8.5 8.5 2.1 11.8L334 71l-10.6 5.6 2.1-11.8-8.5-8.5 11.8-1.4z"
             fill="#3b7dd8"
           />
           <path
-            d="M104 40l3 6.5 6.5 3-6.5 3-3 6.5-3-6.5-6.5-3 6.5-3z"
+            d="M92 22l2.8 6.2 6.2 2.8-6.2 2.8L92 40l-2.8-6.2-6.2-2.8 6.2-2.8z"
             fill="#f0b429"
           />
-          {/* Estes brilhos ficam na FAIXA DE CIMA, ao lado da marca, e nunca
-              mais abaixo: a folha é curta, e tudo o que descer daqui cai em
-              cima do título ou da frase. Na primeira tentativa uma bolinha
-              rosa aterrou no meio da palavra "gratuito". */}
           <path
-            d="M300 28l2.6 5.6 5.6 2.6-5.6 2.6-2.6 5.6-2.6-5.6-5.6-2.6 5.6-2.6z"
+            d="M296 20l2.4 5.2 5.2 2.4-5.2 2.4-2.4 5.2-2.4-5.2-5.2-2.4 5.2-2.4z"
             fill="#f0b429"
           />
-          <circle cx="62" cy="30" r="4" fill="#9fc3e8" />
-          <circle cx="352" cy="96" r="3.5" fill="#e9b8c9" />
+          <circle cx="58" cy="24" r="4" fill="#9fc3e8" />
+          <circle cx="358" cy="104" r="3.5" fill="#e9b8c9" />
         </>
       ) : (
         <>

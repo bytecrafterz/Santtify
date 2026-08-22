@@ -3398,6 +3398,15 @@ button.letra-bloco {
   pointer-events: none;
 }
 
+/* Na folha o desenho é uma faixa de altura fixa presa ao topo, e não um fundo
+   esticado. A folha muda de altura — cresce quando mostra o caminho manual — e
+   um fundo esticado crescia com ela: o coração ia parar ao meio do título. */
+.decoracao-pastel.folha {
+  inset: 0 0 auto 0;
+  height: auto;
+  aspect-ratio: 390 / 160;
+}
+
 /* No escuro as manchas pastel ficariam a gritar sobre o fundo quase
    preto. Não mudo as cores — baixo a presença. */
 @media (prefers-color-scheme: dark) {
