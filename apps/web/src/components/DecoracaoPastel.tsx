@@ -130,7 +130,7 @@ export function DecoracaoPastel({
 
           {/* Brilhos de quatro pontas. */}
           <path
-            d="M96 52l3.4 7.4 7.4 3.4-7.4 3.4L96 74l-3.4-7.8-7.4-3.4 7.4-3.4z"
+            d="M70 40l3.4 7.4 7.4 3.4-7.4 3.4L70 62l-3.4-7.8-7.4-3.4 7.4-3.4z"
             fill="#f0b429"
           />
           <path
