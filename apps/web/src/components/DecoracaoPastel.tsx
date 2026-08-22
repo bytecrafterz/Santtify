@@ -78,12 +78,16 @@ export function DecoracaoPastel({
             d="M104 40l3 6.5 6.5 3-6.5 3-3 6.5-3-6.5-6.5-3 6.5-3z"
             fill="#f0b429"
           />
+          {/* Estes brilhos ficam na FAIXA DE CIMA, ao lado da marca, e nunca
+              mais abaixo: a folha é curta, e tudo o que descer daqui cai em
+              cima do título ou da frase. Na primeira tentativa uma bolinha
+              rosa aterrou no meio da palavra "gratuito". */}
           <path
-            d="M290 112l2.4 5.2 5.2 2.4-5.2 2.4-2.4 5.2-2.4-5.2-5.2-2.4 5.2-2.4z"
+            d="M300 28l2.6 5.6 5.6 2.6-5.6 2.6-2.6 5.6-2.6-5.6-5.6-2.6 5.6-2.6z"
             fill="#f0b429"
           />
-          <circle cx="62" cy="118" r="4" fill="#9fc3e8" />
-          <circle cx="322" cy="140" r="3.5" fill="#e9b8c9" />
+          <circle cx="62" cy="30" r="4" fill="#9fc3e8" />
+          <circle cx="352" cy="96" r="3.5" fill="#e9b8c9" />
         </>
       ) : (
         <>
