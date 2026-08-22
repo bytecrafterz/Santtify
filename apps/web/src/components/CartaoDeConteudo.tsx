@@ -67,9 +67,16 @@ export function CartaoDeConteudo({
     .map((b) => b.text!.trim())
   const descricao = textos.join('\n\n')
 
+  // Relê quando a sessão entra. Sem isto, quem abre a página e só depois é
+  // reconhecido fica a ver o cartão com o coração vazio — o servidor foi
+  // perguntado antes de haver alguém a quem responder. Ver a mesma nota no
+  // cabeçalho do perfil.
   useEffect(() => {
-    void social.estado(contentId).then(definirEstado).catch(() => {})
-  }, [contentId])
+    void social
+      .estado(contentId)
+      .then(definirEstado)
+      .catch(() => {})
+  }, [contentId, usuario?.id])
 
   async function curtir() {
     if (aCurtir.current) return
@@ -101,7 +108,12 @@ export function CartaoDeConteudo({
       return // cancelar não é partilhar
     }
     try {
-      await rastrear({ projectId, contentId, type: 'CUSTOM', props: { acao: 'partilhar_conteudo' } })
+      await rastrear({
+        projectId,
+        contentId,
+        type: 'CUSTOM',
+        props: { acao: 'partilhar_conteudo' },
+      })
       definirEstado((e) => ({ ...e, compartilhamentos: e.compartilhamentos + 1 }))
     } catch {
       // Falhar a contar não desfaz a partilha.
@@ -168,7 +180,12 @@ export function CartaoDeConteudo({
           <strong>{abreviar(estado.comentarios)}</strong>
         </button>
 
-        <button type="button" className="indicador-grande" onClick={partilhar} aria-label="Partilhar">
+        <button
+          type="button"
+          className="indicador-grande"
+          onClick={partilhar}
+          aria-label="Partilhar"
+        >
           <span className="simbolo">
             <SetaGrande />
           </span>
@@ -217,7 +234,11 @@ export function CartaoDeConteudo({
           aoFechar={() => definirComentariosAbertos(false)}
           aoComentar={async (t, parentId) => {
             const novo = await social.comentar(contentId, projectId, t, parentId)
-            definirEstado((x) => ({ ...x, comentarios: x.comentarios + 1, lista: [novo, ...x.lista] }))
+            definirEstado((x) => ({
+              ...x,
+              comentarios: x.comentarios + 1,
+              lista: [novo, ...x.lista],
+            }))
           }}
           aoApagar={async (id) => {
             await social.apagarComentario(id)

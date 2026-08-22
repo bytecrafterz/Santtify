@@ -58,13 +58,24 @@ export function CabecalhoDePerfil({
   const [aberto, definirAberto] = useState(false)
   const inicioDoToque = useRef<number | null>(null)
 
+  /**
+   * Relê SEMPRE que a sessão muda, e não só quando o perfil aparece.
+   *
+   * O access token só vive em memória, e ao abrir a página ele ainda não
+   * existe: é preciso trocar o refresh guardado por um novo, e isso demora.
+   * Esta leitura acontecia uma vez, nesse instante — sem token — e o servidor
+   * respondia como responde a um visitante: "ninguém curtiu isto, muito menos
+   * tu". O coração ficava vazio mesmo tendo sido a própria pessoa a enchê-lo.
+   *
+   * Com `usuario?.id` na lista, a leitura repete-se assim que a sessão entra.
+   */
   useEffect(() => {
     if (!anfitriao) return
     void social
       .estadoDoPerfil(anfitriao.id)
       .then(definirEstado)
       .catch(() => {})
-  }, [anfitriao])
+  }, [anfitriao, usuario?.id])
 
   // Escape fecha, como em qualquer painel. Sem isto, quem abre sem querer no
   // computador fica sem saída óbvia.
