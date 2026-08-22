@@ -3782,3 +3782,31 @@ button.letra-bloco {
   color: var(--cor-texto-suave);
   margin-top: 0.4rem;
 }
+
+/* ── Convite para criar conta ────────────────────────────────────────── */
+.convite-cadastro {
+  display: grid;
+  gap: 0.7rem;
+  text-align: center;
+  padding: 1.4rem 1.1rem 1.6rem;
+}
+
+.convite-cadastro h2 {
+  margin: 0;
+  font-size: 1.15rem;
+}
+
+.convite-cadastro .nota {
+  margin: 0;
+}
+
+.convite-cadastro .reforco {
+  color: var(--cor-acao);
+  font-weight: 600;
+}
+
+.botao-previsualizar.centrado {
+  text-align: center;
+  text-decoration: none;
+  display: block;
+}

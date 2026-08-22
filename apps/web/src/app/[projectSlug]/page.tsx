@@ -70,12 +70,7 @@ export default async function IndiceDoProjeto({
   params: Promise<{ projectSlug: string }>
 }) {
   const { projectSlug } = await params
-  // As duas leituras vão em paralelo: a playlist é precisa logo na primeira
-  // pintura, porque o play da capa passou a tocar aqui dentro.
-  const [dados, tocador] = await Promise.all([
-    api.indice(projectSlug),
-    api.playlist(projectSlug),
-  ])
+  const dados = await api.indice(projectSlug)
   if (!dados) notFound()
 
   const { project, anfitriao, contents, progresso, comunidade } = dados
@@ -97,13 +92,7 @@ export default async function IndiceDoProjeto({
       />
 
       {/* 2 e 5. Capa que toca aqui mesmo, com os filtros que a comandam */}
-      <CapaComPlaylist
-        projectSlug={projectSlug}
-        project={project}
-        contents={contents}
-        categorias={tocador?.categorias ?? []}
-        faixas={tocador?.faixas ?? []}
-      />
+      <CapaComPlaylist project={project} contents={contents} />
 
       {/* 3. Título e descrição */}
       <div className="secao-com-acao">

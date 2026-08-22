@@ -8,6 +8,7 @@ import { rastrear } from '@/lib/track'
 import { abreviar } from '@/lib/numeros'
 import { useAuth } from './ProvedorDeAuth'
 import { PainelDeComentarios } from './PainelDeComentarios'
+import { ConviteDeCadastro } from './ConviteDeCadastro'
 import { OlhoGrande, CoracaoGrande, BalaoGrande, SetaGrande } from './IconesGrandes'
 
 /**
@@ -71,6 +72,8 @@ export function CartaoDePublicacao({
   /** Trava contra toque repetido: dois pedidos cruzados deixam o coração
    *  a dizer uma coisa e o número outra. */
   const [aCurtir, definirACurtir] = useState(false)
+  /** Motivo do convite, ou nulo quando não há convite aberto. */
+  const [convite, definirConvite] = useState<string | null>(null)
   const [estado, definirEstado] = useState<EstadoDaFaixa>({
     visualizacoes: 0,
     curtidas: 0,
@@ -97,7 +100,7 @@ export function CartaoDePublicacao({
   async function curtir() {
     if (aCurtir) return
     if (!usuario) {
-      definirAviso('Entre na sua conta para curtir.')
+      definirConvite('Para curtir, crie a sua conta grátis')
       return
     }
     definirACurtir(true)
@@ -203,6 +206,9 @@ export function CartaoDePublicacao({
           onPause={() => definirTocando(false)}
           onEnded={() => {
             definirTocando(false)
+            // Só a quem ainda não tem conta, e só no fim: interromper a meio
+            // seria tirar à criança o que ela veio ouvir.
+            if (!usuario) definirConvite('Gostou desta música?')
             void rastrear({
               projectId,
               contentId,
@@ -240,7 +246,11 @@ export function CartaoDePublicacao({
         <button
           type="button"
           className="indicador-grande balao"
-          onClick={() => definirComentariosAbertos(true)}
+          onClick={() =>
+            usuario
+              ? definirComentariosAbertos(true)
+              : definirConvite('Para comentar, crie a sua conta grátis')
+          }
           aria-label="Comentários"
         >
           <span className="simbolo">
@@ -283,6 +293,14 @@ export function CartaoDePublicacao({
         </span>
         Produto Vivo
       </Link>
+
+      {convite && (
+        <ConviteDeCadastro
+          projectSlug={projectSlug}
+          motivo={convite}
+          aoFechar={() => definirConvite(null)}
+        />
+      )}
 
       {comentariosAbertos && (
         <PainelDeComentarios
