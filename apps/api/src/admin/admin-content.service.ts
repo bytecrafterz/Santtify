@@ -1,5 +1,5 @@
 import { BadRequestException, Injectable, NotFoundException } from '@nestjs/common'
-import { BlockType, ContentStatus, MediaKind, Prisma } from '@pv/db'
+import { BlockType, CardEstado, CardPapel, ContentStatus, MediaKind, Prisma } from '@pv/db'
 import { PrismaService } from '../prisma/prisma.service'
 import { ShortLinksService } from '../short-links/short-links.service'
 
@@ -790,6 +790,294 @@ export class AdminContentService {
       .replace(/[^a-z0-9]+/g, '-')
       .replace(/^-+|-+$/g, '')
       .slice(0, 80)
+  }
+
+  // ── O CARTÃO COMO PEÇA ÚNICA (23/08) ───────────────────────────────
+  //
+  // Um cartão é imagem, áudio, título e descrição numa linha só, com as suas
+  // próprias curtidas e comentários. Não há como guardar meio cartão porque
+  // não há meio cartão — há um rascunho, e um rascunho não chega à página.
+
+  /** Um cartão está inteiro quando tem imagem, som, título e descrição. */
+  private estadoDoCartao(b: {
+    assetId: string | null
+    imageAssetId: string | null
+    titulo: string | null
+    text: string | null
+  }): CardEstado {
+    const inteiro =
+      Boolean(b.assetId) &&
+      Boolean(b.imageAssetId) &&
+      Boolean(b.titulo?.trim()) &&
+      Boolean(b.text?.trim())
+    return inteiro ? CardEstado.PUBLICADO : CardEstado.RASCUNHO
+  }
+
+  /**
+   * A composição inteira: 26 vagões, cada um com os seus cartões.
+   *
+   * Devolve as 26 letras SEMPRE, existam ou não conteúdos. A casa da letra é
+   * dela mesmo quando está vazia — foi o que faltou quando o A caiu no lugar
+   * do B, e é o que ele descreveu como a linha azul que não se interrompe.
+   */
+  async alfabeto(projectSlug: string) {
+    const project = await this.prisma.project.findUnique({
+      where: { slug: projectSlug },
+      select: { id: true, slug: true, name: true },
+    })
+    if (!project) throw new NotFoundException('Projeto não encontrado')
+
+    const conteudos = await this.prisma.content.findMany({
+      where: { projectId: project.id, letra: { not: null } },
+      orderBy: { letra: 'asc' },
+      select: {
+        id: true,
+        slug: true,
+        letra: true,
+        title: true,
+        status: true,
+        coverUrl: true,
+        blocks: {
+          where: { type: BlockType.AUDIO },
+          orderBy: [{ slot: 'asc' }, { position: 'asc' }],
+          select: {
+            id: true,
+            slot: true,
+            papel: true,
+            estado: true,
+            label: true,
+            titulo: true,
+            text: true,
+            linkUpgrade: true,
+            asset: { select: { id: true, url: true, title: true, durationMs: true } },
+            imageAsset: { select: { url: true } },
+          },
+        },
+      },
+    })
+
+    const porLetra = new Map(conteudos.map((c) => [c.letra!, c]))
+
+    return {
+      project,
+      vagoes: 'ABCDEFGHIJKLMNOPQRSTUVWXYZ'.split('').map((letra) => {
+        const c = porLetra.get(letra)
+        return {
+          letra,
+          contentId: c?.id ?? null,
+          slug: c?.slug ?? null,
+          title: c?.title ?? `Letra ${letra}`,
+          publicado: c?.status === ContentStatus.PUBLISHED,
+          coverUrl: c?.coverUrl ?? null,
+          cartoes: (c?.blocks ?? []).map((b) => ({
+            id: b.id,
+            slot: b.slot,
+            papel: b.papel,
+            estado: b.estado,
+            nomeInterno: b.label,
+            titulo: b.titulo,
+            descricao: b.text,
+            linkUpgrade: b.linkUpgrade,
+            audio: b.asset,
+            imagem: b.imageAsset?.url ?? null,
+          })),
+          prontos: (c?.blocks ?? []).filter((b) => b.estado === CardEstado.PUBLICADO).length,
+        }
+      }),
+    }
+  }
+
+  /**
+   * Guarda um cartão inteiro de uma vez, e recalcula o estado a seguir.
+   *
+   * O estado nunca é escolhido por quem chama: é uma consequência do que está
+   * lá dentro. Se fosse um campo qualquer, mais cedo ou mais tarde alguém
+   * publicava um cartão sem imagem — que é exactamente o defeito que isto veio
+   * fechar.
+   */
+  async salvarCartao(
+    cartaoId: string,
+    dados: {
+      titulo?: string | null
+      descricao?: string | null
+      assetId?: string | null
+      imageAssetId?: string | null
+      linkUpgrade?: string | null
+    },
+    adminId: string,
+  ) {
+    const antes = await this.prisma.contentBlock.findUnique({
+      where: { id: cartaoId },
+      select: { id: true, content: { select: { projectId: true } } },
+    })
+    if (!antes) throw new NotFoundException('Cartão não encontrado')
+
+    const guardado = await this.prisma.contentBlock.update({
+      where: { id: cartaoId },
+      data: {
+        ...(dados.titulo !== undefined ? { titulo: dados.titulo?.trim() || null } : {}),
+        ...(dados.descricao !== undefined ? { text: dados.descricao?.trim() || null } : {}),
+        ...(dados.assetId !== undefined ? { assetId: dados.assetId } : {}),
+        ...(dados.imageAssetId !== undefined ? { imageAssetId: dados.imageAssetId } : {}),
+        ...(dados.linkUpgrade !== undefined
+          ? { linkUpgrade: dados.linkUpgrade?.trim() || null }
+          : {}),
+      },
+      select: {
+        id: true,
+        assetId: true,
+        imageAssetId: true,
+        titulo: true,
+        text: true,
+        linkUpgrade: true,
+      },
+    })
+
+    const estado = this.estadoDoCartao(guardado)
+    await this.prisma.contentBlock.update({ where: { id: cartaoId }, data: { estado } })
+    await this.auditar(adminId, antes.content.projectId, 'card.save', 'ContentBlock', cartaoId, {
+      estado,
+    })
+    return { ...guardado, estado }
+  }
+
+  /**
+   * Duplica um cartão: nasce vazio, logo a seguir ao original.
+   *
+   * Vazio e não copiado. Ele quer duplicar para ter DUAS músicas, e não a
+   * mesma música duas vezes — copiar o conteúdo daria um cartão pronto que
+   * ninguém pediu e que iria direito à página.
+   */
+  async duplicarCartao(cartaoId: string, adminId: string) {
+    const original = await this.prisma.contentBlock.findUnique({
+      where: { id: cartaoId },
+      select: {
+        contentId: true,
+        position: true,
+        label: true,
+        papel: true,
+        content: { select: { projectId: true } },
+      },
+    })
+    if (!original) throw new NotFoundException('Cartão não encontrado')
+    if (original.papel === CardPapel.IMPRESSAO) {
+      throw new BadRequestException('O cartão de impressão é único e não se duplica.')
+    }
+
+    // Abre espaço a seguir ao original, para a cópia não aterrar no fim.
+    await this.prisma.contentBlock.updateMany({
+      where: { contentId: original.contentId, position: { gt: original.position } },
+      data: { position: { increment: 1 } },
+    })
+
+    const copia = await this.prisma.contentBlock.create({
+      data: {
+        contentId: original.contentId,
+        type: BlockType.AUDIO,
+        papel: CardPapel.CARTAO,
+        estado: CardEstado.RASCUNHO,
+        // Sem casa: as quatro casas são das originais. A cópia vive a seguir
+        // àquela de onde saiu e some se for apagada.
+        slot: null,
+        label: original.label,
+        position: original.position + 1,
+      },
+      select: { id: true, slot: true, label: true, position: true, estado: true },
+    })
+    await this.auditar(
+      adminId,
+      original.content.projectId,
+      'card.duplicate',
+      'ContentBlock',
+      copia.id,
+      { de: cartaoId },
+    )
+    return copia
+  }
+
+  /**
+   * Esvazia um cartão original — o quadrado fica.
+   *
+   * "Deletar remove apenas seu conteúdo, mas preserva o quadrado vazio", disse
+   * ele, e é a diferença que interessa: as quatro casas de uma letra são fixas.
+   * Apagar a casa faria a letra passar a ter três, e a composição deixaria de
+   * ter a mesma forma em todos os vagões.
+   *
+   * Uma cópia não tem casa nenhuma a preservar: essa desaparece mesmo.
+   */
+  async esvaziarCartao(cartaoId: string, adminId: string) {
+    const cartao = await this.prisma.contentBlock.findUnique({
+      where: { id: cartaoId },
+      select: { id: true, slot: true, papel: true, content: { select: { projectId: true } } },
+    })
+    if (!cartao) throw new NotFoundException('Cartão não encontrado')
+
+    if (cartao.slot === null) {
+      await this.prisma.contentBlock.delete({ where: { id: cartaoId } })
+      await this.auditar(
+        adminId,
+        cartao.content.projectId,
+        'card.delete',
+        'ContentBlock',
+        cartaoId,
+        {},
+      )
+      return { removido: true }
+    }
+
+    await this.prisma.contentBlock.update({
+      where: { id: cartaoId },
+      data: {
+        assetId: null,
+        imageAssetId: null,
+        titulo: null,
+        text: null,
+        linkUpgrade: null,
+        estado: CardEstado.RASCUNHO,
+      },
+    })
+    await this.auditar(adminId, cartao.content.projectId, 'card.clear', 'ContentBlock', cartaoId, {})
+    return { removido: false }
+  }
+
+  /**
+   * Cria o cartão de impressão da letra. Um por letra, e só um.
+   *
+   * Nasce do quarto quadrado, como ele desenhou, e não se duplica.
+   */
+  async criarCartaoDeImpressao(contentId: string, adminId: string) {
+    const content = await this.prisma.content.findUnique({
+      where: { id: contentId },
+      select: { id: true, projectId: true },
+    })
+    if (!content) throw new NotFoundException('Letra não encontrada')
+
+    const jaExiste = await this.prisma.contentBlock.findFirst({
+      where: { contentId, papel: CardPapel.IMPRESSAO },
+      select: { id: true },
+    })
+    if (jaExiste) return jaExiste
+
+    const ultimo = await this.prisma.contentBlock.findFirst({
+      where: { contentId },
+      orderBy: { position: 'desc' },
+      select: { position: true },
+    })
+
+    const cartao = await this.prisma.contentBlock.create({
+      data: {
+        contentId,
+        type: BlockType.AUDIO,
+        papel: CardPapel.IMPRESSAO,
+        estado: CardEstado.RASCUNHO,
+        slot: null,
+        label: 'Cartão para impressão',
+        position: (ultimo?.position ?? 0) + 1,
+      },
+      select: { id: true, papel: true, estado: true, label: true, position: true },
+    })
+    await this.auditar(adminId, content.projectId, 'card.print', 'ContentBlock', cartao.id, {})
+    return cartao
   }
 
   private async auditar(

@@ -161,6 +161,20 @@ enum ContentStatus {
 /// A página de um conteúdo é composta por blocos ordenados, não por campos
 /// fixos. É isso que impede o formato "música + letra + texto educativo" do
 /// alfabeto de virar o schema da plataforma inteira.
+/// O papel de um cartão dentro da letra.
+enum CardPapel {
+  /// Imagem, áudio, interações, título e texto — a peça que se repete.
+  CARTAO
+  /// O cartão de impressão da letra: um por letra, opcional, sem cópias.
+  IMPRESSAO
+}
+
+/// Um cartão só sai de rascunho quando está inteiro.
+enum CardEstado {
+  RASCUNHO
+  PUBLICADO
+}
+
 model ContentBlock {
   id        String          @id @default(uuid()) @db.Uuid
   /// Engajamento próprio da faixa (decisão de 19/08).
@@ -197,10 +211,50 @@ model ContentBlock {
   url          String?
   meta         Json        @default("{}")
 
+  // ── O CARTÃO COMO PEÇA ÚNICA (23/08) ──────────────────────────────────
+  //
+  // O cliente passou quatro dias a ver a fotografia aparecer separada do
+  // áudio, e a diagnosticar bem: encostá-los por CSS melhora a aparência e não
+  // os torna a mesma coisa. Enquanto a imagem, o som, o título e o texto forem
+  // peças que por acaso estão juntas, há sempre um caminho no código que as
+  // separa outra vez.
+  //
+  // A partir daqui um CARTÃO é uma linha só, com tudo dentro: `imageAssetId` é
+  // a imagem, `assetId` é o áudio, `titulo` é o título grande, `text` é a
+  // descrição. As curtidas, os comentários e as escutas já eram dele. Não há
+  // como publicar meio cartão porque não há meio cartão — há um rascunho.
+
+  /// A casa deste cartão dentro da letra: 1 a 4, na ordem que ele fixou —
+  /// explicação, música, repetição do versículo, oração. As cópias feitas com
+  /// "Duplicar" não têm casa: vivem a seguir à original de onde saíram.
+  slot Int?
+
+  /// O papel do cartão. Um cartão comum, ou o cartão de impressão da letra —
+  /// que é único, opcional, e nasce do quarto quadrado.
+  papel CardPapel @default(CARTAO)
+
+  /// Rascunho enquanto faltar imagem, áudio, título ou descrição. Publicado só
+  /// quando estiver inteiro. É esta coluna que impede meia publicação de
+  /// chegar à página, e é a razão de tudo isto existir.
+  estado CardEstado @default(RASCUNHO)
+
+  /// O título GRANDE que a pessoa lê na página.
+  ///
+  /// Separado de `label` de propósito: `label` guarda o nome interno do
+  /// quadrado ("Música", "Oração"), que serve para o cliente se orientar no
+  /// painel e que ele foi explícito a dizer que NÃO aparece na página.
+  titulo String?
+
+  /// Link de venda desta letra — Hotmart, Kiwify ou outra. Alimenta o botão
+  /// "Fazer upgrade". Fica no cartão e não no projeto porque ele quer poder
+  /// vender coisas diferentes em letras diferentes.
+  linkUpgrade String?
+
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
   @@index([contentId, position])
+  @@index([contentId, slot])
   @@index([categoryId])
   @@index([imageAssetId])
   @@map("content_blocks")

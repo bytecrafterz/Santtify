@@ -2,41 +2,51 @@
 
 import { useState } from 'react'
 import { rastrear } from '@/lib/track'
+import { IndicadoresDaPublicacao } from './IndicadoresDaPublicacao'
 
 /**
- * O fim de uma letra: o convite a imprimir, e o cartão para imprimir.
+ * O cartão de impressão da letra — uma peça inteira, como as outras.
  *
- * Ele fixou a ordem em 23/08 e é esta — depois da última publicação vem
- * "Continue para imprimir a Letra A", depois o cartão, e só depois a letra
- * seguinte. Faz sentido: o cartão é o fecho desta letra, não uma opção solta a
- * meio do caminho. Antes disto a impressão estava lá em cima, ao lado do título
- * do projeto, onde ninguém chega no fim de nada.
+ * A versão anterior desenhava aqui a capa da letra outra vez, e era essa a
+ * "fotografia sozinha mais abaixo" de que ele se queixou em 23/08: uma imagem
+ * sem áudio, sem título e sem texto, no meio de uma página feita só de peças
+ * inteiras. Tinha razão — o defeito não era o espaçamento, era eu continuar a
+ * montar coisas a partir de pedaços soltos.
  *
- * O CONTADOR SÓ SOBE COM ACÇÃO CONCLUÍDA. É a regra que ele impôs em 20/08,
- * depois de tocar várias vezes no botão e ver o número subir sem ter impresso
- * nada. O navegador não conta a ninguém se saiu papel — nada conta. O que dá
- * para saber é se a pessoa levou a acção até ao fim, e é isso que se regista.
+ * Agora não existe até ele o criar no painel, e só aparece quando tem arte
+ * própria. A ordem é a dele: arte promocional na largura do cartão, a folha A4,
+ * o botão de imprimir, os indicadores, e só depois a letra seguinte.
+ *
+ * O CONTADOR SÓ SOBE COM ACÇÃO CONCLUÍDA — regra dele desde 20/08, quando tocou
+ * várias vezes no botão e viu o número subir sem ter impresso nada.
  */
 export function CartaoDeImpressao({
   projectId,
   contentId,
+  blockId,
+  projectSlug,
   titulo,
   letra,
   ficheiro,
   nomeDoFicheiro,
-  capa,
-  qrSvgUrl,
+  arte,
+  folhaA4,
+  linkUpgrade,
 }: {
   projectId: string
   contentId: string
+  blockId: string
+  projectSlug: string
   titulo: string
   letra: string
   ficheiro: string | null
   nomeDoFicheiro: string | null
-  capa: string | null
-  qrSvgUrl: string | null
+  arte: string
+  folhaA4: string | null
+  linkUpgrade: string | null
 }) {
   const [aviso, definirAviso] = useState<string | null>(null)
+  const nome = letra ? `Letra ${letra}` : titulo
 
   async function contar(via: string) {
     try {
@@ -58,58 +68,58 @@ export function CartaoDeImpressao({
     window.print()
   }
 
-  const nome = letra ? `Letra ${letra}` : titulo
-
   return (
-    <section className="bloco-impressao">
-      <p className="chamada-impressao">
-        Continue para imprimir a {nome}
-        <span className="seta-baixo" aria-hidden>
-          ⌄
-        </span>
-      </p>
-
-      <article className="cartao-impressao">
-        {capa && (
+    <article className="publicacao cartao-impressao" id={`impressao-${blockId}`}>
+      <div className="peca-visual">
+        {/* eslint-disable-next-line @next/next/no-img-element */}
+        <img className="foto-publicacao" src={arte} alt={`Cartão da ${nome}`} />
+        {folhaA4 && (
           // eslint-disable-next-line @next/next/no-img-element
-          <img className="arte-impressao" src={capa} alt={titulo} />
+          <img className="foto-publicacao folha-a4" src={folhaA4} alt={`Folha A4 da ${nome}`} />
         )}
-
-        <div className="corpo-impressao">
-          <p className="etiqueta-gratis">IMPRESSÃO GRATUITA</p>
-          <h3>Cartão da {nome}</h3>
-          <p className="nota-impressao">
-            Imprima em casa e leve a {nome} para fora do telemóvel. O QR Code do cartão traz de
-            volta a esta página.
-          </p>
-
-          {qrSvgUrl && (
-            // eslint-disable-next-line @next/next/no-img-element
-            <img className="qr-impressao" src={qrSvgUrl} alt={`QR Code da ${nome}`} />
+        <div className="faixa-imprimir">
+          {ficheiro ? (
+            <a
+              className="botao-imprimir"
+              href={ficheiro}
+              download={nomeDoFicheiro ?? undefined}
+              target="_blank"
+              rel="noopener noreferrer"
+              onClick={() => void contar('download')}
+            >
+              🖨 IMPRIMIR GRÁTIS
+            </a>
+          ) : (
+            <button type="button" className="botao-imprimir" onClick={imprimirAgora}>
+              🖨 IMPRIMIR GRÁTIS
+            </button>
           )}
-
-          <div className="acoes-impressao">
-            {ficheiro ? (
-              <a
-                className="botao-acao"
-                href={ficheiro}
-                download={nomeDoFicheiro ?? undefined}
-                target="_blank"
-                rel="noopener noreferrer"
-                onClick={() => void contar('download')}
-              >
-                ⬇ BAIXAR PDF GRÁTIS
-              </a>
-            ) : (
-              <button type="button" className="botao-acao" onClick={imprimirAgora}>
-                🖨 IMPRIMIR GRÁTIS
-              </button>
-            )}
-          </div>
-
-          {aviso && <p className="nota-ok">{aviso}</p>}
         </div>
-      </article>
-    </section>
+      </div>
+
+      <IndicadoresDaPublicacao
+        alvo={{ tipo: 'faixa', blockId }}
+        projectId={projectId}
+        projectSlug={projectSlug}
+        titulo={`Cartão da ${nome}`}
+        ligacao={`/${projectSlug}#impressao-${blockId}`}
+      />
+
+      {aviso && <p className="nota-ok">{aviso}</p>}
+
+      {linkUpgrade && (
+        <a
+          className="botao-upgrade"
+          href={linkUpgrade}
+          target="_blank"
+          rel="noopener noreferrer"
+          onClick={() =>
+            void rastrear({ projectId, contentId, type: 'CUSTOM', props: { acao: 'upgrade' } })
+          }
+        >
+          👑 FAZER UPGRADE
+        </a>
+      )}
+    </article>
   )
 }

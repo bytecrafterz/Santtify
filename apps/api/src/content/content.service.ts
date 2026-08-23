@@ -1,5 +1,5 @@
 import { Injectable, NotFoundException } from '@nestjs/common'
-import { BlockType, ContentStatus, EventType } from '@pv/db'
+import { BlockType, CardEstado, ContentStatus, EventType } from '@pv/db'
 import { PrismaService } from '../prisma/prisma.service'
 import { ShortLinksService } from '../short-links/short-links.service'
 
@@ -307,16 +307,34 @@ export class ContentService {
         freeFileUrl: content.freeFileUrl,
         freeFileName: content.freeFileName,
         position: content.position,
-        blocks: content.blocks.map((b) => ({
-          id: b.id,
-          type: b.type,
-          label: b.label,
-          text: b.text,
-          url: b.url,
-          asset: b.asset,
-          arte: b.imageAsset?.url ?? null,
-          meta: b.meta,
-        })),
+        /**
+         * SÓ OS CARTÕES INTEIROS CHEGAM À PÁGINA.
+         *
+         * Um cartão é imagem, áudio, título e descrição — e enquanto faltar
+         * qualquer um deles fica em rascunho e não sai daqui. É o que o cliente
+         * pediu em 23/08, depois de quatro dias a ver a fotografia aparecer
+         * separada do áudio: o servidor deixa de ter como devolver meia peça.
+         *
+         * Os blocos de texto soltos continuam a passar. São o texto educativo
+         * que ele escreveu enquanto a letra era um cartão só, e apagá-los agora
+         * seria perder texto dele sem ele o ter pedido.
+         */
+        blocks: content.blocks
+          .filter((b) => b.type !== 'AUDIO' || b.estado === CardEstado.PUBLICADO)
+          .map((b) => ({
+            id: b.id,
+            type: b.type,
+            slot: b.slot,
+            papel: b.papel,
+            label: b.label,
+            titulo: b.titulo,
+            text: b.text,
+            url: b.url,
+            linkUpgrade: b.linkUpgrade,
+            asset: b.asset,
+            arte: b.imageAsset?.url ?? null,
+            meta: b.meta,
+          })),
         stats: content.stats ?? { views: 0, likes: 0, comments: 0, shares: 0 },
         qrCode: code,
         qrUrl: code ? this.shortLinks.urlPublica(code) : null,

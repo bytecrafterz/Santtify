@@ -8,6 +8,7 @@ import { CapaComPlaylist } from '@/components/CapaComPlaylist'
 import { BotaoDenunciar } from '@/components/BotaoDenunciar'
 import { ExperienciaContinua } from '@/components/ExperienciaContinua'
 import { IntroducaoRecolhivel } from '@/components/IntroducaoRecolhivel'
+import { CabecalhoFixo } from '@/components/CabecalhoFixo'
 
 /**
  * A experiência inteira numa página só.
@@ -76,7 +77,13 @@ export default async function IndiceDoProjeto({
   const { project, anfitriao, contents, progresso, comunidade } = dados
 
   return (
-    <main className="envoltorio">
+    <main className="envoltorio com-cabecalho">
+      <CabecalhoFixo
+        projectSlug={projectSlug}
+        onde={project.name}
+        avatarUrl={anfitriao?.avatarUrl ?? null}
+      />
+
       <RastreadorDeVisita
         projectId={project.id}
         type="PAGE_VIEW"

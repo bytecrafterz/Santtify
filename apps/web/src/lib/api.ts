@@ -27,9 +27,18 @@ export interface Asset {
 export interface Bloco {
   id: string
   type: TipoBloco
+  /** A casa do cartão dentro da letra: 1 a 4. Nulo nas cópias. */
+  slot: number | null
+  /** CARTAO ou IMPRESSAO. */
+  papel: 'CARTAO' | 'IMPRESSAO'
+  /** Nome interno do quadrado. NÃO aparece na página — regra dele, 23/08. */
   label: string | null
+  /** O título grande que a pessoa lê. */
+  titulo: string | null
   text: string | null
   url: string | null
+  /** Hotmart, Kiwify ou outra: alimenta o botão de upgrade. */
+  linkUpgrade: string | null
   asset: Asset | null
   /** Arte própria desta faixa, quando o dono enviou uma. */
   arte: string | null
@@ -157,9 +166,7 @@ export const api = {
       contents: ItemIndice[]
       progresso: ProgressoDasLetras
       comunidade: { perfis: number; impressoes: number }
-    }>(
-      `/projects/${slug}/contents`,
-    ),
+    }>(`/projects/${slug}/contents`),
   playlist: (slug: string) =>
     buscar<{ project: Projeto; categorias: CategoriaDeAudio[]; faixas: Faixa[] }>(
       `/projects/${slug}/playlist`,

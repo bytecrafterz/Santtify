@@ -55,6 +55,22 @@ class SalvarBlocoDto {
   @IsOptional() @IsString() assetId?: string | null
 }
 
+/**
+ * O cartão inteiro numa chamada só.
+ *
+ * Note-se o que NÃO está aqui: o estado. Rascunho ou publicado é consequência
+ * do que ficou lá dentro, e não uma escolha de quem chama — se fosse um campo,
+ * mais cedo ou mais tarde chegava um cartão publicado sem imagem, que é o
+ * defeito que tudo isto veio fechar.
+ */
+class SalvarCartaoDto {
+  @IsOptional() @IsString() @MaxLength(120) titulo?: string | null
+  @IsOptional() @IsString() @MaxLength(4000) descricao?: string | null
+  @IsOptional() @IsString() assetId?: string | null
+  @IsOptional() @IsString() imageAssetId?: string | null
+  @IsOptional() @IsString() @MaxLength(500) linkUpgrade?: string | null
+}
+
 class DecidirDenunciaDto {
   @IsIn(['REVIEWED', 'DISMISSED']) status!: 'REVIEWED' | 'DISMISSED'
 }
@@ -328,6 +344,37 @@ export class AdminController {
   @Patch('contents/:id/metadata')
   metadados(@Param('id') id: string, @Body() dto: MetadadosDto, @Req() req: Request) {
     return this.conteudo.salvarMetadados(id, dto as Record<string, unknown>, req.usuario!.id)
+  }
+
+  // ── O cartão como peça única (23/08) ──────────────────────────────
+  //
+  // Rotas próprias, e não mais campos nas dos blocos. Um cartão guarda-se
+  // inteiro de uma vez, e o estado — rascunho ou publicado — sai do que ficou
+  // lá dentro, nunca de quem chama.
+
+  @Get('projects/:projectSlug/alfabeto')
+  alfabeto(@Param('projectSlug') projectSlug: string) {
+    return this.conteudo.alfabeto(projectSlug)
+  }
+
+  @Patch('cards/:id')
+  salvarCartao(@Param('id') id: string, @Body() dto: SalvarCartaoDto, @Req() req: Request) {
+    return this.conteudo.salvarCartao(id, dto, req.usuario!.id)
+  }
+
+  @Post('cards/:id/duplicate')
+  duplicarCartao(@Param('id') id: string, @Req() req: Request) {
+    return this.conteudo.duplicarCartao(id, req.usuario!.id)
+  }
+
+  @Delete('cards/:id')
+  esvaziarCartao(@Param('id') id: string, @Req() req: Request) {
+    return this.conteudo.esvaziarCartao(id, req.usuario!.id)
+  }
+
+  @Post('contents/:id/print-card')
+  criarCartaoDeImpressao(@Param('id') id: string, @Req() req: Request) {
+    return this.conteudo.criarCartaoDeImpressao(id, req.usuario!.id)
   }
 
   // ── Blocos ───────────────────────────────────────────────────────

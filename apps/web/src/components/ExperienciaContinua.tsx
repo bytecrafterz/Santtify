@@ -175,23 +175,34 @@ export function ExperienciaContinua({
             />
           ))}
 
-          {/* A impressão vem DEPOIS da última publicação, e antes da letra
-              seguinte. É a ordem dele, e faz sentido: o cartão é o fim desta
-              letra, não uma opção que anda por ali no meio. */}
-          <CartaoDeImpressao
-            projectId={projectId}
-            contentId={aberta.content.id}
-            titulo={aberta.content.title}
-            letra={aberta.content.letra ?? ''}
-            ficheiro={aberta.content.freeFileUrl}
-            nomeDoFicheiro={aberta.content.freeFileName}
-            capa={aberta.content.coverUrl}
-            qrSvgUrl={
-              aberta.content.qrCode
-                ? `${process.env.NEXT_PUBLIC_API_URL ?? ''}/projects/${projectSlug}/contents/${aberta.content.slug}/qr.svg`
-                : null
-            }
-          />
+          {/* A IMPRESSÃO SÓ APARECE QUANDO EXISTE MESMO.
+              Antes eu desenhava aqui a capa da letra outra vez, e era essa a
+              "fotografia sozinha mais abaixo" de que ele se queixou — uma
+              imagem sem áudio, sem título e sem texto, no meio de uma página
+              que era toda feita de peças inteiras. O cartão de impressão é uma
+              peça como as outras: ou está inteiro, ou não está. */}
+          {(() => {
+            const impressao = aberta.content.blocks.find((b) => b.papel === 'IMPRESSAO' && b.arte)
+            // O `find` acima já garante que há arte; o compilador é que não
+            // consegue ver isso através do predicado. Repetir a condição aqui
+            // custa uma linha e evita um `!` que mente sobre o que se sabe.
+            if (!impressao?.arte) return null
+            return (
+              <CartaoDeImpressao
+                projectId={projectId}
+                contentId={aberta.content.id}
+                blockId={impressao.id}
+                projectSlug={projectSlug}
+                titulo={impressao.titulo ?? aberta.content.title}
+                letra={aberta.content.letra ?? ''}
+                ficheiro={aberta.content.freeFileUrl}
+                nomeDoFicheiro={aberta.content.freeFileName}
+                arte={impressao.arte}
+                folhaA4={(impressao.meta?.folhaA4 as string | undefined) ?? null}
+                linkUpgrade={impressao.linkUpgrade}
+              />
+            )
+          })()}
 
           {/* Só depois da impressão é que se anuncia a próxima. */}
           {(() => {
@@ -238,36 +249,26 @@ export function ExperienciaContinua({
  */
 function publicacoesDe(pagina: PaginaConteudo) {
   const c = pagina.content
-  const audios = c.blocks.filter((b) => b.type === 'AUDIO' && b.asset?.url)
-  const texto = c.blocks
-    .filter((b) => (b.type === 'TEXT' || b.type === 'RICH_TEXT') && b.text?.trim())
-    .map((b) => b.text!.trim())
-    .join('\n\n')
 
-  const [primeiro, ...restantes] = audios
-
-  const principal = {
-    ancora: `conteudo-${c.id}`,
-    etiqueta: c.letra ? `LETRA ${c.letra}` : null,
-    imagem: c.coverUrl,
-    bloco: primeiro ?? null,
-    titulo: c.title,
-    texto: texto || c.subtitle,
-    alvo: { tipo: 'conteudo' as const, contentId: c.id },
-  }
-
-  return [
-    principal,
-    ...restantes.map((b) => ({
-      ancora: `faixa-${b.id}`,
-      etiqueta: (b.label ?? '').trim().toUpperCase() || null,
-      imagem: b.arte ?? c.coverUrl,
+  // Só cartões, e cada cartão é uma peça inteira: o servidor já não devolve
+  // nenhum incompleto. Aqui não há nada a montar nem a juntar — foi essa
+  // montagem, feita de pedaços que por acaso estavam próximos, que durante
+  // quatro dias deixou a fotografia aparecer sozinha noutro sítio da página.
+  return c.blocks
+    .filter((b) => b.type === 'AUDIO' && b.asset?.url && b.papel === 'CARTAO')
+    .map((b) => ({
+      ancora: `cartao-${b.id}`,
+      // SEM ETIQUETA. Os nomes das casas — explicação, música, oração — servem
+      // para ele se orientar no painel, e ele foi explícito: não aparecem na
+      // página, nem como faixa branca no topo.
+      etiqueta: null as string | null,
+      imagem: b.arte,
       bloco: b,
-      titulo: (b.label ?? '').trim() || c.title,
+      titulo: b.titulo ?? '',
       texto: b.text?.trim() ?? null,
+      linkUpgrade: b.linkUpgrade,
       alvo: { tipo: 'faixa' as const, blockId: b.id },
-    })),
-  ]
+    }))
 }
 
 /**
