@@ -4529,6 +4529,9 @@ button.letra-bloco {
 }
 
 .cabecalho-fixo .retrato-topo {
+  /* `flex: 0 0 auto` porque sem ele o item estica com o contentor e o
+     retrato redondo vira uma elipse alta e preta a meio da barra. */
+  flex: 0 0 auto;
   width: 30px;
   height: 30px;
   border-radius: 50%;

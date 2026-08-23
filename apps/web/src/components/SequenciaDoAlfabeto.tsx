@@ -3,6 +3,7 @@
 import { useCallback, useEffect, useState } from 'react'
 import { admin, type CartaoAdmin, type VagaoAdmin } from '@/lib/admin'
 import { CabecalhoFixo } from './CabecalhoFixo'
+import { useAuth } from './ProvedorDeAuth'
 import { EditorDeCartao } from './EditorDeCartao'
 
 /**
@@ -34,6 +35,7 @@ export function SequenciaDoAlfabeto({ projectSlug }: { projectSlug: string }) {
   const [carregando, definirCarregando] = useState(true)
   const [erro, definirErro] = useState<string | null>(null)
   const [menuAberto, definirMenuAberto] = useState<string | null>(null)
+  const { usuario, carregando: aRestaurarSessao } = useAuth()
 
   const recarregar = useCallback(async () => {
     try {
@@ -47,9 +49,20 @@ export function SequenciaDoAlfabeto({ projectSlug }: { projectSlug: string }) {
     }
   }, [projectSlug])
 
+  /**
+   * Espera pela sessão antes de perguntar.
+   *
+   * O access token só vive em memória: ao abrir a página ele ainda não existe,
+   * e é preciso trocar o refresh guardado por um novo. Sem esta espera, o
+   * painel perguntava ao servidor sem credencial nenhuma, levava um 401 e
+   * mostrava "não foi possível carregar o alfabeto" a um administrador com a
+   * sessão perfeitamente válida. É a terceira vez esta semana que esta corrida
+   * me apanha, sempre com outra cara.
+   */
   useEffect(() => {
+    if (aRestaurarSessao) return
     void recarregar()
-  }, [recarregar])
+  }, [recarregar, aRestaurarSessao, usuario?.id])
 
   const vagao = 'letra' in onde ? vagoes.find((v) => v.letra === onde.letra) : undefined
 
@@ -176,8 +189,8 @@ export function SequenciaDoAlfabeto({ projectSlug }: { projectSlug: string }) {
         <h1>Alfabeto — sequência infinita</h1>
         <p className="nota">Deslize para baixo para ver todas as letras</p>
 
-        {erro && <p className="erro">{erro}</p>}
-        {carregando && <p className="nota">A carregar...</p>}
+        {erro && !aRestaurarSessao && <p className="erro">{erro}</p>}
+        {(carregando || aRestaurarSessao) && <p className="nota">A carregar...</p>}
 
         {/* A LINHA NÃO SE INTERROMPE. É o desenho dele, e diz uma coisa
             verdadeira sobre a estrutura: as letras não são 26 páginas soltas,
