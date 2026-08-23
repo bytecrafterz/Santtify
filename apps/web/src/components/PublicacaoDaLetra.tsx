@@ -69,7 +69,27 @@ export function PublicacaoDaLetra({
              colocar somente o áudio, o espaço da imagem continuará visível".
              É o que torna o cartão uma peça e não um conjunto de coisas que
              aparecem quando calha. */
-          <div className="lugar-da-foto" aria-hidden />
+          <div className="lugar-da-foto" aria-hidden>
+            {/* Um símbolo, e não texto. O lugar reservado é visto por quem
+                visita, e não só por quem publica — escrever ali "falta a foto"
+                seria mostrar a nossa lista de tarefas a uma criança. Um
+                rectângulo cinzento e vazio lê-se como avaria; com o símbolo,
+                lê-se como imagem a caminho, e isso é verdade. */}
+            <svg
+              viewBox="0 0 24 24"
+              width="56"
+              height="56"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="1.4"
+              strokeLinecap="round"
+              strokeLinejoin="round"
+            >
+              <rect x="3" y="4.5" width="18" height="15" rx="2.5" />
+              <circle cx="8.5" cy="10" r="1.6" />
+              <path d="m4 17 4.5-4.5 3.5 3.5 3-2.5L20 17" />
+            </svg>
+          </div>
         )}
         {bloco && (
           <TocadorDeOnda

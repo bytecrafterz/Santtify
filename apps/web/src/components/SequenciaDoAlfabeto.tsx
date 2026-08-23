@@ -36,6 +36,9 @@ export function SequenciaDoAlfabeto({ projectSlug }: { projectSlug: string }) {
   const [erro, definirErro] = useState<string | null>(null)
   const [menuAberto, definirMenuAberto] = useState<string | null>(null)
   const { usuario, carregando: aRestaurarSessao } = useAuth()
+  /** A ordem enquanto ele mexe, antes de gravar. Nula = a do servidor. */
+  const [ordem, definirOrdem] = useState<string[] | null>(null)
+  const [aGravarOrdem, definirAGravarOrdem] = useState(false)
 
   const recarregar = useCallback(async () => {
     try {
@@ -90,9 +93,21 @@ export function SequenciaDoAlfabeto({ projectSlug }: { projectSlug: string }) {
 
   // ── Tela 2: os quatro quadrados ───────────────────────────────────
   if (onde.tela === 'quadrados' && vagao) {
-    const originais = vagao.cartoes.filter((c) => c.papel === 'CARTAO' && c.slot !== null)
-    const copias = vagao.cartoes.filter((c) => c.papel === 'CARTAO' && c.slot === null)
     const impressao = vagao.cartoes.find((c) => c.papel === 'IMPRESSAO')
+    const doVagao = vagao.cartoes.filter((c) => c.papel === 'CARTAO')
+    // A ordem em que ele os está a arrumar agora, se já mexeu; senão a do
+    // servidor, que já vem pelas casas e depois pelas cópias.
+    const lista = ordem
+      ? (ordem.map((id) => doVagao.find((c) => c.id === id)).filter(Boolean) as typeof doVagao)
+      : doVagao
+
+    function mover(i: number, direccao: -1 | 1) {
+      const j = i + direccao
+      if (j < 0 || j >= lista.length) return
+      const nova = lista.map((c) => c.id)
+      ;[nova[i], nova[j]] = [nova[j], nova[i]]
+      definirOrdem(nova)
+    }
 
     return (
       <>
@@ -109,7 +124,7 @@ export function SequenciaDoAlfabeto({ projectSlug }: { projectSlug: string }) {
           <p className="nota">Toque para editar • Toque nos três pontos para ver opções</p>
 
           <div className="grade-quadrados">
-            {[...originais, ...copias].map((c, i) => (
+            {lista.map((c, i) => (
               <Quadrado
                 key={c.id}
                 cartao={c}
@@ -138,6 +153,8 @@ export function SequenciaDoAlfabeto({ projectSlug }: { projectSlug: string }) {
                   await recarregar()
                 }}
                 /* Só o quarto quadrado cria o cartão de impressão, e só uma vez. */
+                aoSubir={i > 0 ? () => mover(i, -1) : undefined}
+                aoDescer={i < lista.length - 1 ? () => mover(i, 1) : undefined}
                 aoCriarImpressao={
                   c.slot === 4 && !impressao && vagao.contentId
                     ? async () => {
@@ -150,6 +167,31 @@ export function SequenciaDoAlfabeto({ projectSlug }: { projectSlug: string }) {
               />
             ))}
           </div>
+
+          {/* SALVAR ORDEM só aparece depois de ele mexer em alguma coisa.
+              Um botão de gravar sempre à vista, sem nada por gravar, ensina a
+              pessoa a ignorá-lo — e no dia em que houver mesmo alterações por
+              gravar, ela ignora-o também. */}
+          {ordem && (
+            <button
+              type="button"
+              className="botao-acao largo salvar-ordem"
+              disabled={aGravarOrdem || !vagao.contentId}
+              onClick={async () => {
+                if (!vagao.contentId) return
+                definirAGravarOrdem(true)
+                try {
+                  await admin.ordenarCartoes(vagao.contentId, ordem)
+                  definirOrdem(null)
+                  await recarregar()
+                } finally {
+                  definirAGravarOrdem(false)
+                }
+              }}
+            >
+              {aGravarOrdem ? 'A guardar...' : 'SALVAR ORDEM'}
+            </button>
+          )}
 
           {impressao ? (
             <button
@@ -262,6 +304,8 @@ function Quadrado({
   aoEditar,
   aoDuplicar,
   aoApagar,
+  aoSubir,
+  aoDescer,
   aoCriarImpressao,
 }: {
   cartao: CartaoAdmin
@@ -272,6 +316,8 @@ function Quadrado({
   aoEditar: () => void
   aoDuplicar: () => Promise<void>
   aoApagar: () => Promise<void>
+  aoSubir?: () => void
+  aoDescer?: () => void
   aoCriarImpressao?: () => Promise<void>
 }) {
   return (
@@ -300,6 +346,23 @@ function Quadrado({
           {cartao.estado === 'PUBLICADO' ? 'PRONTO' : 'RASCUNHO'}
         </span>
       </button>
+
+      {/* Setas, e não arrastar. O painel é usado no telemóvel, e arrastar uma
+          grelha é justamente o gesto que briga com a rolagem da página — a
+          pessoa tenta descer e leva um cartão com ela. */}
+      <div className="setas-quadrado">
+        <button type="button" aria-label="Mover para trás" onClick={aoSubir} disabled={!aoSubir}>
+          ‹
+        </button>
+        <button
+          type="button"
+          aria-label="Mover para a frente"
+          onClick={aoDescer}
+          disabled={!aoDescer}
+        >
+          ›
+        </button>
+      </div>
 
       {menuAberto && (
         <div className="menu-quadrado" role="menu">

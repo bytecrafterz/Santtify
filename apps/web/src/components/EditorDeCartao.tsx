@@ -171,14 +171,37 @@ export function EditorDeCartao({
 
       {erro && <p className="erro">{erro}</p>}
 
-      <button
-        type="button"
-        className="botao-acao largo"
-        onClick={() => void guardar()}
-        disabled={ocupado !== null}
-      >
-        {ocupado === 'guardar' ? 'A guardar...' : 'SALVAR'}
-      </button>
+      <div className="acoes-cartao">
+        <button
+          type="button"
+          className="botao-acao largo"
+          onClick={() => void guardar()}
+          disabled={ocupado !== null}
+        >
+          {ocupado === 'guardar' ? 'A guardar...' : 'SALVAR'}
+        </button>
+
+        {/* PUBLICAR só acende quando o cartão está inteiro.
+            Não é um segundo botão de guardar: é o mesmo gesto com outro nome, e
+            o nome muda porque o resultado muda. Guardar um cartão a meio deixa-o
+            em rascunho e ninguém o vê; guardar um cartão inteiro põe-no na
+            página. Ter os dois nomes à vista, com um deles apagado, diz onde a
+            pessoa está sem ela ter de ler nada. */}
+        <button
+          type="button"
+          className="botao-publicar"
+          onClick={() => void guardar()}
+          disabled={ocupado !== null || falta.length > 0}
+          title={falta.length ? `Falta ${falta.join(', ')}` : 'Publicar este cartão'}
+        >
+          {falta.length > 0 && (
+            <span aria-hidden className="cadeado">
+              🔒
+            </span>
+          )}
+          PUBLICAR
+        </button>
+      </div>
 
       {/* A tira diz o que falta, com os nomes das coisas. "Complete o cartão"
           sozinho obriga a adivinhar qual das quatro coisas é que falta. */}

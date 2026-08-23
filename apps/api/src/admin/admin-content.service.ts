@@ -1109,6 +1109,50 @@ export class AdminContentService {
     return cartao
   }
 
+  /**
+   * Grava a ordem dos cartões de uma letra, de uma vez.
+   *
+   * Uma chamada por cartão trocado deixaria a ordem meio gravada se a ligação
+   * caísse a meio — e ele usa isto no telemóvel, onde a ligação cai. Vai tudo
+   * numa transacção: ou fica a ordem toda, ou fica a que lá estava.
+   *
+   * As posições são reescritas a partir da lista recebida, e não somadas ou
+   * trocadas duas a duas. Trocar aos pares depende de o servidor e o ecrã
+   * concordarem no estado inicial, e basta uma gravação perdida para deixarem
+   * de concordar.
+   */
+  async ordenarCartoes(contentId: string, ids: string[], adminId: string) {
+    const existentes = await this.prisma.contentBlock.findMany({
+      where: { contentId },
+      select: { id: true },
+    })
+    const conhecidos = new Set(existentes.map((b) => b.id))
+    const pedidos = ids.filter((id) => conhecidos.has(id))
+    if (pedidos.length !== ids.length) {
+      throw new BadRequestException('A lista tem cartões que não são desta letra.')
+    }
+
+    // O que não vier na lista fica a seguir, pela ordem que já tinha. Assim uma
+    // lista parcial nunca faz desaparecer um cartão do fim da página.
+    const resto = existentes.map((b) => b.id).filter((id) => !pedidos.includes(id))
+    const ordem = [...pedidos, ...resto]
+
+    await this.prisma.$transaction(
+      ordem.map((id, i) =>
+        this.prisma.contentBlock.update({ where: { id }, data: { position: i + 1 } }),
+      ),
+    )
+
+    const content = await this.prisma.content.findUnique({
+      where: { id: contentId },
+      select: { projectId: true },
+    })
+    await this.auditar(adminId, content!.projectId, 'card.order', 'Content', contentId, {
+      total: ordem.length,
+    })
+    return { ordenados: ordem.length }
+  }
+
   /** O projeto pelo slug, para as rotas que só têm o slug na mão. */
   async projetoPorSlug(slug: string) {
     const p = await this.prisma.project.findUnique({

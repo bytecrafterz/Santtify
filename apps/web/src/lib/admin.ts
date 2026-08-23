@@ -323,6 +323,13 @@ export const admin = {
   esvaziarCartao: (id: string) =>
     chamar<{ removido: boolean }>(`/cards/${id}`, { method: 'DELETE' }),
 
+  /** Grava a ordem toda de uma vez: meia ordem gravada é pior do que nenhuma. */
+  ordenarCartoes: (contentId: string, ids: string[]) =>
+    chamar<{ ordenados: number }>(`/contents/${contentId}/card-order`, {
+      method: 'POST',
+      body: JSON.stringify({ ids }),
+    }),
+
   criarCartaoDeImpressao: (contentId: string) =>
     chamar<CartaoAdmin>(`/contents/${contentId}/print-card`, { method: 'POST' }),
 

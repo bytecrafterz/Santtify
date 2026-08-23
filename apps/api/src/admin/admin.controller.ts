@@ -15,7 +15,18 @@ import {
 import { FileInterceptor } from '@nestjs/platform-express'
 import type { Request } from 'express'
 import { BlockType } from '@pv/db'
-import { IsBoolean, IsEnum, IsIn, IsInt, IsOptional, IsString, MaxLength, Min } from 'class-validator'
+import {
+  IsArray,
+  IsBoolean,
+  IsEnum,
+  IsIn,
+  IsInt,
+  IsOptional,
+  IsString,
+  IsUUID,
+  MaxLength,
+  Min,
+} from 'class-validator'
 import { AdminContentService } from './admin-content.service'
 import { StorageService, TAMANHO_MAXIMO } from './storage.service'
 import { LaunchesService } from '../content/launches.service'
@@ -64,6 +75,10 @@ class SalvarBlocoDto {
  * mais cedo ou mais tarde chegava um cartão publicado sem imagem, que é o
  * defeito que tudo isto veio fechar.
  */
+class OrdemDosCartoesDto {
+  @IsArray() @IsUUID('4', { each: true }) ids!: string[]
+}
+
 class SalvarCartaoDto {
   @IsOptional() @IsString() @MaxLength(120) titulo?: string | null
   @IsOptional() @IsString() @MaxLength(4000) descricao?: string | null
@@ -397,6 +412,11 @@ export class AdminController {
   @Delete('cards/:id')
   esvaziarCartao(@Param('id') id: string, @Req() req: Request) {
     return this.conteudo.esvaziarCartao(id, req.usuario!.id)
+  }
+
+  @Post('contents/:id/card-order')
+  ordenarCartoes(@Param('id') id: string, @Body() dto: OrdemDosCartoesDto, @Req() req: Request) {
+    return this.conteudo.ordenarCartoes(id, dto.ids, req.usuario!.id)
   }
 
   @Post('contents/:id/print-card')

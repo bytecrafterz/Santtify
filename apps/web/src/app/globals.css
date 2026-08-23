@@ -5241,6 +5241,76 @@ button.letra-bloco {
 /* O lugar da foto, quando ainda não há foto. Fica com a proporção de uma
    arte de letra para o cartão não mudar de tamanho quando ela chegar. */
 .lugar-da-foto {
+  display: grid;
+  place-items: center;
+  /* Quadrado, que é o formato das artes dele. Se eu reservasse menos altura, o
+     cartão saltava de tamanho no instante em que a foto chegasse. */
   aspect-ratio: 1 / 1;
   background: linear-gradient(135deg, var(--cor-fundo), var(--cor-borda));
+  color: var(--cor-texto-suave);
+  opacity: 0.55;
+}
+
+/* ── Publicar, e arrumar a ordem (24/08) ─────────────────────────────── */
+.acoes-cartao {
+  display: grid;
+  gap: 0.5rem;
+  margin-top: 0.8rem;
+}
+
+.botao-publicar {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.4rem;
+  width: 100%;
+  padding: 0.95rem;
+  border: 0;
+  border-radius: 999px;
+  background: var(--cor-primaria);
+  color: #fff;
+  font-family: inherit;
+  font-size: 1rem;
+  font-weight: 800;
+  letter-spacing: 0.03em;
+  cursor: pointer;
+}
+
+/* Apagado enquanto faltar alguma coisa. Não escondido: escondido obrigava a
+   adivinhar que ele existe, e é o passo seguinte de quem está a preencher. */
+.botao-publicar:disabled {
+  background: var(--cor-borda);
+  color: var(--cor-texto-suave);
+  cursor: not-allowed;
+}
+
+.setas-quadrado {
+  position: absolute;
+  right: 4px;
+  bottom: 4px;
+  z-index: 2;
+  display: flex;
+  gap: 0.15rem;
+}
+
+.setas-quadrado button {
+  width: 26px;
+  height: 26px;
+  border: 1px solid var(--cor-borda);
+  border-radius: 8px;
+  background: var(--cor-superficie);
+  color: var(--cor-texto);
+  font-family: inherit;
+  font-size: 1rem;
+  line-height: 1;
+  cursor: pointer;
+}
+
+.setas-quadrado button:disabled {
+  opacity: 0.3;
+  cursor: default;
+}
+
+.salvar-ordem {
+  margin-top: 0.9rem;
 }
