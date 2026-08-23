@@ -2,7 +2,8 @@
 
 import { useEffect, useRef, useState } from 'react'
 import type { ItemIndice, PaginaConteudo, ProgressoDasLetras } from '@/lib/api'
-import { CartaoDeConteudo } from './CartaoDeConteudo'
+import { PublicacaoDaLetra } from './PublicacaoDaLetra'
+import { CartaoDeImpressao } from './CartaoDeImpressao'
 import { rastrear } from '@/lib/track'
 
 /**
@@ -69,7 +70,12 @@ export function ExperienciaContinua({
     // A visita conta na mesma: quem abre a letra aqui dentro está a ver a letra
     // tanto como quem lá chega pelo QR Code. Sem isto, quanto melhor ficasse a
     // experiência contínua, menos a plataforma saberia sobre o que é visto.
-    void rastrear({ projectId, contentId: item.id, type: 'CONTENT_VIEW', props: { origem: 'perfil' } })
+    void rastrear({
+      projectId,
+      contentId: item.id,
+      type: 'CONTENT_VIEW',
+      props: { origem: 'perfil' },
+    })
   }
 
   // Depois de a letra chegar, leva a pessoa até ela. Sem isto o conteúdo abre
@@ -108,7 +114,11 @@ export function ExperienciaContinua({
 
           if (!dela) {
             return (
-              <div className="letra-bloco trancada" key={letra} aria-label={`Letra ${letra}, ainda bloqueada`}>
+              <div
+                className="letra-bloco trancada"
+                key={letra}
+                aria-label={`Letra ${letra}, ainda bloqueada`}
+              >
                 {letra}
                 <span className="cadeado" aria-hidden>
                   🔒
@@ -143,22 +153,133 @@ export function ExperienciaContinua({
 
       {aberta && !carregando && (
         <section className="letra-aberta">
-          {/* Sem capa nem título repetidos aqui: a introdução do projeto já
-              está em cima da página, e cada conteúdo traz a sua própria
-              imagem. Repetir era ver a mesma coisa duas vezes seguidas. */}
-          {/* Sem botão de fechar: a letra faz parte da página e não é uma janela
-                por cima dela. Quem quiser outra letra toca noutra. */}
-          <CartaoDeConteudo
-            contentId={aberta.content.id}
+          {/* A letra deixou de ser UM cartão com os áudios empilhados por
+              baixo de uma imagem só. São publicações independentes, na ordem
+              que ele fixou em 23/08: principal, música, explicação, oração,
+              memorização. A ordem sai da posição de cada bloco no painel, que
+              é onde ele a manda com as setas — não a invento aqui. */}
+          {publicacoesDe(aberta).map((pub) => (
+            <PublicacaoDaLetra
+              key={pub.ancora}
+              etiqueta={pub.etiqueta}
+              imagem={pub.imagem}
+              bloco={pub.bloco}
+              titulo={pub.titulo}
+              texto={pub.texto}
+              alvo={pub.alvo}
+              projectId={projectId}
+              contentId={aberta.content.id}
+              projectSlug={projectSlug}
+              ligacao={`/${projectSlug}#${pub.ancora}`}
+              ancora={pub.ancora}
+            />
+          ))}
+
+          {/* A impressão vem DEPOIS da última publicação, e antes da letra
+              seguinte. É a ordem dele, e faz sentido: o cartão é o fim desta
+              letra, não uma opção que anda por ali no meio. */}
+          <CartaoDeImpressao
             projectId={projectId}
-            projectSlug={projectSlug}
+            contentId={aberta.content.id}
             titulo={aberta.content.title}
-            subtitulo={aberta.content.subtitle}
+            letra={aberta.content.letra ?? ''}
+            ficheiro={aberta.content.freeFileUrl}
+            nomeDoFicheiro={aberta.content.freeFileName}
             capa={aberta.content.coverUrl}
-            blocos={aberta.content.blocks}
+            qrSvgUrl={
+              aberta.content.qrCode
+                ? `${process.env.NEXT_PUBLIC_API_URL ?? ''}/projects/${projectSlug}/contents/${aberta.content.slug}/qr.svg`
+                : null
+            }
           />
+
+          {/* Só depois da impressão é que se anuncia a próxima. */}
+          {(() => {
+            const seguinte = proximaLetraDepoisDe(aberta.content.letra, contents)
+            if (!seguinte) return null
+            return (
+              <div className="proxima-letra">
+                <p className="rotulo-proxima">Próxima letra</p>
+                <button
+                  type="button"
+                  className="cartao-proxima"
+                  onClick={() => escolher(seguinte)}
+                  disabled={!seguinte.publicado}
+                >
+                  {seguinte.coverUrl && (
+                    // eslint-disable-next-line @next/next/no-img-element
+                    <img src={seguinte.coverUrl} alt={seguinte.title} />
+                  )}
+                  <span className="nome-proxima">
+                    Letra {seguinte.letra} — {seguinte.title}
+                  </span>
+                  {!seguinte.publicado && <span className="cadeado-proxima">🔒 Em breve</span>}
+                </button>
+              </div>
+            )
+          })()}
         </section>
       )}
     </>
   )
+}
+
+/**
+ * Parte uma letra nas suas publicações.
+ *
+ * A PRIMEIRA é o conteúdo em si: a capa da letra, o primeiro áudio, o título e
+ * o texto educativo. As seguintes são um áudio cada, com a arte própria da
+ * faixa. Se a faixa ainda não tiver arte, usa a capa da letra — é melhor ver a
+ * letra outra vez do que ver um buraco branco onde devia estar uma imagem.
+ *
+ * O texto dos blocos de texto que existam vai todo para a primeira publicação,
+ * porque é lá que ele o escreveu enquanto a letra era um cartão só. Cada faixa
+ * tem o seu próprio texto assim que ele o preencher no painel.
+ */
+function publicacoesDe(pagina: PaginaConteudo) {
+  const c = pagina.content
+  const audios = c.blocks.filter((b) => b.type === 'AUDIO' && b.asset?.url)
+  const texto = c.blocks
+    .filter((b) => (b.type === 'TEXT' || b.type === 'RICH_TEXT') && b.text?.trim())
+    .map((b) => b.text!.trim())
+    .join('\n\n')
+
+  const [primeiro, ...restantes] = audios
+
+  const principal = {
+    ancora: `conteudo-${c.id}`,
+    etiqueta: c.letra ? `LETRA ${c.letra}` : null,
+    imagem: c.coverUrl,
+    bloco: primeiro ?? null,
+    titulo: c.title,
+    texto: texto || c.subtitle,
+    alvo: { tipo: 'conteudo' as const, contentId: c.id },
+  }
+
+  return [
+    principal,
+    ...restantes.map((b) => ({
+      ancora: `faixa-${b.id}`,
+      etiqueta: (b.label ?? '').trim().toUpperCase() || null,
+      imagem: b.arte ?? c.coverUrl,
+      bloco: b,
+      titulo: (b.label ?? '').trim() || c.title,
+      texto: b.text?.trim() ?? null,
+      alvo: { tipo: 'faixa' as const, blockId: b.id },
+    })),
+  ]
+}
+
+/**
+ * A letra a seguir a esta no alfabeto.
+ *
+ * Vai pela LETRA e não pela posição na lista. Foi a posição que já pôs o A na
+ * casa do B uma vez, e não volta a entrar por aqui.
+ */
+function proximaLetraDepoisDe(letra: string | null, contents: ItemIndice[]) {
+  if (!letra) return null
+  const i = ALFABETO.indexOf(letra.toUpperCase())
+  if (i < 0 || i + 1 >= ALFABETO.length) return null
+  const seguinte = ALFABETO[i + 1]
+  return contents.find((c) => c.letra === seguinte) ?? null
 }

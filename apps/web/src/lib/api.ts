@@ -39,6 +39,8 @@ export interface Bloco {
 export interface Conteudo {
   id: string
   slug: string
+  /** "A".."Z" — a identidade real da letra. O slug pode estar trocado. */
+  letra: string | null
   title: string
   subtitle: string | null
   summary: string | null

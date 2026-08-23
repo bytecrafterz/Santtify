@@ -529,14 +529,18 @@ function EditorDeBloco({
         </label>
       )}
 
-      {ehTexto && (
+      {/* Cada áudio é uma publicação inteira desde 23/08, com o seu próprio
+          título e o seu próprio texto por baixo dos indicadores. Sem estes dois
+          campos, o desenho existe e não há como o preencher: o "rótulo" passa a
+          ser o título grande e este texto é a descrição que aparece na página. */}
+      {ehTexto || bloco.type === 'AUDIO' ? (
         <CampoDeTexto
-          rotulo="Texto"
+          rotulo={bloco.type === 'AUDIO' ? 'Texto que aparece por baixo do áudio' : 'Texto'}
           valor={bloco.text ?? ''}
           multilinha
           aoSalvar={(v) => admin.salvarBloco(bloco.id, { text: v })}
         />
-      )}
+      ) : null}
 
       {ehMidia && (
         <>

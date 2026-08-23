@@ -5,9 +5,9 @@ import { SeloProdutoVivo } from '@/components/SeloProdutoVivo'
 import { BannerDeConsentimento } from '@/components/BannerDeConsentimento'
 import { CabecalhoDePerfil } from '@/components/CabecalhoDePerfil'
 import { CapaComPlaylist } from '@/components/CapaComPlaylist'
-import { BotaoImprimir } from '@/components/BotaoImprimir'
 import { BotaoDenunciar } from '@/components/BotaoDenunciar'
 import { ExperienciaContinua } from '@/components/ExperienciaContinua'
+import { IntroducaoRecolhivel } from '@/components/IntroducaoRecolhivel'
 
 /**
  * A experiência inteira numa página só.
@@ -91,24 +91,25 @@ export default async function IndiceDoProjeto({
         anfitriao={anfitriao}
       />
 
-      {/* 2 e 5. Capa que toca aqui mesmo, com os filtros que a comandam */}
-      <CapaComPlaylist project={project} contents={contents} />
+      {/* 2, 3 e 4. A INTRODUÇÃO DO PROJETO, e ela recolhe-se depois da
+          primeira visita. Ordem dele, 23/08: capa do perfil, introdução, e
+          depois o alfabeto. Quem já viu a introdução vê o alfabeto logo por
+          baixo do perfil, sem texto de apresentação a ocupar o ecrã. */}
+      <IntroducaoRecolhivel nome={project.name}>
+        <CapaComPlaylist project={project} contents={contents} />
 
-      {/* 3. Título e descrição */}
-      <div className="secao-com-acao">
-        <div>
-          <h2>Conheça o {project.name}</h2>
-          {project.description && <p className="subtitulo">{project.description}</p>}
+        <div className="secao-com-acao">
+          <div>
+            <h2>Conheça o {project.name}</h2>
+            {project.description && <p className="subtitulo">{project.description}</p>}
+          </div>
+          <BotaoDenunciar
+            projectId={project.id}
+            targetType="CONTENT"
+            targetId={contents[0]?.id ?? project.id}
+          />
         </div>
-        <BotaoDenunciar
-          projectId={project.id}
-          targetType="CONTENT"
-          targetId={contents[0]?.id ?? project.id}
-        />
-      </div>
-
-      {/* 4. Imprimir e exportar */}
-      <BotaoImprimir projectId={project.id} impressoes={comunidade.impressoes} />
+      </IntroducaoRecolhivel>
 
       {/* 6, 7 e 8. Progresso, alfabeto e a letra aberta — tudo aqui dentro. */}
       {contents.length === 0 ? (

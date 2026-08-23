@@ -290,6 +290,15 @@ export class ContentService {
       content: {
         id: content.id,
         slug: content.slug,
+        /**
+         * A LETRA vai junto, e não só o slug.
+         *
+         * Os slugs desta base ficaram trocados de quando as letras eram
+         * identificadas pela posição: a Letra A vive no slug "b". Corrigir
+         * slugs partiria os QR Codes já impressos, que não se corrigem depois.
+         * A letra é a identidade certa, e é por ela que a página se orienta.
+         */
+        letra: content.letra,
         title: content.title,
         subtitle: content.subtitle,
         summary: content.summary,

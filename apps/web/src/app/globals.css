@@ -4224,3 +4224,265 @@ button.letra-bloco {
 .rotulo-faixa + .player-onda {
   margin-top: 0;
 }
+
+/* ═══════════════════════════════════════════════════════════════════
+   A PUBLICAÇÃO (padrão obrigatório de 23/08)
+
+   Ele mandou uma imagem e escreveu: "este é o padrão exato de todos os
+   slides da Letra A". A regra que manda em tudo o que se segue é a
+   frase dele em maiúsculas — A FOTO E O ÁUDIO FORMAM UMA ÚNICA PEÇA.
+
+   A letra deixou de ser um cartão com quatro áudios empilhados por
+   baixo de uma imagem só. São cinco publicações independentes, cada
+   uma com a sua foto, o seu áudio, os seus números, o seu título e o
+   seu texto.
+   ═══════════════════════════════════════════════════════════════════ */
+.publicacao {
+  background: var(--cor-superficie);
+  border-radius: 18px;
+  box-shadow: var(--sombra);
+  overflow: hidden;
+  margin-bottom: 1.5rem;
+  padding-bottom: 1rem;
+}
+
+/* MÚSICA, ORAÇÃO, MEMORIZAÇÃO — acima da foto, e não dentro do tocador.
+   Dentro, competia com o tempo e com a onda; acima, é a primeira coisa que
+   se lê e diz logo o que vem a seguir. */
+.etiqueta-publicacao {
+  margin: 0;
+  padding: 0.6rem 1rem 0.55rem;
+  font-size: 0.74rem;
+  font-weight: 800;
+  letter-spacing: 0.08em;
+  color: var(--cor-texto-suave);
+}
+
+/* A PEÇA. `line-height: 0` e `display: block` na imagem porque a linha de
+   base de uma imagem em linha deixa um risco branco de dois ou três pixéis
+   entre ela e o tocador — invisível numa captura, e suficiente para os dois
+   deixarem de parecer a mesma coisa no telemóvel. */
+.peca-visual {
+  display: block;
+  line-height: 0;
+  font-size: 0;
+}
+
+.peca-visual .foto-publicacao {
+  display: block;
+  width: 100%;
+  height: auto;
+  vertical-align: bottom;
+}
+
+.peca-visual .player-onda {
+  margin: 0;
+  border-radius: 0;
+}
+
+/* Título e texto GRANDES, que foi o que ele pediu duas vezes na mesma
+   mensagem. O que estava aqui tinha o tamanho de uma legenda. */
+.publicacao .titulo-publicacao {
+  margin: 0.55rem 1rem 0.35rem;
+  font-size: 1.32rem;
+  line-height: 1.2;
+  font-weight: 800;
+}
+
+.publicacao .texto-publicacao {
+  margin: 0 1rem;
+  font-size: 1.02rem;
+  line-height: 1.5;
+  color: var(--cor-texto);
+}
+
+.publicacao .texto-publicacao.cortado {
+  display: -webkit-box;
+  -webkit-line-clamp: 3;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+.publicacao .ver-mais {
+  margin: 0.25rem 1rem 0;
+  font-size: 0.95rem;
+}
+
+.publicacao .indicadores-publicacao {
+  padding: 0.9rem 0.6rem 0.2rem;
+}
+
+/* ── O fim da letra: imprimir, e só depois a letra seguinte ─────────── */
+.bloco-impressao {
+  margin: 0 0 1.5rem;
+}
+
+.chamada-impressao {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.4rem;
+  margin: 0 0 0.7rem;
+  font-size: 1.02rem;
+  font-weight: 700;
+  color: var(--cor-primaria);
+  text-align: center;
+}
+
+.chamada-impressao .seta-baixo {
+  font-size: 1.3rem;
+  line-height: 0.6;
+}
+
+.cartao-impressao {
+  background: var(--cor-superficie);
+  border-radius: 18px;
+  box-shadow: var(--sombra);
+  overflow: hidden;
+}
+
+.cartao-impressao .arte-impressao {
+  display: block;
+  width: 100%;
+  height: auto;
+  vertical-align: bottom;
+}
+
+.corpo-impressao {
+  display: grid;
+  justify-items: center;
+  gap: 0.55rem;
+  padding: 1rem;
+  text-align: center;
+}
+
+.etiqueta-gratis {
+  margin: 0;
+  font-size: 0.74rem;
+  font-weight: 800;
+  letter-spacing: 0.08em;
+  color: var(--cor-acao);
+}
+
+.corpo-impressao h3 {
+  margin: 0;
+  font-size: 1.25rem;
+}
+
+.nota-impressao {
+  margin: 0;
+  font-size: 0.96rem;
+  line-height: 1.45;
+  color: var(--cor-texto-suave);
+}
+
+.qr-impressao {
+  width: 116px;
+  height: 116px;
+  border-radius: 10px;
+  background: #fff;
+  padding: 6px;
+}
+
+.acoes-impressao {
+  width: 100%;
+}
+
+.acoes-impressao .botao-acao {
+  width: 100%;
+  justify-content: center;
+}
+
+/* ── A letra seguinte, depois da impressão ──────────────────────────── */
+.proxima-letra {
+  margin: 0 0 1.5rem;
+  display: grid;
+  gap: 0.5rem;
+  justify-items: center;
+}
+
+.rotulo-proxima {
+  margin: 0;
+  font-size: 0.96rem;
+  font-weight: 700;
+  color: var(--cor-texto-suave);
+}
+
+.cartao-proxima {
+  width: 100%;
+  display: grid;
+  gap: 0.5rem;
+  justify-items: center;
+  padding: 0;
+  border: 0;
+  border-radius: 18px;
+  overflow: hidden;
+  background: var(--cor-superficie);
+  box-shadow: var(--sombra);
+  font-family: inherit;
+  cursor: pointer;
+}
+
+.cartao-proxima img {
+  display: block;
+  width: 100%;
+  height: auto;
+  vertical-align: bottom;
+}
+
+.cartao-proxima .nome-proxima {
+  padding: 0 1rem;
+  font-size: 1.12rem;
+  font-weight: 800;
+  color: var(--cor-texto);
+}
+
+.cartao-proxima .cadeado-proxima {
+  padding: 0 1rem 0.9rem;
+  font-size: 0.9rem;
+  color: var(--cor-texto-suave);
+}
+
+.cartao-proxima:disabled {
+  cursor: default;
+}
+
+/* Sem imagem — a letra ainda não foi preparada — o cartão seria uma caixa
+   vazia com um nome dentro. Aí basta o texto. */
+.cartao-proxima:not(:has(img)) .nome-proxima {
+  padding-top: 1rem;
+}
+
+/* ── A introdução, aberta ou recolhida (23/08) ───────────────────────── */
+.introducao-a-decidir {
+  height: 0.5rem;
+}
+
+.introducao-aberta {
+  display: block;
+}
+
+.recolher-introducao,
+.introducao-recolhida {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.35rem;
+  width: 100%;
+  margin: 0 0 1rem;
+  padding: 0.7rem;
+  border: 1px solid var(--cor-borda);
+  border-radius: 12px;
+  background: var(--cor-superficie);
+  color: var(--cor-texto-suave);
+  font-family: inherit;
+  font-size: 0.95rem;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.introducao-recolhida .seta,
+.recolher-introducao span {
+  font-size: 1.1rem;
+  line-height: 0.6;
+}

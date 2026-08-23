@@ -16,16 +16,34 @@ const caixa = { width: 34, height: 34, viewBox: '0 0 24 24', 'aria-hidden': true
 
 export function OlhoGrande() {
   return (
-    <svg {...caixa} fill="none" stroke="currentColor" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round">
+    <svg
+      {...caixa}
+      fill="none"
+      stroke="currentColor"
+      strokeWidth={2}
+      strokeLinecap="round"
+      strokeLinejoin="round"
+    >
       <path d="M2 12s3.6-6.5 10-6.5S22 12 22 12s-3.6 6.5-10 6.5S2 12 2 12Z" />
-      <circle cx="12" cy="12" r="2.8" fill="currentColor" stroke="none" />
+      {/* A pupila é um anel, e não uma bola. Ele mandou a referência em 23/08
+          e é isso que lá está: um olho todo em traço, com a mesma espessura por
+          toda a figura. Cheia, a pupila puxava o olhar e o olho ficava mais
+          pesado do que o coração ao lado — e o olho é o único dos quatro que
+          nem sequer é um botão. */}
+      <circle cx="12" cy="12" r="3" />
     </svg>
   )
 }
 
 export function CoracaoGrande({ cheio = false }: { cheio?: boolean }) {
   return (
-    <svg {...caixa} fill={cheio ? 'currentColor' : 'none'} stroke="currentColor" strokeWidth={2} strokeLinejoin="round">
+    <svg
+      {...caixa}
+      fill={cheio ? 'currentColor' : 'none'}
+      stroke="currentColor"
+      strokeWidth={2}
+      strokeLinejoin="round"
+    >
       <path d="M12 20.5s-7.6-4.7-7.6-9.9A4.4 4.4 0 0 1 12 7.6a4.4 4.4 0 0 1 7.6 3c0 5.2-7.6 9.9-7.6 9.9Z" />
     </svg>
   )
@@ -33,7 +51,14 @@ export function CoracaoGrande({ cheio = false }: { cheio?: boolean }) {
 
 export function BalaoGrande() {
   return (
-    <svg {...caixa} fill="none" stroke="currentColor" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round">
+    <svg
+      {...caixa}
+      fill="none"
+      stroke="currentColor"
+      strokeWidth={2}
+      strokeLinecap="round"
+      strokeLinejoin="round"
+    >
       <path d="M20.5 12.2a7.9 7.9 0 0 1-11.5 7L3.5 21l1.6-5A7.9 7.9 0 1 1 20.5 12.2Z" />
     </svg>
   )
@@ -41,8 +66,18 @@ export function BalaoGrande() {
 
 export function SetaGrande() {
   return (
-    <svg {...caixa} fill="none" stroke="currentColor" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round">
-      <path d="M3.5 15.5c1.2-5.4 5.2-8 11-8V4l6.5 6-6.5 6v-3.6c-4.6 0-8.2 1-11 3.1Z" fill="currentColor" />
+    <svg
+      {...caixa}
+      fill="none"
+      stroke="currentColor"
+      strokeWidth={2}
+      strokeLinecap="round"
+      strokeLinejoin="round"
+    >
+      <path
+        d="M3.5 15.5c1.2-5.4 5.2-8 11-8V4l6.5 6-6.5 6v-3.6c-4.6 0-8.2 1-11 3.1Z"
+        fill="currentColor"
+      />
     </svg>
   )
 }
