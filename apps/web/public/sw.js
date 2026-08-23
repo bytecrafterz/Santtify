@@ -36,15 +36,32 @@ self.addEventListener('activate', (evento) => {
   evento.waitUntil(
     caches
       .keys()
-      .then((chaves) => Promise.all(chaves.filter((k) => k !== CACHE).map((k) => caches.delete(k))))
-      .then(() => self.clients.claim())
-      .then(() =>
-        // Avisa quem está com a página aberta que existe versão nova. Sem isto,
-        // quem tem a aplicação aberta continua a ver a anterior até fechar e
-        // abrir de novo — e ninguém fecha uma aplicação para verificar isso.
-        self.clients.matchAll({ type: 'window' }).then((janelas) =>
-          janelas.forEach((j) => j.postMessage({ tipo: 'versao-nova' })),
-        ),
+      .then((chaves) => {
+        // SÓ AVISA QUANDO HOUVE MESMO UMA TROCA DE VERSÃO.
+        //
+        // Antes avisava sempre, e a primeira visita de qualquer pessoa é uma
+        // activação: não havia service worker, instala-se um, e a página
+        // recarregava-se logo. O recarregamento é rápido e não se vê — mas
+        // apaga o primeiro instante da visita, e com ele a introdução do
+        // projeto, que só é para aparecer da primeira vez. Quem chegava pela
+        // primeira vez nunca a chegava a ver.
+        //
+        // Uma troca de versão reconhece-se por existir cache anterior com
+        // outro nome. Numa instalação nova não existe nenhuma.
+        const antigas = chaves.filter((k) => k.startsWith('pv-') && k !== CACHE)
+        return Promise.all(antigas.map((k) => caches.delete(k))).then(() => antigas.length > 0)
+      })
+      .then((houveTroca) =>
+        self.clients.claim().then(() => {
+          if (!houveTroca) return
+          // Avisa quem está com a página aberta que existe versão nova. Sem
+          // isto, quem tem a aplicação aberta continua a ver a anterior até
+          // fechar e abrir de novo — e ninguém fecha uma aplicação para
+          // verificar isso.
+          return self.clients
+            .matchAll({ type: 'window' })
+            .then((janelas) => janelas.forEach((j) => j.postMessage({ tipo: 'versao-nova' })))
+        }),
       ),
   )
 })
