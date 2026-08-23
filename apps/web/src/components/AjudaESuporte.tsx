@@ -71,8 +71,20 @@ export function AjudaESuporte({ projectSlug }: { projectSlug: string }) {
     }
   }
 
-  const porAtender = pedidos.filter((p) => !p.atendidoEm && !p.usedAt)
-  const tratados = pedidos.filter((p) => p.atendidoEm || p.usedAt)
+  /**
+   * O pedido FICA À VISTA enquanto o link estiver no ecrã.
+   *
+   * Sem esta segunda condição acontecia isto: o responsável tocava em "gerar
+   * link", a lista recarregava, o pedido passava a "atendido" e saía da lista
+   * — levando com ele o link, que só se mostra uma vez. Ele ficava a olhar
+   * para uma lista mais curta sem nada para copiar, e tinha de gerar outro.
+   *
+   * Apanhei isto a atravessar a corrente inteira num navegador a sério. Em
+   * nenhum momento houve erro: o botão funcionava, o link nascia, e a interface
+   * deitava-o fora dois segundos depois.
+   */
+  const porAtender = pedidos.filter((p) => !p.usedAt && (!p.atendidoEm || links[p.id]))
+  const tratados = pedidos.filter((p) => (p.atendidoEm && !links[p.id]) || p.usedAt)
 
   return (
     <section className="ajuda-suporte">
