@@ -51,7 +51,7 @@ export function CabecalhoFixo({
           // eslint-disable-next-line @next/next/no-img-element
           <img className="retrato-topo" src={avatarUrl} alt="" aria-hidden />
         ) : (
-          <span className="retrato-topo vazio" aria-hidden />
+          <span className="retrato-topo sem-foto" aria-hidden />
         )}
         <span className="nome-do-lugar">{onde}</span>
       </span>

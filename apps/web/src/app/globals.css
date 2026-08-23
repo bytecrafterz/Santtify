@@ -4529,11 +4529,17 @@ button.letra-bloco {
 }
 
 .cabecalho-fixo .retrato-topo {
-  /* `display: block` é o que aqui interessa mesmo. Quando não há fotografia,
-     o retrato é um `<span>`, e um span é inline — largura e altura são
-     simplesmente ignoradas num elemento inline. Ficava com a altura da linha e
-     o `border-radius: 50%` pintava uma elipse preta alta a meio da barra. Só
-     se via no painel, que é a única tela sem fotografia. */
+  /* Duas armadilhas nesta regra, e caí nas duas.
+   *
+   * `display: block` porque sem fotografia o retrato é um `<span>`, e um span
+   * é inline — largura e altura são ignoradas num elemento inline.
+   *
+   * E a classe do estado vazio chama-se `sem-foto` e não `vazio`. Havia um
+   * `.vazio` genérico neste ficheiro, de semanas atrás, com `padding: 64px` —
+   * um estado vazio de página inteira. O meu retrato apanhava esse padding e
+   * continuava a ser uma elipse preta alta, já depois de eu ter "corrigido" o
+   * display. É a segunda vez neste projecto que uma palavra genérica usada
+   * como classe me morde; a primeira foi `.faixa-nome`. */
   display: block;
   flex: 0 0 auto;
   width: 30px;
