@@ -25,7 +25,9 @@ export function ListaAdmin({ projectSlug }: { projectSlug: string }) {
   useEffect(() => {
     if (carregando) return
     if (!usuario) {
-      router.replace(`/${projectSlug}/entrar?voltar=` + encodeURIComponent(window.location.pathname))
+      router.replace(
+        `/${projectSlug}/entrar?voltar=` + encodeURIComponent(window.location.pathname),
+      )
       return
     }
     if (usuario.role !== 'ADMIN') {
@@ -45,8 +47,6 @@ export function ListaAdmin({ projectSlug }: { projectSlug: string }) {
       .catch(() => definirAguardando(null))
   }, [usuario, carregando, projectSlug, router])
 
-
-
   if (erro) return <p className="erro">{erro}</p>
   if (carregando || !dados) return <p className="vazio">Carregando...</p>
 
@@ -57,6 +57,16 @@ export function ListaAdmin({ projectSlug }: { projectSlug: string }) {
       <p className="subtitulo">
         {publicados} de {dados.contents.length} conteúdos publicados
       </p>
+
+      {/* A entrada nova fica em PRIMEIRO. É por aqui que ele vai trabalhar
+          agora, e enterrá-la no meio dos atalhos antigos seria pedir-lhe que
+          procurasse a coisa que acabou de pedir. */}
+      <Link className="bloco linha atalho-alfabeto" href={`/${projectSlug}/admin/alfabeto`}>
+        <span>Alfabeto — sequência infinita</span>
+        <small>
+          26 letras, quatro cartões em cada uma: foto, áudio, título e texto numa peça só
+        </small>
+      </Link>
 
       <Link className="bloco linha atalho-metricas" href={`/${projectSlug}/admin/metricas`}>
         <span>Ver métricas</span>
@@ -89,9 +99,7 @@ export function ListaAdmin({ projectSlug }: { projectSlug: string }) {
             Aprovações
             <em className="contador-fila">{aguardando}</em>
           </span>
-          <small>
-            {aguardando === 1 ? 'foto aguardando' : 'fotos aguardando'} a sua aprovação
-          </small>
+          <small>{aguardando === 1 ? 'foto aguardando' : 'fotos aguardando'} a sua aprovação</small>
         </Link>
       ) : null}
 
@@ -185,8 +193,8 @@ function LinkDeCompra({
     <div className="bloco link-de-compra">
       <span className="bloco-rotulo">Link de compra</span>
       <p className="nota">
-        Cole aqui o endereço da Hotmart. O botão de comprar aparece no fim de todas as
-        letras, e cada clique fica registrado com a origem da pessoa.
+        Cole aqui o endereço da Hotmart. O botão de comprar aparece no fim de todas as letras, e
+        cada clique fica registrado com a origem da pessoa.
       </p>
       <input
         type="url"

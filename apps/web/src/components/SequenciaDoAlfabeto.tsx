@@ -1,0 +1,311 @@
+'use client'
+
+import { useCallback, useEffect, useState } from 'react'
+import { admin, type CartaoAdmin, type VagaoAdmin } from '@/lib/admin'
+import { CabecalhoFixo } from './CabecalhoFixo'
+import { EditorDeCartao } from './EditorDeCartao'
+
+/**
+ * O painel do alfabeto, nas três telas que ele desenhou em 23/08.
+ *
+ * A comparação é dele e é boa: a composição de um comboio. A Letra A é o
+ * primeiro vagão, a B o segundo, e a linha que os liga não se interrompe até à
+ * Z. Cada vagão leva quatro cartões que são dele e de mais ninguém.
+ *
+ * AS TRÊS TELAS VIVEM NA MESMA PÁGINA, e isso é a pedido dele: "ao salvar,
+ * volta automaticamente aos quatro quadrados e marca aquele como concluído".
+ * Se fossem três endereços, guardar um cartão obrigaria a uma volta ao
+ * servidor e a pessoa perdia o sítio onde estava a meio de preencher 26 letras.
+ */
+type Onde =
+  | { tela: 'sequencia' }
+  | { tela: 'quadrados'; letra: string }
+  | { tela: 'cartao'; letra: string; cartaoId: string }
+
+/** As quatro casas nascem sempre, mesmo quando a letra ainda está vazia. */
+const CASAS = ['Explicação', 'Música', 'Repetição do versículo', 'Oração']
+
+/** Uma cor por casa, para se reconhecer o quadrado sem ler. */
+const CORES = ['#2563eb', '#7c3aed', '#ea580c', '#7c3aed']
+
+export function SequenciaDoAlfabeto({ projectSlug }: { projectSlug: string }) {
+  const [vagoes, definirVagoes] = useState<VagaoAdmin[]>([])
+  const [onde, definirOnde] = useState<Onde>({ tela: 'sequencia' })
+  const [carregando, definirCarregando] = useState(true)
+  const [erro, definirErro] = useState<string | null>(null)
+  const [menuAberto, definirMenuAberto] = useState<string | null>(null)
+
+  const recarregar = useCallback(async () => {
+    try {
+      const r = await admin.alfabeto(projectSlug)
+      definirVagoes(r.vagoes)
+      definirErro(null)
+    } catch {
+      definirErro('Não foi possível carregar o alfabeto.')
+    } finally {
+      definirCarregando(false)
+    }
+  }, [projectSlug])
+
+  useEffect(() => {
+    void recarregar()
+  }, [recarregar])
+
+  const vagao = 'letra' in onde ? vagoes.find((v) => v.letra === onde.letra) : undefined
+
+  // ── Tela 3: o cartão ──────────────────────────────────────────────
+  if (onde.tela === 'cartao' && vagao) {
+    const cartao = vagao.cartoes.find((c) => c.id === onde.cartaoId)
+    if (cartao) {
+      return (
+        <>
+          <CabecalhoFixo projectSlug={projectSlug} onde={`Letra ${vagao.letra}`} />
+          <EditorDeCartao
+            cartao={cartao}
+            aoGuardar={async () => {
+              await recarregar()
+              // Volta aos quatro quadrados, como ele pediu: guardar um cartão
+              // não é sair do trabalho, é passar ao seguinte.
+              definirOnde({ tela: 'quadrados', letra: vagao.letra })
+            }}
+            aoCancelar={() => definirOnde({ tela: 'quadrados', letra: vagao.letra })}
+          />
+        </>
+      )
+    }
+  }
+
+  // ── Tela 2: os quatro quadrados ───────────────────────────────────
+  if (onde.tela === 'quadrados' && vagao) {
+    const originais = vagao.cartoes.filter((c) => c.papel === 'CARTAO' && c.slot !== null)
+    const copias = vagao.cartoes.filter((c) => c.papel === 'CARTAO' && c.slot === null)
+    const impressao = vagao.cartoes.find((c) => c.papel === 'IMPRESSAO')
+
+    return (
+      <>
+        <CabecalhoFixo projectSlug={projectSlug} onde={`Letra ${vagao.letra}`} />
+        <div className="painel-quadrados">
+          <button
+            type="button"
+            className="voltar-sequencia"
+            onClick={() => definirOnde({ tela: 'sequencia' })}
+          >
+            ← Alfabeto
+          </button>
+          <h1>Conteúdos da Letra {vagao.letra}</h1>
+          <p className="nota">Toque para editar • Toque nos três pontos para ver opções</p>
+
+          <div className="grade-quadrados">
+            {[...originais, ...copias].map((c, i) => (
+              <Quadrado
+                key={c.id}
+                cartao={c}
+                numero={i + 1}
+                cor={CORES[(c.slot ?? i + 1) - 1] ?? CORES[0]}
+                menuAberto={menuAberto === c.id}
+                aoAbrirMenu={() => definirMenuAberto(menuAberto === c.id ? null : c.id)}
+                aoEditar={() => {
+                  definirMenuAberto(null)
+                  definirOnde({ tela: 'cartao', letra: vagao.letra, cartaoId: c.id })
+                }}
+                aoDuplicar={async () => {
+                  definirMenuAberto(null)
+                  await admin.duplicarCartao(c.id)
+                  await recarregar()
+                }}
+                aoApagar={async () => {
+                  definirMenuAberto(null)
+                  const nome = c.titulo || c.nomeInterno || 'este cartão'
+                  const aviso =
+                    c.slot === null
+                      ? `Remover a cópia "${nome}"? Ela desaparece.`
+                      : `Esvaziar "${nome}"? O quadrado fica, só o conteúdo sai.`
+                  if (!confirm(aviso)) return
+                  await admin.esvaziarCartao(c.id)
+                  await recarregar()
+                }}
+                /* Só o quarto quadrado cria o cartão de impressão, e só uma vez. */
+                aoCriarImpressao={
+                  c.slot === 4 && !impressao && vagao.contentId
+                    ? async () => {
+                        definirMenuAberto(null)
+                        await admin.criarCartaoDeImpressao(vagao.contentId!)
+                        await recarregar()
+                      }
+                    : undefined
+                }
+              />
+            ))}
+          </div>
+
+          {impressao ? (
+            <button
+              type="button"
+              className="quadrado-impressao pronto"
+              onClick={() =>
+                definirOnde({ tela: 'cartao', letra: vagao.letra, cartaoId: impressao.id })
+              }
+            >
+              <span className="icone" aria-hidden>
+                🖨
+              </span>
+              <span className="nome">CARTÃO PARA IMPRESSÃO</span>
+              <span className="estado">
+                {impressao.estado === 'PUBLICADO' ? 'pronto' : 'rascunho'}
+              </span>
+            </button>
+          ) : (
+            <div className="quadrado-impressao vazio">
+              <span className="icone" aria-hidden>
+                🖨
+              </span>
+              <span className="nome">CARTÃO PARA IMPRESSÃO</span>
+              <span className="estado">Criado a partir do quarto quadrado</span>
+            </div>
+          )}
+        </div>
+      </>
+    )
+  }
+
+  // ── Tela 1: a composição ──────────────────────────────────────────
+  return (
+    <>
+      <CabecalhoFixo projectSlug={projectSlug} onde="Gerenciar conteúdo" />
+      <div className="painel-sequencia">
+        <h1>Alfabeto — sequência infinita</h1>
+        <p className="nota">Deslize para baixo para ver todas as letras</p>
+
+        {erro && <p className="erro">{erro}</p>}
+        {carregando && <p className="nota">A carregar...</p>}
+
+        {/* A LINHA NÃO SE INTERROMPE. É o desenho dele, e diz uma coisa
+            verdadeira sobre a estrutura: as letras não são 26 páginas soltas,
+            são uma composição só. Está desenhada com uma borda contínua e não
+            com um traço por letra — assim não há como aparecer uma falha entre
+            dois vagões quando um deles ainda está vazio. */}
+        <ol className="composicao">
+          {vagoes.map((v) => (
+            <li key={v.letra} className="vagao">
+              <button
+                type="button"
+                className="cabeca-vagao"
+                onClick={() => definirOnde({ tela: 'quadrados', letra: v.letra })}
+              >
+                <span className="bola-letra" style={{ background: corDaLetra(v.letra) }}>
+                  {v.letra}
+                </span>
+                <span className="dados-vagao">
+                  <strong>LETRA {v.letra}</strong>
+                  <small>{v.prontos} de 4 preenchidos</small>
+                </span>
+              </button>
+
+              <div className="quadradinhos">
+                {CASAS.map((nome, i) => {
+                  const c = v.cartoes.find((x) => x.slot === i + 1)
+                  return (
+                    <span
+                      key={nome}
+                      className={c?.estado === 'PUBLICADO' ? 'quadradinho cheio' : 'quadradinho'}
+                      title={nome}
+                    >
+                      <em>{i + 1}</em>
+                      {c?.imagem ? (
+                        // eslint-disable-next-line @next/next/no-img-element
+                        <img src={c.imagem} alt="" aria-hidden />
+                      ) : (
+                        <span className="marca" aria-hidden>
+                          ▤
+                        </span>
+                      )}
+                      <small>{c?.estado === 'PUBLICADO' ? 'PRONTO' : 'VAZIO'}</small>
+                    </span>
+                  )
+                })}
+              </div>
+            </li>
+          ))}
+        </ol>
+
+        <p className="fim-composicao">CONTINUA ATÉ A LETRA Z</p>
+      </div>
+    </>
+  )
+}
+
+/** Uma cor por letra, estável: a mesma letra tem sempre a mesma cor. */
+function corDaLetra(letra: string) {
+  const cores = ['#16a34a', '#2563eb', '#ea580c', '#7c3aed', '#0891b2', '#db2777']
+  return cores[(letra.charCodeAt(0) - 65) % cores.length]
+}
+
+function Quadrado({
+  cartao,
+  numero,
+  cor,
+  menuAberto,
+  aoAbrirMenu,
+  aoEditar,
+  aoDuplicar,
+  aoApagar,
+  aoCriarImpressao,
+}: {
+  cartao: CartaoAdmin
+  numero: number
+  cor: string
+  menuAberto: boolean
+  aoAbrirMenu: () => void
+  aoEditar: () => void
+  aoDuplicar: () => Promise<void>
+  aoApagar: () => Promise<void>
+  aoCriarImpressao?: () => Promise<void>
+}) {
+  return (
+    <div className={cartao.estado === 'PUBLICADO' ? 'quadrado pronto' : 'quadrado'}>
+      <span className="numero" style={{ background: cor }}>
+        {numero}
+      </span>
+      <button type="button" className="tres-pontos" aria-label="Opções" onClick={aoAbrirMenu}>
+        ⋯
+      </button>
+
+      <button type="button" className="corpo-quadrado" onClick={aoEditar}>
+        {cartao.imagem ? (
+          // eslint-disable-next-line @next/next/no-img-element
+          <img src={cartao.imagem} alt="" aria-hidden />
+        ) : (
+          <span className="pilha" aria-hidden style={{ color: cor }}>
+            ▤
+          </span>
+        )}
+        <span className="nome-quadrado">
+          {(cartao.nomeInterno ?? 'Cartão').toUpperCase()}
+          {cartao.slot === null && <em> (cópia)</em>}
+        </span>
+        <span className="estado-quadrado">
+          {cartao.estado === 'PUBLICADO' ? 'PRONTO' : 'RASCUNHO'}
+        </span>
+      </button>
+
+      {menuAberto && (
+        <div className="menu-quadrado" role="menu">
+          <button type="button" onClick={aoEditar}>
+            ✎ Editar
+          </button>
+          <button type="button" onClick={() => void aoDuplicar()}>
+            ⧉ Duplicar
+          </button>
+          <button type="button" className="perigo" onClick={() => void aoApagar()}>
+            🗑 {cartao.slot === null ? 'Remover' : 'Esvaziar'}
+          </button>
+          {aoCriarImpressao && (
+            <button type="button" onClick={() => void aoCriarImpressao()}>
+              🖨 Criar cartão
+            </button>
+          )}
+        </div>
+      )}
+    </div>
+  )
+}

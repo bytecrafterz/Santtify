@@ -82,7 +82,12 @@ export interface ComentarioAdmin {
   body: string
   status: 'PUBLISHED' | 'HIDDEN' | 'DELETED'
   createdAt: string
-  user: { id: string; displayName: string; email: string; status: 'ACTIVE' | 'SUSPENDED' | 'DELETED' }
+  user: {
+    id: string
+    displayName: string
+    email: string
+    status: 'ACTIVE' | 'SUSPENDED' | 'DELETED'
+  }
   /** Nulo quando o comentário é de um perfil e não de uma letra. */
   content: { slug: string; title: string } | null
   /** Presente quando o comentário é de uma faixa e não da letra inteira. */
@@ -142,6 +147,34 @@ export interface DenunciaAdmin {
   status: 'PENDING' | 'REVIEWED' | 'DISMISSED'
   createdAt: string
   reporter: { id: string; displayName: string } | null
+}
+
+/** Um cartão do painel: a peça inteira, com o que lhe falta à vista. */
+export interface CartaoAdmin {
+  id: string
+  /** A casa dentro da letra: 1 a 4. Nulo nas cópias. */
+  slot: number | null
+  papel: 'CARTAO' | 'IMPRESSAO'
+  estado: 'RASCUNHO' | 'PUBLICADO'
+  /** Nome da casa — só para o painel, nunca para a página. */
+  nomeInterno: string | null
+  titulo: string | null
+  descricao: string | null
+  linkUpgrade: string | null
+  audio: { id: string; url: string; title: string | null; durationMs: number | null } | null
+  imagem: string | null
+}
+
+/** Um vagão da composição: a letra e os seus cartões. */
+export interface VagaoAdmin {
+  letra: string
+  contentId: string | null
+  slug: string | null
+  title: string
+  publicado: boolean
+  coverUrl: string | null
+  cartoes: CartaoAdmin[]
+  prontos: number
 }
 
 export const admin = {
@@ -215,7 +248,10 @@ export const admin = {
     projectSlug: string,
     dados: { slug: string; title: string; subtitle?: string; position?: number },
   ) =>
-    chamar<{ id: string; slug: string }>(`/projects/${projectSlug}/contents`, { method: 'POST', body: JSON.stringify(dados) }),
+    chamar<{ id: string; slug: string }>(`/projects/${projectSlug}/contents`, {
+      method: 'POST',
+      body: JSON.stringify(dados),
+    }),
 
   atualizarConteudo: (id: string, dados: Record<string, unknown>) =>
     chamar(`/contents/${id}`, { method: 'PATCH', body: JSON.stringify(dados) }),
@@ -247,6 +283,50 @@ export const admin = {
     return chamar<AssetAdmin>('/upload', { method: 'POST', body: dados })
   },
 
+  // ── O cartão como peça única (23/08) ──────────────────────────────
+  //
+  // Um cartão guarda-se INTEIRO numa chamada. Não há aqui "guardar o título" e
+  // "guardar a imagem" em separado, porque foi de peças guardadas em separado
+  // que nasceu o problema que isto veio fechar.
+
+  alfabeto: (projectSlug: string) =>
+    chamar<{
+      project: { id: string; slug: string; name: string }
+      vagoes: VagaoAdmin[]
+    }>(`/projects/${projectSlug}/alfabeto`),
+
+  salvarCartao: (
+    id: string,
+    dados: {
+      titulo?: string | null
+      descricao?: string | null
+      assetId?: string | null
+      imageAssetId?: string | null
+      linkUpgrade?: string | null
+    },
+  ) => chamar<CartaoAdmin>(`/cards/${id}`, { method: 'PATCH', body: JSON.stringify(dados) }),
+
+  duplicarCartao: (id: string) => chamar<CartaoAdmin>(`/cards/${id}/duplicate`, { method: 'POST' }),
+
+  /** Esvazia um original (a casa fica) ou remove uma cópia. */
+  esvaziarCartao: (id: string) =>
+    chamar<{ removido: boolean }>(`/cards/${id}`, { method: 'DELETE' }),
+
+  criarCartaoDeImpressao: (contentId: string) =>
+    chamar<CartaoAdmin>(`/contents/${contentId}/print-card`, { method: 'POST' }),
+
+  /** Envia a foto e guarda-a no cartão numa só acção de quem publica. */
+  async porFotoNoCartao(cartaoId: string, arquivo: File) {
+    const asset = await this.enviarArquivo(arquivo)
+    return this.salvarCartao(cartaoId, { imageAssetId: asset.id })
+  },
+
+  /** O mesmo para o som. */
+  async porAudioNoCartao(cartaoId: string, arquivo: File) {
+    const asset = await this.enviarArquivo(arquivo)
+    return this.salvarCartao(cartaoId, { assetId: asset.id })
+  },
+
   // ── Categorias de áudio ─────────────────────────────────────────
   categorias: (projectSlug: string) =>
     chamar<{ categorias: CategoriaAdmin[] }>(`/projects/${projectSlug}/categories`),
@@ -258,7 +338,10 @@ export const admin = {
     }),
 
   renomearCategoria: (id: string, nome: string) =>
-    chamar<CategoriaAdmin>(`/categories/${id}`, { method: 'PATCH', body: JSON.stringify({ nome }) }),
+    chamar<CategoriaAdmin>(`/categories/${id}`, {
+      method: 'PATCH',
+      body: JSON.stringify({ nome }),
+    }),
 
   removerCategoria: (id: string) =>
     chamar<{ removida: string; audiosDesclassificados: number }>(`/categories/${id}`, {

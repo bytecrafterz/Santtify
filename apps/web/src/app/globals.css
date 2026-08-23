@@ -4606,3 +4606,516 @@ button.letra-bloco {
   padding-left: 1.75rem;
   padding-right: 1.75rem;
 }
+
+/* ═══════════════════════════════════════════════════════════════════
+   O PAINEL DO ALFABETO (desenho dele, 23/08)
+
+   Três telas: a composição, os quatro quadrados de uma letra, e o
+   cartão. Vivem na mesma página porque guardar um cartão devolve aos
+   quadrados — se fossem três endereços, cada gravação era uma ida ao
+   servidor e a pessoa perdia o sítio a meio de preencher 26 letras.
+   ═══════════════════════════════════════════════════════════════════ */
+.painel-sequencia h1,
+.painel-quadrados h1 {
+  margin: 0.2rem 0 0.15rem;
+  font-size: 1.3rem;
+}
+
+.painel-sequencia .nota,
+.painel-quadrados .nota {
+  margin: 0 0 1rem;
+  color: var(--cor-texto-suave);
+  font-size: 0.9rem;
+}
+
+/* ── A composição: a linha que não se interrompe ─────────────────────
+   Desenhada como UMA borda contínua na lista, e não um traço por letra.
+   Com um traço por letra, uma letra vazia deixava uma falha entre dois
+   vagões — e o desenho dele diz precisamente o contrário disso. */
+.composicao {
+  list-style: none;
+  margin: 0;
+  padding: 0 0 0 1.4rem;
+  border-left: 3px solid var(--cor-primaria);
+  display: grid;
+  gap: 1.4rem;
+}
+
+.vagao {
+  position: relative;
+}
+
+/* O nó do vagão sobre a linha. */
+.vagao::before {
+  content: '';
+  position: absolute;
+  left: calc(-1.4rem - 3px);
+  top: 12px;
+  width: 13px;
+  height: 13px;
+  border-radius: 50%;
+  border: 3px solid var(--cor-primaria);
+  background: var(--cor-fundo);
+  transform: translateX(-50%);
+}
+
+.cabeca-vagao {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  width: 100%;
+  padding: 0;
+  border: 0;
+  background: none;
+  font-family: inherit;
+  text-align: left;
+  color: var(--cor-texto);
+  cursor: pointer;
+}
+
+.bola-letra {
+  display: grid;
+  place-items: center;
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  color: #fff;
+  font-size: 1.15rem;
+  font-weight: 800;
+}
+
+.dados-vagao {
+  display: grid;
+}
+
+.dados-vagao strong {
+  font-size: 1rem;
+  letter-spacing: 0.02em;
+}
+
+.dados-vagao small {
+  color: var(--cor-texto-suave);
+  font-size: 0.82rem;
+}
+
+.quadradinhos {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 0.5rem;
+  margin-top: 0.6rem;
+}
+
+.quadradinho {
+  position: relative;
+  display: grid;
+  justify-items: center;
+  gap: 0.15rem;
+  padding: 0.5rem 0.2rem 0.35rem;
+  border: 1px solid var(--cor-borda);
+  border-radius: 10px;
+  background: var(--cor-superficie);
+  overflow: hidden;
+}
+
+.quadradinho em {
+  position: absolute;
+  top: 3px;
+  left: 5px;
+  font-size: 0.62rem;
+  font-style: normal;
+  font-weight: 800;
+  color: var(--cor-texto-suave);
+}
+
+.quadradinho img {
+  width: 30px;
+  height: 30px;
+  border-radius: 6px;
+  object-fit: cover;
+}
+
+.quadradinho .marca {
+  font-size: 1.3rem;
+  color: var(--cor-borda);
+  line-height: 1;
+}
+
+.quadradinho small {
+  font-size: 0.55rem;
+  font-weight: 800;
+  letter-spacing: 0.04em;
+  color: var(--cor-texto-suave);
+}
+
+.quadradinho.cheio {
+  border-color: var(--cor-acao);
+}
+
+.quadradinho.cheio small {
+  color: var(--cor-acao);
+}
+
+.fim-composicao {
+  margin: 1.2rem 0 2rem;
+  padding: 0.8rem;
+  border: 1px dashed var(--cor-borda);
+  border-radius: 12px;
+  text-align: center;
+  font-size: 0.8rem;
+  font-weight: 800;
+  letter-spacing: 0.06em;
+  color: var(--cor-texto-suave);
+}
+
+/* ── Os quatro quadrados de uma letra ────────────────────────────────── */
+.voltar-sequencia {
+  margin: 0 0 0.5rem;
+  padding: 0;
+  border: 0;
+  background: none;
+  color: var(--cor-primaria);
+  font-family: inherit;
+  font-size: 0.95rem;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.grade-quadrados {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 0.7rem;
+}
+
+.quadrado {
+  position: relative;
+  border: 1px solid var(--cor-borda);
+  border-radius: 14px;
+  background: var(--cor-superficie);
+}
+
+.quadrado.pronto {
+  border-color: var(--cor-acao);
+}
+
+.quadrado .numero {
+  position: absolute;
+  top: -8px;
+  left: -6px;
+  z-index: 2;
+  display: grid;
+  place-items: center;
+  width: 24px;
+  height: 24px;
+  border-radius: 50%;
+  color: #fff;
+  font-size: 0.78rem;
+  font-weight: 800;
+}
+
+.quadrado .tres-pontos {
+  position: absolute;
+  top: 4px;
+  right: 4px;
+  z-index: 2;
+  width: 30px;
+  height: 30px;
+  border: 0;
+  border-radius: 50%;
+  background: none;
+  color: var(--cor-texto-suave);
+  font-size: 1.2rem;
+  line-height: 1;
+  cursor: pointer;
+}
+
+.corpo-quadrado {
+  display: grid;
+  justify-items: center;
+  gap: 0.35rem;
+  width: 100%;
+  padding: 1.1rem 0.6rem 0.8rem;
+  border: 0;
+  background: none;
+  font-family: inherit;
+  color: var(--cor-texto);
+  cursor: pointer;
+}
+
+.corpo-quadrado img {
+  width: 54px;
+  height: 54px;
+  border-radius: 10px;
+  object-fit: cover;
+}
+
+.corpo-quadrado .pilha {
+  font-size: 2.4rem;
+  line-height: 1;
+}
+
+.nome-quadrado {
+  font-size: 0.74rem;
+  font-weight: 800;
+  letter-spacing: 0.03em;
+  text-align: center;
+}
+
+.nome-quadrado em {
+  font-style: normal;
+  font-weight: 600;
+  color: var(--cor-texto-suave);
+}
+
+.estado-quadrado {
+  font-size: 0.6rem;
+  font-weight: 800;
+  letter-spacing: 0.05em;
+  color: var(--cor-texto-suave);
+}
+
+.quadrado.pronto .estado-quadrado {
+  color: var(--cor-acao);
+}
+
+.menu-quadrado {
+  position: absolute;
+  top: 34px;
+  right: 6px;
+  z-index: 3;
+  display: grid;
+  min-width: 150px;
+  border-radius: 12px;
+  overflow: hidden;
+  background: var(--cor-superficie);
+  box-shadow: var(--sombra-alta);
+}
+
+.menu-quadrado button {
+  padding: 0.7rem 0.85rem;
+  border: 0;
+  border-bottom: 1px solid var(--cor-borda);
+  background: none;
+  color: var(--cor-texto);
+  font-family: inherit;
+  font-size: 0.9rem;
+  text-align: left;
+  cursor: pointer;
+}
+
+.menu-quadrado button:last-child {
+  border-bottom: 0;
+}
+
+.menu-quadrado .perigo {
+  color: var(--cor-alerta);
+}
+
+.quadrado-impressao {
+  display: grid;
+  justify-items: center;
+  gap: 0.3rem;
+  width: 100%;
+  margin: 1rem 0 2rem;
+  padding: 1.1rem;
+  border: 2px dashed var(--cor-acao);
+  border-radius: 14px;
+  background: none;
+  color: var(--cor-texto);
+  font-family: inherit;
+  cursor: default;
+}
+
+.quadrado-impressao.pronto {
+  cursor: pointer;
+  border-style: solid;
+}
+
+.quadrado-impressao .icone {
+  font-size: 1.6rem;
+}
+
+.quadrado-impressao .nome {
+  font-size: 0.78rem;
+  font-weight: 800;
+  letter-spacing: 0.04em;
+}
+
+.quadrado-impressao .estado {
+  font-size: 0.72rem;
+  color: var(--cor-texto-suave);
+}
+
+/* ── O cartão, na ordem em que a criança o vai ver ───────────────────── */
+.topo-editor {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 0.6rem;
+}
+
+.etiqueta-interna {
+  font-size: 0.72rem;
+  font-weight: 800;
+  letter-spacing: 0.06em;
+  color: var(--cor-texto-suave);
+}
+
+.previa-cartao {
+  display: grid;
+  gap: 0;
+  border-radius: 16px;
+  overflow: hidden;
+  background: var(--cor-superficie);
+  box-shadow: var(--sombra);
+}
+
+.area-foto {
+  position: relative;
+  display: grid;
+  place-items: center;
+  min-height: 190px;
+  background: var(--cor-fundo);
+  cursor: pointer;
+}
+
+.area-foto img {
+  display: block;
+  width: 100%;
+  height: auto;
+  vertical-align: bottom;
+}
+
+.vazio-foto {
+  display: grid;
+  justify-items: center;
+  gap: 0.3rem;
+  font-size: 0.85rem;
+  font-weight: 800;
+  letter-spacing: 0.08em;
+  color: var(--cor-texto-suave);
+}
+
+.vazio-foto span {
+  font-size: 2.2rem;
+}
+
+.acao-area {
+  position: absolute;
+  right: 8px;
+  bottom: 8px;
+  padding: 0.25rem 0.55rem;
+  border-radius: 999px;
+  background: rgba(13, 14, 18, 0.72);
+  color: #fff;
+  font-size: 0.68rem;
+  font-weight: 700;
+}
+
+/* Colado à foto, como na página. Quem preenche vê o que a criança vê. */
+.area-audio {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  padding: 0.75rem 0.9rem;
+  background: #17181c;
+  color: #fff;
+  font-size: 0.9rem;
+  cursor: pointer;
+}
+
+.area-audio .play {
+  display: grid;
+  place-items: center;
+  width: 34px;
+  height: 34px;
+  border-radius: 50%;
+  background: #fff;
+  color: #17181c;
+}
+
+.area-audio .faixa-audio {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.indicadores-apagados {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  padding: 0.7rem 0.5rem;
+  text-align: center;
+  color: var(--cor-texto-suave);
+  font-size: 0.9rem;
+  opacity: 0.6;
+}
+
+.campo-titulo,
+.campo-descricao {
+  margin: 0 0.9rem 0.6rem;
+  padding: 0.7rem 0.8rem;
+  border: 1px solid var(--cor-borda);
+  border-radius: 10px;
+  background: var(--cor-fundo);
+  color: var(--cor-texto);
+  font-family: inherit;
+}
+
+.campo-titulo {
+  font-size: 1.25rem;
+  font-weight: 800;
+}
+
+.campo-descricao {
+  font-size: 1rem;
+  line-height: 1.45;
+  resize: vertical;
+}
+
+.campo-upgrade {
+  display: grid;
+  gap: 0.3rem;
+  margin: 0 0.9rem 1rem;
+  font-size: 0.8rem;
+  color: var(--cor-texto-suave);
+}
+
+.campo-upgrade input {
+  padding: 0.6rem 0.7rem;
+  border: 1px solid var(--cor-borda);
+  border-radius: 10px;
+  background: var(--cor-fundo);
+  color: var(--cor-texto);
+  font-family: inherit;
+  font-size: 0.9rem;
+}
+
+/* A tira diz O QUE falta, com o nome das coisas. "Complete o cartão"
+   sozinho obriga a adivinhar qual das quatro é que falta. */
+.tira-estado {
+  margin: 0.7rem 0 2rem;
+  padding: 0.7rem 0.9rem;
+  border-radius: 999px;
+  text-align: center;
+  font-size: 0.85rem;
+  font-weight: 700;
+}
+
+.tira-estado.rascunho {
+  background: var(--cor-primaria-suave);
+  color: var(--cor-primaria);
+}
+
+.tira-estado.pronto {
+  background: #dcfce7;
+  color: var(--cor-acao-escura);
+}
+
+/* O atalho para o painel novo. Verde porque é onde se faz, e não onde se
+   consulta — a mesma cor que "criar perfil" e "imprimir". */
+.atalho-alfabeto {
+  border-left: 4px solid var(--cor-acao);
+}
+
+.atalho-alfabeto span {
+  font-weight: 800;
+}
