@@ -281,5 +281,21 @@ function proximaLetraDepoisDe(letra: string | null, contents: ItemIndice[]) {
   const i = ALFABETO.indexOf(letra.toUpperCase())
   if (i < 0 || i + 1 >= ALFABETO.length) return null
   const seguinte = ALFABETO[i + 1]
-  return contents.find((c) => c.letra === seguinte) ?? null
+  // A CASA DA LETRA SEGUINTE EXISTE MESMO QUANDO A LETRA AINDA NÃO EXISTE.
+  // Nesta base não há nenhuma Letra B — a lista salta de A para C — e devolver
+  // nada fazia o fim da Letra A acabar sem dizer o que vem depois. O alfabeto
+  // é sabido de antemão: a casa seguinte é sempre o B, esteja ou não preparada.
+  const dela = contents.find((c) => c.letra === seguinte)
+  if (dela) return dela
+  return {
+    id: '',
+    slug: '',
+    title: 'em breve',
+    subtitle: null,
+    coverUrl: null,
+    position: 0,
+    letra: seguinte,
+    publicado: false,
+    stats: null,
+  } satisfies ItemIndice
 }
