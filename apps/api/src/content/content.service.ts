@@ -319,8 +319,28 @@ export class ContentService {
          * que ele escreveu enquanto a letra era um cartão só, e apagá-los agora
          * seria perder texto dele sem ele o ter pedido.
          */
+        /**
+         * O CARTÃO CHEGA À PÁGINA ASSIM QUE TIVER ALGUMA COISA DENTRO.
+         *
+         * Eu tinha escondido daqui tudo o que fosse rascunho, e isso apagou a
+         * Letra A do ar — os quatro cartões tinham áudio e título e faltava-lhes
+         * a imagem. Foi longe de mais, e a culpa é de eu ter lido só metade do
+         * que ele escreveu em 23/08. A outra metade diz o contrário:
+         *
+         *   "Se eu colocar somente o áudio, o espaço da imagem continuará
+         *    visível. Se ainda não houver título ou texto, os lugares deles
+         *    permanecerão em branco dentro da mesma estrutura."
+         *
+         * Ou seja: o que tem de ser indivisível é a ESTRUTURA, não o momento em
+         * que ela aparece. Um cartão a que falte a foto continua a ser um
+         * cartão, com o lugar da foto lá dentro — e isso é exactamente o
+         * oposto de uma fotografia solta noutro sítio da página.
+         *
+         * "Rascunho" continua a existir e continua a impedir o botão de
+         * publicar no painel. O que não faz é apagar do ar o que já lá estava.
+         */
         blocks: content.blocks
-          .filter((b) => b.type !== 'AUDIO' || b.estado === CardEstado.PUBLICADO)
+          .filter((b) => b.type !== 'AUDIO' || Boolean(b.assetId) || Boolean(b.imageAssetId))
           .map((b) => ({
             id: b.id,
             type: b.type,

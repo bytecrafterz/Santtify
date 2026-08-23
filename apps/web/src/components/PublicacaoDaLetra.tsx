@@ -61,9 +61,15 @@ export function PublicacaoDaLetra({
       {etiqueta && <p className="etiqueta-publicacao">{etiqueta}</p>}
 
       <div className="peca-visual">
-        {imagem && (
+        {imagem ? (
           // eslint-disable-next-line @next/next/no-img-element
           <img className="foto-publicacao" src={imagem} alt={titulo} />
+        ) : (
+          /* O LUGAR DA FOTO FICA, mesmo sem foto. Palavras dele, 23/08: "se eu
+             colocar somente o áudio, o espaço da imagem continuará visível".
+             É o que torna o cartão uma peça e não um conjunto de coisas que
+             aparecem quando calha. */
+          <div className="lugar-da-foto" aria-hidden />
         )}
         {bloco && (
           <TocadorDeOnda

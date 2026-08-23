@@ -5237,3 +5237,10 @@ button.letra-bloco {
 .ja-tratados small {
   color: var(--cor-texto-suave);
 }
+
+/* O lugar da foto, quando ainda não há foto. Fica com a proporção de uma
+   arte de letra para o cartão não mudar de tamanho quando ela chegar. */
+.lugar-da-foto {
+  aspect-ratio: 1 / 1;
+  background: linear-gradient(135deg, var(--cor-fundo), var(--cor-borda));
+}
