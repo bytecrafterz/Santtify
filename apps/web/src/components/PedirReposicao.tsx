@@ -62,9 +62,13 @@ export function PedirReposicao({
           Se existir uma conta com esse endereço, o responsável vai repor o acesso e enviar-lhe o
           caminho para escolher uma senha nova. Nada mais é preciso da sua parte.
         </p>
+        {/* Estava aqui uma frase a pedir à pessoa que voltasse e pedisse de
+            novo, para nós sabermos que ela estava à espera. Ele apanhou-a e
+            tem razão: pedir a quem já está bloqueado que repita o pedido é pôr
+            o trabalho do sistema em cima de quem está à espera dele. O pedido
+            ficou registado à primeira; daí para a frente o problema é nosso. */}
         <p className="nota">
-          Se não receber nada, volte aqui e peça de novo — o pedido fica registado das duas vezes, e
-          é assim que sabemos que alguém está à espera.
+          Já sabemos que está à espera. Não precisa de fazer mais nada nem de repetir o pedido.
         </p>
         <Link className="botao-acao largo" href={`/${projectSlug}/entrar`}>
           VOLTAR PARA ENTRAR
