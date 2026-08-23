@@ -78,6 +78,19 @@ VERSAO="$(date +%Y%m%d%H%M%S)"
 sed -i "s/self.__VERSAO__ || '[^']*'/self.__VERSAO__ || '${VERSAO}'/" apps/web/public/sw.js
 ok "versão ${VERSAO}"
 
+# O CARIMBO DESFAZ-SE SEMPRE, aconteça o que acontecer daqui para a frente.
+#
+# O sed acima escreve num ficheiro que está sob controlo de versões, e um
+# ficheiro modificado faz o `git pull` seguinte RECUSAR-SE a trazer alterações
+# que lhe toquem. Foi o que aconteceu em 23/08: publiquei uma correcção do
+# service worker, o carimbo mudou, e o conteúdo era o antigo — o servidor tinha
+# ficado preso três commits atrás sem dizer nada a ninguém. Uma publicação que
+# falha em silêncio é pior do que uma que falha aos gritos.
+restaurar_carimbo() {
+  git checkout -- apps/web/public/sw.js 2>/dev/null || true
+}
+trap restaurar_carimbo EXIT
+
 info "Construindo as imagens"
 echo "  (a primeira vez demora — compila a API e o site)"
 $COMPOSE build
