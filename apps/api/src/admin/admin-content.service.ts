@@ -917,6 +917,125 @@ export class AdminContentService {
   }
 
   /**
+   * A raiz: perfil, introdução e alfabeto.
+   *
+   * É a tela que ele desenhou em 24/08, e a frase dele no rodapé diz o que ela
+   * é para servir: "Perfil + Introdução + Alfabeto = uma única raiz". O perfil
+   * e o alfabeto são FIXOS — existem sempre, não se duplicam nem se apagam. A
+   * introdução é a única parte que ele pode multiplicar.
+   *
+   * A introdução é o conteúdo sem letra. É por isso que ela nunca entrou na
+   * contagem das 26 e é por isso que aqui ela aparece à parte: não é uma letra
+   * que calha estar em primeiro, é outra coisa.
+   */
+  async estruturaRaiz(projectSlug: string) {
+    const project = await this.projetoPorSlug(projectSlug)
+
+    const [anfitriao, introducao, letras] = await Promise.all([
+      this.prisma.user.findFirst({
+        where: { role: 'ADMIN', status: 'ACTIVE' },
+        orderBy: { createdAt: 'asc' },
+        select: { id: true, displayName: true, avatarUrl: true, bio: true },
+      }),
+      this.prisma.content.findFirst({
+        where: { projectId: project.id, letra: null },
+        orderBy: { position: 'asc' },
+        select: {
+          id: true,
+          slug: true,
+          title: true,
+          coverUrl: true,
+          blocks: {
+            where: { type: BlockType.AUDIO },
+            orderBy: { position: 'asc' },
+            select: {
+              id: true,
+              slot: true,
+              papel: true,
+              estado: true,
+              label: true,
+              titulo: true,
+              text: true,
+              linkUpgrade: true,
+              asset: { select: { id: true, url: true, title: true, durationMs: true } },
+              imageAsset: { select: { url: true } },
+            },
+          },
+        },
+      }),
+      this.prisma.content.findMany({
+        where: { projectId: project.id, letra: { not: null } },
+        orderBy: { letra: 'asc' },
+        select: { letra: true, status: true },
+      }),
+    ])
+
+    return {
+      project,
+      perfil: anfitriao,
+      introducao: introducao
+        ? {
+            contentId: introducao.id,
+            title: introducao.title,
+            coverUrl: introducao.coverUrl,
+            cartoes: introducao.blocks.map((b) => ({
+              id: b.id,
+              slot: b.slot,
+              papel: b.papel,
+              estado: b.estado,
+              nomeInterno: b.label,
+              titulo: b.titulo,
+              descricao: b.text,
+              linkUpgrade: b.linkUpgrade,
+              audio: b.asset,
+              imagem: b.imageAsset?.url ?? null,
+            })),
+          }
+        : null,
+      alfabeto: {
+        letras: letras.map((c) => c.letra!),
+        publicadas: letras.filter((c) => c.status === ContentStatus.PUBLISHED).length,
+      },
+    }
+  }
+
+  /**
+   * Acrescenta uma introdução — o "Duplicar" do segundo bloco da raiz.
+   *
+   * Nasce vazia, como as cópias dos cartões das letras: ele duplica para ter
+   * DUAS introduções, e não a mesma introdução duas vezes.
+   */
+  async duplicarIntroducao(contentId: string, adminId: string) {
+    const content = await this.prisma.content.findUnique({
+      where: { id: contentId },
+      select: { id: true, projectId: true, letra: true },
+    })
+    if (!content) throw new NotFoundException('Introdução não encontrada')
+    if (content.letra) throw new BadRequestException('Isto não é a introdução.')
+
+    const ultimo = await this.prisma.contentBlock.findFirst({
+      where: { contentId },
+      orderBy: { position: 'desc' },
+      select: { position: true },
+    })
+
+    const cartao = await this.prisma.contentBlock.create({
+      data: {
+        contentId,
+        type: BlockType.AUDIO,
+        papel: CardPapel.CARTAO,
+        estado: CardEstado.RASCUNHO,
+        slot: null,
+        label: 'Introdução',
+        position: (ultimo?.position ?? 0) + 1,
+      },
+      select: { id: true, label: true, estado: true, position: true },
+    })
+    await this.auditar(adminId, content.projectId, 'intro.duplicate', 'ContentBlock', cartao.id, {})
+    return cartao
+  }
+
+  /**
    * Guarda um cartão inteiro de uma vez, e recalcula o estado a seguir.
    *
    * O estado nunca é escolhido por quem chama: é uma consequência do que está

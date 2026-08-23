@@ -300,6 +300,27 @@ export const admin = {
   // "guardar a imagem" em separado, porque foi de peças guardadas em separado
   // que nasceu o problema que isto veio fechar.
 
+  estruturaRaiz: (projectSlug: string) =>
+    chamar<{
+      project: { id: string; slug: string; name: string }
+      perfil: {
+        id: string
+        displayName: string
+        avatarUrl: string | null
+        bio: string | null
+      } | null
+      introducao: {
+        contentId: string
+        title: string
+        coverUrl: string | null
+        cartoes: CartaoAdmin[]
+      } | null
+      alfabeto: { letras: string[]; publicadas: number }
+    }>(`/projects/${projectSlug}/estrutura`),
+
+  duplicarIntroducao: (contentId: string) =>
+    chamar<CartaoAdmin>(`/contents/${contentId}/duplicate-intro`, { method: 'POST' }),
+
   alfabeto: (projectSlug: string) =>
     chamar<{
       project: { id: string; slug: string; name: string }

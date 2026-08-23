@@ -394,6 +394,16 @@ export class AdminController {
   // inteiro de uma vez, e o estado — rascunho ou publicado — sai do que ficou
   // lá dentro, nunca de quem chama.
 
+  @Get('projects/:projectSlug/estrutura')
+  estruturaRaiz(@Param('projectSlug') projectSlug: string) {
+    return this.conteudo.estruturaRaiz(projectSlug)
+  }
+
+  @Post('contents/:id/duplicate-intro')
+  duplicarIntroducao(@Param('id') id: string, @Req() req: Request) {
+    return this.conteudo.duplicarIntroducao(id, req.usuario!.id)
+  }
+
   @Get('projects/:projectSlug/alfabeto')
   alfabeto(@Param('projectSlug') projectSlug: string) {
     return this.conteudo.alfabeto(projectSlug)

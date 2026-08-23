@@ -69,6 +69,11 @@ export function ListaAdmin({ projectSlug }: { projectSlug: string }) {
       {/* A entrada nova fica em PRIMEIRO. É por aqui que ele vai trabalhar
           agora, e enterrá-la no meio dos atalhos antigos seria pedir-lhe que
           procurasse a coisa que acabou de pedir. */}
+      <Link className="bloco linha atalho-alfabeto" href={`/${projectSlug}/admin/estrutura`}>
+        <span>Estrutura raiz</span>
+        <small>perfil + introdução + alfabeto — as três partes da página, numa só raiz</small>
+      </Link>
+
       <Link className="bloco linha atalho-alfabeto" href={`/${projectSlug}/admin/alfabeto`}>
         <span>Alfabeto — sequência infinita</span>
         <small>

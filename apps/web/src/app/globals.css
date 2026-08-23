@@ -5314,3 +5314,128 @@ button.letra-bloco {
 .salvar-ordem {
   margin-top: 0.9rem;
 }
+
+/* ── Estrutura raiz (desenho dele, 24/08) ────────────────────────────
+   "Perfil + Introdução + Alfabeto = uma única raiz". Reaproveita a
+   composição do alfabeto — a mesma linha contínua — porque é a mesma
+   ideia: partes ligadas, e não secções soltas empilhadas. */
+.estrutura-raiz .composicao {
+  gap: 1.6rem;
+}
+
+.cabeca-raiz {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.5rem;
+  margin-bottom: 0.5rem;
+}
+
+.cabeca-raiz strong {
+  font-size: 0.95rem;
+  letter-spacing: 0.06em;
+}
+
+/* Fixo quer dizer fixo, e é por isso que estes dois não têm menu nenhum:
+   um botão que nunca deve ser tocado é um botão que acaba por ser tocado. */
+.selo-fixo {
+  font-size: 0.72rem;
+  font-weight: 700;
+  color: var(--cor-texto-suave);
+}
+
+.bloco-raiz {
+  display: grid;
+  gap: 0.5rem;
+  width: 100%;
+  padding: 0.9rem;
+  border: 1px solid var(--cor-borda);
+  border-radius: 14px;
+  background: var(--cor-superficie);
+  text-align: left;
+  font-family: inherit;
+  color: var(--cor-texto);
+}
+
+.bloco-raiz.clicavel {
+  cursor: pointer;
+  margin-bottom: 0.6rem;
+}
+
+.foto-raiz {
+  width: 100%;
+  height: auto;
+  border-radius: 10px;
+}
+
+.lugar-raiz {
+  display: grid;
+  place-items: center;
+  min-height: 110px;
+  border: 1px dashed var(--cor-borda);
+  border-radius: 10px;
+  background: var(--cor-fundo);
+  color: var(--cor-texto-suave);
+  font-size: 0.76rem;
+  font-weight: 800;
+  letter-spacing: 0.06em;
+}
+
+.nome-raiz {
+  margin: 0;
+  font-weight: 700;
+}
+
+.linha-audio-raiz {
+  display: block;
+  padding: 0.5rem 0.6rem;
+  border-radius: 8px;
+  background: #17181c;
+  color: #fff;
+  font-size: 0.82rem;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.editar-raiz {
+  color: var(--cor-primaria);
+  font-size: 0.88rem;
+  font-weight: 700;
+  text-decoration: none;
+}
+
+.dica-duplicar {
+  margin: 0.2rem 0 0;
+  font-size: 0.8rem;
+  color: var(--cor-primaria);
+}
+
+.previa-alfabeto {
+  display: grid;
+  grid-template-columns: repeat(6, 1fr);
+  gap: 0.3rem;
+}
+
+.previa-alfabeto span {
+  display: grid;
+  place-items: center;
+  padding: 0.4rem 0;
+  border-radius: 6px;
+  background: var(--cor-fundo);
+  color: var(--cor-texto-suave);
+  font-size: 0.78rem;
+  font-weight: 700;
+}
+
+.rodape-raiz {
+  margin: 1.4rem 0 2rem;
+  padding: 0.85rem;
+  border-radius: 12px;
+  background: var(--cor-primaria-suave);
+  color: var(--cor-primaria);
+  text-align: center;
+  font-size: 0.88rem;
+  font-weight: 700;
+}
