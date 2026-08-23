@@ -4529,8 +4529,12 @@ button.letra-bloco {
 }
 
 .cabecalho-fixo .retrato-topo {
-  /* `flex: 0 0 auto` porque sem ele o item estica com o contentor e o
-     retrato redondo vira uma elipse alta e preta a meio da barra. */
+  /* `display: block` é o que aqui interessa mesmo. Quando não há fotografia,
+     o retrato é um `<span>`, e um span é inline — largura e altura são
+     simplesmente ignoradas num elemento inline. Ficava com a altura da linha e
+     o `border-radius: 50%` pintava uma elipse preta alta a meio da barra. Só
+     se via no painel, que é a única tela sem fotografia. */
+  display: block;
   flex: 0 0 auto;
   width: 30px;
   height: 30px;
