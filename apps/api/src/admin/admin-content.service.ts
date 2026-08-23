@@ -234,8 +234,36 @@ export class AdminContentService {
       },
       include: { asset: true, content: { select: { projectId: true } } },
     })
+    // O ESTADO SEGUE O CONTEÚDO, venha a alteração por onde vier.
+    //
+    // O painel antigo continua a existir e é por ele que ele trabalha hoje.
+    // Se só as rotas novas recalculassem o estado, um cartão completado pelo
+    // painel antigo ficava eternamente em rascunho e nunca chegava à página —
+    // e ele veria a letra a esvaziar-se sem perceber porquê.
+    await this.sincronizarEstado(blocoId)
     await this.auditar(adminId, bloco.content.projectId, 'block.update', 'ContentBlock', blocoId, {})
     return bloco
+  }
+
+  /** Recalcula rascunho/publicado a partir do que está mesmo no cartão. */
+  private async sincronizarEstado(blocoId: string) {
+    const b = await this.prisma.contentBlock.findUnique({
+      where: { id: blocoId },
+      select: { type: true, assetId: true, imageAssetId: true, titulo: true, label: true, text: true },
+    })
+    if (!b || b.type !== BlockType.AUDIO) return
+    // Quem preenche pelo painel antigo escreve o "rótulo" e não o "título".
+    // Enquanto os dois painéis coexistirem, o rótulo vale como título.
+    const titulo = b.titulo?.trim() || b.label?.trim() || ''
+    const inteiro =
+      Boolean(b.assetId) && Boolean(b.imageAssetId) && Boolean(titulo) && Boolean(b.text?.trim())
+    await this.prisma.contentBlock.update({
+      where: { id: blocoId },
+      data: {
+        estado: inteiro ? CardEstado.PUBLICADO : CardEstado.RASCUNHO,
+        ...(b.titulo?.trim() ? {} : { titulo: titulo || null }),
+      },
+    })
   }
 
   async criarBloco(
@@ -343,6 +371,7 @@ export class AdminContentService {
       data: { imageAssetId: assetId },
       select: { id: true, imageAssetId: true },
     })
+    await this.sincronizarEstado(blocoId)
     await this.auditar(adminId, bloco.content.projectId, 'block.image', 'ContentBlock', blocoId, {
       imageAssetId: assetId,
     })
@@ -933,8 +962,8 @@ export class AdminContentService {
       },
     })
 
+    await this.sincronizarEstado(cartaoId)
     const estado = this.estadoDoCartao(guardado)
-    await this.prisma.contentBlock.update({ where: { id: cartaoId }, data: { estado } })
     await this.auditar(adminId, antes.content.projectId, 'card.save', 'ContentBlock', cartaoId, {
       estado,
     })
