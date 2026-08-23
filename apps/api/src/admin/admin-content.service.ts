@@ -1109,6 +1109,16 @@ export class AdminContentService {
     return cartao
   }
 
+  /** O projeto pelo slug, para as rotas que só têm o slug na mão. */
+  async projetoPorSlug(slug: string) {
+    const p = await this.prisma.project.findUnique({
+      where: { slug },
+      select: { id: true, slug: true, name: true },
+    })
+    if (!p) throw new NotFoundException('Projeto não encontrado')
+    return p
+  }
+
   private async auditar(
     userId: string,
     projectId: string,

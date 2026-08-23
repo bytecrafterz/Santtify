@@ -177,6 +177,17 @@ export interface VagaoAdmin {
   prontos: number
 }
 
+/** Um pedido de reposição de senha, tal como o responsável o vê. */
+export interface PedidoDeReposicao {
+  id: string
+  emailPedido: string
+  createdAt: string
+  atendidoEm: string | null
+  usedAt: string | null
+  expiresAt: string | null
+  user: { id: string; displayName: string } | null
+}
+
 export const admin = {
   // ── Publicação numa tela só (20/08) ───────────────────────────────
   //
@@ -326,6 +337,18 @@ export const admin = {
     const asset = await this.enviarArquivo(arquivo)
     return this.salvarCartao(cartaoId, { assetId: asset.id })
   },
+
+  // ── Ajuda e suporte (23/08) ───────────────────────────────────────
+
+  pedidosDeReposicao: (projectSlug: string) =>
+    chamar<{
+      pedidos: PedidoDeReposicao[]
+      resumo: { porAtender: number; pessoasAfectadas: number; semConta: number }
+    }>(`/projects/${projectSlug}/recovery-requests`),
+
+  /** Gera o link de uso único. Só se vê UMA vez. */
+  atenderPedido: (id: string) =>
+    chamar<{ url: string; validoAte: string }>(`/recovery-requests/${id}/link`, { method: 'POST' }),
 
   // ── Categorias de áudio ─────────────────────────────────────────
   categorias: (projectSlug: string) =>

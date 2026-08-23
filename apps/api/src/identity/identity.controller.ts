@@ -64,6 +64,16 @@ class EditarPerfilDto {
   @IsOptional() @IsString() @MaxLength(80) guardianName?: string
 }
 
+class PedirReposicaoDto {
+  @IsEmail() email!: string
+  @IsOptional() @IsUUID() projectId?: string
+}
+
+class ReporSenhaDto {
+  @IsString() @MinLength(20) token!: string
+  @IsString() @MinLength(10) @MaxLength(200) password!: string
+}
+
 class TrocarSenhaDto {
   @IsString() senhaAtual!: string
   /** Mesmo mínimo do cadastro: comprimento no lugar de complexidade. */
@@ -119,6 +129,26 @@ export class IdentityController {
    * as sessões — inclusive a de quem trocou, que sem isto seria deslogado
    * justamente por ter feito a coisa certa.
    */
+  // ── Reposição de senha (23/08) ────────────────────────────────────
+
+  /**
+   * A pessoa pede. Responde-se sempre 204, exista a conta ou não.
+   *
+   * Um formulário que responde "esse e-mail não existe" é um formulário que
+   * confirma quais e-mails existem — e numa comunidade infantil isso é uma
+   * lista de contactos de crianças a ser oferecida a quem perguntar.
+   */
+  @Post('auth/recovery-request')
+  @HttpCode(204)
+  async pedirReposicao(@Body() dto: PedirReposicaoDto) {
+    await this.auth.pedirReposicao(dto.email, dto.projectId ?? null)
+  }
+
+  @Post('auth/reset-password')
+  reporSenha(@Body() dto: ReporSenhaDto) {
+    return this.auth.reporSenha(dto.token, dto.password)
+  }
+
   @Post('auth/change-password')
   @HttpCode(200)
   @UseGuards(AuthGuard)

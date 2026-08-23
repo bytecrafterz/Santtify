@@ -76,8 +76,9 @@ model Project {
   /// O projeto tem um rosto, e é sempre o mesmo para quem chega. Mostrar a
   /// cada visitante o seu próprio perfil vazio faz da porta de entrada um
   /// formulário; mostrar o do dono faz dela uma pessoa.
-  hostUserId String? @db.Uuid
-  host       User?   @relation("PerfilAnfitriao", fields: [hostUserId], references: [id], onDelete: SetNull)
+  hostUserId     String?         @db.Uuid
+  host           User?           @relation("PerfilAnfitriao", fields: [hostUserId], references: [id], onDelete: SetNull)
+  passwordResets PasswordReset[]
 
   @@map("projects")
 }
@@ -685,6 +686,7 @@ model User {
   consents           Consent[]
   uploads            MediaAsset[]
   refreshTokens      RefreshToken[]
+  passwordResets     PasswordReset[]
   auditLogs          AdminAuditLog[]
   posts              Post[]
 
@@ -706,6 +708,42 @@ enum UserStatus {
   ACTIVE
   SUSPENDED
   DELETED
+}
+
+/**
+ * Um pedido de reposição de senha.
+ * Existe porque a irmã do cliente ficou sem entrar em 23/08 e ele só soube
+ * porque ela lhe telefonou. A observação dele é a certa e é o motivo desta
+ * tabela: se acontecesse a cem desconhecidos, ninguém saberia — pareceria
+ * desinteresse, e era avaria.
+ * A LINHA É CRIADA MESMO QUANDO O E-MAIL NÃO EXISTE, com `userId` nulo. Duas
+ * razões. À pessoa responde-se sempre o mesmo, para o formulário não servir
+ * para descobrir quem tem conta. E ao responsável interessa saber que alguém
+ * tentou entrar com um endereço que não existe: ou escreveu mal, ou pensa que
+ * se registou e não se registou — e as duas coisas perdem-se em silêncio.
+ * O token só nasce quando o responsável atende o pedido, e é guardado em
+ * resumo (hash). Quem tiver acesso à base de dados não consegue entrar na
+ * conta de ninguém com o que está aqui.
+ */
+model PasswordReset {
+  id          String    @id @default(uuid()) @db.Uuid
+  /// Nulo quando o endereço pedido não corresponde a nenhuma conta.
+  userId      String?   @db.Uuid
+  user        User?     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  projectId   String?   @db.Uuid
+  project     Project?  @relation(fields: [projectId], references: [id], onDelete: SetNull)
+  /// O endereço tal como foi escrito, para o responsável reconhecer a pessoa.
+  emailPedido String
+  /// Resumo do token. Nulo enquanto o pedido não for atendido.
+  tokenHash   String?
+  expiresAt   DateTime?
+  usedAt      DateTime?
+  atendidoEm  DateTime?
+  createdAt   DateTime  @default(now())
+
+  @@index([createdAt])
+  @@index([userId])
+  @@map("password_resets")
 }
 
 model RefreshToken {

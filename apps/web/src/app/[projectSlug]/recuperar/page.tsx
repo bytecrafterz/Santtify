@@ -1,7 +1,7 @@
 import Link from 'next/link'
 import { notFound } from 'next/navigation'
 import { api } from '@/lib/api'
-import { EntrarNoGrupoPv } from '@/components/EntrarNoGrupoPv'
+import { PedirReposicao } from '@/components/PedirReposicao'
 
 export const metadata = { title: 'Esqueci minha senha' }
 
@@ -35,23 +35,7 @@ export default async function PaginaDeRecuperacao({
 
       <h1>Esqueci minha senha</h1>
 
-      <div className="bloco">
-        <p>
-          A recuperação automática por e-mail está a ser preparada e ainda não funciona. Para
-          não a deixar sem saída, o caminho por agora é este:
-        </p>
-        <p className="nota">
-          Fale com o responsável no grupo do WhatsApp, diga qual é o seu e-mail de acesso, e ele
-          repõe a sua entrada. Não partilhe a sua senha antiga com ninguém, nem no grupo.
-        </p>
-      </div>
-
-      {process.env.NEXT_PUBLIC_PV_GRUPO_URL && (
-        <EntrarNoGrupoPv
-          projectId={project.id}
-          url={process.env.NEXT_PUBLIC_PV_GRUPO_URL}
-        />
-      )}
+      <PedirReposicao projectId={project.id} projectSlug={projectSlug} />
 
       <p className="nota">
         Se ainda se lembra da senha, pode <Link href={`/${projectSlug}/entrar`}>entrar aqui</Link>.

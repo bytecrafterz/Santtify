@@ -3,6 +3,7 @@ import {
   ConflictException,
   Injectable,
   Logger,
+  NotFoundException,
   UnauthorizedException,
 } from '@nestjs/common'
 import { ConfigService } from '@nestjs/config'
@@ -236,6 +237,165 @@ export class AuthService {
   private diasDeTtl(ttl: string): number {
     const m = /^(\d+)d$/.exec(ttl.trim())
     return m ? Number(m[1]) : 30
+  }
+
+  // ── REPOSIÇÃO DE SENHA (23/08) ─────────────────────────────────────
+  //
+  // A irmã do cliente ficou sem entrar e ele só soube porque ela lhe
+  // telefonou. A frase dele resume o problema melhor do que eu conseguiria:
+  // "se acontecesse com dez ou cem pessoas desconhecidas, elas poderiam
+  // desistir, e nós nunca saberíamos".
+  //
+  // Enquanto não houver serviço de envio de e-mail, o caminho é este: a pessoa
+  // pede, o pedido aparece ao responsável, ele gera um link de uso único e
+  // manda-lho por onde já falam. Não é automático, mas é RASTREADO — e o que
+  // fazia perder pessoas em silêncio era não haver registo nenhum de que
+  // alguém tinha tentado.
+
+  /**
+   * Regista um pedido de reposição.
+   *
+   * RESPONDE SEMPRE O MESMO, exista a conta ou não. Um formulário que diz
+   * "esse e-mail não existe" é um formulário que confirma quais e-mails
+   * existem, e numa comunidade infantil isso é uma lista de contactos de
+   * crianças a ser oferecida a quem perguntar.
+   */
+  async pedirReposicao(email: string, projectId?: string | null) {
+    const endereco = email.trim().toLowerCase()
+    const user = await this.prisma.user.findUnique({
+      where: { email: endereco },
+      select: { id: true, status: true },
+    })
+
+    // Um pedido por endereço a cada dez minutos. Sem isto, um engano de quem
+    // toca várias vezes enche a lista do responsável e esconde os pedidos
+    // verdadeiros no meio de repetições.
+    const recente = await this.prisma.passwordReset.findFirst({
+      where: {
+        emailPedido: endereco,
+        createdAt: { gt: new Date(Date.now() - 10 * 60 * 1000) },
+        usedAt: null,
+      },
+      select: { id: true },
+    })
+    if (recente) return { registado: true }
+
+    await this.prisma.passwordReset.create({
+      data: {
+        emailPedido: endereco,
+        userId: user?.status === 'ACTIVE' ? user.id : null,
+        projectId: projectId ?? null,
+      },
+    })
+    this.logger.warn(`Pedido de reposição de senha: ${endereco} (conta ${user ? 'existe' : 'não existe'})`)
+    return { registado: true }
+  }
+
+  /**
+   * O responsável atende um pedido: nasce um link de uso único, válido 24h.
+   *
+   * O token completo é devolvido UMA VEZ e nunca mais. Na base fica só o
+   * resumo — quem tiver acesso à base de dados não entra na conta de ninguém
+   * com o que está lá guardado.
+   */
+  async atenderPedido(pedidoId: string, baseUrl: string) {
+    const pedido = await this.prisma.passwordReset.findUnique({
+      where: { id: pedidoId },
+      select: { id: true, userId: true, usedAt: true, project: { select: { slug: true } } },
+    })
+    if (!pedido) throw new NotFoundException('Pedido não encontrado')
+    if (!pedido.userId) {
+      throw new BadRequestException(
+        'Este endereço não tem conta. Peça à pessoa que confirme o e-mail com que se registou.',
+      )
+    }
+    if (pedido.usedAt) throw new BadRequestException('Este pedido já foi usado.')
+
+    const token = randomBytes(32).toString('base64url')
+    await this.prisma.passwordReset.update({
+      where: { id: pedidoId },
+      data: {
+        tokenHash: createHash('sha256').update(token).digest('hex'),
+        expiresAt: new Date(Date.now() + 24 * 60 * 60 * 1000),
+        atendidoEm: new Date(),
+      },
+    })
+
+    const slug = pedido.project?.slug ?? ''
+    const caminho = slug ? `/${slug}/repor-senha` : '/repor-senha'
+    return { url: `${baseUrl}${caminho}?t=${token}`, validoAte: '24 horas' }
+  }
+
+  /** A pessoa usa o link e define a senha nova. */
+  async reporSenha(token: string, senhaNova: string): Promise<ParDeTokens> {
+    const resumo = createHash('sha256').update(token).digest('hex')
+    const pedido = await this.prisma.passwordReset.findFirst({
+      where: { tokenHash: resumo, usedAt: null, expiresAt: { gt: new Date() } },
+      select: { id: true, userId: true },
+    })
+    if (!pedido?.userId) {
+      throw new BadRequestException('Este link já foi usado ou expirou. Peça um novo.')
+    }
+
+    const user = await this.prisma.user.findUnique({ where: { id: pedido.userId } })
+    if (!user || user.status !== 'ACTIVE') throw new BadRequestException('Conta indisponível')
+
+    await this.prisma.$transaction([
+      this.prisma.user.update({
+        where: { id: user.id },
+        data: { passwordHash: await argon2.hash(senhaNova) },
+      }),
+      // O link serve uma vez. Sem isto, quem o reencaminhasse sem querer —
+      // num grupo, por exemplo — dava a conta a quem o lesse.
+      this.prisma.passwordReset.update({
+        where: { id: pedido.id },
+        data: { usedAt: new Date() },
+      }),
+      // Todas as sessões antigas caem. Se a senha foi reposta porque alguém
+      // entrou na conta, deixar a sessão dessa pessoa aberta não resolvia nada.
+      this.prisma.refreshToken.updateMany({
+        where: { userId: user.id, revokedAt: null },
+        data: { revokedAt: new Date() },
+      }),
+    ])
+
+    this.logger.log(`Senha reposta por link: ${user.id}`)
+    return this.emitirTokens(user)
+  }
+
+  /**
+   * A lista para o responsável, com o que ele precisa de decidir.
+   *
+   * Vem junto a contagem de quantas pessoas diferentes bateram no mesmo
+   * problema — que foi exactamente o que ele pediu para não voltar a confundir
+   * avaria com desinteresse.
+   */
+  async pedidosDeReposicao(projectId: string) {
+    const desde = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000)
+    const pedidos = await this.prisma.passwordReset.findMany({
+      where: { projectId, createdAt: { gt: desde } },
+      orderBy: { createdAt: 'desc' },
+      take: 100,
+      select: {
+        id: true,
+        emailPedido: true,
+        createdAt: true,
+        atendidoEm: true,
+        usedAt: true,
+        expiresAt: true,
+        user: { select: { id: true, displayName: true } },
+      },
+    })
+
+    const porAtender = pedidos.filter((p) => !p.atendidoEm && !p.usedAt)
+    return {
+      pedidos,
+      resumo: {
+        porAtender: porAtender.length,
+        pessoasAfectadas: new Set(porAtender.map((p) => p.emailPedido)).size,
+        semConta: porAtender.filter((p) => !p.user).length,
+      },
+    }
   }
 
   private publico(user: User): UsuarioPublico {

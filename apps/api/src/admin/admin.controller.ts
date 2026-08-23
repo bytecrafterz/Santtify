@@ -20,6 +20,7 @@ import { AdminContentService } from './admin-content.service'
 import { StorageService, TAMANHO_MAXIMO } from './storage.service'
 import { LaunchesService } from '../content/launches.service'
 import { PostsService } from '../social/posts.service'
+import { AuthService } from '../identity/auth.service'
 import { LaunchStatus } from '@pv/db'
 import { AdminGuard, AuthGuard } from '../identity/auth.guard'
 
@@ -157,6 +158,7 @@ export class AdminController {
     private readonly storage: StorageService,
     private readonly lancamentos: LaunchesService,
     private readonly posts: PostsService,
+    private readonly auth: AuthService,
   ) {}
 
   // ── Moderação do My Post ─────────────────────────────────────────
@@ -344,6 +346,31 @@ export class AdminController {
   @Patch('contents/:id/metadata')
   metadados(@Param('id') id: string, @Body() dto: MetadadosDto, @Req() req: Request) {
     return this.conteudo.salvarMetadados(id, dto as Record<string, unknown>, req.usuario!.id)
+  }
+
+  // ── Ajuda e suporte: quem ficou sem entrar (23/08) ────────────────
+  //
+  // Existe porque a irmã do cliente ficou sem entrar e ele só soube porque ela
+  // lhe telefonou. Um pedido que não deixa rasto parece desinteresse, e é
+  // avaria — foi a observação dele e é a razão desta lista.
+
+  @Get('projects/:projectSlug/recovery-requests')
+  async pedidosDeReposicao(@Param('projectSlug') projectSlug: string) {
+    const project = await this.conteudo.projetoPorSlug(projectSlug)
+    return this.auth.pedidosDeReposicao(project.id)
+  }
+
+  /**
+   * Gera o link de uso único. Devolvido UMA vez e nunca mais.
+   *
+   * O responsável copia-o e manda-o por onde já fala com a pessoa. Não é
+   * automático — enquanto não houver serviço de e-mail não pode ser — mas
+   * fecha o buraco que fazia perder gente em silêncio.
+   */
+  @Post('recovery-requests/:id/link')
+  atenderPedido(@Param('id') id: string, @Req() req: Request) {
+    const base = `${req.protocol}://${req.get('host')?.replace(/^api\./, '')}`
+    return this.auth.atenderPedido(id, base)
   }
 
   // ── O cartão como peça única (23/08) ──────────────────────────────

@@ -58,6 +58,14 @@ export function ListaAdmin({ projectSlug }: { projectSlug: string }) {
         {publicados} de {dados.contents.length} conteúdos publicados
       </p>
 
+      {/* AJUDA E SUPORTE fica acima de tudo. Quem está à espera de entrar
+          não pode ficar por baixo de métricas e categorias — é a única coisa
+          desta lista em que há uma pessoa parada do outro lado. */}
+      <Link className="bloco linha atalho-suporte" href={`/${projectSlug}/admin/suporte`}>
+        <span>Ajuda e suporte</span>
+        <small>quem ficou sem entrar, e o que fazer por essa pessoa</small>
+      </Link>
+
       {/* A entrada nova fica em PRIMEIRO. É por aqui que ele vai trabalhar
           agora, e enterrá-la no meio dos atalhos antigos seria pedir-lhe que
           procurasse a coisa que acabou de pedir. */}

@@ -5126,3 +5126,114 @@ button.letra-bloco {
 .atalho-alfabeto span {
   font-weight: 800;
 }
+
+/* ── Ajuda e suporte (23/08) ─────────────────────────────────────────
+   Vermelho porque é o único sítio do painel onde há uma pessoa parada
+   do outro lado à espera de entrar. */
+.atalho-suporte {
+  border-left: 4px solid var(--cor-alerta);
+}
+
+.atalho-suporte span {
+  font-weight: 800;
+}
+
+.ajuda-suporte {
+  display: grid;
+  gap: 0.9rem;
+}
+
+.resumo-suporte {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 0.7rem;
+}
+
+.resumo-suporte .contador {
+  display: grid;
+  justify-items: center;
+  gap: 0.1rem;
+  padding: 0.9rem 0.5rem;
+  border: 1px solid var(--cor-borda);
+  border-radius: 14px;
+  background: var(--cor-superficie);
+  text-align: center;
+}
+
+.resumo-suporte .contador strong {
+  font-size: 1.9rem;
+  line-height: 1;
+}
+
+.resumo-suporte .contador small {
+  font-size: 0.78rem;
+  color: var(--cor-texto-suave);
+}
+
+/* Só ganha cor quando há mesmo alguém à espera. Um alerta que está sempre
+   aceso deixa de ser um alerta. */
+.resumo-suporte .contador.alerta {
+  border-color: var(--cor-alerta);
+}
+
+.resumo-suporte .contador.alerta strong {
+  color: var(--cor-alerta);
+}
+
+.pedido {
+  display: grid;
+  gap: 0.5rem;
+  padding: 0.9rem;
+  border: 1px solid var(--cor-borda);
+  border-radius: 14px;
+  background: var(--cor-superficie);
+}
+
+.cabeca-pedido {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 0.4rem;
+}
+
+.cabeca-pedido strong {
+  word-break: break-all;
+}
+
+.cabeca-pedido small {
+  color: var(--cor-texto-suave);
+  font-size: 0.8rem;
+}
+
+.link-gerado {
+  display: grid;
+  gap: 0.5rem;
+}
+
+.link-gerado code {
+  display: block;
+  padding: 0.6rem 0.7rem;
+  border-radius: 10px;
+  background: var(--cor-fundo);
+  font-size: 0.78rem;
+  word-break: break-all;
+}
+
+.ja-tratados summary {
+  cursor: pointer;
+  font-weight: 700;
+  color: var(--cor-texto-suave);
+}
+
+.ja-tratados ul {
+  margin: 0.6rem 0 0;
+  padding-left: 1.1rem;
+  display: grid;
+  gap: 0.35rem;
+  font-size: 0.9rem;
+}
+
+.ja-tratados small {
+  color: var(--cor-texto-suave);
+}
