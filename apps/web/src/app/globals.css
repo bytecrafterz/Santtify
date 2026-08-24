@@ -5587,3 +5587,37 @@ button.menu-player {
   cursor: default;
   opacity: 0.85;
 }
+
+/* ── O perfil de outra pessoa (24/08) ────────────────────────────────
+   Mesma estrutura do perfil do dono, porque é o mesmo componente. */
+.titulo-feed {
+  margin: 1.4rem 0 0.6rem;
+  font-size: 1.1rem;
+}
+
+.publicacao-de-alguem {
+  display: grid;
+  gap: 0.5rem;
+  margin-bottom: 0.9rem;
+  padding: 0.9rem;
+  border: 1px solid var(--cor-borda);
+  border-radius: 14px;
+  background: var(--cor-superficie);
+}
+
+.publicacao-de-alguem img {
+  width: 100%;
+  height: auto;
+  border-radius: 10px;
+}
+
+.publicacao-de-alguem p {
+  margin: 0;
+  font-size: 1rem;
+  line-height: 1.45;
+}
+
+.publicacao-de-alguem small {
+  color: var(--cor-texto-suave);
+  font-size: 0.8rem;
+}

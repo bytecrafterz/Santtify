@@ -26,7 +26,18 @@ import { ConviteDeCadastro } from './ConviteDeCadastro'
  * curtiu — regra dele, de 22/08.
  */
 export type AlvoSocial =
-  { tipo: 'conteudo'; contentId: string } | { tipo: 'faixa'; blockId: string }
+  | { tipo: 'conteudo'; contentId: string }
+  | { tipo: 'faixa'; blockId: string }
+  /**
+   * Um PERFIL também é uma publicação: tem visitas, curtidas, comentários e
+   * partilhas, e são dele. Faltava aqui, e o resultado foi o de sempre — a
+   * página de outra pessoa desenhou os quatro números à mão, em `<div>`, e
+   * nenhum deles fazia nada. É a terceira vez que este mesmo defeito nasce num
+   * ficheiro diferente: capa do projeto, cartão da letra, e agora o perfil.
+   * Enquanto houver mais do que um sítio a desenhar isto, há sempre um que
+   * fica para trás.
+   */
+  | { tipo: 'perfil'; userId: string }
 
 const VAZIO: EstadoDaFaixa = {
   visualizacoes: 0,
@@ -58,14 +69,19 @@ export function IndicadoresDaPublicacao({
   const [aviso, definirAviso] = useState<string | null>(null)
   const [aCurtir, definirACurtir] = useState(false)
 
-  const chave = alvo.tipo === 'faixa' ? alvo.blockId : alvo.contentId
+  const chave =
+    alvo.tipo === 'faixa' ? alvo.blockId : alvo.tipo === 'perfil' ? alvo.userId : alvo.contentId
 
   // Relê quando a sessão entra. O access token só vive em memória, e à primeira
   // leitura ainda não existe: sem isto o servidor responde como responde a um
   // visitante e o coração fica vazio mesmo tendo sido a pessoa a enchê-lo.
   useEffect(() => {
     const pedido =
-      alvo.tipo === 'faixa' ? social.estadoDaFaixa(alvo.blockId) : social.estado(alvo.contentId)
+      alvo.tipo === 'faixa'
+        ? social.estadoDaFaixa(alvo.blockId)
+        : alvo.tipo === 'perfil'
+          ? social.estadoDoPerfil(alvo.userId)
+          : social.estado(alvo.contentId)
     void pedido.then(definirEstado).catch(() => {})
   }, [chave, alvo, usuario?.id])
 
@@ -80,7 +96,9 @@ export function IndicadoresDaPublicacao({
       const r =
         alvo.tipo === 'faixa'
           ? await social.curtirFaixa(alvo.blockId, projectId)
-          : await social.curtir(alvo.contentId, projectId)
+          : alvo.tipo === 'perfil'
+            ? await social.curtirPerfil(alvo.userId)
+            : await social.curtir(alvo.contentId, projectId)
       definirEstado((e) => ({ ...e, curtidoPorMim: r.curtido, curtidas: r.total }))
       definirAviso(null)
     } catch {
@@ -106,9 +124,13 @@ export function IndicadoresDaPublicacao({
     try {
       await rastrear({
         projectId,
-        ...(alvo.tipo === 'conteudo' ? { contentId: alvo.contentId } : { blockId: alvo.blockId }),
+        ...(alvo.tipo === 'conteudo' ? { contentId: alvo.contentId } : {}),
+        ...(alvo.tipo === 'faixa' ? { blockId: alvo.blockId } : {}),
         type: 'CUSTOM',
-        props: { acao: alvo.tipo === 'faixa' ? 'partilhar_faixa' : 'partilhar_conteudo' },
+        props:
+          alvo.tipo === 'perfil'
+            ? { acao: 'partilhar_perfil', perfilId: alvo.userId }
+            : { acao: alvo.tipo === 'faixa' ? 'partilhar_faixa' : 'partilhar_conteudo' },
       })
       definirEstado((e) => ({ ...e, compartilhamentos: e.compartilhamentos + 1 }))
     } catch {
@@ -190,7 +212,9 @@ export function IndicadoresDaPublicacao({
             const novo =
               alvo.tipo === 'faixa'
                 ? await social.comentarNaFaixa(alvo.blockId, projectId, t, parentId)
-                : await social.comentar(alvo.contentId, projectId, t, parentId)
+                : alvo.tipo === 'perfil'
+                  ? await social.comentarNoPerfil(alvo.userId, projectId, t, parentId)
+                  : await social.comentar(alvo.contentId, projectId, t, parentId)
             definirEstado((x) => ({
               ...x,
               comentarios: x.comentarios + 1,

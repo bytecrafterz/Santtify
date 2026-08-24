@@ -1,7 +1,7 @@
 import Link from 'next/link'
 import { notFound } from 'next/navigation'
 import { api, type PerfilAnfitriao } from '@/lib/api'
-import { abreviar } from '@/lib/numeros'
+import { PerfilDePessoa } from '@/components/PerfilDePessoa'
 
 export const metadata = { title: 'Perfil' }
 
@@ -22,23 +22,18 @@ export default async function PaginaDePessoa({
   params: Promise<{ projectSlug: string; userId: string }>
 }) {
   const { projectSlug, userId } = await params
+  const projeto = await api.projeto(projectSlug)
+  if (!projeto) notFound()
 
   const base = process.env.NEXT_PUBLIC_API_URL ?? ''
-  const [pessoaRes, socialRes] = await Promise.all([
-    fetch(`${base}/profiles/${userId}`, { next: { revalidate: 30 } }),
-    fetch(`${base}/profiles/${userId}/social`, { next: { revalidate: 30 } }),
-  ])
+  // Os números sociais deixam de ser lidos aqui. Lidos no servidor, vinham
+  // sempre sem sessão — e sem sessão o servidor responde como responde a um
+  // visitante: "ninguém curtiu isto, muito menos tu". Quem os lê agora é o
+  // componente, no navegador, já com a sessão de quem está a ver.
+  const pessoaRes = await fetch(`${base}/profiles/${userId}`, { next: { revalidate: 30 } })
   if (!pessoaRes.ok) notFound()
 
   const pessoa = (await pessoaRes.json()) as PerfilAnfitriao
-  const numeros = socialRes.ok
-    ? ((await socialRes.json()) as {
-        visualizacoes: number
-        curtidas: number
-        comentarios: number
-        compartilhamentos: number
-      })
-    : null
 
   return (
     <main className="envoltorio">
@@ -64,26 +59,7 @@ export default async function PaginaDePessoa({
       {pessoa.guardianName && <p className="responsavel-perfil">{pessoa.guardianName}</p>}
       {pessoa.bio && <p className="bio-perfil">{pessoa.bio}</p>}
 
-      {numeros && (
-        <div className="numeros">
-          <div className="numero">
-            <strong>{abreviar(numeros.visualizacoes)}</strong>
-            <span>Visitas</span>
-          </div>
-          <div className="numero">
-            <strong>{abreviar(numeros.curtidas)}</strong>
-            <span>Curtidas</span>
-          </div>
-          <div className="numero">
-            <strong>{abreviar(numeros.comentarios)}</strong>
-            <span>Comentários</span>
-          </div>
-          <div className="numero">
-            <strong>{abreviar(numeros.compartilhamentos)}</strong>
-            <span>Partilhas</span>
-          </div>
-        </div>
-      )}
+      <PerfilDePessoa pessoa={pessoa} projectId={projeto.id} projectSlug={projectSlug} />
 
       <p className="nota">
         Na plataforma desde{' '}

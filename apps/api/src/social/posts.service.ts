@@ -183,6 +183,24 @@ export class PostsService {
     })
   }
 
+  /**
+   * As publicações de uma pessoa, para quem visita o perfil dela.
+   *
+   * SÓ AS PUBLICADAS, ao contrário de `minhas`. O dono do perfil vê as suas
+   * pendentes e as recusadas, porque são dele e ele precisa de saber em que
+   * estado estão; quem visita vê só o que passou pela moderação. Mostrar uma
+   * publicação pendente a estranhos seria publicar aquilo que ainda não foi
+   * aprovado, que é o contrário do que a moderação existe para fazer.
+   */
+  async doPerfil(userId: string, limite = 50) {
+    return this.prisma.post.findMany({
+      where: { userId, status: PostStatus.PUBLISHED },
+      orderBy: { createdAt: 'desc' },
+      take: limite,
+      select: this.selecao(),
+    })
+  }
+
   async remover(postId: string, userId: string, ehAdmin: boolean) {
     const post = await this.prisma.post.findUnique({
       where: { id: postId },

@@ -328,13 +328,20 @@ class ComentarNoPerfilDto {
  */
 @Controller('profiles/:userId')
 export class PerfisController {
-  constructor(private readonly social: SocialService) {}
+  constructor(private readonly social: SocialService,
+    private readonly posts: PostsService) {}
 
   @Get('social')
   @AuthOpcional()
   @UseGuards(AuthGuard)
   estado(@Param('userId') userId: string, @Req() req: Request) {
     return this.social.estadoDoPerfil(userId, req.usuario?.id ?? null)
+  }
+
+  /** As publicações desta pessoa, para quem visita o perfil dela. */
+  @Get('posts')
+  publicacoes(@Param('userId') userId: string) {
+    return this.posts.doPerfil(userId)
   }
 
   @Post('like')
