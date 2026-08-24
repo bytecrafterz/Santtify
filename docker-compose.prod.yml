@@ -45,6 +45,13 @@ services:
       PUBLIC_API_URL: https://${DOMINIO}
       PUBLIC_SHORTLINK_BASE: https://${DOMINIO}/r
       UPLOAD_DIR: /app/uploads
+      # Envio de e-mail. Estar no .env.production NÃO CHEGA: o `--env-file` só
+      # substitui variáveis dentro deste ficheiro; o que o contentor recebe é o
+      # que estiver aqui. Foi assim que o primeiro envio não chegou sequer a ser
+      # tentado — a chave existia no servidor e não existia dentro da API.
+      BREVO_API_KEY: ${BREVO_API_KEY:-}
+      MAIL_REMETENTE: ${MAIL_REMETENTE:-}
+      MAIL_REMETENTE_NOME: ${MAIL_REMETENTE_NOME:-Santtify}
     volumes:
       # Volume nomeado: as músicas e áudios do cliente sobrevivem a
       # `docker compose down` e a qualquer rebuild da imagem.
