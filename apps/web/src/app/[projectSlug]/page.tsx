@@ -1,14 +1,13 @@
 import { notFound } from 'next/navigation'
 import { api } from '@/lib/api'
 import { RastreadorDeVisita } from '@/components/RastreadorDeVisita'
-import { SeloProdutoVivo } from '@/components/SeloProdutoVivo'
 import { BannerDeConsentimento } from '@/components/BannerDeConsentimento'
 import { CabecalhoDePerfil } from '@/components/CabecalhoDePerfil'
 import { CapaComPlaylist } from '@/components/CapaComPlaylist'
 import { BotaoDenunciar } from '@/components/BotaoDenunciar'
 import { ExperienciaContinua } from '@/components/ExperienciaContinua'
 import { IntroducaoRecolhivel } from '@/components/IntroducaoRecolhivel'
-import { CabecalhoFixo } from '@/components/CabecalhoFixo'
+import { BarraInferior } from '@/components/BarraInferior'
 
 /**
  * A experiência inteira numa página só.
@@ -77,12 +76,11 @@ export default async function IndiceDoProjeto({
   const { project, anfitriao, contents, progresso, comunidade } = dados
 
   return (
-    <main className="envoltorio com-cabecalho">
-      <CabecalhoFixo
-        projectSlug={projectSlug}
-        onde={project.name}
-        avatarUrl={anfitriao?.avatarUrl ?? null}
-      />
+    <main className="envoltorio com-barra">
+      {/* A BARRA PRETA DO TOPO SAIU.
+          Ele desenhou-a em 23/08 e, a usar, concluiu que roubava altura à
+          fotografia de perfil sem dar nada em troca — e tinha razão: as saídas
+          que ela oferecia estão agora em baixo, onde o polegar chega. */}
 
       <RastreadorDeVisita
         projectId={project.id}
@@ -133,8 +131,10 @@ export default async function IndiceDoProjeto({
         />
       )}
 
-      <SeloProdutoVivo projectSlug={projectSlug} />
+      {/* O selo do Produto Vivo deixa de flutuar no fim da página: passou a
+          ser um dos quatro acessos da barra de baixo, sempre à mão. */}
       <BannerDeConsentimento projectId={project.id} />
+      <BarraInferior projectSlug={projectSlug} linkPdf={project.checkoutUrl ?? null} />
     </main>
   )
 }

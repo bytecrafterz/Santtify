@@ -5501,3 +5501,69 @@ button.menu-player {
   font-family: inherit;
   cursor: pointer;
 }
+
+/* ── A barra fixa de baixo (24/08) ───────────────────────────────────
+   Em baixo e não em cima porque é onde o polegar chega. Numa página que
+   é uma composição contínua da A à Z, a saída tem de estar debaixo da
+   mão de quem segura o telemóvel — em cima obriga a esticar ou a usar as
+   duas mãos, e quem usa isto muitas vezes tem uma criança na outra. */
+.barra-inferior {
+  position: fixed;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  z-index: 50;
+  display: flex;
+  justify-content: space-around;
+  align-items: stretch;
+  gap: 0.2rem;
+  padding: 0.45rem 0.5rem calc(0.45rem + env(safe-area-inset-bottom, 0px));
+  background: var(--cor-superficie);
+  border-top: 1px solid var(--cor-borda);
+  box-shadow: 0 -6px 22px rgba(15, 18, 25, 0.08);
+}
+
+.item-barra {
+  flex: 1 1 0;
+  display: grid;
+  justify-items: center;
+  align-content: center;
+  gap: 0.15rem;
+  min-width: 0;
+  padding: 0.3rem 0.2rem;
+  color: var(--cor-texto-suave);
+  font-size: 0.68rem;
+  font-weight: 700;
+  text-decoration: none;
+  text-align: center;
+}
+
+.item-barra .icone {
+  display: grid;
+  place-items: center;
+  height: 24px;
+}
+
+.item-barra .marca-pv-barra {
+  width: 24px;
+  height: 24px;
+  border-radius: 50%;
+  background: var(--cor-acao);
+  color: #fff;
+  font-size: 0.64rem;
+  font-weight: 800;
+}
+
+/* A página precisa de acabar acima da barra, senão o último cartão fica
+   sempre meio tapado — e é o cartão que ele acabou de publicar. */
+.envoltorio.com-barra {
+  padding-bottom: calc(84px + env(safe-area-inset-bottom, 0px));
+}
+
+/* O banner de consentimento sobe acima da barra. A classe chama-se
+   `consentimento` — escrevi `banner-consentimento` à primeira, de cabeça, e a
+   regra não teria pegado em nada. É a terceira vez esta semana que invento um
+   nome de classe em vez de o ir ler; desta apanhei-a antes de publicar. */
+.consentimento {
+  bottom: calc(76px + env(safe-area-inset-bottom, 0px));
+}
