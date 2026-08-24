@@ -3,7 +3,7 @@ import { api } from '@/lib/api'
 import { RastreadorDeVisita } from '@/components/RastreadorDeVisita'
 import { BannerDeConsentimento } from '@/components/BannerDeConsentimento'
 import { CabecalhoDePerfil } from '@/components/CabecalhoDePerfil'
-import { CapaComPlaylist } from '@/components/CapaComPlaylist'
+import { IntroducaoEmCartoes } from '@/components/IntroducaoEmCartoes'
 import { BotaoDenunciar } from '@/components/BotaoDenunciar'
 import { ExperienciaContinua } from '@/components/ExperienciaContinua'
 import { IntroducaoRecolhivel } from '@/components/IntroducaoRecolhivel'
@@ -75,6 +75,18 @@ export default async function IndiceDoProjeto({
 
   const { project, anfitriao, contents, progresso, comunidade } = dados
 
+  /**
+   * A introdução é o conteúdo SEM LETRA. Vai buscar-se por inteiro, com os
+   * cartões dentro, porque a lista do índice só traz títulos e capas.
+   *
+   * Se falhar, a página abre à mesma sem introdução. Uma introdução é bom ter;
+   * não é motivo para deixar 26 letras fora do ar.
+   */
+  const semLetra = contents.find((c) => !c.letra && c.publicado)
+  const introducao = semLetra
+    ? await api.conteudo(projectSlug, semLetra.slug).catch(() => null)
+    : null
+
   return (
     <main className="envoltorio com-barra">
       {/* A BARRA PRETA DO TOPO SAIU.
@@ -101,7 +113,14 @@ export default async function IndiceDoProjeto({
           depois o alfabeto. Quem já viu a introdução vê o alfabeto logo por
           baixo do perfil, sem texto de apresentação a ocupar o ecrã. */}
       <IntroducaoRecolhivel nome={project.name}>
-        <CapaComPlaylist project={project} contents={contents} />
+        {introducao && (
+          <IntroducaoEmCartoes
+            contentId={introducao.content.id}
+            blocos={introducao.content.blocks}
+            projectId={project.id}
+            projectSlug={projectSlug}
+          />
+        )}
 
         <div className="secao-com-acao">
           <div>
