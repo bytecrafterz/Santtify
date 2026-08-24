@@ -1145,6 +1145,15 @@ export class AdminContentService {
         text: true,
         linkUpgrade: true,
         meta: true,
+        // O ENDEREÇO DA IMAGEM E DO SOM, e não só os identificadores.
+        //
+        // Isto devolvia `imageAssetId`, que é um número, e o painel tentava
+        // mostrar a fotografia a partir dele. Resultado: a pessoa escolhia a
+        // foto, o envio corria bem, e o quadrado continuava vazio — sem erro
+        // nenhum. O cliente descreveu-o em 24/08 com a pergunta certa: "como
+        // vou saber se escolhi a foto certa ou se o upload funcionou?".
+        asset: { select: { id: true, url: true, title: true, durationMs: true } },
+        imageAsset: { select: { url: true } },
       },
     })
 
@@ -1153,7 +1162,15 @@ export class AdminContentService {
     await this.auditar(adminId, antes.content.projectId, 'card.save', 'ContentBlock', cartaoId, {
       estado,
     })
-    return { ...guardado, estado }
+    return {
+      ...guardado,
+      estado,
+      // A mesma forma que as listas do painel devolvem, para quem chama nunca
+      // ter de saber onde cada coisa vive.
+      audio: guardado.asset,
+      imagem: guardado.imageAsset?.url ?? null,
+      folhaA4: ((guardado.meta ?? {}) as Record<string, unknown>).folhaA4 ?? null,
+    }
   }
 
   /**

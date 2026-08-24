@@ -51,6 +51,7 @@ export function CabecalhoDePerfil({
   })
   const [comentariosAbertos, definirComentariosAbertos] = useState(false)
   const [pessoasAbertas, definirPessoasAbertas] = useState(false)
+  const [opcoesAbertas, definirOpcoesAbertas] = useState(false)
   const [aviso, definirAviso] = useState<string | null>(null)
   /** Trava contra toque repetido: dois pedidos cruzados deixam o coração
    *  a dizer uma coisa e o número outra. */
@@ -177,9 +178,44 @@ export function CabecalhoDePerfil({
           </div>
         )}
 
-        <Link className="selo-pv-capa" href={`/${projectSlug}/produto-vivo`}>
-          PV
-        </Link>
+        {/* SOBRE A FOTO, SÓ DOIS CONTROLOS: o escudo à esquerda e os três
+            pontos à direita. Lista dele, de 24/08, e é a mesma regra que ele já
+            tinha usado nos cartões — uma fotografia limpa, com o que se pode
+            fazer nos cantos. O selo PV saiu daqui: passou a ser um dos acessos
+            da barra de baixo, e não precisava de estar nos dois sítios. */}
+        <div className="controlos-da-capa">
+          <span className="canto-esquerdo">
+            <BotaoDenunciar
+              projectId={projectId}
+              targetType="PROFILE"
+              targetId={anfitriao?.id ?? ''}
+              podeBloquear={Boolean(anfitriao?.id)}
+            />
+          </span>
+
+          <button
+            type="button"
+            className="canto-direito tres-pontos-capa"
+            aria-label="Opções do perfil"
+            aria-expanded={opcoesAbertas}
+            onClick={() => definirOpcoesAbertas((v) => !v)}
+          >
+            ⋮
+          </button>
+
+          {opcoesAbertas && (
+            <div className="menu-da-capa" role="menu">
+              {souOAnfitriao ? (
+                <Link href={`/${projectSlug}/perfil`}>✎ Editar perfil</Link>
+              ) : temConta ? (
+                <Link href={`/${projectSlug}/perfil`}>👤 O meu perfil</Link>
+              ) : (
+                <Link href={`/${projectSlug}/instalar`}>👤 Criar o meu perfil</Link>
+              )}
+              <span className="linha-menu-capa">👥 {abreviar(perfisCriados)} perfis criados</span>
+            </div>
+          )}
+        </div>
 
         {/* Só nome e selo sobre a foto, numa linha, com sombra própria. */}
         <div className="nome-no-retrato">
@@ -344,37 +380,12 @@ export function CabecalhoDePerfil({
         />
       )}
 
-      <div className="linha-acoes">
-        <BotaoDenunciar
-          projectId={projectId}
-          targetType="PROFILE"
-          targetId={anfitriao?.id ?? ''}
-          podeBloquear={Boolean(anfitriao?.id)}
-        />
-
-        <span className="nota-monitor">
-          {anfitriao?.guardianName
-            ? 'Perfil acompanhado por um adulto'
-            : 'Descreva quem monitora este perfil'}
-        </span>
-
-        {/* Três estados, e não dois.
-            Eu só distinguia o anfitrião de toda a gente, e por isso quem já
-            tinha conta e não era ele lia "CRIAR MEU PERFIL" — com a sessão
-            aberta, a olhar para um convite para se inscrever. Foi o que ele
-            descreveu em 22/08: "não reconhece meu login e pede novo cadastro".
-            Quem já entrou nunca pode ser convidado a entrar outra vez. */}
-        <Link
-          className="botao-acao"
-          href={temConta ? `/${projectSlug}/perfil` : `/${projectSlug}/instalar`}
-        >
-          👤 {souOAnfitriao ? 'EDITAR MEU PERFIL' : temConta ? 'MEU PERFIL' : 'CRIAR MEU PERFIL'}
-        </Link>
-
-        <span className="pilula-contador" title="Perfis criados">
-          👥 {abreviar(perfisCriados)}
-        </span>
-      </div>
+      {/* A FILA DE BAIXO SAIU INTEIRA, a pedido dele em 24/08.
+          "Editar meu perfil" subiu para os três pontos, sobre a fotografia.
+          "Perfil acompanhado por um adulto" já está dentro do painel do
+          perfil, e repetido aqui era a mesma frase duas vezes no mesmo ecrã.
+          O escudo subiu para o canto esquerdo da capa, e a contagem de perfis
+          passou para dentro do menu — onde se vai ver, e não onde se tropeça. */}
     </>
   )
 }

@@ -42,15 +42,35 @@ export function EditorDeCartao({
     !descricao.trim() && 'a descrição',
   ].filter(Boolean) as string[]
 
+  /**
+   * A FOTO APARECE NO INSTANTE EM QUE É ESCOLHIDA, antes de subir.
+   *
+   * Pergunta dele, em 24/08, e é a pergunta certa: "como vou saber se escolhi a
+   * foto certa ou se o upload funcionou?". Não sabia. O envio podia demorar
+   * segundos numa rede de telemóvel, e durante esse tempo o quadrado ficava
+   * igual ao que estava antes de tocar.
+   *
+   * O navegador consegue mostrar o ficheiro que está no aparelho sem o enviar
+   * a lado nenhum. Mostra-se esse imediatamente, e troca-se pelo do servidor
+   * quando ele chegar. Se o envio falhar, a pré-visualização recua — mostrar
+   * uma foto que não ficou guardada seria pior do que não mostrar nenhuma.
+   */
   async function enviarFoto(arquivo: File) {
+    const anterior = imagem
+    const local = URL.createObjectURL(arquivo)
+    definirImagem(local)
     definirOcupado('foto')
     definirErro(null)
     try {
       const r = await admin.porFotoNoCartao(cartao.id, arquivo)
-      definirImagem(r.imagem)
+      definirImagem(r.imagem ?? local)
     } catch {
-      definirErro('Não foi possível enviar a foto.')
+      definirImagem(anterior)
+      definirErro('Não foi possível enviar a foto. Tente outra vez.')
     } finally {
+      // O endereço local ocupa memória até ser libertado, e quem preenche 26
+      // letras troca dezenas de fotografias sem fechar a página.
+      URL.revokeObjectURL(local)
       definirOcupado(null)
     }
   }
@@ -60,9 +80,11 @@ export function EditorDeCartao({
     definirErro(null)
     try {
       const r = await admin.porAudioNoCartao(cartao.id, arquivo)
-      definirAudio(r.audio)
+      // Se o servidor não devolver o áudio resolvido, fica ao menos o nome do
+      // ficheiro que ela escolheu: é o suficiente para reconhecer o engano.
+      definirAudio(r.audio ?? { id: '', url: '', title: arquivo.name, durationMs: null })
     } catch {
-      definirErro('Não foi possível enviar o áudio.')
+      definirErro('Não foi possível enviar o áudio. Tente outra vez.')
     } finally {
       definirOcupado(null)
     }

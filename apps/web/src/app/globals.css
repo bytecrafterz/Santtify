@@ -5621,3 +5621,78 @@ button.menu-player {
   color: var(--cor-texto-suave);
   font-size: 0.8rem;
 }
+
+/* ── Os dois controlos sobre a fotografia de perfil (24/08) ──────────
+   Escudo à esquerda, três pontos à direita, e mais nada. É a mesma
+   regra que ele fixou para os cartões: a imagem fica limpa, e o que se
+   pode fazer vive nos cantos. */
+.controlos-da-capa {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  z-index: 3;
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  padding: 0.6rem;
+  pointer-events: none;
+}
+
+.controlos-da-capa > * {
+  pointer-events: auto;
+}
+
+.tres-pontos-capa {
+  display: grid;
+  place-items: center;
+  width: 36px;
+  height: 36px;
+  border: 0;
+  border-radius: 50%;
+  /* Fundo escurecido por baixo, e não cor sólida: a fotografia muda de pessoa
+     para pessoa, e um ícone branco sobre uma camisa branca desaparece. */
+  background: rgba(13, 14, 18, 0.45);
+  color: #fff;
+  font-size: 1.35rem;
+  line-height: 1;
+  cursor: pointer;
+}
+
+.menu-da-capa {
+  position: absolute;
+  top: 46px;
+  right: 0.6rem;
+  display: grid;
+  min-width: 190px;
+  border-radius: 12px;
+  overflow: hidden;
+  background: var(--cor-superficie);
+  box-shadow: var(--sombra-alta);
+}
+
+.menu-da-capa a,
+.menu-da-capa .linha-menu-capa {
+  padding: 0.75rem 0.9rem;
+  border-bottom: 1px solid var(--cor-borda);
+  color: var(--cor-texto);
+  font-size: 0.9rem;
+  font-weight: 700;
+  text-decoration: none;
+}
+
+.menu-da-capa > :last-child {
+  border-bottom: 0;
+}
+
+.menu-da-capa .linha-menu-capa {
+  color: var(--cor-texto-suave);
+  font-weight: 600;
+}
+
+/* A FOTOGRAFIA DE PONTA A PONTA, sem folga nos lados. `.sangria` já a puxa
+   para fora das margens do envoltório; o que faltava era o arredondado, que
+   deixava dois cantos de fundo à vista e lia-se como espaço lateral. */
+.perfil-capa.sangria {
+  border-radius: 0;
+}

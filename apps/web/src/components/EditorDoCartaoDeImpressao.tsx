@@ -38,7 +38,12 @@ export function EditorDoCartaoDeImpressao({
     Boolean,
   ) as string[]
 
+  /** A imagem aparece assim que é escolhida, como no editor dos outros cartões. */
   async function enviar(qual: 'arte' | 'folha', arquivo: File) {
+    const anterior = qual === 'arte' ? arte : folha
+    const local = URL.createObjectURL(arquivo)
+    if (qual === 'arte') definirArte(local)
+    else definirFolha(local)
     definirOcupado(qual)
     definirErro(null)
     try {
@@ -46,11 +51,14 @@ export function EditorDoCartaoDeImpressao({
         qual === 'arte'
           ? await admin.porFotoNoCartao(cartao.id, arquivo)
           : await admin.porFolhaA4NoCartao(cartao.id, arquivo)
-      if (qual === 'arte') definirArte(r.imagem)
-      else definirFolha(r.folhaA4 ?? null)
+      if (qual === 'arte') definirArte(r.imagem ?? local)
+      else definirFolha(r.folhaA4 ?? local)
     } catch {
-      definirErro('Não foi possível enviar a imagem.')
+      if (qual === 'arte') definirArte(anterior)
+      else definirFolha(anterior)
+      definirErro('Não foi possível enviar a imagem. Tente outra vez.')
     } finally {
+      URL.revokeObjectURL(local)
       definirOcupado(null)
     }
   }
