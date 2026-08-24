@@ -249,12 +249,41 @@ export class AdminContentService {
   private async sincronizarEstado(blocoId: string) {
     const b = await this.prisma.contentBlock.findUnique({
       where: { id: blocoId },
-      select: { type: true, assetId: true, imageAssetId: true, titulo: true, label: true, text: true },
+      select: {
+        type: true,
+        papel: true,
+        meta: true,
+        assetId: true,
+        imageAssetId: true,
+        titulo: true,
+        label: true,
+        text: true,
+      },
     })
     if (!b || b.type !== BlockType.AUDIO) return
     // Quem preenche pelo painel antigo escreve o "rótulo" e não o "título".
     // Enquanto os dois painéis coexistirem, o rótulo vale como título.
     const titulo = b.titulo?.trim() || b.label?.trim() || ''
+
+    /**
+     * O CARTÃO DE IMPRESSÃO TEM OUTRAS EXIGÊNCIAS, e não pode ser medido pela
+     * mesma régua. Não tem áudio nem descrição: é uma arte de apresentação e
+     * uma folha A4 para imprimir. Exigir-lhe um som seria mantê-lo em rascunho
+     * para sempre, e ele nunca chegaria à página.
+     */
+    if (b.papel === CardPapel.IMPRESSAO) {
+      const meta = (b.meta ?? {}) as Record<string, unknown>
+      const prontoParaImprimir = Boolean(b.imageAssetId) && Boolean(meta.folhaA4)
+      await this.prisma.contentBlock.update({
+        where: { id: blocoId },
+        data: {
+          estado: prontoParaImprimir ? CardEstado.PUBLICADO : CardEstado.RASCUNHO,
+          ...(b.titulo?.trim() ? {} : { titulo: titulo || null }),
+        },
+      })
+      return
+    }
+
     const inteiro =
       Boolean(b.assetId) && Boolean(b.imageAssetId) && Boolean(titulo) && Boolean(b.text?.trim())
     await this.prisma.contentBlock.update({
@@ -878,6 +907,7 @@ export class AdminContentService {
             titulo: true,
             text: true,
             linkUpgrade: true,
+            meta: true,
             asset: { select: { id: true, url: true, title: true, durationMs: true } },
             imageAsset: { select: { url: true } },
           },
@@ -909,6 +939,7 @@ export class AdminContentService {
             linkUpgrade: b.linkUpgrade,
             audio: b.asset,
             imagem: b.imageAsset?.url ?? null,
+            folhaA4: ((b.meta ?? {}) as Record<string, unknown>).folhaA4 ?? null,
           })),
           prontos: (c?.blocks ?? []).filter((b) => b.estado === CardEstado.PUBLICADO).length,
         }
@@ -957,6 +988,7 @@ export class AdminContentService {
               titulo: true,
               text: true,
               linkUpgrade: true,
+              meta: true,
               asset: { select: { id: true, url: true, title: true, durationMs: true } },
               imageAsset: { select: { url: true } },
             },
@@ -989,6 +1021,7 @@ export class AdminContentService {
               linkUpgrade: b.linkUpgrade,
               audio: b.asset,
               imagem: b.imageAsset?.url ?? null,
+              folhaA4: ((b.meta ?? {}) as Record<string, unknown>).folhaA4 ?? null,
             })),
           }
         : null,
@@ -1051,6 +1084,8 @@ export class AdminContentService {
       assetId?: string | null
       imageAssetId?: string | null
       linkUpgrade?: string | null
+      /** A folha A4 do cartão de impressão. Vive no `meta`, que já existe. */
+      folhaA4AssetId?: string | null
     },
     adminId: string,
   ) {
@@ -1060,9 +1095,40 @@ export class AdminContentService {
     })
     if (!antes) throw new NotFoundException('Cartão não encontrado')
 
+    /**
+     * A folha A4 guarda-se no `meta`, e não numa coluna nova.
+     *
+     * É a única imagem que só o cartão de impressão tem, e criar uma coluna
+     * para uma coisa que 99% das linhas nunca vai usar é o tipo de decisão que
+     * se paga em todas as consultas seguintes. O `meta` existe exactamente
+     * para isto.
+     */
+    let metaNova: Prisma.InputJsonValue | undefined
+    if (dados.folhaA4AssetId !== undefined) {
+      const actual = await this.prisma.contentBlock.findUnique({
+        where: { id: cartaoId },
+        select: { meta: true },
+      })
+      const base = ((actual?.meta ?? {}) as Record<string, unknown>) || {}
+      if (dados.folhaA4AssetId) {
+        const asset = await this.prisma.mediaAsset.findUnique({
+          where: { id: dados.folhaA4AssetId },
+          select: { url: true, kind: true },
+        })
+        if (!asset || asset.kind !== MediaKind.IMAGE) {
+          throw new BadRequestException('A folha A4 precisa de ser uma imagem.')
+        }
+        metaNova = { ...base, folhaA4: asset.url } as Prisma.InputJsonValue
+      } else {
+        const { folhaA4: _fora, ...resto } = base
+        metaNova = resto as Prisma.InputJsonValue
+      }
+    }
+
     const guardado = await this.prisma.contentBlock.update({
       where: { id: cartaoId },
       data: {
+        ...(metaNova !== undefined ? { meta: metaNova } : {}),
         ...(dados.titulo !== undefined ? { titulo: dados.titulo?.trim() || null } : {}),
         ...(dados.descricao !== undefined ? { text: dados.descricao?.trim() || null } : {}),
         ...(dados.assetId !== undefined ? { assetId: dados.assetId } : {}),
@@ -1078,6 +1144,7 @@ export class AdminContentService {
         titulo: true,
         text: true,
         linkUpgrade: true,
+        meta: true,
       },
     })
 

@@ -5,6 +5,7 @@ import { admin, type CartaoAdmin, type VagaoAdmin } from '@/lib/admin'
 import { CabecalhoFixo } from './CabecalhoFixo'
 import { useAuth } from './ProvedorDeAuth'
 import { EditorDeCartao } from './EditorDeCartao'
+import { EditorDoCartaoDeImpressao } from './EditorDoCartaoDeImpressao'
 
 /**
  * O painel do alfabeto, nas três telas que ele desenhou em 23/08.
@@ -72,6 +73,24 @@ export function SequenciaDoAlfabeto({ projectSlug }: { projectSlug: string }) {
   // ── Tela 3: o cartão ──────────────────────────────────────────────
   if (onde.tela === 'cartao' && vagao) {
     const cartao = vagao.cartoes.find((c) => c.id === onde.cartaoId)
+    if (cartao?.papel === 'IMPRESSAO') {
+      // Outro editor, porque tem outros campos e outra régua: arte de
+      // apresentação e folha A4, sem áudio nem descrição.
+      return (
+        <>
+          <CabecalhoFixo projectSlug={projectSlug} onde={`Letra ${vagao.letra}`} />
+          <EditorDoCartaoDeImpressao
+            cartao={cartao}
+            letra={vagao.letra}
+            aoGuardar={async () => {
+              await recarregar()
+              definirOnde({ tela: 'quadrados', letra: vagao.letra })
+            }}
+            aoCancelar={() => definirOnde({ tela: 'quadrados', letra: vagao.letra })}
+          />
+        </>
+      )
+    }
     if (cartao) {
       return (
         <>

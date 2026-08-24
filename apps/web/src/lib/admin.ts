@@ -163,6 +163,8 @@ export interface CartaoAdmin {
   linkUpgrade: string | null
   audio: { id: string; url: string; title: string | null; durationMs: number | null } | null
   imagem: string | null
+  /** A folha A4, só no cartão de impressão. */
+  folhaA4?: string | null
 }
 
 /** Um vagão da composição: a letra e os seus cartões. */
@@ -335,6 +337,7 @@ export const admin = {
       assetId?: string | null
       imageAssetId?: string | null
       linkUpgrade?: string | null
+      folhaA4AssetId?: string | null
     },
   ) => chamar<CartaoAdmin>(`/cards/${id}`, { method: 'PATCH', body: JSON.stringify(dados) }),
 
@@ -364,6 +367,12 @@ export const admin = {
   async porAudioNoCartao(cartaoId: string, arquivo: File) {
     const asset = await this.enviarArquivo(arquivo)
     return this.salvarCartao(cartaoId, { assetId: asset.id })
+  },
+
+  /** E a folha A4, que só o cartão de impressão tem. */
+  async porFolhaA4NoCartao(cartaoId: string, arquivo: File) {
+    const asset = await this.enviarArquivo(arquivo)
+    return this.salvarCartao(cartaoId, { folhaA4AssetId: asset.id })
   },
 
   // ── Ajuda e suporte (23/08) ───────────────────────────────────────

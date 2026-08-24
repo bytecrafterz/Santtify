@@ -5567,3 +5567,23 @@ button.menu-player {
 .consentimento {
   bottom: calc(76px + env(safe-area-inset-bottom, 0px));
 }
+
+/* A folha A4 na pré-visualização do painel: mais alta do que larga, para se
+   distinguir da arte de apresentação num relance. Trocá-las uma pela outra
+   faria a criança levar para casa o cartaz em vez da folha. */
+.area-foto.folha {
+  border-top: 1px solid var(--cor-borda);
+  min-height: 220px;
+}
+
+/* O botão de imprimir aparece aqui como será, e não como botão: tocar-lhe no
+   painel não imprime nada, e um botão que não faz nada ensina a desconfiar
+   dos outros. */
+.botao-imprimir.como-sera {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  cursor: default;
+  opacity: 0.85;
+}
