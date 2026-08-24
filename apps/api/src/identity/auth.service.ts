@@ -14,6 +14,7 @@ import { createHash, randomBytes } from 'node:crypto'
 import { PrismaService } from '../prisma/prisma.service'
 import { AttributionService } from '../tracking/attribution.service'
 import { EventsService } from '../tracking/events.service'
+import { MailService } from '../common/mail/mail.service'
 import { VisitContext } from '../tracking/attribution.types'
 
 export interface ParDeTokens {
@@ -49,6 +50,7 @@ export class AuthService {
     private readonly config: ConfigService,
     private readonly attribution: AttributionService,
     private readonly events: EventsService,
+    private readonly mail: MailService,
   ) {}
 
   async registrar(
@@ -280,13 +282,61 @@ export class AuthService {
     })
     if (recente) return { registado: true }
 
-    await this.prisma.passwordReset.create({
+    const pedido = await this.prisma.passwordReset.create({
       data: {
         emailPedido: endereco,
         userId: user?.status === 'ACTIVE' ? user.id : null,
         projectId: projectId ?? null,
       },
+      select: { id: true, project: { select: { slug: true } } },
     })
+
+    /**
+     * COM SERVIÇO DE ENVIO, A PESSOA NÃO ESPERA POR NINGUÉM.
+     *
+     * O caminho pelo painel continua a existir e não vai desaparecer: é o que
+     * salva quem escreveu o endereço errado, quem nunca se registou, e o dia em
+     * que o serviço de envio estiver em baixo. Mas deixa de ser o caminho
+     * normal, que era a crítica dele e era justa — repor à mão não escala.
+     *
+     * Só se manda a quem TEM conta. A quem não tem não se manda nada, e não se
+     * lhe diz nada: a resposta no ecrã é a mesma para os dois casos, senão o
+     * formulário passa a confirmar que endereços existem.
+     */
+    if (user?.status === 'ACTIVE' && this.mail.activo) {
+      const token = randomBytes(32).toString('base64url')
+      await this.prisma.passwordReset.update({
+        where: { id: pedido.id },
+        data: {
+          tokenHash: createHash('sha256').update(token).digest('hex'),
+          expiresAt: new Date(Date.now() + 24 * 60 * 60 * 1000),
+          atendidoEm: new Date(),
+        },
+      })
+
+      const base = this.config.get<string>('PUBLIC_WEB_URL') ?? 'https://santtify.com'
+      const slug = pedido.project?.slug
+      const url = `${base}${slug ? `/${slug}` : ''}/repor-senha?t=${token}`
+
+      const envio = await this.mail.enviar({
+        para: endereco,
+        assunto: 'Repor a sua senha — Santtify',
+        texto: `Recebemos um pedido para repor a sua senha.\n\nAbra este endereço para escolher uma senha nova:\n${url}\n\nO link vale 24 horas e serve uma vez só.\n\nSe não foi você que pediu, ignore esta mensagem — a sua senha continua a mesma.`,
+        html: linkDeReposicaoEmHtml(url),
+      })
+
+      // Se o envio falhar, o pedido fica por atender e aparece ao responsável.
+      // Assim uma avaria no serviço de e-mail não deixa a pessoa sem saída
+      // nenhuma — só a devolve ao caminho mais lento.
+      if (!envio.enviado) {
+        await this.prisma.passwordReset.update({
+          where: { id: pedido.id },
+          data: { tokenHash: null, expiresAt: null, atendidoEm: null },
+        })
+        this.logger.error(`Reposição por e-mail falhou para ${endereco}; fica para o painel.`)
+      }
+    }
+
     this.logger.warn(`Pedido de reposição de senha: ${endereco} (conta ${user ? 'existe' : 'não existe'})`)
     return { registado: true }
   }
@@ -408,4 +458,33 @@ export class AuthService {
       createdAt: user.createdAt,
     }
   }
+}
+
+/**
+ * O corpo do e-mail de reposição.
+ *
+ * Tabelas e estilos em linha, e não folha de estilos: os clientes de e-mail
+ * deitam fora quase tudo o que não seja isto, e o Gmail deita fora o resto. O
+ * que aqui parece antiquado é o que garante que a mensagem se lê no telemóvel
+ * de uma mãe com um Android de 2019.
+ *
+ * O botão é um link com fundo, e o endereço aparece também em texto por baixo:
+ * há clientes que não desenham fundos, e aí sobra sempre alguma coisa para
+ * tocar.
+ */
+function linkDeReposicaoEmHtml(url: string): string {
+  return `<!doctype html>
+<html lang="pt"><body style="margin:0;padding:24px;background:#f6f7fb;font-family:-apple-system,Segoe UI,Roboto,sans-serif;color:#171a22">
+  <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="max-width:520px;margin:0 auto;background:#ffffff;border-radius:16px;padding:28px">
+    <tr><td>
+      <h1 style="margin:0 0 12px;font-size:20px">Repor a sua senha</h1>
+      <p style="margin:0 0 18px;font-size:15px;line-height:1.5">Recebemos um pedido para repor a sua senha na Santtify. Toque no botão para escolher uma nova.</p>
+      <p style="margin:0 0 18px">
+        <a href="${url}" style="display:inline-block;background:#16a34a;color:#ffffff;text-decoration:none;font-weight:700;padding:14px 22px;border-radius:999px">ESCOLHER SENHA NOVA</a>
+      </p>
+      <p style="margin:0 0 18px;font-size:13px;line-height:1.5;color:#5b6478">Se o botão não funcionar, copie este endereço:<br><span style="word-break:break-all">${url}</span></p>
+      <p style="margin:0;font-size:13px;line-height:1.5;color:#5b6478">O link vale 24 horas e serve uma vez só. Se não foi você que pediu, ignore esta mensagem — a sua senha continua a mesma.</p>
+    </td></tr>
+  </table>
+</body></html>`
 }

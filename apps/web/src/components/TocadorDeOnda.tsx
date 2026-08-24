@@ -36,12 +36,17 @@ function tempo(s: number): string {
   return `${String(m).padStart(2, '0')}:${String(r).padStart(2, '0')}`
 }
 
+/** As categorias, na ordem que ele fixou em 24/08. */
+const CATEGORIAS = ['TODOS', 'ORAÇÃO', 'MEMORIZAÇÃO', 'MÚSICA', 'EXPLICAÇÃO'] as const
+
 export function TocadorDeOnda({
   bloco,
   projectId,
   contentId,
   rotulo,
   aoTerminar,
+  categoria,
+  aoEscolherCategoria,
 }: {
   bloco: Bloco
   projectId: string
@@ -49,9 +54,13 @@ export function TocadorDeOnda({
   /** Só quando a publicação tem mais de um áudio: aí é preciso distingui-los. */
   rotulo: string | null
   aoTerminar?: () => void
+  /** A categoria escolhida, quando quem usa o tocador quer filtrar. */
+  categoria?: string | null
+  aoEscolherCategoria?: (categoria: string | null) => void
 }) {
   const audio = useRef<HTMLAudioElement>(null)
   const [tocando, definirTocando] = useState(false)
+  const [menuAberto, definirMenuAberto] = useState(false)
   const [agora, definirAgora] = useState(0)
   const [total, definirTotal] = useState(0)
 
@@ -103,13 +112,53 @@ export function TocadorDeOnda({
 
         <span className="tempo">{tempo(total)}</span>
 
-        <a className="menu-player" href={bloco.asset?.url} download aria-label="Baixar áudio">
+        {/* OS TRÊS PONTOS DEIXAM DE DESCARREGAR O FICHEIRO.
+            Isto era um link com `download`, e num iPhone o Safari respondia
+            com a sua própria caixa a perguntar se queria guardar o MP3 —
+            oferecendo o áudio dele a quem tocasse por curiosidade. Ele
+            fotografou-a em 24/08 e tem razão: o tocador é para ouvir aqui.
+            Fica um botão nosso, que abre o menu das categorias. */}
+        <button
+          type="button"
+          className="menu-player"
+          aria-label="Escolher categoria"
+          aria-expanded={menuAberto}
+          onClick={(ev) => {
+            ev.stopPropagation()
+            definirMenuAberto((v) => !v)
+          }}
+        >
           ⋮
-        </a>
+        </button>
+
+        {menuAberto && (
+          <div className="menu-categorias" role="menu">
+            {CATEGORIAS.map((c) => (
+              <button
+                key={c}
+                type="button"
+                className={categoria === c ? 'activa' : undefined}
+                onClick={(ev) => {
+                  ev.stopPropagation()
+                  definirMenuAberto(false)
+                  aoEscolherCategoria?.(c === 'TODOS' ? null : c)
+                }}
+              >
+                {c}
+              </button>
+            ))}
+          </div>
+        )}
 
         <audio
           ref={audio}
           preload="metadata"
+          // O menu nativo do navegador também oferece "descarregar". Isto
+          // tira-lhe essa entrada; não é uma tranca — nada impede alguém de
+          // ir buscar o endereço — mas deixa de estar à mão de quem só quer
+          // ouvir, que é o que ele pediu.
+          controlsList="nodownload"
+          onContextMenu={(ev) => ev.preventDefault()}
           onLoadedMetadata={(e) => definirTotal(e.currentTarget.duration)}
           onTimeUpdate={(e) => definirAgora(e.currentTarget.currentTime)}
           onPlay={() => {

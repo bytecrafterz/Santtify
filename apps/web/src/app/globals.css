@@ -5445,3 +5445,59 @@ button.letra-bloco {
   font-size: 0.88rem;
   font-weight: 700;
 }
+
+/* ── O menu de categorias do tocador (24/08) ─────────────────────────
+   Sobe a partir dos três pontos, dentro do cartão. Antes ali havia um
+   link de descarga, e no iPhone o Safari respondia com a sua própria
+   caixa a perguntar se queria guardar o MP3 — oferecendo o áudio dele a
+   quem tocasse por curiosidade. */
+.menu-categorias {
+  position: absolute;
+  right: 8px;
+  bottom: calc(100% + 6px);
+  z-index: 5;
+  display: grid;
+  min-width: 168px;
+  border-radius: 12px;
+  overflow: hidden;
+  background: var(--cor-superficie);
+  box-shadow: var(--sombra-alta);
+}
+
+.menu-categorias button {
+  padding: 0.7rem 0.9rem;
+  border: 0;
+  border-bottom: 1px solid var(--cor-borda);
+  background: none;
+  color: var(--cor-texto);
+  font-family: inherit;
+  font-size: 0.85rem;
+  font-weight: 700;
+  letter-spacing: 0.03em;
+  text-align: left;
+  cursor: pointer;
+}
+
+.menu-categorias button:last-child {
+  border-bottom: 0;
+}
+
+.menu-categorias button.activa {
+  background: var(--cor-primaria-suave);
+  color: var(--cor-primaria);
+}
+
+/* O tocador passa a ser a âncora do menu. */
+.player-onda {
+  position: relative;
+}
+
+/* Era um <a>; agora é um <button>, e um botão traz consigo o estilo do
+   navegador se ninguém lho tirar. */
+button.menu-player {
+  border: 0;
+  background: none;
+  color: inherit;
+  font-family: inherit;
+  cursor: pointer;
+}

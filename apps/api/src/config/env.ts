@@ -24,6 +24,18 @@ const schema = z.object({
   PUBLIC_SHORTLINK_BASE: z.string().url(),
   PUBLIC_API_URL: z.string().url().default('http://localhost:3333'),
   UPLOAD_DIR: z.string().optional(),
+
+  /**
+   * Envio de e-mail. OPCIONAL de propósito.
+   *
+   * O sistema tem de subir sem isto: em desenvolvimento ninguém quer mandar
+   * e-mail a sério, e obrigar a chave a existir faria a máquina de quem
+   * programa depender de um serviço externo. Quando falta, a reposição de
+   * senha continua a funcionar pelo painel — que é o caminho que já existia.
+   */
+  BREVO_API_KEY: z.string().optional(),
+  MAIL_REMETENTE: z.string().email().optional(),
+  MAIL_REMETENTE_NOME: z.string().default('Santtify'),
 })
 
 export type Env = z.infer<typeof schema>
