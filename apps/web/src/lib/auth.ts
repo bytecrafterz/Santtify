@@ -114,8 +114,20 @@ export async function renovarSessao(): Promise<boolean> {
     tokens.access = r.accessToken
     tokens.refresh = r.refreshToken
     return true
-  } catch {
-    tokens.limpar()
+  } catch (erro) {
+    /**
+     * FALHAR A REDE NÃO É PERDER A SESSÃO.
+     *
+     * Isto apagava o token guardado a qualquer erro — incluindo uma falha de
+     * rede. Um telemóvel que acorda com o wi-fi ainda a ligar falha o primeiro
+     * pedido quase sempre, e bastava isso para a pessoa ser posta fora da
+     * conta. Era a outra metade do que o cliente descreveu em 24/08.
+     *
+     * Só um 401 apaga: aí o servidor disse mesmo que aquele token já não
+     * serve. Qualquer outra coisa é um problema de caminho, e o token fica
+     * guardado para a próxima tentativa.
+     */
+    if (erro instanceof ErroDeApi && erro.status === 401) tokens.limpar()
     return false
   }
 }

@@ -138,17 +138,51 @@ export class AuthService {
       include: { user: true },
     })
 
-    if (!registro || registro.revokedAt || registro.expiresAt < new Date()) {
+    if (!registro || registro.expiresAt < new Date()) {
       throw new UnauthorizedException('Sessão expirada, entre novamente')
     }
+
+    /**
+     * UMA FOLGA DE UM MINUTO PARA QUEM TEM REDE MÁ.
+     *
+     * Antes, o token antigo era revogado no instante em que se trocava. Basta
+     * a resposta perder-se pelo caminho — e num telemóvel que acaba de acordar,
+     * perde-se — para o aparelho ficar com um token que o servidor já matou.
+     * A sessão morria sem ninguém ter feito nada de errado, e foi isso que o
+     * cliente descreveu: três horas fora, e ao voltar tinha de entrar de novo.
+     *
+     * Um token TROCADO continua a servir durante um minuto e devolve um par
+     * novo. Um minuto chega para uma repetição e não chega para nada mais: um
+     * token roubado teria de ser usado nesse minuto exacto, com o dono a
+     * trocá-lo ao mesmo tempo.
+     *
+     * SAIR DA CONTA CONTINUA A VALER NO INSTANTE. É por isso que são duas
+     * colunas: `revokedAt` sem `rotatedAt` é uma porta fechada à chave, e
+     * nenhuma folga a abre.
+     */
+    const FOLGA_MS = 60 * 1000
+    if (registro.revokedAt) {
+      const trocadoAgora =
+        registro.rotatedAt && Date.now() - registro.rotatedAt.getTime() < FOLGA_MS
+      if (!trocadoAgora) {
+        throw new UnauthorizedException('Sessão expirada, entre novamente')
+      }
+      this.logger.log(`Troca repetida dentro da folga: ${registro.userId}`)
+    }
+
     if (registro.user.status !== 'ACTIVE') {
       throw new UnauthorizedException('Conta indisponível')
     }
 
-    await this.prisma.refreshToken.update({
-      where: { id: registro.id },
-      data: { revokedAt: new Date() },
-    })
+    // Só marca à primeira. Repetir dentro da folga não empurra a folga para a
+    // frente, senão um aparelho a repetir em ciclo mantinha o token vivo para
+    // sempre.
+    if (!registro.revokedAt) {
+      await this.prisma.refreshToken.update({
+        where: { id: registro.id },
+        data: { revokedAt: new Date(), rotatedAt: new Date() },
+      })
+    }
 
     return this.emitirTokens(registro.user)
   }
