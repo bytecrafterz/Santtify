@@ -25,9 +25,14 @@ COPY apps/web apps/web
 ARG NEXT_PUBLIC_API_URL
 ARG NEXT_PUBLIC_PROJETO_PADRAO=jesus-alfabeto-saudavel
 ARG NEXT_PUBLIC_WHATSAPP_PV=
+# O número do suporte. Passá-lo no compose não chega: se o Dockerfile não o
+# declarar aqui, o build recebe-o e ignora-o em silêncio, e o botão de suporte
+# nunca aparece — foi o que aconteceu à primeira.
+ARG NEXT_PUBLIC_SUPORTE_WHATSAPP=
 ENV NEXT_PUBLIC_API_URL=$NEXT_PUBLIC_API_URL \
     NEXT_PUBLIC_PROJETO_PADRAO=$NEXT_PUBLIC_PROJETO_PADRAO \
     NEXT_PUBLIC_WHATSAPP_PV=$NEXT_PUBLIC_WHATSAPP_PV \
+    NEXT_PUBLIC_SUPORTE_WHATSAPP=$NEXT_PUBLIC_SUPORTE_WHATSAPP \
     NEXT_TELEMETRY_DISABLED=1
 
 RUN cd apps/web && npx next build
