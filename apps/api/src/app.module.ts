@@ -3,6 +3,7 @@ import { ConfigModule } from '@nestjs/config'
 import { validateEnv } from './config/env'
 import { PrismaModule } from './prisma/prisma.module'
 import { MailModule } from './common/mail/mail.module'
+import { GeoModule } from './common/geo/geo.module'
 import { PrivacyModule } from './common/privacy/privacy.module'
 import { TrackingModule } from './tracking/tracking.module'
 import { ShortLinksModule } from './short-links/short-links.module'
@@ -15,6 +16,7 @@ import { HealthModule } from './health/health.module'
 
 @Module({
   imports: [
+    GeoModule,
     MailModule,
     ConfigModule.forRoot({
       isGlobal: true,

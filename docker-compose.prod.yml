@@ -45,6 +45,7 @@ services:
       PUBLIC_API_URL: https://${DOMINIO}
       PUBLIC_SHORTLINK_BASE: https://${DOMINIO}/r
       UPLOAD_DIR: /app/uploads
+      GEOIP_PAIS_DB: /app/geo/dbip-country-lite.mmdb
       # Envio de e-mail. Estar no .env.production NÃO CHEGA: o `--env-file` só
       # substitui variáveis dentro deste ficheiro; o que o contentor recebe é o
       # que estiver aqui. Foi assim que o primeiro envio não chegou sequer a ser
@@ -56,6 +57,9 @@ services:
       # Volume nomeado: as músicas e áudios do cliente sobrevivem a
       # `docker compose down` e a qualquer rebuild da imagem.
       - uploads:/app/uploads
+      # A base de países, só de leitura. Fica no servidor e não na imagem: é
+      # mensal, e reconstruir a imagem a cada actualização seria absurdo.
+      - ./geo:/app/geo:ro
 
   web:
     build:

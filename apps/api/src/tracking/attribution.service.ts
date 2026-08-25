@@ -4,6 +4,7 @@ import { Platform, ShortLink, Visitor } from '@pv/db'
 import { randomBytes } from 'node:crypto'
 import { PrismaService } from '../prisma/prisma.service'
 import { HashService } from '../common/privacy/hash.service'
+import { GeoService } from '../common/geo/geo.service'
 import { AttributionSnapshot, VisitContext } from './attribution.types'
 import {
   ehNavegacaoInterna,
@@ -27,9 +28,24 @@ export class AttributionService {
   /** Hosts que são nossos — usados para reconhecer navegação interna. */
   private readonly hostsProprios: ReadonlySet<string>
 
+  /**
+   * O país desta visita.
+   *
+   * A CDN dá-o de graça quando existe uma, e não existe nenhuma à frente deste
+   * servidor — o campo esteve vazio nas 290 linhas até 25/08 por isso mesmo.
+   * Quando falta, resolve-se com a base offline, sem o endereço sair daqui.
+   *
+   * O IP CRU MORRE NESTA LINHA. Entra para a consulta e sai um código de duas
+   * letras; o que fica guardado é o resumo, como sempre foi.
+   */
+  private paisDe(ctx: VisitContext): string | null {
+    return ctx.countryCode ?? this.geo.pais(ctx.ip)
+  }
+
   constructor(
     private readonly prisma: PrismaService,
     private readonly hash: HashService,
+    private readonly geo: GeoService,
     config: ConfigService,
   ) {
     const hosts = new Set<string>()
@@ -113,7 +129,7 @@ export class AttributionService {
           ipHash,
           userAgentHash,
           deviceType,
-          countryCode: ctx.countryCode ?? null,
+          countryCode: this.paisDe(ctx),
         },
       })
     } else {
@@ -172,7 +188,7 @@ export class AttributionService {
       ipHash,
       userAgentHash,
       deviceType,
-      countryCode: ctx.countryCode ?? null,
+      countryCode: this.paisDe(ctx),
       path: ctx.path ?? null,
       referrerHost: hostDeReferrer(ctx.referrer),
     }

@@ -34,6 +34,7 @@ export class AnalyticsService {
       propagacao,
       conteudos,
       diaZero,
+      porPais,
     ] = await Promise.all([
       this.totais(project.id),
       this.novosPorDia(project.id, desde),
@@ -42,9 +43,21 @@ export class AnalyticsService {
       this.propagacao(project.id),
       this.conteudosMaisAcessados(project.id),
       this.marcoDiaZero(project.id),
+      this.porPais(project.id),
     ])
 
-    return { project, periodoDias: dias, totais, porDia, origemVisitantes, origemCadastros, propagacao, conteudos, diaZero }
+    return {
+      project,
+      periodoDias: dias,
+      totais,
+      porDia,
+      origemVisitantes,
+      origemCadastros,
+      propagacao,
+      conteudos,
+      diaZero,
+      porPais,
+    }
   }
 
   /** Visitantes, cadastros, interações. */
@@ -115,6 +128,43 @@ export class AnalyticsService {
       contatosPv,
       cliquesEmComprar,
     }
+  }
+
+  /**
+   * De que países vêm as visitas e os cadastros.
+   *
+   * Ele pediu a origem em 25/08: país, região e cidade. Devolvo PAÍS, e digo
+   * porquê em vez de fingir o resto.
+   *
+   * O país sai de uma base offline pelo endereço de rede, e é fiável. A região
+   * e a cidade saem da mesma família de bases e não são: num telemóvel o
+   * endereço pertence à operadora, e a cidade que ela devolve é onde está o
+   * equipamento dela. Numa plataforma que vai correr quase toda em telemóveis,
+   * isso daria uma lista de cidades onde a operadora tem antenas, com ar de ser
+   * onde estão as famílias. Um número errado com aspecto de certo é pior do que
+   * número nenhum, e este ia para decisões de divulgação.
+   *
+   * "SEM IDENTIFICAR" é uma linha honesta e não um erro. São as visitas
+   * anteriores a 25/08, quando o campo nunca chegou a ser preenchido, mais as
+   * que vêm de redes que a base não conhece.
+   */
+  private async porPais(projectId: string) {
+    const linhas = await this.prisma.$queryRaw<
+      Array<{ pais: string | null; visitantes: number; cadastros: number }>
+    >`
+      SELECT v."countryCode"                                  AS pais,
+             count(*)::int                                    AS visitantes,
+             count(DISTINCT v."userId")::int                   AS cadastros
+      FROM visitors v
+      WHERE v."projectId" = ${projectId}::uuid
+      GROUP BY 1 ORDER BY 2 DESC`
+
+    return linhas.map((l) => ({
+      pais: l.pais,
+      nome: l.pais ? NOMES_DE_PAIS[l.pais] ?? l.pais : 'Sem identificar',
+      visitantes: l.visitantes,
+      cadastros: l.cadastros,
+    }))
   }
 
   /** Curva de crescimento a partir do Dia Zero. */
@@ -207,4 +257,30 @@ export class AnalyticsService {
       orderBy: { followers: 'desc' },
     })
   }
+}
+
+/**
+ * Os países que interessam a este projeto, por extenso.
+ *
+ * Uma tabela curta e não uma biblioteca: ele fala português a famílias em
+ * Portugal e no Brasil, e o resto do mundo aparece pelo código de duas letras
+ * até haver razão para o contrário. Acrescentar uma linha aqui custa menos do
+ * que carregar duzentos nomes que ninguém vai ler.
+ */
+const NOMES_DE_PAIS: Record<string, string> = {
+  PT: 'Portugal',
+  BR: 'Brasil',
+  AO: 'Angola',
+  MZ: 'Moçambique',
+  CV: 'Cabo Verde',
+  GW: 'Guiné-Bissau',
+  ST: 'São Tomé e Príncipe',
+  TL: 'Timor-Leste',
+  ES: 'Espanha',
+  FR: 'França',
+  GB: 'Reino Unido',
+  CH: 'Suíça',
+  LU: 'Luxemburgo',
+  US: 'Estados Unidos',
+  CA: 'Canadá',
 }

@@ -35,6 +35,7 @@ interface VisaoGeral {
   }
   conteudos: Array<{ titulo: string; slug: string; visualizacoes: number; visitantes: number }>
   diaZero: Array<{ platform: string; followers: number | null }>
+  porPais: Array<{ pais: string | null; nome: string; visitantes: number; cadastros: number }>
 }
 
 async function buscar(projectSlug: string, dias: number, jaRenovou = false): Promise<VisaoGeral> {
@@ -71,9 +72,14 @@ export function Dashboard({ projectSlug }: { projectSlug: string }) {
 
   useEffect(() => {
     if (carregando) return
-    if (!usuario) return router.replace(`/${projectSlug}/entrar?voltar=` + encodeURIComponent(window.location.pathname))
+    if (!usuario)
+      return router.replace(
+        `/${projectSlug}/entrar?voltar=` + encodeURIComponent(window.location.pathname),
+      )
     if (usuario.role !== 'ADMIN') return definirErro('Esta área é restrita ao administrador.')
-    buscar(projectSlug, dias).then(definirDados).catch((e) => definirErro(e.message))
+    buscar(projectSlug, dias)
+      .then(definirDados)
+      .catch((e) => definirErro(e.message))
   }, [usuario, carregando, projectSlug, dias, router])
 
   if (erro) return <p className="erro">{erro}</p>
@@ -115,10 +121,10 @@ export function Dashboard({ projectSlug }: { projectSlug: string }) {
         <Cartao valor={n(t.cliquesEmComprar)} rotulo="Cliques em comprar" />
       </div>
       <p className="nota">
-        O PV aparece nas 26 letras e a contagem é a soma de todas. O primeiro número é
-        curiosidade: quantas pessoas quiseram saber o que é a tecnologia. O segundo é
-        intenção: quantas foram até o fim e pediram para entrar no grupo. É esse que
-        responde se existem dez, vinte ou cinquenta empresas interessadas.
+        O PV aparece nas 26 letras e a contagem é a soma de todas. O primeiro número é curiosidade:
+        quantas pessoas quiseram saber o que é a tecnologia. O segundo é intenção: quantas foram até
+        o fim e pediram para entrar no grupo. É esse que responde se existem dez, vinte ou cinquenta
+        empresas interessadas.
       </p>
 
       <h2>Crescimento</h2>
@@ -127,9 +133,16 @@ export function Dashboard({ projectSlug }: { projectSlug: string }) {
       ) : (
         <div className="bloco grafico">
           {dados.porDia.map((d) => (
-            <div className="coluna" key={String(d.dia)} title={`${d.dia}: ${n(d.visitantes)} visitantes, ${n(d.cadastros)} cadastros`}>
+            <div
+              className="coluna"
+              key={String(d.dia)}
+              title={`${d.dia}: ${n(d.visitantes)} visitantes, ${n(d.cadastros)} cadastros`}
+            >
               <div className="barra" style={{ height: `${(n(d.visitantes) / maxDia) * 100}%` }}>
-                <div className="parte-cadastro" style={{ height: `${(n(d.cadastros) / Math.max(1, n(d.visitantes))) * 100}%` }} />
+                <div
+                  className="parte-cadastro"
+                  style={{ height: `${(n(d.cadastros) / Math.max(1, n(d.visitantes))) * 100}%` }}
+                />
               </div>
             </div>
           ))}
@@ -142,9 +155,8 @@ export function Dashboard({ projectSlug }: { projectSlug: string }) {
 
       <h2>De onde vieram</h2>
       <p className="nota">
-        Contado pela origem que iniciou a cadeia. Quem chegou por um
-        compartilhamento de WhatsApp vindo do Instagram conta para o Instagram — foi
-        ele que trouxe a pessoa para dentro.
+        Contado pela origem que iniciou a cadeia. Quem chegou por um compartilhamento de WhatsApp
+        vindo do Instagram conta para o Instagram — foi ele que trouxe a pessoa para dentro.
       </p>
       <Barras
         itens={dados.origemVisitantes.map((o) => ({ nome: o.plataforma, valor: n(o.visitantes) }))}
@@ -156,6 +168,23 @@ export function Dashboard({ projectSlug }: { projectSlug: string }) {
         itens={dados.origemCadastros.map((o) => ({ nome: o.plataforma, valor: n(o.cadastros) }))}
         vazio="Nenhum cadastro ainda."
       />
+
+      <h2>De onde vêm</h2>
+      <Barras
+        itens={dados.porPais.map((o) => ({ nome: o.nome, valor: n(o.visitantes) }))}
+        vazio="Ainda sem visitas identificadas."
+      />
+      {/* A NOTA NÃO É DECORAÇÃO. Ele vai tomar decisões de divulgação com este
+          quadro, e tem de saber o que ele não sabe: o país é fiável, a cidade
+          não é, e as visitas antigas ficaram sem origem porque o campo nunca
+          chegou a ser preenchido antes de 25/08. Um número sem a sua margem é
+          um número que engana. */}
+      <p className="nota">
+        O país vem do endereço de rede, resolvido dentro do nosso servidor: nenhum endereço sai
+        daqui. Cidade e região não aparecem de propósito: no telemóvel o endereço é o da operadora,
+        e a cidade que ela devolve é onde está o equipamento dela, não a família. As visitas de
+        antes de 25 de agosto aparecem como &quot;Sem identificar&quot;.
+      </p>
 
       <h2>Propagação do Produto Vivo</h2>
       <div className="numeros">
@@ -206,7 +235,13 @@ function Cartao({ valor, rotulo }: { valor: number | string; rotulo: string }) {
   )
 }
 
-function Barras({ itens, vazio }: { itens: Array<{ nome: string; valor: number }>; vazio: string }) {
+function Barras({
+  itens,
+  vazio,
+}: {
+  itens: Array<{ nome: string; valor: number }>
+  vazio: string
+}) {
   if (itens.length === 0) return <p className="bloco-vazio">{vazio}</p>
   const max = Math.max(1, ...itens.map((i) => i.valor))
   return (
