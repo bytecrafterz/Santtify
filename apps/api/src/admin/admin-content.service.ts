@@ -969,7 +969,10 @@ export class AdminContentService {
         select: { id: true, displayName: true, avatarUrl: true, bio: true },
       }),
       this.prisma.content.findFirst({
-        where: { projectId: project.id, letra: null },
+        // A introdução é o conteúdo sem letra E que não é o Produto Vivo. Os
+        // dois vivem fora do alfabeto, e sem esta distinção o Produto Vivo
+        // apareceria como introdução no dia em que fosse criado primeiro.
+        where: { projectId: project.id, letra: null, slug: { not: 'produto-vivo' } },
         orderBy: { position: 'asc' },
         select: {
           id: true,
@@ -1002,9 +1005,81 @@ export class AdminContentService {
       }),
     ])
 
+    /**
+     * O PRODUTO VIVO NASCE QUANDO FOR PRECISO, e não numa migração.
+     *
+     * Ele pediu em 25/08 um modelo vazio para preencher, com o mesmo cartão dos
+     * áudios e um botão de duplicar. Criar isto por migração obrigaria todos os
+     * projectos futuros a ter um Produto Vivo, tenham-no ou não; criado aqui,
+     * aparece na primeira vez que alguém abre a estrutura e mais nunca.
+     */
+    let pv = await this.prisma.content.findFirst({
+      where: { projectId: project.id, slug: 'produto-vivo' },
+      select: { id: true, title: true },
+    })
+    if (!pv) {
+      const criado = await this.prisma.content.create({
+        data: {
+          projectId: project.id,
+          slug: 'produto-vivo',
+          title: 'Produto Vivo',
+          status: ContentStatus.PUBLISHED,
+          position: 900,
+        },
+        select: { id: true, title: true },
+      })
+      await this.prisma.contentBlock.create({
+        data: {
+          contentId: criado.id,
+          type: BlockType.AUDIO,
+          papel: CardPapel.CARTAO,
+          estado: CardEstado.RASCUNHO,
+          slot: null,
+          label: 'Produto Vivo',
+          position: 1,
+        },
+      })
+      pv = criado
+    }
+
+    const cartoesPv = await this.prisma.contentBlock.findMany({
+      where: { contentId: pv.id, type: BlockType.AUDIO },
+      orderBy: { position: 'asc' },
+      select: {
+        id: true,
+        slot: true,
+        papel: true,
+        estado: true,
+        label: true,
+        titulo: true,
+        text: true,
+        linkUpgrade: true,
+        meta: true,
+        asset: { select: { id: true, url: true, title: true, durationMs: true } },
+        imageAsset: { select: { url: true } },
+      },
+    })
+
     return {
       project,
       perfil: anfitriao,
+      produtoVivo: {
+        contentId: pv.id,
+        title: pv.title,
+        cartoes: cartoesPv.map((b) => ({
+          id: b.id,
+          slot: b.slot,
+          papel: b.papel,
+          estado: b.estado,
+          nomeInterno: b.label,
+          titulo: b.titulo,
+          descricao: b.text,
+          linkUpgrade: b.linkUpgrade,
+          audio: b.asset,
+          imagem: b.imageAsset?.url ?? null,
+          folhaA4: ((b.meta ?? {}) as Record<string, unknown>).folhaA4 ?? null,
+        })),
+      },
       introducao: introducao
         ? {
             contentId: introducao.id,
@@ -1044,7 +1119,9 @@ export class AdminContentService {
       select: { id: true, projectId: true, letra: true },
     })
     if (!content) throw new NotFoundException('Introdução não encontrada')
-    if (content.letra) throw new BadRequestException('Isto não é a introdução.')
+    // Serve a introdução e o Produto Vivo: os dois vivem fora do alfabeto e os
+    // dois se multiplicam. Numa LETRA não, porque aí as quatro casas são fixas.
+    if (content.letra) throw new BadRequestException('Numa letra, use Duplicar no quadrado.')
 
     const ultimo = await this.prisma.contentBlock.findFirst({
       where: { contentId },
@@ -1059,7 +1136,7 @@ export class AdminContentService {
         papel: CardPapel.CARTAO,
         estado: CardEstado.RASCUNHO,
         slot: null,
-        label: 'Introdução',
+        label: content.slug === 'produto-vivo' ? 'Produto Vivo' : 'Introdução',
         position: (ultimo?.position ?? 0) + 1,
       },
       select: { id: true, label: true, estado: true, position: true },

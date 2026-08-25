@@ -317,6 +317,7 @@ export const admin = {
         coverUrl: string | null
         cartoes: CartaoAdmin[]
       } | null
+      produtoVivo: { contentId: string; title: string; cartoes: CartaoAdmin[] }
       alfabeto: { letras: string[]; publicadas: number }
     }>(`/projects/${projectSlug}/estrutura`),
 
