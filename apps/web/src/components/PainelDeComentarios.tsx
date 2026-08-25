@@ -127,12 +127,6 @@ export function PainelDeComentarios({
     definirTexto(c.body)
   }
 
-  async function partilhar(c: ComentarioDaFaixa) {
-    const url = `${window.location.origin}${window.location.pathname}#comentario-${c.id}`
-    if (navigator.share) await navigator.share({ text: c.body, url }).catch(() => {})
-    else await navigator.clipboard?.writeText(url).catch(() => {})
-  }
-
   // As respostas ficam agrupadas debaixo do comentário a que respondem: uma
   // lista plana faz perder o fio à conversa logo na terceira resposta.
   /**
@@ -203,9 +197,6 @@ export function PainelDeComentarios({
             <button type="button" onClick={() => definirAResponderA(c)}>
               Responder
             </button>
-            <button type="button" onClick={() => partilhar(c)}>
-              Partilhar
-            </button>
             {meu && (
               <>
                 <button type="button" onClick={() => comecarEdicao(c)}>
@@ -234,7 +225,12 @@ export function PainelDeComentarios({
   }
 
   return (
-    <div className="fundo-modal" role="dialog" aria-modal="true" aria-label={`Comentários — ${titulo}`}>
+    <div
+      className="fundo-modal"
+      role="dialog"
+      aria-modal="true"
+      aria-label={`Comentários — ${titulo}`}
+    >
       <button type="button" className="fundo-clicavel" aria-label="Fechar" onClick={aoFechar} />
 
       <div className="folha-comentarios" ref={folha}>
@@ -268,7 +264,9 @@ export function PainelDeComentarios({
         <div className="rodape-comentarios">
           {(aResponderA || aEditar) && (
             <p className="nota contexto">
-              {aEditar ? 'A editar o seu comentário' : `A responder a ${aResponderA?.user.displayName}`}
+              {aEditar
+                ? 'A editar o seu comentário'
+                : `A responder a ${aResponderA?.user.displayName}`}
               <button
                 type="button"
                 onClick={() => {
@@ -307,7 +305,11 @@ export function PainelDeComentarios({
               onChange={(ev) => definirTexto(ev.target.value)}
               disabled={!usuarioId}
             />
-            <button type="submit" disabled={!usuarioId || !texto.trim() || ocupado} aria-label="Enviar">
+            <button
+              type="submit"
+              disabled={!usuarioId || !texto.trim() || ocupado}
+              aria-label="Enviar"
+            >
               ➤
             </button>
           </form>

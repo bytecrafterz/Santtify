@@ -314,12 +314,18 @@ export function CabecalhoDePerfil({
           <strong>{abreviar(estado.visualizacoes)}</strong>
         </span>
 
+        {/* CURTIR O PRÓPRIO PERFIL PASSA A SER PERMITIDO.
+            Eu tinha-o proibido por uma ideia minha de bom gosto — ninguém curte
+            a sua própria fotografia — e o resultado foi ele tocar no coração do
+            seu perfil dezenas de vezes sem nada acontecer e sem explicação
+            nenhuma. Já me tinha acontecido o mesmo em 21/08 com o curtir dos
+            conteúdos, e voltei a fazê-lo aqui. A regra é dele, e o botão é
+            dele. */}
         <button
           type="button"
           className={estado.curtidoPorMim ? 'indicador-grande activo' : 'indicador-grande'}
           onClick={curtir}
-          disabled={souOAnfitriao}
-          title={souOAnfitriao ? 'Este é o seu perfil' : 'Curtir'}
+          title="Curtir"
           aria-pressed={estado.curtidoPorMim}
           aria-label="Curtir"
         >

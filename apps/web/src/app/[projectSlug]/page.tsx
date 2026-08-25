@@ -4,7 +4,6 @@ import { RastreadorDeVisita } from '@/components/RastreadorDeVisita'
 import { BannerDeConsentimento } from '@/components/BannerDeConsentimento'
 import { CabecalhoDePerfil } from '@/components/CabecalhoDePerfil'
 import { IntroducaoEmCartoes } from '@/components/IntroducaoEmCartoes'
-import { BotaoDenunciar } from '@/components/BotaoDenunciar'
 import { ExperienciaContinua } from '@/components/ExperienciaContinua'
 import { IntroducaoRecolhivel } from '@/components/IntroducaoRecolhivel'
 import { BarraInferior } from '@/components/BarraInferior'
@@ -122,17 +121,12 @@ export default async function IndiceDoProjeto({
           />
         )}
 
-        <div className="secao-com-acao">
-          <div>
-            <h2>Conheça o {project.name}</h2>
-            {project.description && <p className="subtitulo">{project.description}</p>}
-          </div>
-          <BotaoDenunciar
-            projectId={project.id}
-            targetType="CONTENT"
-            targetId={contents[0]?.id ?? project.id}
-          />
-        </div>
+        {/* A ÁREA "CONHEÇA O JESUS ALFABETO SAUDÁVEL" SAIU, com o escudo que
+            estava dentro dela. Ele pediu-o duas vezes, e a razão que deu é boa:
+            os textos passaram a viver dentro dos próprios conteúdos, e uma
+            caixa de apresentação separada era a mesma explicação outra vez, num
+            sítio onde já não faz falta. Acabam os áudios da introdução e segue
+            directamente o alfabeto. */}
       </IntroducaoRecolhivel>
 
       {/* 6, 7 e 8. Progresso, alfabeto e a letra aberta — tudo aqui dentro. */}

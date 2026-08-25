@@ -3957,10 +3957,16 @@ button.letra-bloco {
 }
 
 .indicadores-publicacao .indicador-grande {
+  /* O NÚMERO AO LADO DO ÍCONE, e não por baixo.
+     Ele pediu isto três vezes — 22, 24 e 25 de agosto — e as três vezes eu
+     mudei outra coisa. Estava em coluna desde o primeiro mockup e eu nunca
+     voltei a olhar para esta regra; ia sempre acertar o tamanho, a cor, o
+     espaçamento, e nunca a direcção. */
   display: flex;
-  flex-direction: column;
+  flex-direction: row;
   align-items: center;
-  gap: 0.15rem;
+  justify-content: center;
+  gap: 0.35rem;
   border: none;
   background: none;
   cursor: pointer;
