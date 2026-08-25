@@ -253,6 +253,7 @@ export class AdminContentService {
         type: true,
         papel: true,
         meta: true,
+        contentId: true,
         assetId: true,
         imageAssetId: true,
         titulo: true,
@@ -293,6 +294,30 @@ export class AdminContentService {
         ...(b.titulo?.trim() ? {} : { titulo: titulo || null }),
       },
     })
+
+    /**
+     * A LETRA PUBLICA-SE SOZINHA QUANDO TEM CONTEÚDO PRONTO.
+     *
+     * Ele preencheu a Letra B inteira, viu os cartões marcados como PRONTO, e o
+     * conteúdo não apareceu no feed. Tinha razão em não perceber: havia dois
+     * níveis de publicação e só um estava à vista. As letras B a Z nasceram como
+     * rascunho — o que é certo, senão a grade abria com 26 casas vazias — mas
+     * ninguém lhe disse que faltava publicar a LETRA, além dos cartões.
+     *
+     * Ter de publicar duas vezes a mesma coisa não é uma regra, é uma armadilha.
+     * A letra passa a abrir-se no instante em que tiver o primeiro cartão
+     * pronto.
+     *
+     * O contrário não acontece: tirar o último cartão do ar NÃO fecha a letra.
+     * Fechá-la faria a casa voltar a trancar-se na grade a meio de uma edição, e
+     * quem está a trocar uma foto veria o seu trabalho desaparecer do site.
+     */
+    if (inteiro) {
+      await this.prisma.content.updateMany({
+        where: { id: b.contentId, status: { not: ContentStatus.PUBLISHED } },
+        data: { status: ContentStatus.PUBLISHED, publishedAt: new Date() },
+      })
+    }
   }
 
   async criarBloco(
