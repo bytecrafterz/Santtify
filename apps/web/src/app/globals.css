@@ -5725,3 +5725,29 @@ button.menu-player {
   right: 6px;
   z-index: 2;
 }
+
+/* ── Criar conta, à vista (25/08) ────────────────────────────────────
+   Ele mandou o link a amigos e vários não encontraram onde se registar.
+   Eu tinha arrumado essa entrada dentro dos três pontos, e quem chega de
+   fora não abre um menu à procura de uma coisa que não sabe que existe. */
+.convite-a-criar-conta {
+  display: grid;
+  gap: 0.4rem;
+  justify-items: center;
+  margin: 0 0 1.2rem;
+  padding: 1rem;
+  border: 1px solid var(--cor-borda);
+  border-radius: 16px;
+  background: var(--cor-superficie);
+  text-align: center;
+}
+
+.titulo-convite {
+  margin: 0;
+  font-size: 1rem;
+  font-weight: 800;
+}
+
+.convite-a-criar-conta .nota {
+  margin: 0 0 0.4rem;
+}

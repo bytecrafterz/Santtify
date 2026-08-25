@@ -33,14 +33,40 @@ export function CabecalhoDePerfil({
   projectId,
   perfisCriados,
   anfitriao,
+  donoEhOUtilizador = false,
 }: {
   projectSlug: string
   projectId: string
   perfisCriados: number
   /** O rosto do projeto: o mesmo para toda a gente que chega. */
   anfitriao: PerfilAnfitriao | null
+  /** Em /perfil, o dono é quem entrou, e não o anfitrião. */
+  donoEhOUtilizador?: boolean
 }) {
   const { usuario } = useAuth()
+
+  /**
+   * DE QUEM É ESTE PERFIL.
+   *
+   * Normalmente é o anfitrião — o rosto do projeto, igual para toda a gente que
+   * chega. Mas em /perfil é o de quem entrou, e a estrutura tem de ser a mesma:
+   * foto, escudo, três pontos, os quatro indicadores.
+   *
+   * Ele pediu-o em 25/08, depois de uma pessoa real se registar e não conseguir
+   * encontrar nem editar o próprio perfil: "tudo o que existe no meu perfil deve
+   * existir nos outros perfis também".
+   */
+  const dono =
+    donoEhOUtilizador && usuario
+      ? {
+          id: usuario.id,
+          displayName: usuario.displayName,
+          avatarUrl: usuario.avatarUrl,
+          bio: null,
+          guardianName: null,
+          createdAt: usuario.createdAt,
+        }
+      : anfitriao
   const [estado, definirEstado] = useState<EstadoDaFaixa>({
     visualizacoes: 0,
     curtidas: 0,
@@ -71,12 +97,12 @@ export function CabecalhoDePerfil({
    * Com `usuario?.id` na lista, a leitura repete-se assim que a sessão entra.
    */
   useEffect(() => {
-    if (!anfitriao) return
+    if (!dono) return
     void social
-      .estadoDoPerfil(anfitriao.id)
+      .estadoDoPerfil(dono.id)
       .then(definirEstado)
       .catch(() => {})
-  }, [anfitriao, usuario?.id])
+  }, [dono, usuario?.id])
 
   // Escape fecha, como em qualquer painel. Sem isto, quem abre sem querer no
   // computador fica sem saída óbvia.
@@ -111,20 +137,20 @@ export function CabecalhoDePerfil({
 
   const temConta = Boolean(usuario)
   // O dono do perfil edita-o; quem chega de fora é convidado a criar o seu.
-  const souOAnfitriao = Boolean(usuario && anfitriao && usuario.id === anfitriao.id)
-  const nome = anfitriao?.displayName ?? 'Escreva seu nome aqui'
-  const descricao = anfitriao?.bio ?? 'Faça o seu descritivo pessoal'
+  const souOAnfitriao = Boolean(usuario && dono && usuario.id === dono.id)
+  const nome = dono?.displayName ?? 'Escreva seu nome aqui'
+  const descricao = dono?.bio ?? 'Faça o seu descritivo pessoal'
 
   async function curtir() {
     if (aCurtir) return
-    if (!anfitriao) return
+    if (!dono) return
     if (!usuario) {
       definirAviso('Entre na sua conta para curtir.')
       return
     }
     definirACurtir(true)
     try {
-      const r = await social.curtirPerfil(anfitriao.id)
+      const r = await social.curtirPerfil(dono.id)
       definirEstado((x) => ({ ...x, curtidoPorMim: r.curtido, curtidas: r.total }))
       definirAviso(null)
     } catch (e) {
@@ -138,7 +164,7 @@ export function CabecalhoDePerfil({
   }
 
   async function partilhar() {
-    if (!anfitriao) return
+    if (!dono) return
     const url = window.location.origin + window.location.pathname
 
     // Conta depois, e só se a partilha for concluída: cancelar não é partilhar.
@@ -157,7 +183,7 @@ export function CabecalhoDePerfil({
       await rastrear({
         projectId,
         type: 'CUSTOM',
-        props: { acao: 'partilhar_perfil', perfilId: anfitriao.id },
+        props: { acao: 'partilhar_perfil', perfilId: dono.id },
       })
       definirEstado((x) => ({ ...x, compartilhamentos: x.compartilhamentos + 1 }))
     } catch {
@@ -168,9 +194,9 @@ export function CabecalhoDePerfil({
   return (
     <>
       <div className={aberto ? 'perfil-capa sangria com-painel' : 'perfil-capa sangria'}>
-        {anfitriao?.avatarUrl ? (
+        {dono?.avatarUrl ? (
           // eslint-disable-next-line @next/next/no-img-element
-          <img className="foto-capa" src={anfitriao.avatarUrl} alt={nome} />
+          <img className="foto-capa" src={dono.avatarUrl} alt={nome} />
         ) : (
           <div className="foto-capa capa-vazia">
             <span aria-hidden>📷</span>
@@ -188,8 +214,8 @@ export function CabecalhoDePerfil({
             <BotaoDenunciar
               projectId={projectId}
               targetType="PROFILE"
-              targetId={anfitriao?.id ?? ''}
-              podeBloquear={Boolean(anfitriao?.id)}
+              targetId={dono?.id ?? ''}
+              podeBloquear={Boolean(dono?.id)}
             />
           </span>
 
@@ -221,7 +247,7 @@ export function CabecalhoDePerfil({
         <div className="nome-no-retrato">
           <h1 title={nome}>
             {nome}
-            {anfitriao && (
+            {dono && (
               <span className="verificado" aria-label="Perfil confirmado">
                 ✓
               </span>
@@ -258,14 +284,12 @@ export function CabecalhoDePerfil({
 
           <div className="conteudo-painel" aria-hidden={!aberto}>
             <h2>{nome}</h2>
-            {anfitriao?.guardianName && (
-              <p className="responsavel-perfil">{anfitriao.guardianName}</p>
-            )}
+            {dono?.guardianName && <p className="responsavel-perfil">{dono.guardianName}</p>}
             <p className="bio-perfil">{descricao}</p>
-            {anfitriao?.createdAt && (
+            {dono?.createdAt && (
               <p className="nota">
                 Na plataforma desde{' '}
-                {new Date(anfitriao.createdAt).toLocaleDateString('pt-PT', {
+                {new Date(dono.createdAt).toLocaleDateString('pt-PT', {
                   day: '2-digit',
                   month: 'long',
                   year: 'numeric',
@@ -342,8 +366,8 @@ export function CabecalhoDePerfil({
 
       {aviso && <p className="nota">{aviso}</p>}
 
-      {pessoasAbertas && anfitriao && (
-        <PainelDePessoas userId={anfitriao.id} aoFechar={() => definirPessoasAbertas(false)} />
+      {pessoasAbertas && dono && (
+        <PainelDePessoas userId={dono.id} aoFechar={() => definirPessoasAbertas(false)} />
       )}
 
       {comentariosAbertos && (
@@ -352,11 +376,11 @@ export function CabecalhoDePerfil({
           titulo={nome}
           comentarios={estado.lista}
           usuarioId={usuario?.id ?? null}
-          avatarUrl={usuario ? (anfitriao?.avatarUrl ?? null) : null}
+          avatarUrl={usuario ? (dono?.avatarUrl ?? null) : null}
           aoFechar={() => definirComentariosAbertos(false)}
           aoComentar={async (t, parentId) => {
-            if (!anfitriao) return
-            const novo = await social.comentarNoPerfil(anfitriao.id, projectId, t, parentId)
+            if (!dono) return
+            const novo = await social.comentarNoPerfil(dono.id, projectId, t, parentId)
             definirEstado((x) => ({
               ...x,
               comentarios: x.comentarios + 1,
@@ -378,6 +402,26 @@ export function CabecalhoDePerfil({
             }))
           }
         />
+      )}
+
+      {/* CRIAR CONTA, À VISTA, PARA QUEM AINDA NÃO TEM.
+          Ele mandou o link a amigos e vários não encontraram onde se registar.
+          Tinha razão e a culpa é minha: em 24/08 arrumei essa entrada dentro dos
+          três pontos, e quem chega de fora não abre um menu à procura de uma
+          coisa que não sabe que existe.
+
+          Só aparece a quem não entrou, e desaparece sozinho depois do cadastro —
+          foi exactamente o que ele pediu. */}
+      {!temConta && (
+        <div className="convite-a-criar-conta">
+          <p className="titulo-convite">Ainda não tem uma conta?</p>
+          <p className="nota">
+            Crie o seu perfil para curtir, comentar e fazer parte da nossa comunidade.
+          </p>
+          <Link className="botao-acao largo" href={`/${projectSlug}/cadastrar`}>
+            👤 CRIAR MEU PERFIL
+          </Link>
+        </div>
       )}
 
       {/* A FILA DE BAIXO SAIU INTEIRA, a pedido dele em 24/08.
