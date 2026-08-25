@@ -121,6 +121,7 @@ export default async function IndiceDoProjeto({
             blocos={introducao.content.blocks}
             projectId={project.id}
             projectSlug={projectSlug}
+            categorias={cats?.categorias ?? []}
           />
         )}
 

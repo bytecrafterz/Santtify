@@ -41,6 +41,8 @@ export default async function PaginaProdutoVivo({
   const { projectSlug } = await params
   const project = await api.projeto(projectSlug)
 
+  const cats = await api.categorias(projectSlug).catch(() => null)
+
   /**
    * As publicações do Produto Vivo. Se falharem, a página abre à mesma com o
    * grupo e a nota da patente: o convite às empresas é o que esta página existe
@@ -75,6 +77,7 @@ export default async function PaginaProdutoVivo({
           blocos={pv.content.blocks}
           projectId={project?.id ?? ''}
           projectSlug={projectSlug}
+          categorias={cats?.categorias ?? []}
         />
       )}
 

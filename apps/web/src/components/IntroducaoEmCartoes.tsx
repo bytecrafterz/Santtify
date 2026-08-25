@@ -23,11 +23,14 @@ export function IntroducaoEmCartoes({
   blocos,
   projectId,
   projectSlug,
+  categorias = [],
 }: {
   contentId: string
   blocos: Bloco[]
   projectId: string
   projectSlug: string
+  /** As categorias do projeto, para o filtro do tocador. */
+  categorias?: Array<{ slug: string; name: string }>
 }) {
   const cartoes = blocos.filter(
     (b) => b.type === 'AUDIO' && b.papel === 'CARTAO' && (b.asset?.url || b.arte),
@@ -50,6 +53,7 @@ export function IntroducaoEmCartoes({
           projectSlug={projectSlug}
           ligacao={`/${projectSlug}#cartao-${b.id}`}
           ancora={`cartao-${b.id}`}
+          categorias={categorias}
         />
       ))}
     </>

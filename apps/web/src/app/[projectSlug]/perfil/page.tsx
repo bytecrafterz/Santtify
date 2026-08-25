@@ -68,6 +68,7 @@ export default async function PaginaDePerfil({
             blocos={introducao.content.blocks}
             projectId={project.id}
             projectSlug={projectSlug}
+            categorias={cats?.categorias ?? []}
           />
         )}
       </IntroducaoRecolhivel>
