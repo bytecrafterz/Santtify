@@ -5757,3 +5757,94 @@ button.menu-player {
 .convite-a-criar-conta .nota {
   margin: 0 0 0.4rem;
 }
+
+/* ── Quem já se registou (25/08) ─────────────────────────────────────
+   Um número de perfis sem ninguém por trás não diz nada a quem chega. */
+.folha-pessoas {
+  position: fixed;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  z-index: 70;
+  max-height: 76dvh;
+  overflow-y: auto;
+  padding: 0.8rem 1rem calc(1.2rem + env(safe-area-inset-bottom, 0px));
+  border-radius: 22px 22px 0 0;
+  background: var(--cor-superficie);
+  box-shadow: 0 -12px 40px rgba(15, 18, 25, 0.22);
+}
+
+.folha-pessoas header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.6rem;
+  margin-bottom: 0.6rem;
+}
+
+.folha-pessoas h2 {
+  margin: 0;
+  font-size: 1.1rem;
+}
+
+.busca-pessoas {
+  width: 100%;
+  margin-bottom: 0.7rem;
+  padding: 0.7rem 0.8rem;
+  border: 1px solid var(--cor-borda);
+  border-radius: 10px;
+  background: var(--cor-fundo);
+  color: var(--cor-texto);
+  font-family: inherit;
+}
+
+.lista-pessoas {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  gap: 0.2rem;
+}
+
+.lista-pessoas a {
+  display: flex;
+  align-items: center;
+  gap: 0.7rem;
+  padding: 0.6rem 0.3rem;
+  border-radius: 10px;
+  color: var(--cor-texto);
+  text-decoration: none;
+}
+
+.lista-pessoas img,
+.lista-pessoas .inicial {
+  flex: 0 0 auto;
+  display: grid;
+  place-items: center;
+  width: 42px;
+  height: 42px;
+  border-radius: 50%;
+  object-fit: cover;
+  background: var(--cor-primaria-suave);
+  color: var(--cor-primaria);
+  font-weight: 800;
+}
+
+.lista-pessoas .quem {
+  display: grid;
+  min-width: 0;
+}
+
+.lista-pessoas .quem small {
+  color: var(--cor-texto-suave);
+  font-size: 0.78rem;
+}
+
+/* A contagem dentro do menu passou a ser botão. */
+button.linha-menu-capa {
+  border: 0;
+  background: none;
+  text-align: left;
+  font-family: inherit;
+  cursor: pointer;
+}

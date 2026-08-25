@@ -363,6 +363,40 @@ export class ContentService {
     }
   }
 
+  /**
+   * As pessoas registadas neste projeto, para a lista de "perfis criados".
+   *
+   * Ele pediu-a em 25/08: tocar no número e ver quem são. Faz sentido — um
+   * número de perfis sem ninguém por trás não diz nada a quem chega, e é
+   * precisamente a confiança que uma comunidade infantil precisa de mostrar.
+   *
+   * SÓ O QUE É PÚBLICO: nome, fotografia e data de entrada. Nada de e-mail e
+   * nada de contagens de actividade. Quem se regista numa plataforma para
+   * crianças não está a autorizar que o examinem, e o e-mail de um menor não
+   * aparece numa lista aberta por decisão nenhuma que eu possa tomar sozinho.
+   *
+   * Contam-se pelo elo visitante → utilizador, como a contagem que já existe,
+   * para os dois números nunca se contradizerem no mesmo ecrã.
+   */
+  async pessoasDoProjeto(projectSlug: string) {
+    const project = await this.projeto(projectSlug)
+
+    const elos = await this.prisma.visitor.findMany({
+      where: { projectId: project.id, userId: { not: null } },
+      distinct: ['userId'],
+      select: { userId: true },
+    })
+    const ids = elos.map((e) => e.userId!).filter(Boolean)
+
+    const pessoas = await this.prisma.user.findMany({
+      where: { id: { in: ids }, status: 'ACTIVE' },
+      orderBy: { createdAt: 'asc' },
+      select: { id: true, displayName: true, avatarUrl: true, createdAt: true },
+    })
+
+    return { total: pessoas.length, pessoas }
+  }
+
   /** SVG do QR, servido direto para impressão ou download pelo painel. */
   async qrSvg(projectSlug: string, contentSlug: string): Promise<string> {
     const project = await this.projeto(projectSlug)

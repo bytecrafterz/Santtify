@@ -44,6 +44,11 @@ export class ContentController {
     return this.content.porSlug(projectSlug, contentSlug)
   }
 
+  @Get('people')
+  pessoas(@Param('projectSlug') projectSlug: string) {
+    return this.content.pessoasDoProjeto(projectSlug)
+  }
+
   @Get('contents/:contentSlug/qr.svg')
   @Header('Content-Type', 'image/svg+xml')
   @Header('Cache-Control', 'public, max-age=86400')

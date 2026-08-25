@@ -7,6 +7,7 @@ import { social, type EstadoDaFaixa } from '@/lib/social'
 import { ErroDeApi } from '@/lib/auth'
 import { PainelDeComentarios } from './PainelDeComentarios'
 import { PainelDePessoas } from './PainelDePessoas'
+import { ListaDePessoas } from './ListaDePessoas'
 import { rastrear } from '@/lib/track'
 import { useAuth } from './ProvedorDeAuth'
 import { abreviar } from '@/lib/numeros'
@@ -78,6 +79,7 @@ export function CabecalhoDePerfil({
   const [comentariosAbertos, definirComentariosAbertos] = useState(false)
   const [pessoasAbertas, definirPessoasAbertas] = useState(false)
   const [opcoesAbertas, definirOpcoesAbertas] = useState(false)
+  const [pessoasDoProjeto, definirPessoasDoProjeto] = useState(false)
   const [aviso, definirAviso] = useState<string | null>(null)
   /** Trava contra toque repetido: dois pedidos cruzados deixam o coração
    *  a dizer uma coisa e o número outra. */
@@ -238,7 +240,19 @@ export function CabecalhoDePerfil({
               ) : (
                 <Link href={`/${projectSlug}/instalar`}>👤 Criar o meu perfil</Link>
               )}
-              <span className="linha-menu-capa">👥 {abreviar(perfisCriados)} perfis criados</span>
+              {/* Tocar no número abre a lista. Ele pediu-o em 25/08 e tem
+                  razão: um número de perfis sem ninguém por trás não diz nada
+                  a quem chega. */}
+              <button
+                type="button"
+                className="linha-menu-capa"
+                onClick={() => {
+                  definirOpcoesAbertas(false)
+                  definirPessoasDoProjeto(true)
+                }}
+              >
+                👥 {abreviar(perfisCriados)} perfis criados
+              </button>
             </div>
           )}
         </div>
@@ -371,6 +385,10 @@ export function CabecalhoDePerfil({
       </div>
 
       {aviso && <p className="nota">{aviso}</p>}
+
+      {pessoasDoProjeto && (
+        <ListaDePessoas projectSlug={projectSlug} aoFechar={() => definirPessoasDoProjeto(false)} />
+      )}
 
       {pessoasAbertas && dono && (
         <PainelDePessoas userId={dono.id} aoFechar={() => definirPessoasAbertas(false)} />
