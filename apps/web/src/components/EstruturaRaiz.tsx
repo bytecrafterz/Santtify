@@ -49,8 +49,13 @@ export function EstruturaRaiz({ projectSlug }: { projectSlug: string }) {
   if (aEditar) {
     return (
       <>
-        <CabecalhoFixo projectSlug={projectSlug} onde="Introdução" />
+        <CabecalhoFixo
+          projectSlug={projectSlug}
+          onde="Introdução"
+          voltarPara={`/${projectSlug}/admin`}
+        />
         <EditorDeCartao
+          key={aEditar.id}
           cartao={aEditar}
           aoGuardar={async () => {
             await recarregar()
@@ -66,7 +71,11 @@ export function EstruturaRaiz({ projectSlug }: { projectSlug: string }) {
 
   return (
     <>
-      <CabecalhoFixo projectSlug={projectSlug} onde="Estrutura raiz" />
+      <CabecalhoFixo
+        projectSlug={projectSlug}
+        onde="Estrutura raiz"
+        voltarPara={`/${projectSlug}/admin`}
+      />
       <div className="estrutura-raiz">
         {erro && <p className="erro">{erro}</p>}
         {!dados && !erro && <p className="nota">A carregar...</p>}
@@ -130,23 +139,86 @@ export function EstruturaRaiz({ projectSlug }: { projectSlug: string }) {
 
             {intro?.cartoes.length ? (
               intro.cartoes.map((c) => (
-                <button
-                  key={c.id}
-                  type="button"
-                  className="bloco-raiz clicavel"
-                  onClick={() => definirAEditar(c)}
-                >
-                  {c.imagem ? (
-                    // eslint-disable-next-line @next/next/no-img-element
-                    <img className="foto-raiz" src={c.imagem} alt="" />
-                  ) : (
-                    <div className="lugar-raiz">CARREGAR INTRODUÇÃO</div>
+                <div key={c.id} className="bloco-raiz com-menu">
+                  {/* Os três pontos em CADA cartão publicado. Foi aqui que ele
+                      ficou preso em 25/08: duas memorizações repetidas no topo
+                      do perfil e nenhuma forma de mexer em nenhuma delas. */}
+                  <button
+                    type="button"
+                    className="tres-pontos"
+                    aria-label="Opções desta introdução"
+                    onClick={() => definirMenuAberto(menuAberto === c.id ? null : c.id)}
+                  >
+                    ⋯
+                  </button>
+
+                  {menuAberto === c.id && (
+                    <div className="menu-quadrado" role="menu">
+                      <button
+                        type="button"
+                        onClick={() => {
+                          definirMenuAberto(null)
+                          definirAEditar(c)
+                        }}
+                      >
+                        ✎ Editar
+                      </button>
+                      {c.estado === 'PUBLICADO' ? (
+                        <button
+                          type="button"
+                          onClick={async () => {
+                            definirMenuAberto(null)
+                            await admin.tirarCartaoDoAr(c.id)
+                            await recarregar()
+                          }}
+                        >
+                          🚫 Tirar do ar
+                        </button>
+                      ) : (
+                        <button
+                          type="button"
+                          onClick={async () => {
+                            definirMenuAberto(null)
+                            try {
+                              await admin.porCartaoNoAr(c.id)
+                            } catch (e) {
+                              alert(e instanceof Error ? e.message : 'Não foi possível pôr no ar.')
+                            }
+                            await recarregar()
+                          }}
+                        >
+                          ⬆ Pôr no ar
+                        </button>
+                      )}
+                      <button
+                        type="button"
+                        className="perigo"
+                        onClick={async () => {
+                          definirMenuAberto(null)
+                          const nome = c.titulo || c.audio?.title || 'esta introdução'
+                          if (!confirm(`Excluir "${nome}"? Isto não se desfaz.`)) return
+                          await admin.apagarCartaoDeVez(c.id)
+                          await recarregar()
+                        }}
+                      >
+                        🗑 Excluir
+                      </button>
+                    </div>
                   )}
-                  <span className="linha-audio-raiz">▶ {c.audio?.title ?? 'Sem áudio'}</span>
-                  <span className="estado-quadrado">
-                    {c.estado === 'PUBLICADO' ? 'PRONTO' : 'RASCUNHO'}
-                  </span>
-                </button>
+
+                  <button type="button" className="area-clicavel" onClick={() => definirAEditar(c)}>
+                    {c.imagem ? (
+                      // eslint-disable-next-line @next/next/no-img-element
+                      <img className="foto-raiz" src={c.imagem} alt="" />
+                    ) : (
+                      <div className="lugar-raiz">CARREGAR INTRODUÇÃO</div>
+                    )}
+                    <span className="linha-audio-raiz">▶ {c.audio?.title ?? 'Sem áudio'}</span>
+                    <span className="estado-quadrado">
+                      {c.estado === 'PUBLICADO' ? 'PRONTO' : 'RASCUNHO'}
+                    </span>
+                  </button>
+                </div>
               ))
             ) : (
               <p className="nota">Ainda não há introdução.</p>

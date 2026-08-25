@@ -341,6 +341,18 @@ export const admin = {
     },
   ) => chamar<CartaoAdmin>(`/cards/${id}`, { method: 'PATCH', body: JSON.stringify(dados) }),
 
+  /** Sai do ar e fica guardado — reversível, para o engano com pressa. */
+  tirarCartaoDoAr: (id: string) =>
+    chamar<{ estado: string }>(`/cards/${id}/unpublish`, { method: 'POST' }),
+
+  /** Volta ao ar. Só se estiver inteiro; a regra é sempre a mesma. */
+  porCartaoNoAr: (id: string) =>
+    chamar<{ estado: string }>(`/cards/${id}/publish`, { method: 'POST' }),
+
+  /** Apaga de vez. Nas quatro casas de uma letra, esvazia em vez de apagar. */
+  apagarCartaoDeVez: (id: string) =>
+    chamar<{ apagado: boolean; esvaziado: boolean }>(`/cards/${id}/forever`, { method: 'DELETE' }),
+
   duplicarCartao: (id: string) => chamar<CartaoAdmin>(`/cards/${id}/duplicate`, { method: 'POST' }),
 
   /** Esvazia um original (a casa fica) ou remove uma cópia. */

@@ -78,8 +78,13 @@ export function SequenciaDoAlfabeto({ projectSlug }: { projectSlug: string }) {
       // apresentação e folha A4, sem áudio nem descrição.
       return (
         <>
-          <CabecalhoFixo projectSlug={projectSlug} onde={`Letra ${vagao.letra}`} />
+          <CabecalhoFixo
+            projectSlug={projectSlug}
+            onde={`Letra ${vagao.letra}`}
+            voltarPara={`/${projectSlug}/admin`}
+          />
           <EditorDoCartaoDeImpressao
+            key={cartao.id}
             cartao={cartao}
             letra={vagao.letra}
             aoGuardar={async () => {
@@ -94,8 +99,13 @@ export function SequenciaDoAlfabeto({ projectSlug }: { projectSlug: string }) {
     if (cartao) {
       return (
         <>
-          <CabecalhoFixo projectSlug={projectSlug} onde={`Letra ${vagao.letra}`} />
+          <CabecalhoFixo
+            projectSlug={projectSlug}
+            onde={`Letra ${vagao.letra}`}
+            voltarPara={`/${projectSlug}/admin`}
+          />
           <EditorDeCartao
+            key={cartao.id}
             cartao={cartao}
             aoGuardar={async () => {
               await recarregar()
@@ -130,7 +140,11 @@ export function SequenciaDoAlfabeto({ projectSlug }: { projectSlug: string }) {
 
     return (
       <>
-        <CabecalhoFixo projectSlug={projectSlug} onde={`Letra ${vagao.letra}`} />
+        <CabecalhoFixo
+          projectSlug={projectSlug}
+          onde={`Letra ${vagao.letra}`}
+          voltarPara={`/${projectSlug}/admin`}
+        />
         <div className="painel-quadrados">
           <button
             type="button"
@@ -168,10 +182,24 @@ export function SequenciaDoAlfabeto({ projectSlug }: { projectSlug: string }) {
                       ? `Remover a cópia "${nome}"? Ela desaparece.`
                       : `Esvaziar "${nome}"? O quadrado fica, só o conteúdo sai.`
                   if (!confirm(aviso)) return
-                  await admin.esvaziarCartao(c.id)
+                  await admin.apagarCartaoDeVez(c.id)
                   await recarregar()
                 }}
                 /* Só o quarto quadrado cria o cartão de impressão, e só uma vez. */
+                aoTirarDoAr={async () => {
+                  definirMenuAberto(null)
+                  await admin.tirarCartaoDoAr(c.id)
+                  await recarregar()
+                }}
+                aoPorNoAr={async () => {
+                  definirMenuAberto(null)
+                  try {
+                    await admin.porCartaoNoAr(c.id)
+                  } catch (e) {
+                    alert(e instanceof Error ? e.message : 'Não foi possível pôr no ar.')
+                  }
+                  await recarregar()
+                }}
                 aoSubir={i > 0 ? () => mover(i, -1) : undefined}
                 aoDescer={i < lista.length - 1 ? () => mover(i, 1) : undefined}
                 aoCriarImpressao={
@@ -245,7 +273,11 @@ export function SequenciaDoAlfabeto({ projectSlug }: { projectSlug: string }) {
   // ── Tela 1: a composição ──────────────────────────────────────────
   return (
     <>
-      <CabecalhoFixo projectSlug={projectSlug} onde="Gerenciar conteúdo" />
+      <CabecalhoFixo
+        projectSlug={projectSlug}
+        onde="Gerenciar conteúdo"
+        voltarPara={`/${projectSlug}/admin`}
+      />
       <div className="painel-sequencia">
         <h1>Alfabeto — sequência infinita</h1>
         <p className="nota">Deslize para baixo para ver todas as letras</p>
@@ -323,6 +355,8 @@ function Quadrado({
   aoEditar,
   aoDuplicar,
   aoApagar,
+  aoTirarDoAr,
+  aoPorNoAr,
   aoSubir,
   aoDescer,
   aoCriarImpressao,
@@ -335,6 +369,8 @@ function Quadrado({
   aoEditar: () => void
   aoDuplicar: () => Promise<void>
   aoApagar: () => Promise<void>
+  aoTirarDoAr: () => Promise<void>
+  aoPorNoAr: () => Promise<void>
   aoSubir?: () => void
   aoDescer?: () => void
   aoCriarImpressao?: () => Promise<void>
@@ -391,8 +427,21 @@ function Quadrado({
           <button type="button" onClick={() => void aoDuplicar()}>
             ⧉ Duplicar
           </button>
+          {/* TIRAR DO AR e EXCLUIR são duas acções, e não uma com aviso.
+              Tirar do ar é reversível e usa-se com pressa — publicou-se o que
+              não devia. Excluir é definitivo e usa-se com calma. Num só botão,
+              a pressa da primeira acabaria por levar a segunda pela frente. */}
+          {cartao.estado === 'PUBLICADO' ? (
+            <button type="button" onClick={() => void aoTirarDoAr()}>
+              🚫 Tirar do ar
+            </button>
+          ) : (
+            <button type="button" onClick={() => void aoPorNoAr()}>
+              ⬆ Pôr no ar
+            </button>
+          )}
           <button type="button" className="perigo" onClick={() => void aoApagar()}>
-            🗑 {cartao.slot === null ? 'Remover' : 'Esvaziar'}
+            🗑 {cartao.slot === null ? 'Excluir' : 'Esvaziar'}
           </button>
           {aoCriarImpressao && (
             <button type="button" onClick={() => void aoCriarImpressao()}>

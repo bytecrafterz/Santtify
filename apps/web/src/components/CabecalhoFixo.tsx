@@ -19,15 +19,25 @@ export function CabecalhoFixo({
   projectSlug,
   onde,
   avatarUrl,
+  voltarPara,
 }: {
   projectSlug: string
   /** O que a pessoa está a ver: "Letra A", "Gerenciar conteúdo"... */
   onde: string
   avatarUrl?: string | null
+  /**
+   * Para onde a casinha leva.
+   *
+   * No painel leva ao PAINEL, e não ao perfil público. Ele apanhou-o em 25/08:
+   * estava a trabalhar no painel, tocou na casinha, e saiu para o site — e
+   * depois teve de ir procurar outra vez o endereço do painel. Quem está a
+   * trabalhar por trás não quer sair pela porta da frente.
+   */
+  voltarPara?: string
 }) {
   return (
     <header className="cabecalho-fixo">
-      <Link className="ir-alfabeto" href={`/${projectSlug}`}>
+      <Link className="ir-alfabeto" href={voltarPara ?? `/${projectSlug}`}>
         <span className="casa" aria-hidden>
           <svg
             viewBox="0 0 24 24"

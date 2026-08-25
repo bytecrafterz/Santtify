@@ -415,6 +415,21 @@ export class AdminController {
     return this.conteudo.salvarCartao(id, dto, req.usuario!.id)
   }
 
+  @Post('cards/:id/unpublish')
+  tirarDoAr(@Param('id') id: string, @Req() req: Request) {
+    return this.conteudo.tirarDoAr(id, req.usuario!.id)
+  }
+
+  @Post('cards/:id/publish')
+  porNoAr(@Param('id') id: string, @Req() req: Request) {
+    return this.conteudo.porNoAr(id, req.usuario!.id)
+  }
+
+  @Delete('cards/:id/forever')
+  apagarCartao(@Param('id') id: string, @Req() req: Request) {
+    return this.conteudo.apagarCartao(id, req.usuario!.id)
+  }
+
   @Post('cards/:id/duplicate')
   duplicarCartao(@Param('id') id: string, @Req() req: Request) {
     return this.conteudo.duplicarCartao(id, req.usuario!.id)

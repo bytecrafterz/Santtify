@@ -18,6 +18,19 @@ import { admin, type CartaoAdmin } from '@/lib/admin'
  * Os indicadores aparecem apagados e não se tocam: estão aqui porque fazem
  * parte da peça e ele quis vê-los no lugar. Os números são de quem visita.
  */
+/**
+ * UMA CHAVE POR CARTÃO, e sem ela isto corrompia conteúdo.
+ *
+ * Quem monta este editor tem de lhe passar `key={cartao.id}`. Sem isso, o
+ * React reaproveita a mesma instância quando se passa de um cartão para outro
+ * — e um `useState(cartao.titulo)` só lê a propriedade na PRIMEIRA montagem.
+ *
+ * O que acontecia: ele abria o cartão da Música, voltava, abria o da
+ * Memorização, e via o título e o texto da Música. Se guardasse, escrevia o
+ * conteúdo de um cartão dentro do outro. Ele descreveu-o em 25/08 — "está
+ * puxando conteúdo de outra publicação" — e o problema era pior do que se via:
+ * não era só mostrar mal, era gravar mal.
+ */
 export function EditorDeCartao({
   cartao,
   aoGuardar,

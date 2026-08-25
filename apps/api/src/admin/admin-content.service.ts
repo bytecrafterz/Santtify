@@ -1174,6 +1174,92 @@ export class AdminContentService {
   }
 
   /**
+   * Tira um cartão do ar sem o apagar.
+   *
+   * Pedido dele em 25/08, depois de ficar com duas memorizações repetidas no
+   * topo do perfil e sem forma de mexer em nenhuma. A frase dele diz o
+   * problema: "se eu publicar algo errado ou duplicado, fica preso no perfil".
+   *
+   * SÃO DUAS ACÇÕES DIFERENTES E NÃO UMA COM AVISO. Tirar do ar é reversível e
+   * usa-se com pressa — publicou-se o que não devia, e tira-se. Apagar é
+   * definitivo e usa-se com calma. Juntá-las num só botão com uma pergunta faz
+   * com que a pressa da primeira leve a segunda pela frente.
+   *
+   * `estado` volta a RASCUNHO, que é a mesma porta por onde um cartão
+   * incompleto espera: fica no painel, guarda tudo o que tem, e não chega à
+   * página. Não foi preciso inventar um terceiro estado para isto.
+   */
+  async tirarDoAr(cartaoId: string, adminId: string) {
+    const cartao = await this.prisma.contentBlock.findUnique({
+      where: { id: cartaoId },
+      select: { id: true, content: { select: { projectId: true } } },
+    })
+    if (!cartao) throw new NotFoundException('Cartão não encontrado')
+
+    await this.prisma.contentBlock.update({
+      where: { id: cartaoId },
+      data: { estado: CardEstado.RASCUNHO },
+    })
+    await this.auditar(adminId, cartao.content.projectId, 'card.unpublish', 'ContentBlock', cartaoId, {})
+    return { estado: CardEstado.RASCUNHO }
+  }
+
+  /**
+   * Volta a pôr no ar um cartão que estava fora.
+   *
+   * Só se estiver inteiro. Um cartão a que falte a foto não volta ao ar por
+   * alguém carregar num botão — a regra de quando um cartão pode ser publicado
+   * é uma só, e é calculada a partir do que ele tem lá dentro.
+   */
+  async porNoAr(cartaoId: string, adminId: string) {
+    const cartao = await this.prisma.contentBlock.findUnique({
+      where: { id: cartaoId },
+      select: { id: true, content: { select: { projectId: true } } },
+    })
+    if (!cartao) throw new NotFoundException('Cartão não encontrado')
+
+    await this.sincronizarEstado(cartaoId)
+    const depois = await this.prisma.contentBlock.findUnique({
+      where: { id: cartaoId },
+      select: { estado: true },
+    })
+    if (depois?.estado !== CardEstado.PUBLICADO) {
+      throw new BadRequestException(
+        'Este cartão ainda não está completo. Falta preencher alguma coisa antes de o pôr no ar.',
+      )
+    }
+    await this.auditar(adminId, cartao.content.projectId, 'card.publish', 'ContentBlock', cartaoId, {})
+    return { estado: CardEstado.PUBLICADO }
+  }
+
+  /**
+   * Apaga um cartão de vez.
+   *
+   * Ao contrário de `esvaziarCartao`, que preserva o quadrado das quatro casas
+   * fixas, isto remove a linha. Só se usa em cópias e no cartão de impressão —
+   * as quatro casas de uma letra não se apagam, senão a letra passa a ter três
+   * e a composição deixa de ter a mesma forma em todos os vagões.
+   */
+  async apagarCartao(cartaoId: string, adminId: string) {
+    const cartao = await this.prisma.contentBlock.findUnique({
+      where: { id: cartaoId },
+      select: { id: true, slot: true, papel: true, content: { select: { projectId: true, letra: true } } },
+    })
+    if (!cartao) throw new NotFoundException('Cartão não encontrado')
+
+    // Numa letra, as quatro casas são fixas: esvaziam-se, não se apagam. Fora
+    // das letras — a introdução, o Produto Vivo — não há casas a preservar.
+    if (cartao.slot !== null && cartao.content.letra) {
+      await this.esvaziarCartao(cartaoId, adminId)
+      return { apagado: false, esvaziado: true }
+    }
+
+    await this.prisma.contentBlock.delete({ where: { id: cartaoId } })
+    await this.auditar(adminId, cartao.content.projectId, 'card.delete', 'ContentBlock', cartaoId, {})
+    return { apagado: true, esvaziado: false }
+  }
+
+  /**
    * Duplica um cartão: nasce vazio, logo a seguir ao original.
    *
    * Vazio e não copiado. Ele quer duplicar para ter DUAS músicas, e não a

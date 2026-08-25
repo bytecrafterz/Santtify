@@ -5696,3 +5696,32 @@ button.menu-player {
 .perfil-capa.sangria {
   border-radius: 0;
 }
+
+/* Cada cartão da introdução com o seu menu. O bloco deixou de ser um botão
+   inteiro — passou a ser uma caixa com um botão dentro — senão os três pontos
+   ficavam dentro de outro botão, que nenhum navegador aceita. */
+.bloco-raiz.com-menu {
+  position: relative;
+  padding: 0;
+  margin-bottom: 0.6rem;
+}
+
+.bloco-raiz.com-menu .area-clicavel {
+  display: grid;
+  gap: 0.5rem;
+  width: 100%;
+  padding: 0.9rem;
+  border: 0;
+  background: none;
+  color: inherit;
+  font-family: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+
+.bloco-raiz.com-menu .tres-pontos {
+  position: absolute;
+  top: 6px;
+  right: 6px;
+  z-index: 2;
+}
