@@ -35,6 +35,7 @@ export function CabecalhoDePerfil({
   perfisCriados,
   anfitriao,
   donoEhOUtilizador = false,
+  pessoa,
 }: {
   projectSlug: string
   projectId: string
@@ -43,6 +44,16 @@ export function CabecalhoDePerfil({
   anfitriao: PerfilAnfitriao | null
   /** Em /perfil, o dono é quem entrou, e não o anfitrião. */
   donoEhOUtilizador?: boolean
+  /**
+   * O perfil de OUTRA pessoa, quando se está a ver o dela.
+   *
+   * Existe para haver um único componente de perfil em toda a plataforma. Havia
+   * três desenhos diferentes da mesma coisa — o anfitrião, quem entra, e os
+   * outros — e o dos outros ficava sempre para trás: o escudo por baixo em vez
+   * de sobre a foto, e a descrição aberta em vez de recolhida. Ele apanhou as
+   * duas em 25/08 e pediu o óbvio: a mesma estrutura em todos.
+   */
+  pessoa?: PerfilAnfitriao | null
 }) {
   const { usuario } = useAuth()
 
@@ -57,8 +68,9 @@ export function CabecalhoDePerfil({
    * encontrar nem editar o próprio perfil: "tudo o que existe no meu perfil deve
    * existir nos outros perfis também".
    */
-  const dono =
-    donoEhOUtilizador && usuario
+  const dono = pessoa
+    ? pessoa
+    : donoEhOUtilizador && usuario
       ? {
           id: usuario.id,
           displayName: usuario.displayName,

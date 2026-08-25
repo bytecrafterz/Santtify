@@ -1068,6 +1068,16 @@ export class AdminContentService {
           position: 1,
         },
       })
+      // O QR TAMBÉM AQUI. Criar conteúdo pelo caminho normal gera um QR; criá-lo
+      // à mão, como aqui e no script das 26 letras, saltava esse passo — e a
+      // Letra B ficou sem QR nenhum sem ninguém dar por isso. Cada porta nova
+      // por onde nasce conteúdo tem de repetir tudo o que a porta antiga fazia.
+      await this.shortLinks.criarQrDeConteudo({
+        projectId: project.id,
+        contentId: criado.id,
+        projectSlug: project.slug,
+        contentSlug: 'produto-vivo',
+      })
       pv = criado
     }
 

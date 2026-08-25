@@ -2,6 +2,7 @@ import Link from 'next/link'
 import { notFound } from 'next/navigation'
 import { api, type PerfilAnfitriao } from '@/lib/api'
 import { PerfilDePessoa } from '@/components/PerfilDePessoa'
+import { CabecalhoDePerfil } from '@/components/CabecalhoDePerfil'
 import { IntroducaoEmCartoes } from '@/components/IntroducaoEmCartoes'
 import { IntroducaoRecolhivel } from '@/components/IntroducaoRecolhivel'
 import { ExperienciaContinua } from '@/components/ExperienciaContinua'
@@ -55,23 +56,19 @@ export default async function PaginaDePessoa({
         <Link href={`/${projectSlug}`}>← Voltar</Link>
       </div>
 
-      <div className="perfil-capa sangria">
-        {pessoa.avatarUrl ? (
-          // eslint-disable-next-line @next/next/no-img-element
-          <img className="foto-capa" src={pessoa.avatarUrl} alt={pessoa.displayName} />
-        ) : (
-          <div className="foto-capa capa-vazia">
-            <span aria-hidden>👤</span>
-            <span>Sem fotografia</span>
-          </div>
-        )}
-        <div className="nome-no-retrato">
-          <h1 title={pessoa.displayName}>{pessoa.displayName}</h1>
-        </div>
-      </div>
-
-      {pessoa.guardianName && <p className="responsavel-perfil">{pessoa.guardianName}</p>}
-      {pessoa.bio && <p className="bio-perfil">{pessoa.bio}</p>}
+      {/* O MESMO COMPONENTE DE PERFIL, e não um desenho parecido.
+          Havia três: o do anfitrião, o de quem entra, e este. Este ficava
+          sempre para trás — o escudo por baixo em vez de sobre a foto, e a
+          descrição aberta em vez de recolhida. Ele apanhou as duas em 25/08.
+          Enquanto forem três desenhos, um deles diverge sempre, e é sempre o
+          que menos gente vê. */}
+      <CabecalhoDePerfil
+        projectSlug={projectSlug}
+        projectId={projeto.id}
+        perfisCriados={indice?.comunidade.perfis ?? 0}
+        anfitriao={indice?.anfitriao ?? null}
+        pessoa={pessoa}
+      />
 
       <PerfilDePessoa pessoa={pessoa} projectId={projeto.id} projectSlug={projectSlug} />
 
@@ -104,15 +101,6 @@ export default async function PaginaDePessoa({
       )}
 
       <BarraInferior projectSlug={projectSlug} linkPdf={projeto.checkoutUrl ?? null} />
-
-      <p className="nota">
-        Na plataforma desde{' '}
-        {new Date(pessoa.createdAt).toLocaleDateString('pt-PT', {
-          day: '2-digit',
-          month: 'long',
-          year: 'numeric',
-        })}
-      </p>
     </main>
   )
 }

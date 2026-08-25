@@ -2,8 +2,6 @@
 
 import { useEffect, useState } from 'react'
 import type { PerfilAnfitriao } from '@/lib/api'
-import { IndicadoresDaPublicacao } from './IndicadoresDaPublicacao'
-import { BotaoDenunciar } from './BotaoDenunciar'
 
 /**
  * O perfil de outra pessoa, com a mesma estrutura do perfil do dono.
@@ -49,25 +47,9 @@ export function PerfilDePessoa({
 
   return (
     <>
-      <IndicadoresDaPublicacao
-        alvo={{ tipo: 'perfil', userId: pessoa.id }}
-        projectId={projectId}
-        projectSlug={projectSlug}
-        titulo={pessoa.displayName}
-        ligacao={`/${projectSlug}/pessoa/${pessoa.id}`}
-      />
-
-      {/* Bloquear e denunciar existe em todos os perfis, e não só no do dono.
-          Num sítio para crianças, o perfil de um estranho é justamente onde
-          isto tem de estar mais à mão. */}
-      <div className="linha-acoes">
-        <BotaoDenunciar
-          projectId={projectId}
-          targetType="PROFILE"
-          targetId={pessoa.id}
-          podeBloquear
-        />
-      </div>
+      {/* Os indicadores e o escudo saíram daqui: passaram a vir do mesmo
+          cabeçalho que desenha o perfil do anfitrião e o de quem entra. Aqui
+          fica só o que é próprio desta pessoa, que são as publicações dela. */}
 
       <h2 className="titulo-feed">Publicações</h2>
       {carregando && <p className="nota">A carregar...</p>}
