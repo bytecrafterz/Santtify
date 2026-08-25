@@ -5848,3 +5848,45 @@ button.linha-menu-capa {
   font-family: inherit;
   cursor: pointer;
 }
+
+/* ── O aviso de nome e fotografia (25/08) ────────────────────────────
+   Aparece uma vez, e só a quem ainda não tem fotografia. Um aviso que
+   aparece a quem já fez o que se pede treina as pessoas a fechá-lo sem
+   ler, incluindo no dia em que for a sério. */
+.folha-identidade {
+  position: fixed;
+  left: 50%;
+  bottom: 0;
+  transform: translateX(-50%);
+  z-index: 80;
+  width: 100%;
+  max-width: 520px;
+  display: grid;
+  justify-items: center;
+  gap: 0.6rem;
+  padding: 1.4rem 1.2rem calc(1.4rem + env(safe-area-inset-bottom, 0px));
+  border-radius: 22px 22px 0 0;
+  background: var(--cor-superficie);
+  box-shadow: 0 -12px 40px rgba(15, 18, 25, 0.24);
+  text-align: center;
+}
+
+.folha-identidade .emblema {
+  font-size: 2.4rem;
+  line-height: 1;
+}
+
+.folha-identidade h2 {
+  margin: 0;
+  font-size: 1.15rem;
+}
+
+.folha-identidade p {
+  margin: 0;
+  font-size: 0.96rem;
+  line-height: 1.45;
+}
+
+.folha-identidade .botao-acao {
+  margin-top: 0.4rem;
+}

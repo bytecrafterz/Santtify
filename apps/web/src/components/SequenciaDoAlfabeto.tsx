@@ -107,6 +107,7 @@ export function SequenciaDoAlfabeto({ projectSlug }: { projectSlug: string }) {
           <EditorDeCartao
             key={cartao.id}
             cartao={cartao}
+            projectSlug={projectSlug}
             aoGuardar={async () => {
               await recarregar()
               // Volta aos quatro quadrados, como ele pediu: guardar um cartão

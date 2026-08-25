@@ -39,6 +39,9 @@ export interface Bloco {
   url: string | null
   /** Hotmart, Kiwify ou outra: alimenta o botão de upgrade. */
   linkUpgrade: string | null
+  /** A que grupo esta faixa pertence, para o filtro do tocador. */
+  categoria: string | null
+  categoriaNome: string | null
   asset: Asset | null
   /** Arte própria desta faixa, quando o dono enviou uma. */
   arte: string | null
@@ -167,6 +170,10 @@ export const api = {
       progresso: ProgressoDasLetras
       comunidade: { perfis: number; impressoes: number }
     }>(`/projects/${slug}/contents`),
+  categorias: (slug: string) =>
+    buscar<{ categorias: Array<{ id: string; slug: string; name: string }> }>(
+      `/projects/${slug}/categories`,
+    ),
   playlist: (slug: string) =>
     buscar<{ project: Projeto; categorias: CategoriaDeAudio[]; faixas: Faixa[] }>(
       `/projects/${slug}/playlist`,

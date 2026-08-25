@@ -30,11 +30,14 @@ export function ExperienciaContinua({
   projectId,
   contents,
   progresso,
+  categorias = [],
 }: {
   projectSlug: string
   projectId: string
   contents: ItemIndice[]
   progresso: ProgressoDasLetras
+  /** As categorias do projeto, para o filtro do tocador. */
+  categorias?: Array<{ slug: string; name: string }>
 }) {
   const [escolhida, definirEscolhida] = useState<string | null>(null)
   const [cache, definirCache] = useState<Record<string, PaginaConteudo>>({})
@@ -208,6 +211,7 @@ export function ExperienciaContinua({
               projectSlug={projectSlug}
               ligacao={`/${projectSlug}#${pub.ancora}`}
               ancora={pub.ancora}
+              categorias={categorias}
             />
           ))}
 

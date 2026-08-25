@@ -36,8 +36,19 @@ function tempo(s: number): string {
   return `${String(m).padStart(2, '0')}:${String(r).padStart(2, '0')}`
 }
 
-/** As categorias, na ordem que ele fixou em 24/08. */
-const CATEGORIAS = ['TODOS', 'ORAÇÃO', 'MEMORIZAÇÃO', 'MÚSICA', 'EXPLICAÇÃO'] as const
+/**
+ * As categorias vinham escritas aqui, à mão, e era esse o defeito.
+ *
+ * Ele criou "Música Alegre" no painel e perguntou-me porque não aparecia no
+ * filtro. Não aparecia porque este ficheiro tinha cinco nomes fixos e nunca
+ * olhou para as categorias do projecto. Ele assumiu um comportamento que eu
+ * nunca construí, e a pergunta ficou sem resposta enquanto eu corria atrás de
+ * outras coisas.
+ *
+ * Agora a lista vem de quem usa o tocador, que a foi buscar ao projecto.
+ * "TODOS" continua a ser nosso: não é uma categoria, é a ausência de filtro.
+ */
+const TODOS = 'TODOS'
 
 export function TocadorDeOnda({
   bloco,
@@ -46,6 +57,7 @@ export function TocadorDeOnda({
   rotulo,
   aoTerminar,
   categoria,
+  categorias = [],
   aoEscolherCategoria,
 }: {
   bloco: Bloco
@@ -56,6 +68,8 @@ export function TocadorDeOnda({
   aoTerminar?: () => void
   /** A categoria escolhida, quando quem usa o tocador quer filtrar. */
   categoria?: string | null
+  /** As categorias do projeto, tal como ele as criou no painel. */
+  categorias?: Array<{ slug: string; name: string }>
   aoEscolherCategoria?: (categoria: string | null) => void
 }) {
   const audio = useRef<HTMLAudioElement>(null)
@@ -133,7 +147,7 @@ export function TocadorDeOnda({
 
         {menuAberto && (
           <div className="menu-categorias" role="menu">
-            {CATEGORIAS.map((c) => (
+            {[TODOS, ...categorias.map((c) => c.name.toUpperCase())].map((c) => (
               <button
                 key={c}
                 type="button"
@@ -141,7 +155,7 @@ export function TocadorDeOnda({
                 onClick={(ev) => {
                   ev.stopPropagation()
                   definirMenuAberto(false)
-                  aoEscolherCategoria?.(c === 'TODOS' ? null : c)
+                  aoEscolherCategoria?.(c === TODOS ? null : c)
                 }}
               >
                 {c}

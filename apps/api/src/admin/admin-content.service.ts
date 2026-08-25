@@ -935,6 +935,7 @@ export class AdminContentService {
             meta: true,
             asset: { select: { id: true, url: true, title: true, durationMs: true } },
             imageAsset: { select: { url: true } },
+            category: { select: { id: true, name: true } },
           },
         },
       },
@@ -964,6 +965,8 @@ export class AdminContentService {
             linkUpgrade: b.linkUpgrade,
             audio: b.asset,
             imagem: b.imageAsset?.url ?? null,
+            categoriaId: b.category?.id ?? null,
+            categoriaNome: b.category?.name ?? null,
             folhaA4: ((b.meta ?? {}) as Record<string, unknown>).folhaA4 ?? null,
           })),
           prontos: (c?.blocks ?? []).filter((b) => b.estado === CardEstado.PUBLICADO).length,
@@ -1019,6 +1022,7 @@ export class AdminContentService {
               meta: true,
               asset: { select: { id: true, url: true, title: true, durationMs: true } },
               imageAsset: { select: { url: true } },
+              category: { select: { id: true, name: true } },
             },
           },
         },
@@ -1082,6 +1086,7 @@ export class AdminContentService {
         meta: true,
         asset: { select: { id: true, url: true, title: true, durationMs: true } },
         imageAsset: { select: { url: true } },
+        category: { select: { id: true, name: true } },
       },
     })
 
@@ -1102,6 +1107,8 @@ export class AdminContentService {
           linkUpgrade: b.linkUpgrade,
           audio: b.asset,
           imagem: b.imageAsset?.url ?? null,
+          categoriaId: b.category?.id ?? null,
+          categoriaNome: b.category?.name ?? null,
           folhaA4: ((b.meta ?? {}) as Record<string, unknown>).folhaA4 ?? null,
         })),
       },
@@ -1121,6 +1128,8 @@ export class AdminContentService {
               linkUpgrade: b.linkUpgrade,
               audio: b.asset,
               imagem: b.imageAsset?.url ?? null,
+              categoriaId: b.category?.id ?? null,
+              categoriaNome: b.category?.name ?? null,
               folhaA4: ((b.meta ?? {}) as Record<string, unknown>).folhaA4 ?? null,
             })),
           }
@@ -1259,6 +1268,7 @@ export class AdminContentService {
         // vou saber se escolhi a foto certa ou se o upload funcionou?".
         asset: { select: { id: true, url: true, title: true, durationMs: true } },
         imageAsset: { select: { url: true } },
+        category: { select: { id: true, name: true } },
       },
     })
 

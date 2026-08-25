@@ -36,6 +36,9 @@ export default async function PaginaDePessoa({
     ? await api.conteudo(projectSlug, semLetra.slug).catch(() => null)
     : null
 
+  // As categorias que ele criou no painel, para o filtro do tocador.
+  const cats = await api.categorias(projectSlug).catch(() => null)
+
   const base = process.env.NEXT_PUBLIC_API_URL ?? ''
   // Os números sociais deixam de ser lidos aqui. Lidos no servidor, vinham
   // sempre sem sessão — e sem sessão o servidor responde como responde a um
@@ -95,6 +98,7 @@ export default async function PaginaDePessoa({
           projectId={projeto.id}
           contents={indice.contents}
           progresso={indice.progresso}
+          categorias={cats?.categorias ?? []}
         />
       )}
 

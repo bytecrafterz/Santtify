@@ -57,6 +57,7 @@ export function EstruturaRaiz({ projectSlug }: { projectSlug: string }) {
         <EditorDeCartao
           key={aEditar.id}
           cartao={aEditar}
+          projectSlug={projectSlug}
           aoGuardar={async () => {
             await recarregar()
             definirAEditar(null)

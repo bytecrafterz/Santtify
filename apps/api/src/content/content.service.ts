@@ -251,6 +251,12 @@ export class ContentService {
           orderBy: { position: 'asc' },
           include: {
             imageAsset: { select: { url: true, width: true, height: true } },
+            // A CATEGORIA VIAJA COM O BLOCO.
+            // Sem isto o filtro do tocador não tinha como saber a que grupo
+            // cada faixa pertence, e por isso vivia de uma lista escrita à mão
+            // no código — que foi o que fez a "Música Alegre" dele não
+            // aparecer em lado nenhum depois de criada.
+            category: { select: { slug: true, name: true } },
             asset: {
               select: { id: true, kind: true, url: true, mimeType: true, durationMs: true, title: true, altText: true },
             },
@@ -351,6 +357,8 @@ export class ContentService {
             text: b.text,
             url: b.url,
             linkUpgrade: b.linkUpgrade,
+            categoria: b.category?.slug ?? null,
+            categoriaNome: b.category?.name ?? null,
             asset: b.asset,
             arte: b.imageAsset?.url ?? null,
             meta: b.meta,
@@ -361,6 +369,27 @@ export class ContentService {
       },
       navegacao: { anterior, proximo },
     }
+  }
+
+  /**
+   * As categorias de áudio deste projeto.
+   *
+   * Ele criou "Música Alegre" no painel e perguntou porque não aparecia no
+   * filtro do tocador. A resposta é que o filtro nunca leu daqui: era uma lista
+   * de cinco nomes escrita à mão no código. Ele assumiu um comportamento que eu
+   * nunca tinha construído, e a pergunta dele ficou sem resposta enquanto eu
+   * corria atrás de outras coisas.
+   *
+   * Passa a ler daqui. Cria uma categoria no painel e ela aparece no filtro.
+   */
+  async categoriasDoProjeto(projectSlug: string) {
+    const project = await this.projeto(projectSlug)
+    const categorias = await this.prisma.blockCategory.findMany({
+      where: { projectId: project.id },
+      orderBy: [{ position: 'asc' }, { name: 'asc' }],
+      select: { id: true, slug: true, name: true },
+    })
+    return { categorias }
   }
 
   /**

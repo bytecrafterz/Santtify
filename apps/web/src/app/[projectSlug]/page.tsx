@@ -86,6 +86,9 @@ export default async function IndiceDoProjeto({
     ? await api.conteudo(projectSlug, semLetra.slug).catch(() => null)
     : null
 
+  // As categorias que ele criou no painel, para o filtro do tocador.
+  const cats = await api.categorias(projectSlug).catch(() => null)
+
   return (
     <main className="envoltorio com-barra">
       {/* A BARRA PRETA DO TOPO SAIU.
@@ -141,6 +144,7 @@ export default async function IndiceDoProjeto({
           projectId={project.id}
           contents={contents}
           progresso={progresso}
+          categorias={cats?.categorias ?? []}
         />
       )}
 

@@ -156,6 +156,22 @@ export function IndicadoresDaPublicacao({
   }
 
   async function partilhar() {
+    /**
+     * SEM CONTA NÃO SE INTERAGE, e partilhar é interagir.
+     *
+     * Ele fixou a regra em 25/08, na versão mais rígida: quem não está
+     * registado pode ver, e mais nada. Ao tentar curtir, comentar ou partilhar,
+     * abre o pedido de cadastro.
+     *
+     * A razão dele é de segurança e é boa. Uma partilha leva a plataforma para
+     * fora com o nome de quem a mandou, e numa comunidade infantil isso não
+     * pode partir de alguém que ninguém sabe quem é. A curtida já estava
+     * travada; a partilha ficou aberta e era a porta que faltava fechar.
+     */
+    if (!usuario) {
+      definirConvite('Para partilhar, crie a sua conta grátis')
+      return
+    }
     const url = `${window.location.origin}${ligacao}`
     try {
       // Contar ANTES de partilhar contava também quem desistia. Cancelar

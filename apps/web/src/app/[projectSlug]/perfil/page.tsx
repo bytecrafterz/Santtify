@@ -7,6 +7,7 @@ import { ExperienciaContinua } from '@/components/ExperienciaContinua'
 import { IntroducaoRecolhivel } from '@/components/IntroducaoRecolhivel'
 import { BarraInferior } from '@/components/BarraInferior'
 import { BannerDeConsentimento } from '@/components/BannerDeConsentimento'
+import { AvisoDeIdentidade } from '@/components/AvisoDeIdentidade'
 
 export const metadata = { title: 'Meu perfil' }
 
@@ -39,6 +40,9 @@ export default async function PaginaDePerfil({
   const introducao = semLetra
     ? await api.conteudo(projectSlug, semLetra.slug).catch(() => null)
     : null
+
+  // As categorias que ele criou no painel, para o filtro do tocador.
+  const cats = await api.categorias(projectSlug).catch(() => null)
 
   return (
     <main className="envoltorio com-barra">
@@ -74,9 +78,12 @@ export default async function PaginaDePerfil({
           projectId={project.id}
           contents={contents}
           progresso={progresso}
+          categorias={cats?.categorias ?? []}
         />
       )}
 
+      {/* Logo depois do cadastro: é aqui que quem se regista cai. */}
+      <AvisoDeIdentidade projectSlug={projectSlug} />
       <BannerDeConsentimento projectId={project.id} />
       <BarraInferior projectSlug={projectSlug} linkPdf={project.checkoutUrl ?? null} />
     </main>

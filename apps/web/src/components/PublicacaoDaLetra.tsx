@@ -37,6 +37,7 @@ export function PublicacaoDaLetra({
   projectSlug,
   ligacao,
   ancora,
+  categorias,
   aoTerminarAudio,
 }: {
   etiqueta: string | null
@@ -51,6 +52,8 @@ export function PublicacaoDaLetra({
   projectSlug: string
   ligacao: string
   ancora: string
+  /** As categorias do projeto, para o menu do tocador. */
+  categorias?: Array<{ slug: string; name: string }>
   aoTerminarAudio?: () => void
 }) {
   const [expandido, definirExpandido] = useState(false)
@@ -97,6 +100,7 @@ export function PublicacaoDaLetra({
             projectId={projectId}
             contentId={contentId}
             rotulo={null}
+            categorias={categorias}
             aoTerminar={aoTerminarAudio}
           />
         )}

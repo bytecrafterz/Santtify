@@ -163,6 +163,9 @@ export interface CartaoAdmin {
   linkUpgrade: string | null
   audio: { id: string; url: string; title: string | null; durationMs: number | null } | null
   imagem: string | null
+  /** A categoria, que alimenta o filtro do tocador na página. */
+  categoriaId?: string | null
+  categoriaNome?: string | null
   /** A folha A4, só no cartão de impressão. */
   folhaA4?: string | null
 }

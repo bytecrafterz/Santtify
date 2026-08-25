@@ -1,7 +1,8 @@
 'use client'
 
 import { useState } from 'react'
-import { admin, type CartaoAdmin } from '@/lib/admin'
+import { useEffect } from 'react'
+import { admin, type CartaoAdmin, type CategoriaAdmin } from '@/lib/admin'
 
 /**
  * A terceira tela: o cartão, inteiro, numa página só.
@@ -33,10 +34,12 @@ import { admin, type CartaoAdmin } from '@/lib/admin'
  */
 export function EditorDeCartao({
   cartao,
+  projectSlug,
   aoGuardar,
   aoCancelar,
 }: {
   cartao: CartaoAdmin
+  projectSlug: string
   aoGuardar: () => Promise<void>
   aoCancelar: () => void
 }) {
@@ -47,6 +50,18 @@ export function EditorDeCartao({
   const [audio, definirAudio] = useState(cartao.audio)
   const [ocupado, definirOcupado] = useState<string | null>(null)
   const [erro, definirErro] = useState<string | null>(null)
+  const [categorias, definirCategorias] = useState<CategoriaAdmin[]>([])
+  const [categoriaId, definirCategoriaId] = useState(cartao.categoriaId ?? '')
+
+  // As categorias que ele criou no painel. É esta lista que alimenta o filtro
+  // do tocador na página, e é por isso que ela está aqui: ele definia a
+  // categoria noutro sítio e não percebia porque não aparecia no filtro.
+  useEffect(() => {
+    void admin
+      .categorias(projectSlug)
+      .then((r) => definirCategorias(r.categorias))
+      .catch(() => {})
+  }, [projectSlug])
 
   const falta = [
     !imagem && 'a foto',
@@ -192,6 +207,34 @@ export function EditorDeCartao({
           rows={4}
           maxLength={4000}
         />
+
+        {/* A CATEGORIA VIVE AQUI, no cartão, e não noutra tela.
+            Ele definiu "Música Alegre" e perguntou porque não aparecia no
+            filtro do tocador. A categoria estava noutro sítio do painel e o
+            filtro nunca a leu — era uma lista de cinco nomes escrita no código.
+            Agora escolhe-se aqui e aparece lá. */}
+        <label className="campo-upgrade">
+          <span>Categoria (aparece no filtro do tocador)</span>
+          <select
+            value={categoriaId}
+            onChange={async (e) => {
+              const v = e.target.value
+              definirCategoriaId(v)
+              try {
+                await admin.classificarBloco(cartao.id, v || null)
+              } catch {
+                definirErro('Não foi possível guardar a categoria.')
+              }
+            }}
+          >
+            <option value="">Sem categoria</option>
+            {categorias.map((c) => (
+              <option key={c.id} value={c.id}>
+                {c.name}
+              </option>
+            ))}
+          </select>
+        </label>
 
         <label className="campo-upgrade">
           <span>Link de venda (Hotmart, Kiwify ou outro)</span>
