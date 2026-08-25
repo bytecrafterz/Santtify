@@ -548,13 +548,14 @@ export class SocialService {
   async quemInteragiuComOPerfil(profileUserId: string) {
     const [curtiram, comentaram, visualizacoes] = await Promise.all([
       this.prisma.profileReaction.findMany({
-        where: { profileUserId },
+        // Só contas activas: uma conta removida não aparece em lista pública.
+        where: { profileUserId, user: { status: 'ACTIVE' } },
         orderBy: { createdAt: 'desc' },
         take: 100,
         select: { user: { select: { id: true, displayName: true, avatarUrl: true } } },
       }),
       this.prisma.comment.findMany({
-        where: { profileUserId, status: 'PUBLISHED' },
+        where: { profileUserId, status: 'PUBLISHED', user: { status: 'ACTIVE' } },
         orderBy: { createdAt: 'desc' },
         take: 100,
         distinct: ['userId'],
@@ -632,7 +633,11 @@ export class SocialService {
   async quemCurtiu(alvo: { blockId?: string; contentId?: string }) {
     if (alvo.blockId) {
       const curtiram = await this.prisma.blockReaction.findMany({
-        where: { blockId: alvo.blockId, type: ReactionType.LIKE },
+        // SÓ CONTAS ACTIVAS. Uma conta removida deixa as curtidas dela para
+        // trás — o registo é dela e não se apaga — mas o nome de quem já não
+        // está na plataforma não tem de aparecer numa lista pública. Apanhei-o
+        // porque as minhas próprias contas de teste apareciam na lista dele.
+        where: { blockId: alvo.blockId, type: ReactionType.LIKE, user: { status: 'ACTIVE' } },
         orderBy: { createdAt: 'desc' },
         take: 100,
         select: { user: { select: { id: true, displayName: true, avatarUrl: true } } },
@@ -641,7 +646,7 @@ export class SocialService {
     }
 
     const curtiram = await this.prisma.reaction.findMany({
-      where: { contentId: alvo.contentId, type: ReactionType.LIKE },
+      where: { contentId: alvo.contentId, type: ReactionType.LIKE, user: { status: 'ACTIVE' } },
       orderBy: { createdAt: 'desc' },
       take: 100,
       select: { user: { select: { id: true, displayName: true, avatarUrl: true } } },
