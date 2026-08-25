@@ -616,6 +616,39 @@ export class SocialService {
     return this.comSinalDeCurtida(lista, leitorId)
   }
 
+  /**
+   * Quem curtiu uma publicação ou uma faixa.
+   *
+   * Ele pediu-o em 25/08: "quando eu tocar no número de likes, preciso
+   * conseguir ver quais pessoas deram like, como nas redes sociais. Não quero
+   * somente um número sem saber de onde ele veio".
+   *
+   * O mesmo limite do perfil vale aqui: QUEM CURTIU aparece, quem só viu não.
+   * Curtir é um acto público — a pessoa carregou num coração — e ver não é. A
+   * política de privacidade publicada em nome dele promete que a visita fica
+   * anónima, e numa plataforma usada por crianças uma lista de quem andou a ver
+   * é a espécie de coisa que não se constrói.
+   */
+  async quemCurtiu(alvo: { blockId?: string; contentId?: string }) {
+    if (alvo.blockId) {
+      const curtiram = await this.prisma.blockReaction.findMany({
+        where: { blockId: alvo.blockId, type: ReactionType.LIKE },
+        orderBy: { createdAt: 'desc' },
+        take: 100,
+        select: { user: { select: { id: true, displayName: true, avatarUrl: true } } },
+      })
+      return { curtiram: curtiram.map((c) => c.user) }
+    }
+
+    const curtiram = await this.prisma.reaction.findMany({
+      where: { contentId: alvo.contentId, type: ReactionType.LIKE },
+      orderBy: { createdAt: 'desc' },
+      take: 100,
+      select: { user: { select: { id: true, displayName: true, avatarUrl: true } } },
+    })
+    return { curtiram: curtiram.map((c) => c.user).filter(Boolean) }
+  }
+
   async alternarCurtidaDoPerfil(profileUserId: string, userId: string) {
     // O dono pode curtir o próprio perfil. Eu tinha-o proibido — um número que
     // o dono sobe sozinho vale menos — e ele pediu duas vezes o contrário. É

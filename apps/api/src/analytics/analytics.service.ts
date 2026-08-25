@@ -61,7 +61,30 @@ export class AnalyticsService {
       cliquesEmComprar,
     ] = await Promise.all([
       this.prisma.visitor.count({ where: { projectId } }),
-      this.prisma.visitor.count({ where: { projectId, userId: { not: null } } }),
+      /**
+       * CADASTROS SÃO PESSOAS, e não linhas de visitante.
+       *
+       * Isto contava linhas. Cada navegador, cada telemóvel e cada janela
+       * privada cria uma linha de visitante nova, e ao entrar na conta essa
+       * linha passa a apontar para a pessoa. Uma pessoa com três aparelhos
+       * contava três vezes.
+       *
+       * Na base dele hoje: 56 linhas para 7 pessoas. A Família Caxito sozinha
+       * tinha 31 linhas. O painel dizia catorze cadastros e ele só conseguia
+       * ver três perfis — apanhou a diferença em 25/08 e pediu para descobrir
+       * de onde vinha. Vinha daqui.
+       *
+       * A lista da comunidade sempre contou por pessoa. Passam a contar o
+       * mesmo, que é a única forma de os dois números não se contradizerem no
+       * mesmo ecrã.
+       */
+      this.prisma.visitor
+        .findMany({
+          where: { projectId, userId: { not: null } },
+          distinct: ['userId'],
+          select: { userId: true },
+        })
+        .then((v) => v.length),
       this.prisma.reaction.count({ where: { projectId } }),
       this.prisma.comment.count({ where: { projectId, status: 'PUBLISHED' } }),
       this.prisma.share.count({ where: { shortLink: { projectId } } }),
@@ -99,7 +122,9 @@ export class AnalyticsService {
     return this.prisma.$queryRaw<Array<{ dia: Date; visitantes: number; cadastros: number }>>`
       SELECT date_trunc('day', v."firstSeenAt")::date              AS dia,
              count(*)::int                                         AS visitantes,
-             (count(*) FILTER (WHERE v."userId" IS NOT NULL))::int AS cadastros
+             -- Pessoas distintas, pela mesma razão do total acima: uma pessoa
+             -- com três aparelhos continua a ser uma pessoa.
+             count(DISTINCT v."userId")::int                       AS cadastros
       FROM visitors v
       WHERE v."projectId" = ${projectId}::uuid AND v."firstSeenAt" >= ${desde}
       GROUP BY 1 ORDER BY 1`

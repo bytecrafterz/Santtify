@@ -1,5 +1,6 @@
 'use client'
 
+import Link from 'next/link'
 import { useEffect, useState } from 'react'
 import { social, type EstadoDaFaixa } from '@/lib/social'
 import { useAuth } from './ProvedorDeAuth'
@@ -39,6 +40,12 @@ export type AlvoSocial =
    */
   | { tipo: 'perfil'; userId: string }
 
+interface Pessoa {
+  id: string
+  displayName: string
+  avatarUrl: string | null
+}
+
 const VAZIO: EstadoDaFaixa = {
   visualizacoes: 0,
   curtidas: 0,
@@ -68,6 +75,7 @@ export function IndicadoresDaPublicacao({
   const [convite, definirConvite] = useState<string | null>(null)
   const [aviso, definirAviso] = useState<string | null>(null)
   const [aCurtir, definirACurtir] = useState(false)
+  const [quemCurtiu, definirQuemCurtiu] = useState<Pessoa[] | null>(null)
 
   const chave =
     alvo.tipo === 'faixa' ? alvo.blockId : alvo.tipo === 'perfil' ? alvo.userId : alvo.contentId
@@ -130,6 +138,23 @@ export function IndicadoresDaPublicacao({
     }
   }
 
+  async function mostrarQuemCurtiu() {
+    const base = process.env.NEXT_PUBLIC_API_URL ?? ''
+    const url =
+      alvo.tipo === 'faixa'
+        ? `${base}/blocks/${alvo.blockId}/people`
+        : alvo.tipo === 'perfil'
+          ? `${base}/profiles/${alvo.userId}/people`
+          : `${base}/contents/${alvo.contentId}/people`
+    try {
+      const r = await fetch(url)
+      const d = r.ok ? await r.json() : { curtiram: [] }
+      definirQuemCurtiu(d.curtiram ?? [])
+    } catch {
+      definirAviso('Não foi possível abrir a lista agora.')
+    }
+  }
+
   async function partilhar() {
     const url = `${window.location.origin}${ligacao}`
     try {
@@ -180,7 +205,18 @@ export function IndicadoresDaPublicacao({
           <span className="simbolo">
             <CoracaoGrande cheio={estado.curtidoPorMim} />
           </span>
-          <strong>{abreviar(estado.curtidas)}</strong>
+          {/* TOCAR NO NÚMERO MOSTRA QUEM CURTIU; tocar no coração curte.
+              São duas intenções no mesmo sítio, e separá-las pelo alvo do toque
+              é o que as redes sociais fazem — foi assim que ele o descreveu em
+              25/08: "não quero somente um número sem saber de onde ele veio". */}
+          <strong
+            onClick={(ev) => {
+              ev.stopPropagation()
+              if (estado.curtidas > 0) void mostrarQuemCurtiu()
+            }}
+          >
+            {abreviar(estado.curtidas)}
+          </strong>
         </button>
 
         <button
@@ -213,6 +249,53 @@ export function IndicadoresDaPublicacao({
       </div>
 
       {aviso && <p className="nota">{aviso}</p>}
+
+      {quemCurtiu && (
+        <div className="fundo-modal" role="dialog" aria-modal="true" aria-label="Quem curtiu">
+          <button
+            type="button"
+            className="fundo-clicavel"
+            aria-label="Fechar"
+            onClick={() => definirQuemCurtiu(null)}
+          />
+          <div className="folha-pessoas">
+            <header>
+              <h2>Quem curtiu</h2>
+              <button
+                type="button"
+                className="fechar-x"
+                aria-label="Fechar"
+                onClick={() => definirQuemCurtiu(null)}
+              >
+                ✕
+              </button>
+            </header>
+            {quemCurtiu.length === 0 && <p className="nota">Ainda ninguém curtiu.</p>}
+            <ul className="lista-pessoas">
+              {quemCurtiu.map((pessoa) => (
+                <li key={pessoa.id}>
+                  <Link
+                    href={`/${projectSlug}/pessoa/${pessoa.id}`}
+                    onClick={() => definirQuemCurtiu(null)}
+                  >
+                    {pessoa.avatarUrl ? (
+                      // eslint-disable-next-line @next/next/no-img-element
+                      <img src={pessoa.avatarUrl} alt="" />
+                    ) : (
+                      <span className="inicial" aria-hidden>
+                        {pessoa.displayName.trim().charAt(0).toUpperCase()}
+                      </span>
+                    )}
+                    <span className="quem">
+                      <strong>{pessoa.displayName}</strong>
+                    </span>
+                  </Link>
+                </li>
+              ))}
+            </ul>
+          </div>
+        </div>
+      )}
 
       {convite && (
         <ConviteDeCadastro

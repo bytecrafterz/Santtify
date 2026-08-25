@@ -253,6 +253,11 @@ export class PublicacoesController {
 export class FaixasController {
   constructor(private readonly social: SocialService) {}
 
+  @Get('people')
+  quemCurtiuAFaixa(@Param('blockId') blockId: string) {
+    return this.social.quemCurtiu({ blockId })
+  }
+
   @Get('social')
   @AuthOpcional()
   @UseGuards(AuthGuard)
