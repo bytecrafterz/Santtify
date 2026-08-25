@@ -501,7 +501,7 @@ export class SocialService {
         this.prisma.profileReaction.count({
           where: { profileUserId, type: ReactionType.LIKE },
         }),
-        this.prisma.comment.count({ where: { profileUserId, status: 'PUBLISHED' } }),
+        this.contarComentarios({ profileUserId }, leitorId),
         this.prisma.event.count({
           where: {
             type: EventType.CUSTOM,
@@ -573,6 +573,32 @@ export class SocialService {
       comentaram: comentaram.map((c) => c.user),
       visualizacoes,
     }
+  }
+
+  /**
+   * Quantos comentários é que a pessoa vai MESMO encontrar se abrir.
+   *
+   * O contador e a lista usavam filtros diferentes: o contador contava tudo o
+   * que estava publicado, a lista escondia quem o leitor tivesse bloqueado. Ele
+   * apanhou-o em 25/08 — "no meu aparece que existem 3, mas quando abro existem
+   * somente 2" — e tem toda a razão em dizer que isso é essencial. Um número
+   * que não corresponde ao que se encontra faz duvidar de todos os outros
+   * números da página.
+   *
+   * Passam os dois a fazer a mesma pergunta, com o mesmo filtro.
+   */
+  private async contarComentarios(
+    onde: { profileUserId?: string; blockId?: string; contentId?: string },
+    leitorId: string | null,
+  ) {
+    const escondidos = await this.bloqueadosPor(leitorId)
+    return this.prisma.comment.count({
+      where: {
+        ...onde,
+        status: 'PUBLISHED',
+        ...(escondidos.length ? { userId: { notIn: escondidos } } : {}),
+      },
+    })
   }
 
   async listarComentariosDoPerfil(profileUserId: string, leitorId: string | null = null) {
@@ -721,7 +747,7 @@ export class SocialService {
       await Promise.all([
         this.contarEventoDaFaixa(blockId, EventType.MEDIA_PLAY),
         this.prisma.blockReaction.count({ where: { blockId, type: ReactionType.LIKE } }),
-        this.prisma.comment.count({ where: { blockId, status: 'PUBLISHED' } }),
+        this.contarComentarios({ blockId }, userId),
         this.contarEventoDaFaixa(blockId, EventType.CUSTOM, 'partilhar_faixa'),
         userId
           ? this.prisma.blockReaction

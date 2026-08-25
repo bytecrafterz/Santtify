@@ -2,6 +2,10 @@ import Link from 'next/link'
 import { notFound } from 'next/navigation'
 import { api, type PerfilAnfitriao } from '@/lib/api'
 import { PerfilDePessoa } from '@/components/PerfilDePessoa'
+import { IntroducaoEmCartoes } from '@/components/IntroducaoEmCartoes'
+import { IntroducaoRecolhivel } from '@/components/IntroducaoRecolhivel'
+import { ExperienciaContinua } from '@/components/ExperienciaContinua'
+import { BarraInferior } from '@/components/BarraInferior'
 
 export const metadata = { title: 'Perfil' }
 
@@ -25,6 +29,13 @@ export default async function PaginaDePessoa({
   const projeto = await api.projeto(projectSlug)
   if (!projeto) notFound()
 
+  // A plataforma inteira, para o perfil não ser um beco.
+  const indice = await api.indice(projectSlug)
+  const semLetra = indice?.contents.find((c) => !c.letra && c.publicado)
+  const introducao = semLetra
+    ? await api.conteudo(projectSlug, semLetra.slug).catch(() => null)
+    : null
+
   const base = process.env.NEXT_PUBLIC_API_URL ?? ''
   // Os números sociais deixam de ser lidos aqui. Lidos no servidor, vinham
   // sempre sem sessão — e sem sessão o servidor responde como responde a um
@@ -36,7 +47,7 @@ export default async function PaginaDePessoa({
   const pessoa = (await pessoaRes.json()) as PerfilAnfitriao
 
   return (
-    <main className="envoltorio">
+    <main className="envoltorio com-barra">
       <div className="cabecalho">
         <Link href={`/${projectSlug}`}>← Voltar</Link>
       </div>
@@ -60,6 +71,34 @@ export default async function PaginaDePessoa({
       {pessoa.bio && <p className="bio-perfil">{pessoa.bio}</p>}
 
       <PerfilDePessoa pessoa={pessoa} projectId={projeto.id} projectSlug={projectSlug} />
+
+      {/* E POR BAIXO, A PLATAFORMA — igual ao perfil dele e ao de quem entra.
+          Ele disse-o em 25/08 depois de abrir o perfil da Kadosh: "não pode
+          abrir numa página praticamente vazia mostrando apenas Publicações".
+          Tinha razão. Um perfil que não leva a lado nenhum é uma saída sem
+          porta: quem lá chega por um comentário fica preso, e o único caminho
+          de volta é o botão do navegador. */}
+      <IntroducaoRecolhivel nome={projeto.name}>
+        {introducao && (
+          <IntroducaoEmCartoes
+            contentId={introducao.content.id}
+            blocos={introducao.content.blocks}
+            projectId={projeto.id}
+            projectSlug={projectSlug}
+          />
+        )}
+      </IntroducaoRecolhivel>
+
+      {indice && indice.contents.length > 0 && (
+        <ExperienciaContinua
+          projectSlug={projectSlug}
+          projectId={projeto.id}
+          contents={indice.contents}
+          progresso={indice.progresso}
+        />
+      )}
+
+      <BarraInferior projectSlug={projectSlug} linkPdf={projeto.checkoutUrl ?? null} />
 
       <p className="nota">
         Na plataforma desde{' '}
