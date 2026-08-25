@@ -75,6 +75,28 @@ export function IndicadoresDaPublicacao({
   // Relê quando a sessão entra. O access token só vive em memória, e à primeira
   // leitura ainda não existe: sem isto o servidor responde como responde a um
   // visitante e o coração fica vazio mesmo tendo sido a pessoa a enchê-lo.
+  /**
+   * Relê quando a visita desta abertura ficar registada.
+   *
+   * Sem isto o número mostrado é sempre o de antes da própria visita — a
+   * leitura e a gravação acontecem no mesmo instante e a leitura chega
+   * primeiro. Quem abre vê o número parado e conclui, com razão, que não
+   * contou.
+   */
+  useEffect(() => {
+    function releitura() {
+      const p =
+        alvo.tipo === 'faixa'
+          ? social.estadoDaFaixa(alvo.blockId)
+          : alvo.tipo === 'perfil'
+            ? social.estadoDoPerfil(alvo.userId)
+            : social.estado(alvo.contentId)
+      void p.then(definirEstado).catch(() => {})
+    }
+    window.addEventListener('pv:visita-registada', releitura)
+    return () => window.removeEventListener('pv:visita-registada', releitura)
+  }, [chave, alvo])
+
   useEffect(() => {
     const pedido =
       alvo.tipo === 'faixa'

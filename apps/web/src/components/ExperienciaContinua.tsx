@@ -76,6 +76,32 @@ export function ExperienciaContinua({
       type: 'CONTENT_VIEW',
       props: { origem: 'perfil' },
     })
+
+    /**
+     * UMA VISUALIZAÇÃO POR CARTÃO, quando a letra é aberta.
+     *
+     * Regra dele, de 25/08: "entrou efetivamente no conteúdo = 1 view; saiu e
+     * abriu novamente = nova view". Conta-se ao ABRIR a letra e não ao rolar,
+     * que é o cuidado que ele próprio pediu — quem sobe e desce a mesma página
+     * não gera dezenas de visualizações, porque não há aqui nenhum contador
+     * ligado ao gesto de rolar.
+     *
+     * Sai depois do evento da letra e não bloqueia nada: falhar a contar não
+     * pode impedir a letra de abrir.
+     */
+    const pagina = cache[item.slug]
+    if (pagina) {
+      for (const b of pagina.content.blocks) {
+        if (b.type !== 'AUDIO') continue
+        void rastrear({
+          projectId,
+          contentId: item.id,
+          type: 'CONTENT_VIEW',
+          // O bloco vai dentro de `props`, que é onde o servidor o procura.
+          props: { blockId: b.id, origem: 'abriu-a-letra' },
+        })
+      }
+    }
   }
 
   // Depois de a letra chegar, leva a pessoa até ela. Sem isto o conteúdo abre

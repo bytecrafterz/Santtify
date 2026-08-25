@@ -745,7 +745,19 @@ export class SocialService {
 
     const [visualizacoes, curtidas, comentarios, compartilhamentos, curtido, lista] =
       await Promise.all([
-        this.contarEventoDaFaixa(blockId, EventType.MEDIA_PLAY),
+        /**
+         * O OLHO CONTA ABERTURAS, e não reproduções.
+         *
+         * Contava MEDIA_PLAY — quantas vezes o áudio foi tocado. Isso não é uma
+         * visualização, é uma escuta, e o cliente esperava outra coisa: "se
+         * Explicação está com 24 visualizações e eu realmente abro aquele
+         * conteúdo, deve passar para 25".
+         *
+         * Tinha razão, e o número antigo era pior do que parecia: um cartão que
+         * ninguém tocasse ficava eternamente a zero mesmo tendo sido visto por
+         * cem pessoas.
+         */
+        this.contarEventoDaFaixa(blockId, EventType.CONTENT_VIEW),
         this.prisma.blockReaction.count({ where: { blockId, type: ReactionType.LIKE } }),
         this.contarComentarios({ blockId }, userId),
         this.contarEventoDaFaixa(blockId, EventType.CUSTOM, 'partilhar_faixa'),
