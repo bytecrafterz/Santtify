@@ -50,7 +50,17 @@ export function ExperienciaContinua({
     definirErro(null)
     definirEscolhida(item.slug)
 
-    if (!cache[item.slug]) {
+    /**
+     * A PÁGINA FICA NUMA VARIÁVEL, e não só na cache.
+     *
+     * `cache` é estado do React: preenchê-la com `definirCache` só a torna
+     * legível no render seguinte. Ler `cache[item.slug]` mais abaixo devolvia
+     * `undefined`, e por isso as visualizações por cartão não eram contadas de
+     * todo. Não dava erro nenhum — o ciclo simplesmente não corria, e o olho
+     * ficava a zero por mais vezes que a letra fosse aberta.
+     */
+    let pagina = cache[item.slug]
+    if (!pagina) {
       definirCarregando(true)
       try {
         const res = await fetch(
@@ -58,6 +68,7 @@ export function ExperienciaContinua({
         )
         if (!res.ok) throw new Error('falhou')
         const dados = (await res.json()) as PaginaConteudo
+        pagina = dados
         definirCache((c) => ({ ...c, [item.slug]: dados }))
       } catch {
         definirErro('Não foi possível abrir esta letra agora.')
@@ -89,7 +100,6 @@ export function ExperienciaContinua({
      * Sai depois do evento da letra e não bloqueia nada: falhar a contar não
      * pode impedir a letra de abrir.
      */
-    const pagina = cache[item.slug]
     if (pagina) {
       for (const b of pagina.content.blocks) {
         if (b.type !== 'AUDIO') continue
