@@ -1116,7 +1116,10 @@ export class AdminContentService {
   async duplicarIntroducao(contentId: string, adminId: string) {
     const content = await this.prisma.content.findUnique({
       where: { id: contentId },
-      select: { id: true, projectId: true, letra: true },
+      // `slug` vai no select porque é lido logo abaixo. Faltava, e o build
+      // local passou na mesma por causa da cache incremental do TypeScript —
+      // só o build limpo do servidor é que o apanhou.
+      select: { id: true, projectId: true, letra: true, slug: true },
     })
     if (!content) throw new NotFoundException('Introdução não encontrada')
     // Serve a introdução e o Produto Vivo: os dois vivem fora do alfabeto e os

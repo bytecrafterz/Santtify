@@ -93,11 +93,48 @@ trap restaurar_carimbo EXIT
 
 info "Construindo as imagens"
 echo "  (a primeira vez demora — compila a API e o site)"
-$COMPOSE build
+
+# FALHAR AOS GRITOS, e não em silêncio.
+#
+# O `set -e` já abortava aqui, e isso está certo. O que faltava era dizê-lo de
+# forma que ninguém possa não ver: em 25/08 a API não compilou, o script parou
+# como devia, e eu fui confirmar a publicação procurando uma marca do SITE — que
+# tinha compilado. Dei a publicação por boa durante uma hora com a API antiga a
+# servir. O erro não foi do script; foi de eu ter perguntado à porta errada.
+if ! $COMPOSE build; then
+  echo ""
+  echo "  ############################################################"
+  echo "  ##  A CONSTRUÇÃO FALHOU. NADA FOI PUBLICADO.              ##"
+  echo "  ##  O que está no ar continua a ser a versão anterior.    ##"
+  echo "  ############################################################"
+  echo ""
+  echo "  O erro está acima. Procure por 'error TS' ou 'failed to solve'."
+  exit 1
+fi
 
 info "Subindo os serviços"
 # As migrations rodam no entrypoint da API, antes de a aplicação atender.
 $COMPOSE up -d
+
+# A API tem de responder DEPOIS de subir. Sem isto, um contentor que arranca e
+# morre a seguir — variável em falta, migração partida — passa despercebido, e
+# o site continua de pé a falar com uma API que já não está lá.
+info "Conferindo que a API responde"
+for _ in $(seq 1 30); do
+  if curl -fsS -m 5 http://localhost:3333/health >/dev/null 2>&1; then
+    ok "a API respondeu"
+    break
+  fi
+  sleep 2
+done
+if ! curl -fsS -m 5 http://localhost:3333/health >/dev/null 2>&1; then
+  echo ""
+  echo "  ############################################################"
+  echo "  ##  A API NÃO RESPONDE depois de subir.                   ##"
+  echo "  ############################################################"
+  echo "  Veja: docker compose -f docker-compose.prod.yml logs api --tail=50"
+  exit 1
+fi
 
 info "Esperando ficar de pé"
 pronto=0
