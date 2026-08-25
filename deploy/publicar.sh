@@ -120,14 +120,23 @@ $COMPOSE up -d
 # morre a seguir — variável em falta, migração partida — passa despercebido, e
 # o site continua de pé a falar com uma API que já não está lá.
 info "Conferindo que a API responde"
+# DE DENTRO DO CONTENTOR, e não do servidor.
+#
+# A porta da API não está publicada para fora — só o Caddy é que está — por isso
+# um `curl localhost:3333` a partir daqui nunca chega lá. A primeira versão
+# desta conferência fazia exactamente isso e dizia que a API estava em baixo
+# quando estava boa. Um alarme que toca sempre ensina a ignorá-lo, e aí não
+# serve para nada no dia em que toca a sério.
+API_OK=0
 for _ in $(seq 1 30); do
-  if curl -fsS -m 5 http://localhost:3333/health >/dev/null 2>&1; then
+  if $COMPOSE exec -T api node -e "fetch('http://127.0.0.1:3333/health').then(r=>process.exit(r.ok?0:1)).catch(()=>process.exit(1))" >/dev/null 2>&1; then
+    API_OK=1
     ok "a API respondeu"
     break
   fi
   sleep 2
 done
-if ! curl -fsS -m 5 http://localhost:3333/health >/dev/null 2>&1; then
+if [ "$API_OK" -ne 1 ]; then
   echo ""
   echo "  ############################################################"
   echo "  ##  A API NÃO RESPONDE depois de subir.                   ##"
