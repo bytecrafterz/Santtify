@@ -6008,3 +6008,65 @@ button.linha-menu-capa {
   background: #3f3f46;
   font-size: 0.9rem;
 }
+
+/* ── A folha A4 sozinha, com as quatro opções ──────────────────────────
+   Fundo escuro de propósito: é o que os leitores de PDF fazem, e faz a folha
+   branca ler-se como uma folha em cima de uma mesa e não como o fundo da
+   página. */
+.vista-cartao {
+  min-height: 100dvh;
+  padding: 0 0 5.5rem;
+  background: #18181b;
+}
+
+.folha-do-cartao {
+  display: block;
+  width: 100%;
+  height: auto;
+  max-width: 640px;
+  margin: 0 auto;
+}
+
+.vista-cartao .nota-ok {
+  margin: 0.75rem 1rem;
+  text-align: center;
+  color: #fff;
+}
+
+/* As quatro opções fixas no fundo: no telemóvel a folha é alta, e um botão que
+   obriga a deslizar até ao fim para voltar não serve para nada. */
+.acoes-do-cartao {
+  position: fixed;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  background: #27272a;
+  border-top: 1px solid rgba(255, 255, 255, 0.12);
+  padding-bottom: env(safe-area-inset-bottom);
+}
+
+.acao-do-cartao {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 0.25rem;
+  padding: 0.7rem 0.2rem;
+  border: 0;
+  background: transparent;
+  color: #fff;
+  font-family: inherit;
+  font-size: 0.62rem;
+  font-weight: 800;
+  letter-spacing: 0.03em;
+  line-height: 1.2;
+  text-align: center;
+  text-decoration: none;
+  cursor: pointer;
+}
+
+.acao-do-cartao span {
+  font-size: 1.15rem;
+}

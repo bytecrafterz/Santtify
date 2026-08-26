@@ -1,6 +1,7 @@
 'use client'
 
 import { useState } from 'react'
+import Link from 'next/link'
 import { api } from '@/lib/api'
 import { rastrear } from '@/lib/track'
 import { IndicadoresDaPublicacao } from './IndicadoresDaPublicacao'
@@ -76,19 +77,22 @@ export function CartaoDeImpressao({
           // eslint-disable-next-line @next/next/no-img-element
           <img className="foto-publicacao folha-a4" src={folhaA4} alt={`Folha A4 da ${nome}`} />
         )}
+        {/*
+          Leva à página do cartão, e não ao PDF em bruto.
+
+          O PDF continua a ser o ficheiro certo para imprimir e para a gráfica,
+          mas abri-lo directamente no telemóvel é um beco: não há como voltar
+          sem fechar o separador nem como partilhar sem descarregar antes. Ele
+          pediu em 27/08 as quatro opções juntas, e é isso que essa página tem.
+        */}
         <div className="faixa-imprimir">
-          <a
+          <Link
             className="botao-imprimir"
-            href={api.cartaoPdfUrl(projectSlug, contentSlug)}
-            target="_blank"
-            rel="noopener noreferrer"
-            onClick={() => {
-              void contar('impressora')
-              definirAviso('Abrimos o cartão em folha A4. É só carregar em imprimir.')
-            }}
+            href={`/${projectSlug}/${contentSlug}/cartao`}
+            onClick={() => void contar('impressora')}
           >
             🖨 IMPRIMIR GRÁTIS
-          </a>
+          </Link>
           <a
             className="botao-imprimir secundario"
             href={api.cartaoPdfUrl(projectSlug, contentSlug, true)}
