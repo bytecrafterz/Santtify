@@ -1,13 +1,20 @@
 {
+  "id": "/",
   "name": "Jesus Alfabeto Saudável",
   "short_name": "Santtify",
   "description": "Aprenda o alfabeto com música, áudio e conteúdo educativo.",
   "start_url": "/",
+  "scope": "/",
   "display": "standalone",
   "orientation": "portrait",
   "background_color": "#000000",
   "theme_color": "#2563eb",
   "lang": "pt",
+  "dir": "ltr",
+  "categories": [
+    "education",
+    "kids"
+  ],
   "icons": [
     {
       "src": "/icone-192.png",
