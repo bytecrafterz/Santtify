@@ -105,6 +105,28 @@ exactamente como ele escreveu.
 guarda. É o mesmo ficheiro nos dois casos, e é isso que faz a impressão em casa
 bater certo com o que foi enviado ao designer.
 
+### 4. A qualidade original perdia-se antes de chegar ao papel
+
+Isto ele não pediu, e teria descoberto na gráfica. Todas as imagens enviadas
+eram reduzidas a 1200px de largura, que é a medida certa para o telemóvel e
+errada para a impressora: a arte dele chega com 4419px, e em A4 sairia a cerca
+de 100 dpi. Passa a ficar uma segunda cópia de 2480px, que é A4 a 300 dpi, lida
+só quando alguém pede o PDF. Escreve-se apenas quando há resolução a preservar,
+e quem pedir o PDF de uma imagem antiga continua a receber a de 1200px em vez de
+um erro.
+
+### 5. A publicação passou a provar o que publicou
+
+A meio disto, uma correcção de estilo não chegou ao ar: a construção correu, o
+contentor foi recriado, tudo respondeu, e o que ficou a servir era do build
+anterior. Nada na saída deu sinal, e só se apanhou por eu ter ido medir o botão
+no navegador. É a terceira vez este mês que a publicação engana a verificação.
+
+Cada imagem passa a trazer dentro dela o commit de onde saiu, e o `publicar.sh`
+compara no fim; se não bater, grita e diz o comando que resolve. O commit é lido
+do `.git` à mão, porque o script corre como root numa árvore de outro dono e o
+git, nesse caso, recusa-se a responder.
+
 ---
 
 ## Defeitos do mês que valem ser lembrados
@@ -143,7 +165,9 @@ certo com o nome que eu tinha escolhido.
 
 **Defeitos aqui passam no build e nos testes.** Quase tudo o que ele encontrou é
 visível apenas no ecrã ou na base de dados. Publicar, abrir num navegador a sério
-e medir o DOM não é excesso de zelo: é a única verificação que vale.
+e medir o DOM não é excesso de zelo: é a única verificação que vale. E publicar
+também não chega: é preciso confirmar que no ar está o que se acabou de publicar,
+porque três vezes este mês não estava.
 
 **O que é desenhado duas vezes diverge, e diverge onde ninguém olha.** Aconteceu
 três vezes — os quatro indicadores em três ficheiros, três desenhos de perfil,
