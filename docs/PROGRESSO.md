@@ -1,5 +1,10 @@
 # Progresso do projeto — 11/08/2026
 
+> **Este ficheiro parou a 11/08, quando ainda nada estava no ar.** O estado
+> actual está em [PROGRESSO-2026-08-26.md](PROGRESSO-2026-08-26.md) e é esse que
+> se deve ler primeiro. Este continua a valer como história de como se chegou
+> aqui, e pelos avisos do fim, que não caducaram.
+
 Registro do estado técnico e da relação com o cliente. Quem retomar este projeto
 deve ler este arquivo primeiro, depois [ARQUITETURA.md](ARQUITETURA.md) e
 [contexto/04-escopo-acordado.md](contexto/04-escopo-acordado.md).

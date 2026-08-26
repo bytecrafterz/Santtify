@@ -65,6 +65,25 @@ export const TAMANHO_MAXIMO_IMAGEM = 12 * 1024 * 1024
 const LARGURA_WEB = 1200
 
 /**
+ * A largura para papel: 2480px é uma folha A4 a 300 dpi.
+ *
+ * A redução para 1200px é certa para o telemóvel e errada para a impressora.
+ * A arte dele chega com 4419px de largura porque vem do ficheiro de impressão;
+ * guardada só a 1200px, sai em A4 a cerca de 100 dpi, e nota-se no papel. Fica
+ * uma segunda cópia, mais pesada, que só é lida quando alguém pede o PDF —
+ * quem abre a página continua a receber a de 1200px.
+ *
+ * Só se escreve quando há resolução a preservar. Uma fotografia de perfil de
+ * 800px não ganha nada em ser guardada duas vezes.
+ */
+const LARGURA_IMPRESSAO = 2480
+
+/** O nome da cópia para papel, a partir do nome da que vai para o ecrã. */
+export function nomeParaImpressao(nomeWeb: string): string {
+  return nomeWeb.replace(/\.[^.]+$/, '') + '-impressao.jpg'
+}
+
+/**
  * Cartão de compartilhamento: 1200x630, a proporção que WhatsApp, Facebook e
  * Instagram usam na prévia do link.
  *
@@ -227,6 +246,19 @@ export class StorageService {
   }
 
   /**
+   * O melhor que temos desta imagem para pôr em papel.
+   *
+   * Tenta primeiro a cópia de 2480px e cai na de 1200px quando ela não existe —
+   * e não existe em tudo o que foi enviado antes de 26/08, nem no que já veio
+   * pequeno de origem. Cair para trás é melhor do que recusar: uma folha um
+   * pouco mais macia imprime-se, um erro não.
+   */
+  async lerParaImpressao(url: string | null | undefined): Promise<Buffer | null> {
+    if (!url) return null
+    return (await this.lerPelaUrl(nomeParaImpressao(url))) ?? (await this.lerPelaUrl(url))
+  }
+
+  /**
    * Uma imagem numa página A4, para imprimir.
    *
    * A4 EM PONTOS e a imagem no tamanho original: o PDF guarda a imagem como
@@ -362,6 +394,16 @@ export class StorageService {
       .jpeg({ quality: 82, progressive: true, mozjpeg: true })
       .toBuffer()
     await writeFile(join(destino, nomeCartao), cartao)
+
+    // A cópia para papel, quando o que ele enviou tem mais do que o ecrã precisa.
+    if ((meta.width ?? 0) > LARGURA_WEB) {
+      const paraPapel = await entrada
+        .clone()
+        .resize({ width: LARGURA_IMPRESSAO, withoutEnlargement: true })
+        .jpeg({ quality: 92, mozjpeg: true })
+        .toBuffer()
+      await writeFile(join(destino, nomeParaImpressao(nomeWeb)), paraPapel)
+    }
 
     const original = arquivo.size
     this.logger.log(

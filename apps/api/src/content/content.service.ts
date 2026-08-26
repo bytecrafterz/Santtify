@@ -512,7 +512,7 @@ export class ContentService {
 
     const meta = (cartao.meta ?? {}) as Record<string, unknown>
     const endereco = (meta.folhaA4 as string | undefined) ?? cartao.imageAsset?.url ?? null
-    const original = await this.storage.lerPelaUrl(endereco)
+    const original = await this.storage.lerParaImpressao(endereco)
     if (!original) {
       throw new NotFoundException('O cartão ainda não tem a folha A4 nem a arte carregadas.')
     }

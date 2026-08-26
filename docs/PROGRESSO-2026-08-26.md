@@ -1,0 +1,181 @@
+# Progresso do projeto — 26/08/2026
+
+Este ficheiro continua [PROGRESSO.md](PROGRESSO.md), que ficou parado em 11/08,
+quando ainda nada estava no ar. Quem retomar o projeto deve ler **este primeiro**;
+o outro serve como história de como se chegou aqui.
+
+---
+
+## Situação em uma frase
+
+**A plataforma está no ar em `santtify.com`, o cliente usa-a todos os dias e o
+trabalho passou de construir para corrigir o que ele encontra.** O escopo
+contratado (USD 256) foi entregue a 10/08. Tudo o que veio depois — quinze dias e
+128 commits — foi correcção, acabamento e pedidos novos, ainda dentro do mesmo
+contrato.
+
+|                   |                                                        |
+| ----------------- | ------------------------------------------------------ |
+| Contrato          | USD 256 em custódia na Workana desde 10/08             |
+| Entrega do escopo | 10/08, sete dias antes do prazo                        |
+| Estado            | No ar, em uso real, com conteúdo dele                  |
+| Commits           | 145 (128 desde 11/08)                                  |
+| Migrations        | 24                                                     |
+| Servidor          | VPS na conta dele, Docker + Caddy, domínio autenticado |
+
+---
+
+## O que está no ar e funciona
+
+**A estrutura da página.** Perfil, introdução em cartões, Produto Vivo e as 26
+letras, tudo na mesma tela. Tocar numa letra abre-a por baixo da grade sem sair
+do sítio — regra dele desde 20/08.
+
+**O cartão como unidade indivisível.** Um cartão é uma linha na base de dados com
+imagem, áudio, título e descrição. Fica em rascunho até estar inteiro, e só então
+chega à página. Foi a correcção estrutural mais importante do mês: antes eram
+peças encostadas umas às outras, e por isso apareciam fotografias sozinhas no meio
+da página.
+
+**O painel do alfabeto.** Composição de 26 vagões, quatro quadrados por letra,
+editor por cartão. Publicar, tirar do ar, duplicar, ordenar, apagar.
+
+**Contas e sessão.** Registo com e-mail, reposição de senha por e-mail real
+(Brevo, domínio autenticado), sessão que sobrevive a fechar o telemóvel, perfil
+com foto e descrição. Quem já entrou nunca volta a ser convidado a entrar.
+
+**Social.** Gosto, comentário, partilha e visualizações, com os mesmos quatro
+indicadores em toda a plataforma, vindos de um único componente. Tocar no número
+mostra quem são as pessoas.
+
+**Métricas.** Registos, origem dos acessos por país, aberturas por letra e por
+cartão, tudo a partir do log de eventos que nunca se apaga.
+
+**PWA.** Instalável em Android e iPhone, com o passo a passo próprio de cada um,
+áudio que continua com o ecrã bloqueado e cache versionada que não prende a versão
+antiga no telemóvel.
+
+**Impressão.** Cada letra tem QR Code próprio, e o cartão de impressão sai numa
+folha A4, em PDF, feito no servidor.
+
+---
+
+## 26/08 — os três pontos do cartão de impressão
+
+Ele apontou três coisas, e as três estão feitas.
+
+### 1. O QR Code não aparecia onde ele precisava dele
+
+O QR era criado com a letra desde o início, mas vivia noutro ecrã. Ele escreveu:
+_"ele já deveria estar disponível aqui, pronto para eu baixar e enviar ao
+designer"_, e tinha razão — uma coisa criada automaticamente que ninguém encontra
+é o mesmo que não existir.
+
+Agora está dentro do cartão de impressão, em tamanho de conferir, com um botão
+para descarregar. O ficheiro é vectorial (SVG): a gráfica amplia-o para um cartaz
+sem que fique serrilhado, o que uma fotografia do ecrã nunca permitiria.
+
+### 2. TROCAR, TIRAR DO AR e DELETAR estavam atrás do mesmo gesto
+
+Passam a ser três botões da mesma largura, porque nenhum é o principal. DELETAR
+pergunta antes, porque não tem volta.
+
+**Ao ligar o segundo apareceu um defeito antigo:** tirar do ar era desfeito pelo
+gravar seguinte. O estado do cartão era recalculado a partir do que ele tem lá
+dentro, e um cartão tirado do ar continua completo — logo, voltava sozinho à
+página. Ninguém carregava em publicar e mesmo assim ele reaparecia. A decisão fica
+agora escrita no cartão (`meta.foraDoAr`) e só sai por um gesto contrário e
+explícito. A página pública também passou a respeitá-la; antes não olhava para o
+estado de todo, e o botão teria mentido.
+
+### 3. Imprimir mandava imprimir a página
+
+Foi por isso que lhe saiu o site inteiro, com o cartão cortado ao meio. O
+navegador imprime o que está no ecrã, e o que está no ecrã é uma página com
+cabeçalho, botões e comentários.
+
+A correcção não foi ajustar o estilo de impressão. Foi deixar de mandar imprimir
+uma página e passar a dar um ficheiro que já é o cartão: `GET
+/projects/:slug/contents/:contentSlug/cartao.pdf` compõe a folha A4 dele numa
+página de 595,28 × 841,89 pt, centrada e inteira, sem redução nenhuma pelo
+caminho. Um cartão, uma página A4, um PDF, com a qualidade do ficheiro original —
+exactamente como ele escreveu.
+
+`?baixar=1` muda só o cabeçalho: sem ele o navegador abre e imprime, com ele
+guarda. É o mesmo ficheiro nos dois casos, e é isso que faz a impressão em casa
+bater certo com o que foi enviado ao designer.
+
+---
+
+## Defeitos do mês que valem ser lembrados
+
+Estão todos corrigidos. Ficam aqui porque a forma como falharam repete-se.
+
+**Um cartão escrevia por cima do outro.** Faltava `key` no React, e o estado do
+formulário anterior sobrevivia à troca de cartão. O mais grave do mês: perdia
+trabalho dele sem dizer nada.
+
+**A API não compilou, o site compilou, e eu confirmei o site.** Durante uma hora
+dei por publicado o que estava a servir código velho. O build local passou por
+causa da cache incremental do TypeScript. Hoje o `publicar.sh` apaga `dist` antes
+de construir, falha alto, e confere a saúde da API de dentro do contentor.
+
+**A conferência que eu acabei de pôr dizia que a API estava em baixo estando boa.**
+Perguntava ao porto errado. Uma conferência errada é pior do que nenhuma.
+
+**A chave do e-mail existia no servidor e não existia dentro da API.**
+`--env-file` só interpola o ficheiro do compose; não entra no contentor sem estar
+em `environment:`. O mesmo tipo de silêncio apanhou o número de suporte, que o
+Dockerfile deitava fora por falta de `ARG`.
+
+**Os meus dados de teste deram dois alarmes falsos ao cliente.** Ele julgou que a
+irmã se tinha registado quatro vezes, e viu contas `@santtify.dev` na lista de
+quem gostou. As listas públicas passaram a filtrar contas removidas, e eu deixei
+de testar na base dele.
+
+**A elipse preta da barra, duas vezes.** À segunda medi o elemento no navegador em
+vez de adivinhar: 40×128, porque uma regra genérica de semanas antes também batia
+certo com o nome que eu tinha escolhido.
+
+---
+
+## As duas lições que mandam neste projeto
+
+**Defeitos aqui passam no build e nos testes.** Quase tudo o que ele encontrou é
+visível apenas no ecrã ou na base de dados. Publicar, abrir num navegador a sério
+e medir o DOM não é excesso de zelo: é a única verificação que vale.
+
+**O que é desenhado duas vezes diverge, e diverge onde ninguém olha.** Aconteceu
+três vezes — os quatro indicadores em três ficheiros, três desenhos de perfil,
+três caminhos de criar conteúdo dos quais só um fazia QR Code. A correcção nunca
+foi acertar a cópia. Foi apagá-la.
+
+---
+
+## Pendências
+
+| Item                                               | Bloqueado por     | Nota                                  |
+| -------------------------------------------------- | ----------------- | ------------------------------------- |
+| Link da Hotmart para o botão de PDF da barra       | Ele               | Espera desde 22/08                    |
+| Nome e foto obrigatórios no perfil                 | Nada; falta ligar | O aviso existe, ainda não impede      |
+| Canal de mensagem do responsável para o utilizador | Orçamento         | Pedido em 25/08                       |
+| Vídeo dentro dos blocos                            | Orçamento         | `BlockType.VIDEO` existe, tocador não |
+| Projectos em destaque, carrossel                   | Orçamento         | Faz parte de A                        |
+
+---
+
+## O que ele pediu a 26/08 e ainda não foi orçado
+
+**A — projectos genéricos.** Criar um projecto novo escolhendo a quantidade de
+blocos, em vez de 26 letras fixas. O `Project` já é entidade a sério, com marca,
+conteúdos e métricas próprias; o número 26 está preso em dois sítios apenas. O que
+não existe é o botão de criar projecto, e é aí que está o trabalho: formulário,
+escolha de quantidade, e o alfabeto deixar de mandar na grade.
+
+**B — cartões personalizados.** Cada pessoa gera o seu cartão com foto, áudio e
+texto próprios, e recebe um A4 de alta qualidade. O motor A4 acabado de construir
+serve de base, mas B tem partes que ainda não existem: composição da arte com os
+dados de cada pessoa, biblioteca de modelos, e — pelo carrinho de compras que
+aparece no desenho dele — um fluxo de compra que nunca foi descrito.
+
+Estas duas coisas são trabalho novo e estão fora do contrato de USD 256.
