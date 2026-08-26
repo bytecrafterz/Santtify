@@ -129,6 +129,46 @@ git, nesse caso, recusa-se a responder.
 
 ---
 
+## 27/08 - os treze pontos dele, e os onze que eram meus
+
+Ele listou treze pontos e condicionou a revisão final e o pagamento a todos.
+Dois eram escopo novo (o 13 é literalmente o A, o 5 é o canal de mensagens
+adiado desde 25/08) e ficaram de fora, dito com todas as letras. Os outros onze
+foram feitos e verificados no mesmo dia.
+
+**Os números estavam errados e a culpa era minha, de duas maneiras.**
+
+O contador de comentários lia uma tabela guardada, somada a cada comentário e
+subtraída a cada remoção. Estava em MENOS TRÊS na introdução e MENOS DOIS na
+Letra A. Um número negativo ao lado de um conteúdo não é um número errado, é um
+número que denuncia como foi obtido. Pior: eu já tinha corrigido a contagem em
+26/08, mas corrigi a que a lista usa enquanto o ecrã lia a outra. A regra passou
+a viver num só sítio, o `ContagensService`, e a tabela deixou de ser lida e
+escrita. As visualizações, presas em zero desde 18/08, voltaram com ela: 587 no
+projecto.
+
+Os cadastros diziam oito para sete pessoas. A oitava era uma conta de teste
+minha, desactivada no dia anterior: a consulta contava contas removidas. É a
+terceira vez que os meus dados de teste lhe dão um alarme falso.
+
+**O QR estava no sítio errado.** Pu-lo dentro do editor do cartão de impressão
+em 26/08, e as letras sem cartão criado não tinham por onde lá chegar. O QR
+pertence à letra. Passou para a tela dos quadrados, e sai também em PNG porque o
+WhatsApp não desenha SVG e era por lá que ele o queria enviar.
+
+**O resto:** o cartão ganhou página própria com Voltar, Baixar PDF, Imprimir e
+Compartilhar (abrir o PDF em bruto no telemóvel é um beco); o sinal azul de
+confirmado saiu dos perfis, porque nada era verificado; o convite a instalar e o
+aviso sobre nome e fotografia passaram a aparecer à entrada em vez de viverem em
+páginas que era preciso ir procurar; e o painel de métricas ganhou o quadro de
+interação com os quatro números que ele apresenta às empresas.
+
+Ao montar os dois avisos lado a lado ficaram um por cima do outro, com o de
+instalar a comer os toques do outro. Passaram a ter ordem: primeiro as regras,
+que são condição para participar, depois o convite, que é conveniência.
+
+---
+
 ## Defeitos do mês que valem ser lembrados
 
 Estão todos corrigidos. Ficam aqui porque a forma como falharam repete-se.
