@@ -3087,12 +3087,19 @@ button.letra-bloco {
   font-size: 0.88rem;
 }
 
+/* A CAIXA E O SEU TEXTO NUNCA SE SEPARAM.
+   A linha é flexível e deixava esta etiqueta encolher abaixo do seu conteúdo,
+   e então "Lembrar meu login" caía para debaixo do quadradinho, como se fossem
+   duas coisas sem relação. Se faltar espaço, quem muda de linha é o link de
+   recuperar a senha, que é uma coisa inteira e continua a ler-se. */
 .linha-lembrar .lembrar {
   display: flex;
   align-items: center;
   gap: 0.45rem;
   margin: 0;
   font-weight: 500;
+  flex: 0 0 auto;
+  white-space: nowrap;
 }
 
 .linha-lembrar .lembrar input {
