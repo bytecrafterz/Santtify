@@ -2192,9 +2192,14 @@ img.avatar {
 }
 
 .letra-bloco.trancada {
-  color: #b6bcca;
-  background: #eef0f5;
+  /* Cores do tema e não fixas. Com o cinzento claro escrito à mão, no modo
+     escuro do telemóvel as 24 casas trancadas ficavam brancas e as abertas
+     escuras: o contrário do que se espera, e foi assim que a Letra B lhe
+     pareceu "toda preta" no meio de quadrados claros. */
+  color: var(--cor-texto-suave);
+  background: var(--cor-fundo);
   border-style: dashed;
+  opacity: 0.75;
 }
 
 .letra-bloco .cadeado {

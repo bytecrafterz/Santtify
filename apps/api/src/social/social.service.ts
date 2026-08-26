@@ -593,13 +593,33 @@ export class SocialService {
     leitorId: string | null,
   ) {
     const escondidos = await this.bloqueadosPor(leitorId)
-    return this.prisma.comment.count({
-      where: {
-        ...onde,
-        status: 'PUBLISHED',
-        ...(escondidos.length ? { userId: { notIn: escondidos } } : {}),
-      },
-    })
+    const base = {
+      ...onde,
+      status: 'PUBLISHED' as const,
+      ...(escondidos.length ? { userId: { notIn: escondidos } } : {}),
+    }
+
+    /**
+     * CONTA SÓ O QUE PODE MESMO APARECER.
+     *
+     * Ele voltou a apanhar a diferença: o perfil dizia 13 e ao abrir havia 2.
+     * Da primeira vez eu alinhei o filtro de quem está bloqueado, e isso estava
+     * certo mas não era tudo.
+     *
+     * Faltava isto: uma resposta cujo comentário-pai foi apagado fica órfã. O
+     * pai já não se desenha, e uma resposta desenha-se DENTRO do pai — por isso
+     * ela não tem onde aparecer, nunca. Estavam cinco assim, e eram contadas.
+     *
+     * Contam-se agora os comentários de topo mais as respostas cujo pai ainda
+     * está publicado, que é exactamente o que a pessoa encontra ao abrir.
+     */
+    const [topo, respostas] = await Promise.all([
+      this.prisma.comment.count({ where: { ...base, parentId: null } }),
+      this.prisma.comment.count({
+        where: { ...base, parent: { is: { status: 'PUBLISHED' } } },
+      }),
+    ])
+    return topo + respostas
   }
 
   async listarComentariosDoPerfil(profileUserId: string, leitorId: string | null = null) {

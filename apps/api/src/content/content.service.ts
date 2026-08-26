@@ -71,6 +71,26 @@ export class ContentService {
         letra: true,
         status: true,
         stats: { select: { views: true, likes: true, comments: true, shares: true } },
+        /**
+         * A ARTE DO PRIMEIRO CARTÃO, para servir de capa quando a letra não
+         * tiver uma sua.
+         *
+         * A Letra A tinha capa e a B não, e na grade a B ficava um quadrado
+         * escuro com uma letra dentro, entre casas com arte. Ele descreveu-a
+         * como "toda preta" e pediu o certo: a primeira foto preenche a capa,
+         * automaticamente, em todas as letras.
+         *
+         * Faz sentido para além do aspecto. Ele já enviou aquela arte uma vez ao
+         * publicar o primeiro cartão; obrigá-lo a enviá-la outra vez como capa é
+         * trabalho a dobrar em 26 letras, e é trabalho que ele vai esquecer em
+         * metade delas.
+         */
+        blocks: {
+          where: { type: BlockType.AUDIO, imageAssetId: { not: null } },
+          orderBy: [{ slot: 'asc' }, { position: 'asc' }],
+          take: 1,
+          select: { imageAsset: { select: { url: true } } },
+        },
       },
     })
 
@@ -84,7 +104,7 @@ export class ContentService {
         letra: c.letra,
         publicado,
         subtitle: publicado ? c.subtitle : null,
-        coverUrl: publicado ? c.coverUrl : null,
+        coverUrl: publicado ? (c.coverUrl ?? c.blocks[0]?.imageAsset?.url ?? null) : null,
         stats: publicado ? c.stats : null,
       }
     })
