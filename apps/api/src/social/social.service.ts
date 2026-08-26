@@ -361,7 +361,8 @@ export class SocialService {
     return {
       visualizacoes: numeros.views,
       curtidas: numeros.likes,
-      comentarios: numeros.comments,
+      // O número sai da lista que segue junto, e não de uma contagem à parte.
+      comentarios: this.contagens.desenhaveis(lista),
       compartilhamentos: numeros.shares,
       curtidoPorMim: curtido,
       lista,
@@ -502,48 +503,46 @@ export class SocialService {
     })
     if (!pessoa || pessoa.status !== 'ACTIVE') throw new NotFoundException('Perfil não encontrado')
 
-    const [visualizacoes, curtidas, comentarios, compartilhamentos, curtido, lista] =
-      await Promise.all([
-        this.prisma.event.count({
-          where: {
-            type: EventType.PAGE_VIEW,
-            AND: [{ props: { path: ['perfilId'], equals: profileUserId } }],
-          },
-        }),
-        this.prisma.profileReaction.count({
-          where: { profileUserId, type: ReactionType.LIKE },
-        }),
-        this.contarComentarios({ profileUserId }, leitorId),
-        this.prisma.event.count({
-          where: {
-            type: EventType.CUSTOM,
-            AND: [
-              { props: { path: ['perfilId'], equals: profileUserId } },
-              { props: { path: ['acao'], equals: 'partilhar_perfil' } },
-            ],
-          },
-        }),
-        leitorId
-          ? this.prisma.profileReaction
-              .findUnique({
-                where: {
-                  profileUserId_userId_type: {
-                    profileUserId,
-                    userId: leitorId,
-                    type: ReactionType.LIKE,
-                  },
+    const [visualizacoes, curtidas, compartilhamentos, curtido, lista] = await Promise.all([
+      this.prisma.event.count({
+        where: {
+          type: EventType.PAGE_VIEW,
+          AND: [{ props: { path: ['perfilId'], equals: profileUserId } }],
+        },
+      }),
+      this.prisma.profileReaction.count({
+        where: { profileUserId, type: ReactionType.LIKE },
+      }),
+      this.prisma.event.count({
+        where: {
+          type: EventType.CUSTOM,
+          AND: [
+            { props: { path: ['perfilId'], equals: profileUserId } },
+            { props: { path: ['acao'], equals: 'partilhar_perfil' } },
+          ],
+        },
+      }),
+      leitorId
+        ? this.prisma.profileReaction
+            .findUnique({
+              where: {
+                profileUserId_userId_type: {
+                  profileUserId,
+                  userId: leitorId,
+                  type: ReactionType.LIKE,
                 },
-                select: { id: true },
-              })
-              .then(Boolean)
-          : Promise.resolve(false),
-        this.listarComentariosDoPerfil(profileUserId, leitorId),
-      ])
+              },
+              select: { id: true },
+            })
+            .then(Boolean)
+        : Promise.resolve(false),
+      this.listarComentariosDoPerfil(profileUserId, leitorId),
+    ])
 
     return {
       visualizacoes,
       curtidas,
-      comentarios,
+      comentarios: this.contagens.desenhaveis(lista),
       compartilhamentos,
       curtidoPorMim: curtido,
       lista,
@@ -592,28 +591,6 @@ export class SocialService {
       comentaram: comentaram.map((c) => c.user),
       visualizacoes,
     }
-  }
-
-  /**
-   * Quantos comentários é que a pessoa vai MESMO encontrar se abrir.
-   *
-   * O contador e a lista usavam filtros diferentes: o contador contava tudo o
-   * que estava publicado, a lista escondia quem o leitor tivesse bloqueado. Ele
-   * apanhou-o em 25/08 — "no meu aparece que existem 3, mas quando abro existem
-   * somente 2" — e tem toda a razão em dizer que isso é essencial. Um número
-   * que não corresponde ao que se encontra faz duvidar de todos os outros
-   * números da página.
-   *
-   * Passam os dois a fazer a mesma pergunta, com o mesmo filtro.
-   */
-  private async contarComentarios(
-    onde: { profileUserId?: string; blockId?: string; contentId?: string },
-    leitorId: string | null,
-  ) {
-    // A regra vive no ContagensService e é a mesma para o conteúdo, para a
-    // faixa e para o perfil. Aqui só se descobre quem é que este leitor
-    // bloqueou, porque isso depende de quem está a olhar.
-    return this.contagens.comentarios(onde, await this.bloqueadosPor(leitorId))
   }
 
   async listarComentariosDoPerfil(profileUserId: string, leitorId: string | null = null) {
@@ -803,39 +780,37 @@ export class SocialService {
   async estadoDaFaixa(blockId: string, userId: string | null) {
     await this.faixaExiste(blockId)
 
-    const [visualizacoes, curtidas, comentarios, compartilhamentos, curtido, lista] =
-      await Promise.all([
-        /**
-         * O OLHO CONTA ABERTURAS, e não reproduções.
-         *
-         * Contava MEDIA_PLAY — quantas vezes o áudio foi tocado. Isso não é uma
-         * visualização, é uma escuta, e o cliente esperava outra coisa: "se
-         * Explicação está com 24 visualizações e eu realmente abro aquele
-         * conteúdo, deve passar para 25".
-         *
-         * Tinha razão, e o número antigo era pior do que parecia: um cartão que
-         * ninguém tocasse ficava eternamente a zero mesmo tendo sido visto por
-         * cem pessoas.
-         */
-        this.contarEventoDaFaixa(blockId, EventType.CONTENT_VIEW),
-        this.prisma.blockReaction.count({ where: { blockId, type: ReactionType.LIKE } }),
-        this.contarComentarios({ blockId }, userId),
-        this.contarEventoDaFaixa(blockId, EventType.CUSTOM, 'partilhar_faixa'),
-        userId
-          ? this.prisma.blockReaction
-              .findUnique({
-                where: { blockId_userId_type: { blockId, userId, type: ReactionType.LIKE } },
-                select: { id: true },
-              })
-              .then(Boolean)
-          : Promise.resolve(false),
-        this.listarComentariosDaFaixa(blockId, userId),
-      ])
+    const [visualizacoes, curtidas, compartilhamentos, curtido, lista] = await Promise.all([
+      /**
+       * O OLHO CONTA ABERTURAS, e não reproduções.
+       *
+       * Contava MEDIA_PLAY — quantas vezes o áudio foi tocado. Isso não é uma
+       * visualização, é uma escuta, e o cliente esperava outra coisa: "se
+       * Explicação está com 24 visualizações e eu realmente abro aquele
+       * conteúdo, deve passar para 25".
+       *
+       * Tinha razão, e o número antigo era pior do que parecia: um cartão que
+       * ninguém tocasse ficava eternamente a zero mesmo tendo sido visto por
+       * cem pessoas.
+       */
+      this.contarEventoDaFaixa(blockId, EventType.CONTENT_VIEW),
+      this.prisma.blockReaction.count({ where: { blockId, type: ReactionType.LIKE } }),
+      this.contarEventoDaFaixa(blockId, EventType.CUSTOM, 'partilhar_faixa'),
+      userId
+        ? this.prisma.blockReaction
+            .findUnique({
+              where: { blockId_userId_type: { blockId, userId, type: ReactionType.LIKE } },
+              select: { id: true },
+            })
+            .then(Boolean)
+        : Promise.resolve(false),
+      this.listarComentariosDaFaixa(blockId, userId),
+    ])
 
     return {
       visualizacoes,
       curtidas,
-      comentarios,
+      comentarios: this.contagens.desenhaveis(lista),
       compartilhamentos,
       curtidoPorMim: curtido,
       lista,

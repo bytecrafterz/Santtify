@@ -101,7 +101,26 @@ export class ProfileService {
     const [comentarios, curtidas, compartilhamentos, conteudosVistos] = await Promise.all([
       this.prisma.comment.count({ where: { userId, status: 'PUBLISHED' } }),
       this.prisma.reaction.count({ where: { userId } }),
-      this.prisma.share.count({ where: { userId } }),
+      /**
+       * Partilhas com a mesma definição do resto da plataforma.
+       *
+       * Contava só as linhas de `Share`, que nascem do fluxo antigo do link
+       * rastreado, e por isso dizia 2 a quem tinha partilhado dezenas de vezes.
+       * Partilhar uma faixa ou um perfil grava um evento, e ficava de fora. É o
+       * mesmo defeito que o painel de métricas tinha.
+       */
+      Promise.all([
+        this.prisma.share.count({ where: { userId } }),
+        this.prisma.event.count({
+          where: {
+            ...this.eventosDaPessoa(userId),
+            type: EventType.CUSTOM,
+            OR: ['partilhar_conteudo', 'partilhar_faixa', 'partilhar_perfil'].map((acao) => ({
+              props: { path: ['acao'], equals: acao },
+            })),
+          },
+        }),
+      ]).then(([linhas, eventos]) => linhas + eventos),
       this.prisma.event
         .findMany({
           where: {

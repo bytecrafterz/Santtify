@@ -1,6 +1,7 @@
 'use client'
 
 import { useEffect, useState } from 'react'
+import Link from 'next/link'
 import { social, type PessoaQueInteragiu } from '@/lib/social'
 import { abreviar } from '@/lib/numeros'
 
@@ -19,9 +20,11 @@ import { abreviar } from '@/lib/numeros'
  */
 export function PainelDePessoas({
   userId,
+  projectSlug,
   aoFechar,
 }: {
   userId: string
+  projectSlug: string
   aoFechar: () => void
 }) {
   const [aba, definirAba] = useState<'curtidas' | 'comentarios'>('curtidas')
@@ -33,12 +36,17 @@ export function PainelDePessoas({
   } | null>(null)
 
   useEffect(() => {
-    void social.quemInteragiu(userId).then(definirDados).catch(() => definirDados(null))
+    void social
+      .quemInteragiu(userId)
+      .then(definirDados)
+      .catch(() => definirDados(null))
   }, [userId])
 
   const lista = (aba === 'curtidas' ? dados?.curtiram : dados?.comentaram) ?? []
   const filtrada = busca
-    ? lista.filter((p) => p.displayName.toLocaleLowerCase('pt').includes(busca.toLocaleLowerCase('pt')))
+    ? lista.filter((p) =>
+        p.displayName.toLocaleLowerCase('pt').includes(busca.toLocaleLowerCase('pt')),
+      )
     : lista
 
   return (
@@ -80,17 +88,31 @@ export function PainelDePessoas({
         )}
 
         <ul className="lista-pessoas">
+          {/*
+            O nome e a cara abrem o perfil, como já abriam nos comentários.
+
+            Aqui não abriam nada, e ele apanhou a diferença em 26/08: "nos
+            comentários isso já funciona". Uma lista de pessoas em que tocar no
+            nome não faz nada ensina que não há nada para ver, e o perfil das
+            outras pessoas é justamente o que ele quer que se visite.
+          */}
           {filtrada.map((p) => (
             <li key={p.id}>
-              {p.avatarUrl ? (
-                // eslint-disable-next-line @next/next/no-img-element
-                <img className="avatar-comentario" src={p.avatarUrl} alt={p.displayName} />
-              ) : (
-                <span className="avatar-comentario vazio" aria-hidden>
-                  {p.displayName.charAt(0).toUpperCase()}
-                </span>
-              )}
-              <strong>{p.displayName}</strong>
+              <Link
+                className="pessoa-da-lista"
+                href={`/${projectSlug}/pessoa/${p.id}`}
+                onClick={aoFechar}
+              >
+                {p.avatarUrl ? (
+                  // eslint-disable-next-line @next/next/no-img-element
+                  <img className="avatar-comentario" src={p.avatarUrl} alt={p.displayName} />
+                ) : (
+                  <span className="avatar-comentario vazio" aria-hidden>
+                    {p.displayName.charAt(0).toUpperCase()}
+                  </span>
+                )}
+                <strong>{p.displayName}</strong>
+              </Link>
             </li>
           ))}
           {dados && filtrada.length === 0 && (
@@ -103,9 +125,9 @@ export function PainelDePessoas({
 
         {dados && (
           <p className="nota rodape-pessoas">
-            {abreviar(dados.visualizacoes)}{' '}
-            {dados.visualizacoes === 1 ? 'visita' : 'visitas'} ao perfil. As visitas são contadas
-            sem identificar quem as fez, como diz a política de privacidade.
+            {abreviar(dados.visualizacoes)} {dados.visualizacoes === 1 ? 'visita' : 'visitas'} ao
+            perfil. As visitas são contadas sem identificar quem as fez, como diz a política de
+            privacidade.
           </p>
         )}
       </div>

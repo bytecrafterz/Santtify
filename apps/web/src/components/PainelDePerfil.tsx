@@ -29,10 +29,15 @@ export function PainelDePerfil({ projectSlug }: { projectSlug: string }) {
   useEffect(() => {
     if (carregando) return
     if (!usuario) {
-      router.replace(`/${projectSlug}/entrar?voltar=` + encodeURIComponent(window.location.pathname))
+      router.replace(
+        `/${projectSlug}/entrar?voltar=` + encodeURIComponent(window.location.pathname),
+      )
       return
     }
-    void auth.perfil().then(definirPerfil).catch(() => definirPerfil(null))
+    void auth
+      .perfil()
+      .then(definirPerfil)
+      .catch(() => definirPerfil(null))
   }, [usuario, carregando, router, projectSlug])
 
   if (carregando || !usuario) {
@@ -72,10 +77,24 @@ export function PainelDePerfil({ projectSlug }: { projectSlug: string }) {
 
       {perfil && (
         <div className="numeros">
-          <Numero valor={perfil.estatisticas.conteudosVistos} rotulo="Conteúdos vistos" />
-          <Numero valor={perfil.estatisticas.curtidas} rotulo="Curtidas" />
-          <Numero valor={perfil.estatisticas.comentarios} rotulo="Comentários" />
-          <Numero valor={perfil.estatisticas.compartilhamentos} rotulo="Compartilhamentos" />
+          {/*
+            OS RÓTULOS DIZEM DE QUEM É O NÚMERO.
+
+            Diziam "Conteúdos vistos", "Curtidas", "Comentários" e
+            "Compartilhamentos", exactamente os mesmos nomes que estão no
+            cabeçalho do perfil logo por cima, onde significam outra coisa: lá
+            são as curtidas QUE O PERFIL RECEBEU, aqui são as que a pessoa DEU.
+            Ele comparou os dois em 26/08 e viu 11 num sítio e 8 noutro, e tinha
+            razão em desconfiar dos dois. O número estava certo; o nome é que
+            não dizia de quem era.
+          */}
+          <Numero valor={perfil.estatisticas.conteudosVistos} rotulo="Conteúdos que você abriu" />
+          <Numero valor={perfil.estatisticas.curtidas} rotulo="Curtidas que você deu" />
+          <Numero valor={perfil.estatisticas.comentarios} rotulo="Comentários que você escreveu" />
+          <Numero
+            valor={perfil.estatisticas.compartilhamentos}
+            rotulo="Vezes que você compartilhou"
+          />
         </div>
       )}
 

@@ -2,7 +2,6 @@
 
 import { useState } from 'react'
 import Link from 'next/link'
-import { api } from '@/lib/api'
 import { rastrear } from '@/lib/track'
 import { IndicadoresDaPublicacao } from './IndicadoresDaPublicacao'
 
@@ -55,11 +54,6 @@ export function CartaoDeImpressao({
   const [aviso, definirAviso] = useState<string | null>(null)
   const nome = letra ? `Letra ${letra}` : titulo
 
-  /** O ficheiro chega ao telemóvel com um nome que se percebe na pasta das transferências. */
-  function nomeDoFicheiro() {
-    return letra ? `letra-${letra.toLowerCase()}` : contentSlug
-  }
-
   async function contar(via: string) {
     try {
       await rastrear({ projectId, contentId, type: 'CUSTOM', props: { acao: 'imprimir', via } })
@@ -93,17 +87,24 @@ export function CartaoDeImpressao({
           >
             🖨 IMPRIMIR GRÁTIS
           </Link>
-          <a
+          {/*
+            OS DOIS BOTÕES LEVAM AO MESMO SÍTIO, E É DE PROPÓSITO.
+
+            Este apontava direto ao ficheiro PDF. Quem carregava nele caía num
+            leitor de PDF em ecrã inteiro, sem voltar, sem partilhar e sem nada:
+            "abre uma tela e fico praticamente preso nela", em 26/08. Eu tinha
+            mudado o de imprimir e esquecido este, que é o que ele usou.
+
+            A página do cartão é que tem as quatro saídas. Baixar é uma delas, e
+            está lá dentro.
+          */}
+          <Link
             className="botao-imprimir secundario"
-            href={api.cartaoPdfUrl(projectSlug, contentSlug, true)}
-            download={`cartao-${nomeDoFicheiro()}.pdf`}
-            onClick={() => {
-              void contar('download')
-              definirAviso('Cartão guardado em PDF.')
-            }}
+            href={`/${projectSlug}/${contentSlug}/cartao`}
+            onClick={() => void contar('download')}
           >
             ⬇ BAIXAR EM PDF
-          </a>
+          </Link>
         </div>
       </div>
 

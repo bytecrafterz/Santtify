@@ -404,7 +404,11 @@ export function CabecalhoDePerfil({
       )}
 
       {pessoasAbertas && dono && (
-        <PainelDePessoas userId={dono.id} aoFechar={() => definirPessoasAbertas(false)} />
+        <PainelDePessoas
+          userId={dono.id}
+          projectSlug={projectSlug}
+          aoFechar={() => definirPessoasAbertas(false)}
+        />
       )}
 
       {comentariosAbertos && (

@@ -124,7 +124,7 @@ export class AnalyticsService {
       this.prisma.event.count({ where: { projectId, type: 'CONTENT_VIEW' } }),
       this.prisma.reaction.count({ where: { projectId, user: { is: { status: 'ACTIVE' } } } }),
       this.contagens.comentariosDoProjecto(projectId),
-      this.prisma.share.count({ where: { shortLink: { projectId } } }),
+      this.contagens.partilhasDoProjecto(projectId),
       this.prisma.event.count({ where: { projectId, type: 'SHARE_LINK_CLICKED' } }),
       // O PV é contado somando TODAS as letras: é um só Produto Vivo,
       // apresentado em vinte e seis lugares. Por isso não há filtro de

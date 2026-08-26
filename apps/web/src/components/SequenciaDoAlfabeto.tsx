@@ -21,7 +21,15 @@ import { QrDaLetra } from './QrDaLetra'
  * servidor e a pessoa perdia o sítio onde estava a meio de preencher 26 letras.
  */
 type Onde =
-  | { tela: 'sequencia' }
+  /**
+   * A sequência lembra-se de onde ele estava.
+   *
+   * "Estou trabalhando na letra R, entro para editar e depois volto. O sistema
+   * me joga novamente para a letra A." Ele tem razão e isto não é conforto: são
+   * 26 letras, quatro cartões cada, e voltar ao topo a cada gravação é descer a
+   * lista dezenas de vezes num dia de trabalho.
+   */
+  | { tela: 'sequencia'; letra?: string }
   | { tela: 'quadrados'; letra: string }
   | { tela: 'cartao'; letra: string; cartaoId: string }
 
@@ -37,7 +45,24 @@ export function SequenciaDoAlfabeto({ projectSlug }: { projectSlug: string }) {
   const [carregando, definirCarregando] = useState(true)
   const [erro, definirErro] = useState<string | null>(null)
   const [menuAberto, definirMenuAberto] = useState<string | null>(null)
+  const [aCriarImpressao, definirACriarImpressao] = useState(false)
   const { usuario, carregando: aRestaurarSessao } = useAuth()
+
+  /**
+   * Voltar de uma letra devolve a lista NAQUELA letra, e não no princípio.
+   *
+   * `block: 'center'` e não 'start': encostar a letra ao topo esconde-a por
+   * baixo do cabeçalho fixo, e ele ficava a olhar para a letra seguinte
+   * convencido de que o sítio se tinha perdido na mesma.
+   *
+   * Sem animação de propósito. Ver a lista a correr sozinha do A até ao R faz
+   * parecer que a página se enganou e se corrigiu; aparecer já no sítio certo é
+   * o que se espera de voltar.
+   */
+  useEffect(() => {
+    if (onde.tela !== 'sequencia' || !onde.letra) return
+    document.getElementById(`vagao-${onde.letra}`)?.scrollIntoView({ block: 'center' })
+  }, [onde])
   /** A ordem enquanto ele mexe, antes de gravar. Nula = a do servidor. */
   const [ordem, definirOrdem] = useState<string[] | null>(null)
   const [aGravarOrdem, definirAGravarOrdem] = useState(false)
@@ -157,7 +182,7 @@ export function SequenciaDoAlfabeto({ projectSlug }: { projectSlug: string }) {
           <button
             type="button"
             className="voltar-sequencia"
-            onClick={() => definirOnde({ tela: 'sequencia' })}
+            onClick={() => definirOnde({ tela: 'sequencia', letra: vagao.letra })}
           >
             ← Alfabeto
           </button>
@@ -269,13 +294,46 @@ export function SequenciaDoAlfabeto({ projectSlug }: { projectSlug: string }) {
               </span>
             </button>
           ) : (
-            <div className="quadrado-impressao vazio">
+            /*
+              UM BOTÃO, E NÃO UM AVISO A DIZER ONDE FICA O BOTÃO.
+
+              Isto era um texto morto: "Criado a partir do quarto quadrado". O
+              caminho existia mesmo, dentro do menu de três pontinhos do quarto
+              quadrado, e ninguém o encontrava. Ele foi à Letra C em 26/08 e
+              escreveu que não havia "um caminho claro para colocar o cartão de
+              impressão e gerar o PDF". Tinha razão: havia um letreiro a apontar
+              para uma porta escondida.
+            */
+            <button
+              type="button"
+              className="quadrado-impressao criar"
+              disabled={!vagao.contentId || aCriarImpressao}
+              onClick={async () => {
+                if (!vagao.contentId) return
+                definirACriarImpressao(true)
+                try {
+                  const novo = await admin.criarCartaoDeImpressao(vagao.contentId)
+                  await recarregar()
+                  // Abre já o editor: criar e ficar no mesmo sítio seria pedir-lhe
+                  // que descobrisse o passo seguinte sozinho outra vez.
+                  definirOnde({ tela: 'cartao', letra: vagao.letra, cartaoId: novo.id })
+                } finally {
+                  definirACriarImpressao(false)
+                }
+              }}
+            >
               <span className="icone" aria-hidden>
                 🖨
               </span>
-              <span className="nome">CARTÃO PARA IMPRESSÃO</span>
-              <span className="estado">Criado a partir do quarto quadrado</span>
-            </div>
+              <span className="nome">CRIAR CARTÃO PARA IMPRESSÃO</span>
+              <span className="estado">
+                {!vagao.contentId
+                  ? 'A letra precisa de ter conteúdo primeiro'
+                  : aCriarImpressao
+                    ? 'A criar...'
+                    : 'Arte, folha A4 e PDF para a gráfica'}
+              </span>
+            </button>
           )}
         </div>
       </>
@@ -304,7 +362,7 @@ export function SequenciaDoAlfabeto({ projectSlug }: { projectSlug: string }) {
             dois vagões quando um deles ainda está vazio. */}
         <ol className="composicao">
           {vagoes.map((v) => (
-            <li key={v.letra} className="vagao">
+            <li key={v.letra} id={`vagao-${v.letra}`} className="vagao">
               <button
                 type="button"
                 className="cabeca-vagao"

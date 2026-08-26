@@ -64,6 +64,47 @@ export class ContagensService {
   }
 
   /**
+   * Quantos comentários é que a TELA vai conseguir desenhar desta lista.
+   *
+   * ESTE É O ÚNICO NÚMERO QUE PODE APARECER AO LADO DE UMA PUBLICAÇÃO.
+   *
+   * Contar na base de dados e desenhar no ecrã são duas perguntas diferentes, e
+   * enquanto foram duas perguntas deram respostas diferentes. Em 26/08 o perfil
+   * dele dizia 8 e ao abrir apareciam 2: os outros seis eram respostas cujo
+   * comentário-pai não vinha na lista, e uma resposta desenha-se DENTRO do pai.
+   * Sem pai, não há onde a pôr.
+   *
+   * Eu já tinha dito que estava corrigido, e tinha comparado o contador com a
+   * lista que o servidor manda em vez de com o que a página desenha. Bateu, e
+   * estava errado à mesma. A régua é a tela.
+   *
+   * Por isso este número não faz consulta nenhuma: recebe a MESMA lista que vai
+   * ser enviada e conta o que dela é desenhável, com o mesmo percurso que o
+   * PainelDeComentarios faz. Divergirem deixa de ser possível, porque passam a
+   * ser a mesma coisa contada uma vez.
+   */
+  desenhaveis(lista: Array<{ id: string; parentId?: string | null }>): number {
+    const porId = new Map(lista.map((c) => [c.id, c]))
+
+    /** Sobe pelos pais que existem na lista até um comentário de topo. */
+    const temRaizVisivel = (c: { id: string; parentId?: string | null }) => {
+      let actual = c
+      const vistos = new Set<string>()
+      while (actual.parentId) {
+        // Dados em ciclo não podem pendurar isto, como não penduram a tela.
+        if (vistos.has(actual.id)) return false
+        vistos.add(actual.id)
+        const pai = porId.get(actual.parentId)
+        if (!pai) return false
+        actual = pai
+      }
+      return true
+    }
+
+    return lista.filter(temRaizVisivel).length
+  }
+
+  /**
    * Comentários de um projecto inteiro, para o painel de métricas.
    *
    * Mesma regra do resto, mais o filtro de contas removidas: o número que ele
@@ -83,13 +124,55 @@ export class ContagensService {
     return topo + respostas
   }
 
+  /**
+   * As três formas de partilhar que existem, somadas uma vez só.
+   *
+   * O painel dizia DUAS partilhas num projecto onde tinham sido feitas 55, e ele
+   * apanhou-o em 26/08 porque tinha partilhado mais de dez vezes só ele. A conta
+   * antiga olhava apenas para as linhas de `Share`, que nascem do fluxo antigo
+   * do link rastreado. Partilhar uma faixa ou um perfil, que é o que se faz hoje
+   * na plataforma, grava um evento e não uma linha, e ficava de fora.
+   *
+   * Nenhuma partilha grava as duas coisas, por isso somar não conta ninguém
+   * duas vezes. Todas contam só depois da acção concluída: cancelar a folha de
+   * partilha do telemóvel não conta, que é regra dele desde 20/08.
+   */
+  private get accoesDePartilha() {
+    return ['partilhar_conteudo', 'partilhar_faixa', 'partilhar_perfil']
+  }
+
+  async partilhasDoProjecto(projectId: string) {
+    const [linhas, eventos] = await Promise.all([
+      this.prisma.share.count({ where: { shortLink: { is: { projectId } } } }),
+      this.prisma.event.count({
+        where: {
+          projectId,
+          type: EventType.CUSTOM,
+          OR: this.accoesDePartilha.map((acao) => ({
+            props: { path: ['acao'], equals: acao },
+          })),
+        },
+      }),
+    ])
+    return linhas + eventos
+  }
+
   /** Os quatro números de um conteúdo, contados agora. */
   async deConteudo(contentId: string, escondidos: string[] = []): Promise<Contagens> {
     const [views, likes, comments, shares] = await Promise.all([
       this.prisma.event.count({ where: { contentId, type: EventType.CONTENT_VIEW } }),
       this.prisma.reaction.count({ where: { contentId, type: ReactionType.LIKE } }),
       this.comentarios({ contentId }, escondidos),
-      this.prisma.share.count({ where: { shortLink: { is: { contentId } } } }),
+      Promise.all([
+        this.prisma.share.count({ where: { shortLink: { is: { contentId } } } }),
+        this.prisma.event.count({
+          where: {
+            contentId,
+            type: EventType.CUSTOM,
+            props: { path: ['acao'], equals: 'partilhar_conteudo' },
+          },
+        }),
+      ]).then(([linhas, eventos]) => linhas + eventos),
     ])
     return { views, likes, comments, shares }
   }

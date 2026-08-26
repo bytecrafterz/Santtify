@@ -6070,3 +6070,26 @@ button.linha-menu-capa {
 .acao-do-cartao span {
   font-size: 1.15rem;
 }
+
+/* A pessoa inteira é o alvo do toque, e não só o nome: no telemóvel um alvo
+   pequeno ao lado de uma fotografia grande erra-se metade das vezes. */
+.pessoa-da-lista {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  width: 100%;
+  color: inherit;
+  text-decoration: none;
+}
+
+/* O quadrado de criar o cartão de impressão é um botão a sério, e não o
+   letreiro apagado que estava aqui a apontar para um menu escondido. */
+.quadrado-impressao.criar {
+  border-style: dashed;
+  cursor: pointer;
+}
+
+.quadrado-impressao.criar:disabled {
+  opacity: 0.55;
+  cursor: not-allowed;
+}
