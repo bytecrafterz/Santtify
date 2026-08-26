@@ -629,6 +629,11 @@ export class SocialService {
         profileUserId,
         status: 'PUBLISHED',
         ...(escondidos.length ? { userId: { notIn: escondidos } } : {}),
+        // A LISTA DEVOLVE O MESMO QUE O CONTADOR CONTA.
+        // Uma resposta cujo pai foi apagado não tem onde ser desenhada — as
+        // respostas vivem dentro do pai — e vinha na lista para ser deitada
+        // fora pelo ecrã. Sair daqui é mais honesto do que sair lá à frente.
+        OR: [{ parentId: null }, { parent: { is: { status: 'PUBLISHED' } } }],
       },
       orderBy: { createdAt: 'desc' },
       take: 50,
@@ -875,6 +880,8 @@ export class SocialService {
         blockId,
         status: 'PUBLISHED',
         ...(escondidos.length ? { userId: { notIn: escondidos } } : {}),
+        // Mesma regra do perfil: uma resposta órfã não tem onde ser desenhada.
+        OR: [{ parentId: null }, { parent: { is: { status: 'PUBLISHED' } } }],
       },
       orderBy: { createdAt: 'desc' },
       take: 50,
