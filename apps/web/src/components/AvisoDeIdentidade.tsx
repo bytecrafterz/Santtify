@@ -22,7 +22,14 @@ import { useAuth } from './ProvedorDeAuth'
  */
 const CHAVE = 'pv_aviso_identidade'
 
-export function AvisoDeIdentidade({ projectSlug }: { projectSlug: string }) {
+export function AvisoDeIdentidade({
+  projectSlug,
+  aoMudar,
+}: {
+  projectSlug: string
+  /** Avisa quem está por fora se este aviso está à vista, para não se taparem. */
+  aoMudar?: (visivel: boolean) => void
+}) {
   const { usuario, carregando } = useAuth()
   const [mostrar, definirMostrar] = useState(false)
 

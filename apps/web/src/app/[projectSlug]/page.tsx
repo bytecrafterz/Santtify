@@ -2,8 +2,7 @@ import { notFound } from 'next/navigation'
 import { api } from '@/lib/api'
 import { RastreadorDeVisita } from '@/components/RastreadorDeVisita'
 import { BannerDeConsentimento } from '@/components/BannerDeConsentimento'
-import { AvisoDeIdentidade } from '@/components/AvisoDeIdentidade'
-import { FolhaDeInstalacao } from '@/components/FolhaDeInstalacao'
+import { AvisosDeEntrada } from '@/components/AvisosDeEntrada'
 import { CabecalhoDePerfil } from '@/components/CabecalhoDePerfil'
 import { IntroducaoEmCartoes } from '@/components/IntroducaoEmCartoes'
 import { ExperienciaContinua } from '@/components/ExperienciaContinua'
@@ -163,15 +162,14 @@ export default async function IndiceDoProjeto({
         não tem fotografia, e uma vez só.
       */}
       {/*
-        E o convite a instalar o ícone, à entrada.
+        O convite a instalar e o aviso sobre nome e fotografia, por esta ordem.
 
-        Vivia só na página /instalar, que é preciso ir procurar, e por isso ele
-        disse em 27/08 que ninguém a vê. A folha decide-se sozinha: não aparece
-        a quem já tem a aplicação instalada, nem a quem já a afastou nesta
-        visita.
+        Viviam os dois em páginas que era preciso ir procurar, e por isso ele
+        disse em 27/08 que ninguém os vê. Passam a aparecer onde a pessoa cai
+        depois de se registar. Quem os mostra decide a ordem, para que não se
+        tapem um ao outro.
       */}
-      <FolhaDeInstalacao />
-      <AvisoDeIdentidade projectSlug={projectSlug} />
+      <AvisosDeEntrada projectSlug={projectSlug} />
       <BannerDeConsentimento projectId={project.id} />
       <BarraInferior projectSlug={projectSlug} linkPdf={project.checkoutUrl ?? null} />
     </main>
