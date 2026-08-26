@@ -42,7 +42,8 @@ export function AvisoDeIdentidade({
       // Sem onde guardar, volta a aparecer. É o pior caso e é aceitável.
     }
     definirMostrar(true)
-  }, [usuario, carregando])
+    aoMudar?.(true)
+  }, [usuario, carregando, aoMudar])
 
   if (!mostrar) return null
 
@@ -53,6 +54,7 @@ export function AvisoDeIdentidade({
       /* nada a fazer */
     }
     definirMostrar(false)
+    aoMudar?.(false)
   }
 
   return (
