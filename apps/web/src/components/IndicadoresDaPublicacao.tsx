@@ -172,7 +172,31 @@ export function IndicadoresDaPublicacao({
       definirConvite('Para partilhar, crie a sua conta grátis')
       return
     }
-    const url = `${window.location.origin}${ligacao}`
+    /**
+     * O QUE SE PARTILHA É UM LINK IDENTIFICÁVEL, E NÃO O ENDEREÇO DA PÁGINA.
+     *
+     * Partilhava-se o endereço tal e qual. Quem o abria voltava sem nada que o
+     * distinguisse de alguém que tivesse escrito o endereço à mão, e por isso o
+     * painel dizia 244 acessos directos num projecto que cresce por partilha.
+     * Ele apanhou-o em 26/08: "praticamente todos os acessos que eu provoquei
+     * vieram de links compartilhados", e a plataforma não tinha como saber.
+     *
+     * O link curto já existia e ninguém o usava aqui. Ele grava de onde veio a
+     * visita e conta a partilha de uma vez só, que é também o número que estava
+     * a dizer 2 quando deviam ser dezenas.
+     *
+     * Se a criação do link falhar, parte-se o endereço simples: ficar sem
+     * partilhar por causa da contagem seria trocar o principal pelo acessório.
+     */
+    let url = `${window.location.origin}${ligacao}`
+    if (alvo.tipo === 'conteudo') {
+      try {
+        const curto = await social.compartilhar(alvo.contentId, projectId, 'WHATSAPP')
+        url = curto.url
+      } catch {
+        // fica o endereço simples
+      }
+    }
     try {
       // Contar ANTES de partilhar contava também quem desistia. Cancelar
       // rejeita a promessa, e cancelar não é partilhar.
@@ -185,16 +209,23 @@ export function IndicadoresDaPublicacao({
       return
     }
     try {
-      await rastrear({
-        projectId,
-        ...(alvo.tipo === 'conteudo' ? { contentId: alvo.contentId } : {}),
-        ...(alvo.tipo === 'faixa' ? { blockId: alvo.blockId } : {}),
-        type: 'CUSTOM',
-        props:
-          alvo.tipo === 'perfil'
-            ? { acao: 'partilhar_perfil', perfilId: alvo.userId }
-            : { acao: alvo.tipo === 'faixa' ? 'partilhar_faixa' : 'partilhar_conteudo' },
-      })
+      /*
+        O conteúdo já ficou contado ao gerar o link curto, no servidor.
+        Registá-lo outra vez aqui contaria a mesma partilha duas vezes, e um
+        número inflacionado é tão inútil para uma apresentação como um a menos.
+        A faixa e o perfil ainda não têm link próprio e continuam por evento.
+      */
+      if (alvo.tipo !== 'conteudo') {
+        await rastrear({
+          projectId,
+          ...(alvo.tipo === 'faixa' ? { blockId: alvo.blockId } : {}),
+          type: 'CUSTOM',
+          props:
+            alvo.tipo === 'perfil'
+              ? { acao: 'partilhar_perfil', perfilId: alvo.userId }
+              : { acao: 'partilhar_faixa' },
+        })
+      }
       definirEstado((e) => ({ ...e, compartilhamentos: e.compartilhamentos + 1 }))
     } catch {
       // Falhar a contar não desfaz a partilha.
