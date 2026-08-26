@@ -1013,7 +1013,12 @@ export class AdminContentService {
             categoriaNome: b.category?.name ?? null,
             folhaA4: ((b.meta ?? {}) as Record<string, unknown>).folhaA4 ?? null,
           })),
-          prontos: (c?.blocks ?? []).filter((b) => b.estado === CardEstado.PUBLICADO).length,
+          // Só as quatro casas, porque é "de 4" que o painel diz a seguir. As
+          // cópias e o cartão de impressão também estão prontos, e contá-los
+          // dava "5 de 4 preenchidos" na Letra A — um número que parece avaria.
+          prontos: (c?.blocks ?? []).filter(
+            (b) => b.slot !== null && b.estado === CardEstado.PUBLICADO,
+          ).length,
         }
       }),
     }

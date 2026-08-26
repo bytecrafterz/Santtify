@@ -511,6 +511,14 @@ export class ContentService {
     if (!cartao) throw new NotFoundException('Esta letra ainda não tem cartão para impressão.')
 
     const meta = (cartao.meta ?? {}) as Record<string, unknown>
+
+    // Tirado do ar é tirado do ar também aqui. Senão um endereço que já circula
+    // continuaria a imprimir a arte que ele acabou de retirar, e retirar deixava
+    // de querer dizer alguma coisa.
+    if (meta.foraDoAr === true) {
+      throw new NotFoundException('Este cartão está fora do ar.')
+    }
+
     const endereco = (meta.folhaA4 as string | undefined) ?? cartao.imageAsset?.url ?? null
     const original = await this.storage.lerParaImpressao(endereco)
     if (!original) {

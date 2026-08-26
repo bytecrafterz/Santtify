@@ -6001,6 +6001,14 @@ button.linha-menu-capa {
   flex-direction: column;
 }
 
+/* A entrelinha de volta. `.peca-visual` põe `line-height: 0` para as imagens
+   encostarem umas às outras sem a fresta que o alinhamento de texto deixa —
+   e o botão, que é texto, herdava isso e ficava com 32px de altura em vez de
+   56, com as letras coladas às bordas. Vale para os dois botões. */
+.faixa-imprimir .botao-imprimir {
+  line-height: 1.25;
+}
+
 .botao-imprimir.secundario {
   padding: 0.8rem;
   border-top: 1px solid rgba(255, 255, 255, 0.18);
