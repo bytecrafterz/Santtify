@@ -255,16 +255,39 @@ export function CabecalhoDePerfil({
               {/* Tocar no número abre a lista. Ele pediu-o em 25/08 e tem
                   razão: um número de perfis sem ninguém por trás não diz nada
                   a quem chega. */}
-              <button
-                type="button"
-                className="linha-menu-capa"
-                onClick={() => {
-                  definirOpcoesAbertas(false)
-                  definirPessoasDoProjeto(true)
-                }}
-              >
-                👥 {abreviar(perfisCriados)} perfis criados
-              </button>
+              {/*
+                ABRIR A LISTA DE TODA A GENTE É SÓ DO RESPONSÁVEL.
+
+                O número fica à vista de todos, porque é ele que diz a uma
+                família que há mais gente do outro lado, e foi para isso que ele
+                o pediu em 19/08. A lista por trás é outra coisa, e em 26/08 ele
+                fechou-a: "um usuário não pode abrir uma área e visualizar a
+                lista completa de todos os usuários cadastrados".
+
+                Chegar ao perfil de alguém por uma curtida ou por um comentário
+                continua livre. Ali houve um acto público daquela pessoa que
+                leva até ela; uma lista de toda a gente não tem acto nenhum por
+                trás, e numa plataforma com crianças isso é o que decide.
+
+                O servidor recusa na mesma a quem não for administrador. Isto é
+                para não oferecer uma porta que se vai fechar na cara.
+              */}
+              {usuario?.role === 'ADMIN' || usuario?.role === 'OWNER' ? (
+                <button
+                  type="button"
+                  className="linha-menu-capa"
+                  onClick={() => {
+                    definirOpcoesAbertas(false)
+                    definirPessoasDoProjeto(true)
+                  }}
+                >
+                  👥 {abreviar(perfisCriados)} perfis criados
+                </button>
+              ) : (
+                <span className="linha-menu-capa apenas-numero">
+                  👥 {abreviar(perfisCriados)} perfis criados
+                </span>
+              )}
             </div>
           )}
         </div>

@@ -2,6 +2,7 @@
 
 import Link from 'next/link'
 import { useEffect, useState } from 'react'
+import { admin } from '@/lib/admin'
 
 /**
  * Quem já se registou, com nome, fotografia e caminho para o perfil.
@@ -38,10 +39,12 @@ export function ListaDePessoas({
   const [busca, definirBusca] = useState('')
 
   useEffect(() => {
-    fetch(`${process.env.NEXT_PUBLIC_API_URL ?? ''}/projects/${projectSlug}/people`)
-      .then((r) => (r.ok ? r.json() : { pessoas: [] }))
+    // Com sessão, porque a rota deixou de ser pública em 26/08. Um `fetch`
+    // solto responderia 401 e a folha abria vazia sem dizer porquê.
+    admin
+      .pessoasDoProjeto(projectSlug)
       .then((d) => definirPessoas(d.pessoas ?? []))
-      .catch(() => {})
+      .catch(() => definirPessoas([]))
       .finally(() => definirCarregando(false))
   }, [projectSlug])
 

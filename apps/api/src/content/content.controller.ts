@@ -1,7 +1,8 @@
-import { Controller, Get, Header, Param, Query, Res } from '@nestjs/common'
+import { Controller, Get, Header, Param, Query, Res, UseGuards } from '@nestjs/common'
 import type { Response } from 'express'
 import { ContentService } from './content.service'
 import { LaunchesService } from './launches.service'
+import { AdminGuard, AuthGuard } from '../identity/auth.guard'
 
 /**
  * Leitura pública do conteúdo. Sem autenticação: a página da letra é aberta
@@ -46,7 +47,20 @@ export class ContentController {
     return this.content.categoriasDoProjeto(projectSlug)
   }
 
+  /**
+   * A LISTA COMPLETA DE QUEM SE REGISTOU É SÓ DO RESPONSÁVEL.
+   *
+   * Esta rota estava aberta a toda a gente, e é a única deste ficheiro que
+   * fica fechada. Ele pediu-o em 26/08 e a razão é a certa numa plataforma com
+   * crianças: chegar ao perfil de alguém por uma curtida ou por um comentário
+   * continua livre, porque ali houve um acto público daquela pessoa que leva
+   * até ela; uma lista de toda a gente não tem acto nenhum por trás.
+   *
+   * As duas guardas juntas, como em todo o painel: sessão válida e papel de
+   * administrador. Sem as duas isto responderia a qualquer pessoa com conta.
+   */
   @Get('people')
+  @UseGuards(AuthGuard, AdminGuard)
   pessoas(@Param('projectSlug') projectSlug: string) {
     return this.content.pessoasDoProjeto(projectSlug)
   }

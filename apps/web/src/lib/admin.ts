@@ -477,6 +477,24 @@ export const admin = {
   /** Apaga um comentário impróprio. Rota fora do prefixo do painel. */
   apagarComentario: (id: string) => chamarRaiz<void>(`/comments/${id}`, { method: 'DELETE' }),
 
+  /**
+   * A lista completa de quem se registou. Passa pelas guardas de administração.
+   *
+   * Ia por um `fetch` solto e sem sessão, o que funcionava enquanto a rota
+   * estava aberta a toda a gente. Ele fechou-a em 26/08 e agora ela precisa de
+   * ir por aqui, que é onde vive o token.
+   */
+  pessoasDoProjeto: (projectSlug: string) =>
+    chamarRaiz<{
+      total: number
+      pessoas: Array<{
+        id: string
+        displayName: string
+        avatarUrl: string | null
+        createdAt: string
+      }>
+    }>(`/projects/${projectSlug}/people`),
+
   /** Fila de aprovação das fotos publicadas no My Post. */
   publicacoesPendentes: (projectSlug: string) =>
     chamar<{

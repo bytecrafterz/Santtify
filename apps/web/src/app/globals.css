@@ -6093,3 +6093,19 @@ button.linha-menu-capa {
   opacity: 0.55;
   cursor: not-allowed;
 }
+
+/* O número de perfis para quem não é responsável: continua a ler-se igual, mas
+   não finge ser um botão. Um item de menu que não faz nada ao toque é pior do
+   que um texto, porque promete uma tela que não existe para aquela pessoa. */
+.linha-menu-capa.apenas-numero {
+  cursor: default;
+  opacity: 0.85;
+}
+
+/* O número de perfis para quem não é responsável: lê-se igual, mas não finge
+   ser um botão. Um item de menu que não faz nada ao toque promete uma tela que
+   não existe para aquela pessoa. */
+.linha-menu-capa.apenas-numero {
+  cursor: default;
+  opacity: 0.85;
+}

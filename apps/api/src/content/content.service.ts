@@ -129,13 +129,18 @@ export class ContentService {
     // As impressões saem do log de eventos que já existe. Nenhuma tabela nova
     // foi precisa — é o mesmo retorno da decisão de gravar evento bruto.
     const [perfis, impressoes] = await Promise.all([
-      this.prisma.visitor
-        .findMany({
-          where: { projectId: project.id, userId: { not: null } },
-          distinct: ['userId'],
-          select: { userId: true },
-        })
-        .then((v) => v.length),
+      /**
+       * O MESMO CONJUNTO QUE A LISTA DEVOLVE, CONTADO.
+       *
+       * Contava toda a linha de visitante com dono, incluindo os donos cuja
+       * conta já não existe. Dizia 13 onde havia 9, e as quatro a mais eram
+       * contas de teste minhas. É o mesmo defeito que o painel de métricas tinha
+       * ontem e que eu corrigi lá sem ver que estava aqui também.
+       *
+       * Passa a chamar a função que devolve as pessoas e a contá-las. Um número
+       * que não venha de contar a própria lista volta sempre a divergir dela.
+       */
+      this.membrosDoProjeto(project.id).then((m) => m.length),
       this.prisma.event.count({
         where: {
           projectId: project.id,
@@ -465,22 +470,45 @@ export class ContentService {
    * Contam-se pelo elo visitante → utilizador, como a contagem que já existe,
    * para os dois números nunca se contradizerem no mesmo ecrã.
    */
-  async pessoasDoProjeto(projectSlug: string) {
-    const project = await this.projeto(projectSlug)
-
+  /**
+   * Quem tem conta activa e passou por este projeto.
+   *
+   * Existe como função própria porque duas coisas precisam do MESMO conjunto: o
+   * número que aparece na página e a lista que o responsável abre. Enquanto
+   * foram duas consultas, uma dizia 13 e a outra 9.
+   */
+  private async membrosDoProjeto(projectId: string) {
     const elos = await this.prisma.visitor.findMany({
-      where: { projectId: project.id, userId: { not: null } },
+      where: { projectId, userId: { not: null } },
       distinct: ['userId'],
       select: { userId: true },
     })
     const ids = elos.map((e) => e.userId!).filter(Boolean)
+    if (!ids.length) return []
 
-    const pessoas = await this.prisma.user.findMany({
+    return this.prisma.user.findMany({
       where: { id: { in: ids }, status: 'ACTIVE' },
       orderBy: { createdAt: 'asc' },
       select: { id: true, displayName: true, avatarUrl: true, createdAt: true },
     })
+  }
 
+  /**
+   * A lista completa de quem se registou. SÓ PARA O RESPONSÁVEL.
+   *
+   * A rota que serve isto está fechada por trás das guardas de administração
+   * desde 26/08, a pedido dele, e a razão é boa: "um usuário não pode abrir uma
+   * área e visualizar a lista completa de todos os usuários cadastrados".
+   *
+   * Chegar ao perfil de alguém por uma curtida ou por um comentário continua a
+   * ser possível para toda a gente, e isso é outra coisa: ali houve um acto
+   * público daquela pessoa que leva até ela. Uma lista de toda a gente não tem
+   * acto nenhum por trás, e numa plataforma com crianças é uma lista que não se
+   * entrega a quem passa.
+   */
+  async pessoasDoProjeto(projectSlug: string) {
+    const project = await this.projeto(projectSlug)
+    const pessoas = await this.membrosDoProjeto(project.id)
     return { total: pessoas.length, pessoas }
   }
 
