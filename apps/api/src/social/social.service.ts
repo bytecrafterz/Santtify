@@ -1,10 +1,16 @@
-import { BadRequestException, Injectable, ForbiddenException, NotFoundException } from '@nestjs/common'
+import {
+  BadRequestException,
+  Injectable,
+  ForbiddenException,
+  NotFoundException,
+} from '@nestjs/common'
 import { EventType, Platform, ReactionType, ReportReason, ReportTarget } from '@pv/db'
 import { PrismaService } from '../prisma/prisma.service'
 import { ShortLinksService } from '../short-links/short-links.service'
 import { EventsService } from '../tracking/events.service'
 import { AttributionService } from '../tracking/attribution.service'
 import { VisitContext } from '../tracking/attribution.types'
+import { ContagensService } from './contagens.service'
 
 /**
  * Módulo social — genérico sobre Content, nunca sobre "letra".
@@ -21,7 +27,19 @@ export class SocialService {
     private readonly shortLinks: ShortLinksService,
     private readonly events: EventsService,
     private readonly attribution: AttributionService,
+    private readonly contagens: ContagensService,
   ) {}
+
+  /**
+   * NINGUÉM SOMA NEM SUBTRAI CONTADORES AQUI.
+   *
+   * Havia cinco lugares neste ficheiro a mexer na tabela `content_stats`: mais
+   * um ao curtir, menos um ao descurtir, mais um ao comentar, e por aí. Bastou
+   * um desses passos correr sem o seu par para o número ficar errado para
+   * sempre, e em 27/08 estava negativo. Os quatro números passam a ser contados
+   * quando alguém os pede, pelo ContagensService. A tabela continua a existir
+   * porque apagá-la é uma migração, mas já não é lida nem escrita por ninguém.
+   */
 
   // ── Curtir ────────────────────────────────────────────────────────
 
@@ -45,20 +63,12 @@ export class SocialService {
 
     if (existente) {
       await this.prisma.reaction.delete({ where: { id: existente.id } })
-      await this.prisma.contentStats.update({
-        where: { contentId },
-        data: { likes: { decrement: 1 } },
-      })
       await this.events.registrar({ type: EventType.UNLIKE, attribution: atribuicao, contentId })
       return { curtido: false, total: await this.contarCurtidas(contentId) }
     }
 
     await this.prisma.reaction.create({
       data: { projectId: content.projectId, contentId, userId, type: ReactionType.LIKE },
-    })
-    await this.prisma.contentStats.update({
-      where: { contentId },
-      data: { likes: { increment: 1 } },
     })
     await this.events.registrar({ type: EventType.LIKE, attribution: atribuicao, contentId })
     return { curtido: true, total: await this.contarCurtidas(contentId) }
@@ -137,11 +147,6 @@ export class SocialService {
       },
     })
 
-    await this.prisma.contentStats.update({
-      where: { contentId },
-      data: { comments: { increment: 1 } },
-    })
-
     const visita = await this.attribution.resolveVisit({ ...ctx, userId })
     await this.events.registrar({
       type: EventType.COMMENT,
@@ -171,15 +176,6 @@ export class SocialService {
       where: { id: commentId },
       data: { status: 'DELETED', deletedAt: new Date() },
     })
-    // Comentário de perfil não pertence a letra nenhuma, e por isso não há
-    // contador de letra para descontar. Desde que o comentário passou a poder
-    // ser de um perfil, este passo deixou de valer sempre.
-    if (comment.contentId) {
-      await this.prisma.contentStats.update({
-        where: { contentId: comment.contentId },
-        data: { comments: { decrement: 1 } },
-      })
-    }
   }
 
   // ── Compartilhar ──────────────────────────────────────────────────
@@ -255,7 +251,11 @@ export class SocialService {
     })
 
     const limpar = (v: string | null | undefined) =>
-      (v ?? '').toString().toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '')
+      (v ?? '')
+        .toString()
+        .toLowerCase()
+        .replace(/[^a-z0-9]+/g, '-')
+        .replace(/^-+|-+$/g, '')
 
     const origem = ['pv', limpar(a.rootPlatform ?? a.platform) || 'direto', limpar(campanha)]
       .filter(Boolean)
@@ -306,10 +306,6 @@ export class SocialService {
     await this.prisma.share.create({
       data: { userId, shortLinkId: link.id, channel: canal },
     })
-    await this.prisma.contentStats.update({
-      where: { contentId },
-      data: { shares: { increment: 1 } },
-    })
 
     await this.events.registrar({
       type: EventType.SHARE_CREATED,
@@ -323,43 +319,54 @@ export class SocialService {
 
   // ── Leitura agregada para a página ────────────────────────────────
 
-  /** Estado social de um conteúdo, do ponto de vista de quem está olhando. */
+  /**
+   * Estado social de um conteúdo, do ponto de vista de quem está olhando.
+   *
+   * CONTA-SE AGORA, E NÃO SE LÊ UM CONTADOR GUARDADO.
+   *
+   * Isto lia a tabela `content_stats`, que é somada quando alguém comenta e
+   * subtraída quando alguém apaga. Um contador desses só está certo enquanto
+   * ninguém falhar um passo, e em 27/08 estava a mostrar MENOS TRÊS comentários
+   * na introdução e MENOS DOIS na Letra A. Um número negativo ao lado de um
+   * conteúdo não é um número errado, é um número que denuncia a forma como foi
+   * obtido.
+   *
+   * Vinha de duas contas para a mesma coisa: eu corrigi a contagem em 26/08,
+   * mas corrigi a que a lista usa, e o ecrã lia esta. É a mesma armadilha que
+   * este projecto já me armou três vezes, e a saída é sempre a mesma: apagar a
+   * segunda conta em vez de a acertar. A faixa (`estadoDaFaixa`) já contava em
+   * directo; o conteúdo passa a fazer igual, com as mesmas regras.
+   *
+   * As visualizações passam a ser aberturas do conteúdo, que é o que ele espera
+   * ver subir quando abre uma letra, e não um valor recalculado de vez em quando
+   * que estava parado em zero desde 18/08.
+   */
   async estado(contentId: string, userId: string | null) {
-    const [stats, curtido, comentarios] = await Promise.all([
-      this.prisma.contentStats.findUnique({
-        where: { contentId },
-        select: { likes: true, comments: true, shares: true, views: true },
-      }),
-      userId
-        ? this.prisma.reaction
-            .findUnique({
-              where: {
-                contentId_userId_type: { contentId, userId, type: ReactionType.LIKE },
-              },
-              select: { id: true },
-            })
-            .then(Boolean)
-        : Promise.resolve(false),
+    const [numeros, curtido, lista] = await Promise.all([
+      this.contagens.deConteudo(contentId, await this.bloqueadosPor(userId)),
+      (async () =>
+        userId
+          ? this.prisma.reaction
+              .findUnique({
+                where: {
+                  contentId_userId_type: { contentId, userId, type: ReactionType.LIKE },
+                },
+                select: { id: true },
+              })
+              .then(Boolean)
+          : false)(),
       this.listarComentarios(contentId, 100, userId),
     ])
 
     return {
-      // `views` já era lido aqui e ficava pelo caminho. Passa a sair porque a
-      // contagem pública ao lado do conteúdo é o que dá a uma família a noção
-      // de que há mais gente do outro lado — e era a única das quatro que o
-      // número existia no banco mas não chegava à tela.
-      visualizacoes: stats?.views ?? 0,
-      curtidas: stats?.likes ?? 0,
-      comentarios: stats?.comments ?? 0,
-      compartilhamentos: stats?.shares ?? 0,
+      visualizacoes: numeros.views,
+      curtidas: numeros.likes,
+      comentarios: numeros.comments,
+      compartilhamentos: numeros.shares,
       curtidoPorMim: curtido,
-      lista: comentarios,
+      lista,
     }
   }
-
-
-
-
 
   // ── O comentário como objecto social ─────────────────────────────────
   //
@@ -439,7 +446,12 @@ export class SocialService {
     lista: T[],
     leitorId: string | null,
   ): Promise<(T & { curtidoPorMim: boolean })[]> {
-    const meus = new Set(await this.curtidasDe(leitorId, lista.map((c) => c.id)))
+    const meus = new Set(
+      await this.curtidasDe(
+        leitorId,
+        lista.map((c) => c.id),
+      ),
+    )
     return lista.map((c) => ({ ...c, curtidoPorMim: meus.has(c.id) }))
   }
 
@@ -528,9 +540,15 @@ export class SocialService {
         this.listarComentariosDoPerfil(profileUserId, leitorId),
       ])
 
-    return { visualizacoes, curtidas, comentarios, compartilhamentos, curtidoPorMim: curtido, lista }
+    return {
+      visualizacoes,
+      curtidas,
+      comentarios,
+      compartilhamentos,
+      curtidoPorMim: curtido,
+      lista,
+    }
   }
-
 
   /**
    * Quem curtiu este perfil, com cara e nome.
@@ -592,34 +610,10 @@ export class SocialService {
     onde: { profileUserId?: string; blockId?: string; contentId?: string },
     leitorId: string | null,
   ) {
-    const escondidos = await this.bloqueadosPor(leitorId)
-    const base = {
-      ...onde,
-      status: 'PUBLISHED' as const,
-      ...(escondidos.length ? { userId: { notIn: escondidos } } : {}),
-    }
-
-    /**
-     * CONTA SÓ O QUE PODE MESMO APARECER.
-     *
-     * Ele voltou a apanhar a diferença: o perfil dizia 13 e ao abrir havia 2.
-     * Da primeira vez eu alinhei o filtro de quem está bloqueado, e isso estava
-     * certo mas não era tudo.
-     *
-     * Faltava isto: uma resposta cujo comentário-pai foi apagado fica órfã. O
-     * pai já não se desenha, e uma resposta desenha-se DENTRO do pai — por isso
-     * ela não tem onde aparecer, nunca. Estavam cinco assim, e eram contadas.
-     *
-     * Contam-se agora os comentários de topo mais as respostas cujo pai ainda
-     * está publicado, que é exactamente o que a pessoa encontra ao abrir.
-     */
-    const [topo, respostas] = await Promise.all([
-      this.prisma.comment.count({ where: { ...base, parentId: null } }),
-      this.prisma.comment.count({
-        where: { ...base, parent: { is: { status: 'PUBLISHED' } } },
-      }),
-    ])
-    return topo + respostas
+    // A regra vive no ContagensService e é a mesma para o conteúdo, para a
+    // faixa e para o perfil. Aqui só se descobre quem é que este leitor
+    // bloqueou, porque isso depende de quem está a olhar.
+    return this.contagens.comentarios(onde, await this.bloqueadosPor(leitorId))
   }
 
   async listarComentariosDoPerfil(profileUserId: string, leitorId: string | null = null) {
@@ -721,14 +715,17 @@ export class SocialService {
   // numa plataforma de crianças é pedir que a mãe se registe primeiro,
   // enquanto o conteúdo continua no ar.
 
-  async denunciar(dados: {
-    projectId: string
-    targetType: ReportTarget
-    targetId: string
-    reason: ReportReason
-    note?: string
-    bloquear?: boolean
-  }, userId: string | null) {
+  async denunciar(
+    dados: {
+      projectId: string
+      targetType: ReportTarget
+      targetId: string
+      reason: ReportReason
+      note?: string
+      bloquear?: boolean
+    },
+    userId: string | null,
+  ) {
     const denuncia = await this.prisma.report.create({
       data: {
         projectId: dados.projectId,
@@ -835,7 +832,14 @@ export class SocialService {
         this.listarComentariosDaFaixa(blockId, userId),
       ])
 
-    return { visualizacoes, curtidas, comentarios, compartilhamentos, curtidoPorMim: curtido, lista }
+    return {
+      visualizacoes,
+      curtidas,
+      comentarios,
+      compartilhamentos,
+      curtidoPorMim: curtido,
+      lista,
+    }
   }
 
   async alternarCurtidaDaFaixa(blockId: string, userId: string, ctx: VisitContext) {

@@ -2,6 +2,7 @@ import { BadRequestException, Injectable, NotFoundException } from '@nestjs/comm
 import { BlockType, CardEstado, CardPapel, ContentStatus, MediaKind, Prisma } from '@pv/db'
 import { PrismaService } from '../prisma/prisma.service'
 import { ShortLinksService } from '../short-links/short-links.service'
+import { ContagensService } from '../social/contagens.service'
 
 /**
  * Operações do painel administrativo.
@@ -17,6 +18,7 @@ export class AdminContentService {
   constructor(
     private readonly prisma: PrismaService,
     private readonly shortLinks: ShortLinksService,
+    private readonly contagens: ContagensService,
   ) {}
 
   /** Lista TUDO, inclusive rascunho — diferente da leitura pública. */
@@ -45,6 +47,9 @@ export class AdminContentService {
       },
     })
 
+    // Contados agora, em lote, e não lidos de uma tabela que deriva.
+    const numeros = await this.contagens.deConteudos(contents.map((c) => c.id))
+
     return {
       project,
       contents: contents.map((c) => {
@@ -58,7 +63,7 @@ export class AdminContentService {
           position: c.position,
           publishedAt: c.publishedAt,
           updatedAt: c.updatedAt,
-          stats: c.stats,
+          stats: numeros.get(c.id) ?? null,
           qrCode: c.shortLink[0]?.code ?? null,
           // O cliente precisa ver de relance o que falta preencher.
           blocosPreenchidos: preenchidos,

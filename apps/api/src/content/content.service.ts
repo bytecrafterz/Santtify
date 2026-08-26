@@ -3,6 +3,7 @@ import { BlockType, CardEstado, CardPapel, ContentStatus, EventType } from '@pv/
 import { PrismaService } from '../prisma/prisma.service'
 import { ShortLinksService } from '../short-links/short-links.service'
 import { StorageService } from '../admin/storage.service'
+import { ContagensService } from '../social/contagens.service'
 
 /**
  * Leitura de conteúdo para o PWA.
@@ -17,6 +18,7 @@ export class ContentService {
     private readonly prisma: PrismaService,
     private readonly shortLinks: ShortLinksService,
     private readonly storage: StorageService,
+    private readonly contagens: ContagensService,
   ) {}
 
   async projeto(slug: string) {
@@ -72,7 +74,6 @@ export class ContentService {
         position: true,
         letra: true,
         status: true,
-        stats: { select: { views: true, likes: true, comments: true, shares: true } },
         /**
          * A ARTE DO PRIMEIRO CARTÃO, para servir de capa quando a letra não
          * tiver uma sua.
@@ -96,6 +97,12 @@ export class ContentService {
       },
     })
 
+    // Os quatro números de todas as letras em quatro consultas. Perguntar um a
+    // um seriam mais de cem idas à base de dados só para desenhar a grade.
+    const numeros = await this.contagens.deConteudos(
+      todas.filter((c) => c.status === ContentStatus.PUBLISHED).map((c) => c.id),
+    )
+
     const contents = todas.map((c) => {
       const publicado = c.status === ContentStatus.PUBLISHED
       return {
@@ -107,7 +114,7 @@ export class ContentService {
         publicado,
         subtitle: publicado ? c.subtitle : null,
         coverUrl: publicado ? (c.coverUrl ?? c.blocks[0]?.imageAsset?.url ?? null) : null,
-        stats: publicado ? c.stats : null,
+        stats: publicado ? (numeros.get(c.id) ?? null) : null,
       }
     })
 
@@ -297,7 +304,6 @@ export class ContentService {
             },
           },
         },
-        stats: true,
         shortLink: {
           where: { kind: 'CONTENT_QR', active: true },
           select: { code: true },
@@ -415,7 +421,7 @@ export class ContentService {
             arte: b.imageAsset?.url ?? null,
             meta: b.meta,
           })),
-        stats: content.stats ?? { views: 0, likes: 0, comments: 0, shares: 0 },
+        stats: await this.contagens.deConteudo(content.id),
         qrCode: code,
         qrUrl: code ? this.shortLinks.urlPublica(code) : null,
       },
@@ -548,5 +554,23 @@ export class ContentService {
 
     // Links antigos podem não ter o SVG gravado; gera sob demanda.
     return link.qrSvg ?? (await this.shortLinks.gerarQrSvg(this.shortLinks.urlPublica(link.code)))
+  }
+
+  /**
+   * O mesmo QR em PNG, grande.
+   *
+   * O vectorial é o que a gráfica quer, e é o que ele deve mandar ao designer.
+   * Mas ele tentou enviar esse ficheiro pelo WhatsApp em 27/08 e não conseguiu:
+   * o WhatsApp não mostra SVG, trata-o como documento, e do outro lado ninguém
+   * vê nada. Os dois formatos servem para coisas diferentes e por isso existem
+   * os dois, em vez de se trocar um pelo outro.
+   *
+   * 1024 pontos porque um QR impresso a partir de uma imagem pequena falha na
+   * leitura, e porque é a medida em que ainda se envia por mensagem sem que a
+   * aplicação o esmague.
+   */
+  async qrPng(projectSlug: string, contentSlug: string): Promise<Buffer> {
+    const svg = await this.qrSvg(projectSlug, contentSlug)
+    return this.storage.svgEmPng(svg, 1024)
   }
 }

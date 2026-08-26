@@ -246,6 +246,20 @@ export class StorageService {
   }
 
   /**
+   * Um SVG transformado em PNG, com fundo branco.
+   *
+   * O fundo é preciso: um QR sobre transparente, colado numa conversa de fundo
+   * escuro, fica preto sobre preto e nenhum telemóvel o lê.
+   */
+  async svgEmPng(svg: string, largura: number): Promise<Buffer> {
+    return sharp(Buffer.from(svg), { density: 384 })
+      .resize({ width: largura, height: largura, fit: 'contain', background: '#fff' })
+      .flatten({ background: '#fff' })
+      .png()
+      .toBuffer()
+  }
+
+  /**
    * O melhor que temos desta imagem para pôr em papel.
    *
    * Tenta primeiro a cópia de 2480px e cai na de 1200px quando ela não existe —

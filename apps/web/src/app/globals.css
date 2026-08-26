@@ -2352,19 +2352,6 @@ img.avatar {
   min-width: 0;
 }
 
-.verificado {
-  display: inline-grid;
-  place-items: center;
-  width: 18px;
-  height: 18px;
-  border-radius: 50%;
-  background: var(--cor-primaria);
-  color: #fff;
-  font-size: 0.7rem;
-  margin-left: 0.35rem;
-  vertical-align: middle;
-}
-
 .perfil-capa .foto-capa.capa-vazia {
   display: grid;
   place-items: center;
@@ -5999,6 +5986,12 @@ button.linha-menu-capa {
 .faixa-imprimir {
   display: flex;
   flex-direction: column;
+}
+
+/* Os dois formatos do QR lado a lado, centrados debaixo dele. */
+.linha-acoes.centrada {
+  justify-content: center;
+  margin: 0;
 }
 
 /* A entrelinha de volta. `.peca-visual` põe `line-height: 0` para as imagens

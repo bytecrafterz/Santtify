@@ -2,6 +2,7 @@ import { Module, forwardRef } from '@nestjs/common'
 import { AdminController } from './admin.controller'
 import { AdminContentService } from './admin-content.service'
 import { StorageModule } from './storage.module'
+import { ContagensModule } from '../social/contagens.module'
 import { ShortLinksModule } from '../short-links/short-links.module'
 import { ContentModule } from '../content/content.module'
 import { PostsModule } from '../social/posts.module'
@@ -13,6 +14,7 @@ import { IdentityModule } from '../identity/identity.module'
     IdentityModule,
     ContentModule,
     StorageModule,
+    ContagensModule,
     forwardRef(() => PostsModule),
   ],
   controllers: [AdminController],

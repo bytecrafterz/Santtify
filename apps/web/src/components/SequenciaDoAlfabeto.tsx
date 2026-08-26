@@ -6,6 +6,7 @@ import { CabecalhoFixo } from './CabecalhoFixo'
 import { useAuth } from './ProvedorDeAuth'
 import { EditorDeCartao } from './EditorDeCartao'
 import { EditorDoCartaoDeImpressao } from './EditorDoCartaoDeImpressao'
+import { QrDaLetra } from './QrDaLetra'
 
 /**
  * O painel do alfabeto, nas três telas que ele desenhou em 23/08.
@@ -221,6 +222,10 @@ export function SequenciaDoAlfabeto({ projectSlug }: { projectSlug: string }) {
               />
             ))}
           </div>
+
+          {/* O QR fica aqui, na letra, e não dentro do cartão de impressão:
+              as letras sem cartão criado também precisam do seu. */}
+          <QrDaLetra projectSlug={projectSlug} contentSlug={vagao.slug} letra={vagao.letra} />
 
           {/* SALVAR ORDEM só aparece depois de ele mexer em alguma coisa.
               Um botão de gravar sempre à vista, sem nada por gravar, ensina a

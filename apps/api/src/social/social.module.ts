@@ -13,9 +13,10 @@ import { ShortLinksModule } from '../short-links/short-links.module'
 import { TrackingModule } from '../tracking/tracking.module'
 import { IdentityModule } from '../identity/identity.module'
 import { PostsModule } from './posts.module'
+import { ContagensModule } from './contagens.module'
 
 @Module({
-  imports: [ShortLinksModule, TrackingModule, IdentityModule, PostsModule],
+  imports: [ShortLinksModule, TrackingModule, IdentityModule, PostsModule, ContagensModule],
   controllers: [
     SocialController,
     FaixasController,

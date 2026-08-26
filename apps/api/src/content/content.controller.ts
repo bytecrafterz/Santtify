@@ -63,6 +63,23 @@ export class ContentController {
     return res.send(svg)
   }
 
+  /** O mesmo QR em PNG, para enviar por mensagem. Ver a nota no serviço. */
+  @Get('contents/:contentSlug/qr.png')
+  async qrPng(
+    @Param('projectSlug') projectSlug: string,
+    @Param('contentSlug') contentSlug: string,
+    @Query('baixar') baixar: string | undefined,
+    @Res() res: Response,
+  ) {
+    const png = await this.content.qrPng(projectSlug, contentSlug)
+    res.setHeader('Content-Type', 'image/png')
+    res.setHeader('Cache-Control', 'public, max-age=86400')
+    if (baixar) {
+      res.setHeader('Content-Disposition', `attachment; filename="qr-${contentSlug}.png"`)
+    }
+    return res.send(png)
+  }
+
   /**
    * O cartão da letra como ficheiro A4, para imprimir ou para a gráfica.
    *

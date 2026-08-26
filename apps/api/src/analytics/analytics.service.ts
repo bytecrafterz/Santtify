@@ -1,5 +1,6 @@
 import { Injectable, NotFoundException } from '@nestjs/common'
 import { PrismaService } from '../prisma/prisma.service'
+import { ContagensService } from '../social/contagens.service'
 
 /**
  * Dashboard das métricas essenciais da Fase 1.
@@ -15,7 +16,10 @@ import { PrismaService } from '../prisma/prisma.service'
  */
 @Injectable()
 export class AnalyticsService {
-  constructor(private readonly prisma: PrismaService) {}
+  constructor(
+    private readonly prisma: PrismaService,
+    private readonly contagens: ContagensService,
+  ) {}
 
   async visaoGeral(projectSlug: string, dias = 30) {
     const project = await this.prisma.project.findUnique({
@@ -91,15 +95,25 @@ export class AnalyticsService {
        * mesmo, que é a única forma de os dois números não se contradizerem no
        * mesmo ecrã.
        */
+      /**
+       * E SÓ CONTAS QUE AINDA EXISTEM.
+       *
+       * Contava toda a linha de visitante com dono, incluindo os donos cuja
+       * conta já foi removida. Em 27/08 o painel dizia oito cadastros e ele só
+       * tinha sete pessoas: a oitava era uma conta de teste minha, desactivada
+       * no dia anterior. A lista da comunidade já escondia contas removidas
+       * desde 25/08; este número não, e por isso os dois discordavam no mesmo
+       * ecrã outra vez.
+       */
       this.prisma.visitor
         .findMany({
-          where: { projectId, userId: { not: null } },
+          where: { projectId, userId: { not: null }, user: { is: { status: 'ACTIVE' } } },
           distinct: ['userId'],
           select: { userId: true },
         })
         .then((v) => v.length),
-      this.prisma.reaction.count({ where: { projectId } }),
-      this.prisma.comment.count({ where: { projectId, status: 'PUBLISHED' } }),
+      this.prisma.reaction.count({ where: { projectId, user: { is: { status: 'ACTIVE' } } } }),
+      this.contagens.comentariosDoProjecto(projectId),
       this.prisma.share.count({ where: { shortLink: { projectId } } }),
       this.prisma.event.count({ where: { projectId, type: 'SHARE_LINK_CLICKED' } }),
       // O PV é contado somando TODAS as letras: é um só Produto Vivo,
@@ -161,7 +175,7 @@ export class AnalyticsService {
 
     return linhas.map((l) => ({
       pais: l.pais,
-      nome: l.pais ? NOMES_DE_PAIS[l.pais] ?? l.pais : 'Sem identificar',
+      nome: l.pais ? (NOMES_DE_PAIS[l.pais] ?? l.pais) : 'Sem identificar',
       visitantes: l.visitantes,
       cadastros: l.cadastros,
     }))

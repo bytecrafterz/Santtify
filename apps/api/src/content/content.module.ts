@@ -4,9 +4,10 @@ import { LaunchesService } from './launches.service'
 import { ContentController } from './content.controller'
 import { ShortLinksModule } from '../short-links/short-links.module'
 import { StorageModule } from '../admin/storage.module'
+import { ContagensModule } from '../social/contagens.module'
 
 @Module({
-  imports: [ShortLinksModule, StorageModule],
+  imports: [ShortLinksModule, StorageModule, ContagensModule],
   controllers: [ContentController],
   providers: [ContentService, LaunchesService],
   exports: [ContentService, LaunchesService],

@@ -2,6 +2,7 @@
 
 import { useState } from 'react'
 import { admin, type CartaoAdmin } from '@/lib/admin'
+import { QrDaLetra } from './QrDaLetra'
 
 /**
  * O cartão de impressão da letra, no painel.
@@ -54,7 +55,6 @@ export function EditorDoCartaoDeImpressao({
 
   // Sem slug não há endereço público, e sem endereço público não há QR nem PDF.
   // Acontece enquanto a letra ainda não foi criada de verdade.
-  const qr = contentSlug ? admin.urlQrSvg(projectSlug, contentSlug) : null
   const pdf = contentSlug ? admin.urlCartaoPdf(projectSlug, contentSlug) : null
   const pdfParaBaixar = contentSlug ? admin.urlCartaoPdf(projectSlug, contentSlug, true) : null
 
@@ -217,28 +217,7 @@ export function EditorDoCartaoDeImpressao({
         </label>
       </article>
 
-      {/*
-        O QR da letra, do tamanho de quem o vai conferir e não de quem o vai ler.
-        O ficheiro é vectorial: a gráfica amplia-o para um cartaz sem que fique
-        serrilhado, o que uma fotografia do ecrã nunca permitiria.
-      */}
-      <section className="bloco-qr">
-        <h3>QR CODE DA LETRA {letra}</h3>
-        {qr ? (
-          <>
-            {/* eslint-disable-next-line @next/next/no-img-element */}
-            <img className="imagem-qr" src={qr} alt={`QR Code da Letra ${letra}`} />
-            <p className="nota-qr">
-              Este é o código que leva à Letra {letra}. Baixe e envie ao designer.
-            </p>
-            <a className="botao-acao largo" href={qr} download={`qr-letra-${letra}.svg`}>
-              ⬇ BAIXAR O QR CODE
-            </a>
-          </>
-        ) : (
-          <p className="nota-qr">O QR aparece assim que a letra tiver conteúdo publicado.</p>
-        )}
-      </section>
+      <QrDaLetra projectSlug={projectSlug} contentSlug={contentSlug} letra={letra} />
 
       {/*
         Ver o que sai na impressora antes de mandar imprimir. É o mesmo ficheiro

@@ -269,16 +269,17 @@ export function CabecalhoDePerfil({
           )}
         </div>
 
-        {/* Só nome e selo sobre a foto, numa linha, com sombra própria. */}
+        {/*
+          Só o nome sobre a foto.
+
+          Havia aqui um sinal azul de confirmado, e ele mandou-o tirar em 27/08
+          com uma razão que se percebe: nada era verificado, o sinal aparecia a
+          quem fosse dono do perfil e mais nada. Um selo de confiança que não
+          verifica coisa nenhuma é pior do que não existir, porque ensina a
+          confiar nele. Quando houver mesmo verificação, volta.
+        */}
         <div className="nome-no-retrato">
-          <h1 title={nome}>
-            {nome}
-            {dono && (
-              <span className="verificado" aria-label="Perfil confirmado">
-                ✓
-              </span>
-            )}
-          </h1>
+          <h1 title={nome}>{nome}</h1>
         </div>
 
         {/* Véu para fechar tocando fora. Só existe com o painel aberto, senão
