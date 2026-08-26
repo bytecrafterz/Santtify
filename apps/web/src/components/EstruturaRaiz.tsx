@@ -166,7 +166,7 @@ export function EstruturaRaiz({ projectSlug }: { projectSlug: string }) {
               quantas vezes quisesse. É o mesmo cartão dos áudios: foto, som,
               título, texto e os quatro indicadores. O texto institucional que
               lá estava saiu — era longo e não dizia o que aquilo é. */}
-          <li className="vagao">
+          <li className="vagao" id="produto-vivo">
             <div className="cabeca-raiz">
               <strong>PRODUTO VIVO</strong>
               {pv && (

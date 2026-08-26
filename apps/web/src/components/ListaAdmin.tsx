@@ -5,7 +5,6 @@ import { useRouter } from 'next/navigation'
 import { useEffect, useState } from 'react'
 import { admin, type ItemAdmin } from '@/lib/admin'
 import { useAuth } from '@/components/ProvedorDeAuth'
-import { NovaPublicacao } from './NovaPublicacao'
 
 /**
  * Índice do painel: o que já está preenchido e o que falta.
@@ -19,7 +18,6 @@ export function ListaAdmin({ projectSlug }: { projectSlug: string }) {
   const { usuario, carregando } = useAuth()
   const [dados, definirDados] = useState<Awaited<ReturnType<typeof admin.listar>> | null>(null)
   const [erro, definirErro] = useState<string | null>(null)
-  const [aPublicar, definirAPublicar] = useState(false)
   const [aguardando, definirAguardando] = useState<number | null>(null)
 
   useEffect(() => {
@@ -74,6 +72,22 @@ export function ListaAdmin({ projectSlug }: { projectSlug: string }) {
         <small>perfil + introdução + alfabeto — as três partes da página, numa só raiz</small>
       </Link>
 
+      {/*
+        O PRODUTO VIVO TEM ENTRADA PRÓPRIA.
+
+        Vivia dentro da Estrutura raiz e só lá. Eu disse-lhe onde era e ele
+        respondeu em 26/08 que entrou no painel e "não encontrou de forma
+        clara". Uma coisa que existe mas que é preciso explicar por mensagem
+        para se achar não está no painel: está escondida nele.
+      */}
+      <Link
+        className="bloco linha atalho-alfabeto"
+        href={`/${projectSlug}/admin/estrutura#produto-vivo`}
+      >
+        <span>Produto Vivo</span>
+        <small>a arte, o áudio e o texto que as empresas veem</small>
+      </Link>
+
       <Link className="bloco linha atalho-alfabeto" href={`/${projectSlug}/admin/alfabeto`}>
         <span>Alfabeto — sequência infinita</span>
         <small>
@@ -116,47 +130,19 @@ export function ListaAdmin({ projectSlug }: { projectSlug: string }) {
         </Link>
       ) : null}
 
-      <ul className="lista">
-        {dados.contents.map((c) => {
-          const completo = c.blocosTotal > 0 && c.blocosPreenchidos === c.blocosTotal
-          return (
-            <li key={c.id}>
-              <Link className="bloco item-admin" href={`/${projectSlug}/admin/${c.slug}`}>
-                <div>
-                  <strong>{c.title}</strong>
-                  {c.subtitle && <small> — {c.subtitle}</small>}
-                  <div className="meta-admin">
-                    <span className={c.status === 'PUBLISHED' ? 'etiqueta publicado' : 'etiqueta'}>
-                      {c.status === 'PUBLISHED' ? 'Publicado' : 'Rascunho'}
-                    </span>
-                    <span className={completo ? 'progresso completo' : 'progresso'}>
-                      {c.blocosPreenchidos}/{c.blocosTotal} blocos
-                    </span>
-                    {c.qrCode && <span className="progresso">QR pronto</span>}
-                  </div>
-                </div>
-                <span aria-hidden>›</span>
-              </Link>
-            </li>
-          )
-        })}
-      </ul>
+      {/*
+        A LISTA DE TODOS OS CONTEÚDOS SAIU DAQUI.
 
-      {aPublicar ? (
-        <NovaPublicacao
-          projectSlug={projectSlug}
-          totalExistente={dados.contents.length}
-          aoTerminar={async () => {
-            definirAPublicar(false)
-            definirDados(await admin.listar(projectSlug))
-          }}
-          aoCancelar={() => definirAPublicar(false)}
-        />
-      ) : (
-        <button type="button" className="botao-publicar" onClick={() => definirAPublicar(true)}>
-          + Novo conteúdo
-        </button>
-      )}
+        Estava por baixo dos atalhos e repetia tudo o que a Estrutura raiz e o
+        Alfabeto já fazem, mas pelo editor antigo, o de blocos soltos. Ele
+        apanhou os dois em 26/08: "vejo Introdução num lugar e também Estrutura
+        raiz noutro, não estou entendendo por que existem os dois".
+
+        Tinha razão, e a resposta é que só um deve ficar. Fica o novo, onde um
+        cartão é uma peça inteira. Enquanto os dois existiram, o que ele abria
+        pelo caminho antigo mostrava-lhe a Introdução no modelo velho, que é
+        exactamente a queixa número um da mesma mensagem.
+      */}
     </>
   )
 }
