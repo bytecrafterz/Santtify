@@ -3088,12 +3088,17 @@ button.letra-bloco {
 }
 
 /* A CAIXA E O SEU TEXTO NUNCA SE SEPARAM.
-   A linha é flexível e deixava esta etiqueta encolher abaixo do seu conteúdo,
-   e então "Lembrar meu login" caía para debaixo do quadradinho, como se fossem
-   duas coisas sem relação. Se faltar espaço, quem muda de linha é o link de
-   recuperar a senha, que é uma coisa inteira e continua a ler-se. */
+   "Lembrar meu login" caía para debaixo do quadradinho, como se fossem duas
+   coisas sem relação. A causa não era esta linha: é `.formulario label`, que
+   empilha etiqueta e campo em coluna, e está certa para o E-mail e a Senha,
+   onde o rótulo fica mesmo por cima. Aqui o rótulo é do lado, e por isso a
+   direcção tem de ser dita outra vez.
+   Fui à procura no sítio errado à primeira: pus `flex: 0 0 auto` e `nowrap`,
+   que impedem a etiqueta de encolher, e não servem de nada contra uma coluna.
+   Se faltar espaço, quem muda de linha é o link de recuperar a senha. */
 .linha-lembrar .lembrar {
   display: flex;
+  flex-direction: row;
   align-items: center;
   gap: 0.45rem;
   margin: 0;
