@@ -69,6 +69,7 @@ export class AnalyticsService {
     const [
       visitantes,
       cadastros,
+      visualizacoes,
       curtidas,
       comentarios,
       compartilhamentos,
@@ -112,6 +113,15 @@ export class AnalyticsService {
           select: { userId: true },
         })
         .then((v) => v.length),
+      /**
+       * Visualizações do projecto inteiro: aberturas de conteúdo.
+       *
+       * O painel mostrava visitantes e cadastros, e ele pediu em 27/08 os
+       * números que vai APRESENTAR A UMA EMPRESA. Visitantes responde quantas
+       * pessoas entraram; visualizações responde quantas vezes o conteúdo foi
+       * mesmo aberto, que é outra coisa e é a que interessa a quem compra.
+       */
+      this.prisma.event.count({ where: { projectId, type: 'CONTENT_VIEW' } }),
       this.prisma.reaction.count({ where: { projectId, user: { is: { status: 'ACTIVE' } } } }),
       this.contagens.comentariosDoProjecto(projectId),
       this.prisma.share.count({ where: { shortLink: { projectId } } }),
@@ -133,6 +143,7 @@ export class AnalyticsService {
     return {
       visitantes,
       cadastros,
+      visualizacoes,
       conversao,
       curtidas,
       comentarios,

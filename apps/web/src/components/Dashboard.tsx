@@ -14,6 +14,7 @@ interface VisaoGeral {
   totais: {
     visitantes: number
     cadastros: number
+    visualizacoes: number
     conversao: number
     curtidas: number
     comentarios: number
@@ -107,6 +108,22 @@ export function Dashboard({ projectSlug }: { projectSlug: string }) {
         <Cartao valor={n(t.visitantes)} rotulo="Visitantes" />
         <Cartao valor={n(t.cadastros)} rotulo="Cadastros" />
         <Cartao valor={`${t.conversao}%`} rotulo="Conversão" />
+      </div>
+
+      {/*
+        Os quatro números que ele vai mostrar a uma empresa.
+
+        Curtidas e comentários já eram calculados e não chegavam a esta tela;
+        as visualizações nem sequer eram somadas para o projecto todo. Ele
+        pediu-os por nome em 27/08, e a razão é comercial: visitantes diz quantas
+        pessoas entraram, visualizações diz quantas vezes o conteúdo foi mesmo
+        aberto, e é a segunda que responde à pergunta de quem compra.
+      */}
+      <h2>Interação</h2>
+      <div className="numeros">
+        <Cartao valor={n(t.visualizacoes)} rotulo="Visualizações" />
+        <Cartao valor={n(t.curtidas)} rotulo="Curtidas" />
+        <Cartao valor={n(t.comentarios)} rotulo="Comentários" />
         <Cartao valor={n(t.compartilhamentos)} rotulo="Compartilhamentos" />
       </div>
 
