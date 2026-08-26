@@ -129,7 +129,7 @@ git, nesse caso, recusa-se a responder.
 
 ---
 
-## 27/08 - os treze pontos dele, e os onze que eram meus
+## 26/08 (tarde) - os treze pontos dele, e os onze que eram meus
 
 Ele listou treze pontos e condicionou a revisão final e o pagamento a todos.
 Dois eram escopo novo (o 13 é literalmente o A, o 5 é o canal de mensagens

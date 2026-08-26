@@ -1,4 +1,4 @@
-# 27/08/2026 - Os onze pontos prontos, ponto por ponto
+# 26/08/2026 - Os onze pontos prontos, ponto por ponto
 
 **CONTEXTO:** resposta a seguir a corrigir e verificar os onze pontos. Segue a
 numeracao dele, para ele poder riscar um a um na propria lista.

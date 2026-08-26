@@ -1,4 +1,4 @@
-# 27/08/2026 - Os treze pontos: onze hoje, dois continuam a ser trabalho novo
+# 26/08/2026 - Os treze pontos: onze hoje, dois continuam a ser trabalho novo
 
 **CONTEXTO:** ele listou treze pontos e condicionou a revisao final e a
 libertacao do pagamento a todos eles. Dois desses pontos sao escopo novo: o 13
