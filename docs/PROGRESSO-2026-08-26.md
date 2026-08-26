@@ -169,6 +169,48 @@ que são condição para participar, depois o convite, que é conveniência.
 
 ---
 
+## 26/08 (noite) - a terceira lista, e a lição que faltava
+
+Ele reviu pelo telemóvel e trouxe treze pontos novos. Onze eram meus.
+
+**O que dói e é o mais útil deste projecto até hoje:** eu tinha dado o contador
+de comentários por corrigido de manhã, e tinha comparado o contador com a LISTA
+QUE A API DEVOLVE. Bateu. Mas quem conta é o ecrã, e o ecrã desenhava menos: das
+oito respostas devolvidas, seis não tinham comentário-pai na lista e uma resposta
+desenha-se dentro do pai. Conferi pelo lugar errado duas vezes seguidas.
+
+A regra que ele mandou é melhor do que a minha correcção da manhã. Não basta os
+números virem do mesmo serviço: **passam a ser contados a partir da mesma lista
+que segue para o ecrã**, com o mesmo percurso que o `PainelDeComentarios` faz.
+Divergirem deixou de ser possível, porque passaram a ser a mesma coisa.
+
+**Havia três conjuntos de métricas** com nomes iguais e sentidos diferentes: o
+cabeçalho do perfil (do perfil), o painel do perfil (da actividade da pessoa) e o
+painel de métricas (do projecto). Daí o "11 num sítio, 8 noutro". Os rótulos
+passam a dizer de quem é cada número.
+
+**As partilhas tinham três definições** e o painel dizia 2 num projecto com 55.
+Contava só linhas de `Share`; partilhar uma faixa ou um perfil grava um evento e
+ficava de fora.
+
+**E o botão de partilhar entregava o endereço da página**, não um link
+identificável. Por isso 244 dos 358 visitantes apareciam como directos num
+projecto que cresce por partilha. O link curto existia e ninguém o usava ali.
+Não recupera o passado; a partir daqui passa a haver de onde vieram.
+
+**O painel tinha dois caminhos para a mesma coisa:** por baixo dos atalhos novos
+estava a lista de todos os conteúdos, que abre o editor antigo de blocos soltos.
+Era por aí que ele via a Introdução no modelo velho. Os pontos 1 e 2 da lista
+dele eram o mesmo problema, e a resposta foi apagar o caminho antigo.
+
+**Sobre o aviso do Play Protect:** não existe aplicação Android neste projecto.
+Nenhum APK, nenhum gradle, nenhum AndroidManifest. O pacote que o Android instala
+é montado pelo Google a partir do nosso manifesto, e o `targetSdkVersion` é
+escolhido por eles. Não há SDK nosso para actualizar. O que resolve de vez é
+publicar como TWA na Play Store, e isso é trabalho novo.
+
+---
+
 ## Defeitos do mês que valem ser lembrados
 
 Estão todos corrigidos. Ficam aqui porque a forma como falharam repete-se.
