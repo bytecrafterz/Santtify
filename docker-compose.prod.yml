@@ -26,6 +26,8 @@ services:
     build:
       context: .
       dockerfile: apps/api/Dockerfile
+      args:
+        PV_COMMIT: ${PV_COMMIT:-desconhecido}
     restart: unless-stopped
     depends_on:
       db:
@@ -74,6 +76,7 @@ services:
         # O número de suporte NUNCA entra no repositório: o histórico do git é
         # permanente e um número lá dentro nunca mais sai. Vive só no servidor.
         NEXT_PUBLIC_SUPORTE_WHATSAPP: ${NEXT_PUBLIC_SUPORTE_WHATSAPP:-}
+        PV_COMMIT: ${PV_COMMIT:-desconhecido}
     restart: unless-stopped
     depends_on:
       - api

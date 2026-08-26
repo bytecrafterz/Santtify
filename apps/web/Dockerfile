@@ -35,6 +35,20 @@ ENV NEXT_PUBLIC_API_URL=$NEXT_PUBLIC_API_URL \
     NEXT_PUBLIC_SUPORTE_WHATSAPP=$NEXT_PUBLIC_SUPORTE_WHATSAPP \
     NEXT_TELEMETRY_DISABLED=1
 
+# O COMMIT DE ONDE ISTO SAIU, gravado dentro da imagem.
+#
+# Serve para a publicação poder PROVAR que o que ficou a servir veio do código
+# de agora, em vez de confiar que ficou. Em 26/08 uma correcção de estilo não
+# chegou ao ar e a publicação correu sem uma única queixa: a imagem foi
+# construída, o contentor foi recriado, e o que estava lá dentro era do build
+# anterior. Só se apanhou por eu ter ido medir o botão no navegador.
+#
+# Está aqui em cima do build de propósito. Como o valor muda a cada commit,
+# obriga o `next build` a correr outra vez em cada publicação — as camadas do
+# npm, que são as demoradas, continuam em cache.
+ARG PV_COMMIT=desconhecido
+RUN echo "$PV_COMMIT" > /app/COMMIT
+
 RUN cd apps/web && npx next build
 
 # ── Estágio 3: runtime ─────────────────────────────────────────────
@@ -48,6 +62,7 @@ RUN addgroup -S pv && adduser -S pv -G pv
 COPY --from=build --chown=pv:pv /app/apps/web/.next/standalone ./
 COPY --from=build --chown=pv:pv /app/apps/web/.next/static ./apps/web/.next/static
 COPY --from=build --chown=pv:pv /app/apps/web/public ./apps/web/public
+COPY --from=build /app/COMMIT ./COMMIT
 
 USER pv
 EXPOSE 3000

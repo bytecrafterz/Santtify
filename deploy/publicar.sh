@@ -73,6 +73,22 @@ fi
 # Carimba a versão no service worker ANTES de compilar. O nome do cache sai
 # daqui, e é ele que faz a publicação nova apagar a anterior nos telemóveis
 # que já têm a aplicação instalada.
+# ── De que commit é isto ────────────────────────────────────────────
+# Lido do .git à mão, e não com o `git`. Este script corre como root e a árvore
+# é de outro utilizador; nesse caso o git recusa-se a responder ("dubious
+# ownership") e uma conferência que rebenta sozinha não confere nada.
+PV_COMMIT="desconhecido"
+if [ -f .git/HEAD ]; then
+  ref="$(cut -d' ' -f2 .git/HEAD 2>/dev/null)"
+  if [ -f ".git/$ref" ]; then
+    PV_COMMIT="$(cut -c1-7 ".git/$ref")"
+  else
+    PV_COMMIT="$(cut -c1-7 .git/HEAD)"
+  fi
+fi
+export PV_COMMIT
+ok "publicando o commit ${PV_COMMIT}"
+
 info "Carimbando a versão no service worker"
 VERSAO="$(date +%Y%m%d%H%M%S)"
 sed -i "s/self.__VERSAO__ || '[^']*'/self.__VERSAO__ || '${VERSAO}'/" apps/web/public/sw.js
@@ -144,6 +160,32 @@ if [ "$API_OK" -ne 1 ]; then
   echo "  Veja: docker compose -f docker-compose.prod.yml logs api --tail=50"
   exit 1
 fi
+
+# ── E veio deste commit? ────────────────────────────────────────────
+#
+# A pergunta parece paranóica e não é. Em 26/08 publiquei uma correcção de
+# estilo, a construção correu, o contentor foi recriado, tudo respondeu, e o
+# que ficou a servir era do build anterior. Nada nesta saída deu sinal.
+#
+# Cada imagem traz agora dentro dela o commit de onde saiu. Se o que está a
+# servir não for o que acabou de ser publicado, isto grita.
+info "Conferindo que no ar está este commit"
+for servico in api web; do
+  no_ar="$($COMPOSE exec -T "$servico" cat /app/COMMIT 2>/dev/null | tr -d '\r\n')"
+  if [ "$no_ar" = "$PV_COMMIT" ]; then
+    ok "$servico está no ${PV_COMMIT}"
+  else
+    echo ""
+    echo "  ############################################################"
+    echo "  ##  O QUE ESTÁ NO AR NÃO É O QUE ACABOU DE SER PUBLICADO. ##"
+    echo "  ############################################################"
+    echo "  $servico está a servir '${no_ar:-nada}' e devia estar em '$PV_COMMIT'."
+    echo ""
+    echo "  Force a reconstrução desse serviço e volte a publicar:"
+    echo "    docker compose -f docker-compose.prod.yml --env-file $ENV_FILE build --no-cache $servico"
+    exit 1
+  fi
+done
 
 info "Esperando ficar de pé"
 pronto=0

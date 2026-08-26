@@ -24,6 +24,11 @@ COPY package.json package-lock.json ./
 COPY packages/db packages/db
 COPY apps/api apps/api
 
+# O commit de onde isto saiu, para a publicação poder conferir depois que o que
+# ficou a servir veio mesmo do código de agora. Ver a nota no Dockerfile do site.
+ARG PV_COMMIT=desconhecido
+RUN echo "$PV_COMMIT" > /app/COMMIT
+
 # O client do Prisma é gerado a partir do schema; sem isso o build não compila.
 RUN npx prisma generate --schema packages/db/prisma/schema.prisma \
  && cd apps/api && npx nest build
@@ -42,6 +47,7 @@ COPY --from=build /app/apps/api/node_modules ./apps/api/node_modules
 COPY --from=build /app/apps/api/dist ./apps/api/dist
 COPY --from=build /app/packages/db ./packages/db
 COPY --from=build /app/package.json ./package.json
+COPY --from=build /app/COMMIT ./COMMIT
 
 # O entrypoint aplica as migrations antes de subir. Sem ele, um servidor novo
 # sobe a API contra um banco sem tabela nenhuma.
