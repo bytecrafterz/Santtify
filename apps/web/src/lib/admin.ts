@@ -489,4 +489,8 @@ export const admin = {
 
   urlQrSvg: (projectSlug: string, contentSlug: string) =>
     `${API_URL}/projects/${projectSlug}/contents/${contentSlug}/qr.svg`,
+
+  /** O mesmo ficheiro A4 que a pessoa recebe, para ele conferir antes de publicar. */
+  urlCartaoPdf: (projectSlug: string, contentSlug: string, baixar = false) =>
+    `${API_URL}/projects/${projectSlug}/contents/${contentSlug}/cartao.pdf${baixar ? '?baixar=1' : ''}`,
 }

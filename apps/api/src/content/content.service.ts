@@ -1,7 +1,8 @@
 import { Injectable, NotFoundException } from '@nestjs/common'
-import { BlockType, CardEstado, ContentStatus, EventType } from '@pv/db'
+import { BlockType, CardEstado, CardPapel, ContentStatus, EventType } from '@pv/db'
 import { PrismaService } from '../prisma/prisma.service'
 import { ShortLinksService } from '../short-links/short-links.service'
+import { StorageService } from '../admin/storage.service'
 
 /**
  * Leitura de conteúdo para o PWA.
@@ -15,6 +16,7 @@ export class ContentService {
   constructor(
     private readonly prisma: PrismaService,
     private readonly shortLinks: ShortLinksService,
+    private readonly storage: StorageService,
   ) {}
 
   async projeto(slug: string) {
@@ -128,7 +130,11 @@ export class ContentService {
         })
         .then((v) => v.length),
       this.prisma.event.count({
-        where: { projectId: project.id, type: EventType.CUSTOM, props: { path: ['acao'], equals: 'imprimir' } },
+        where: {
+          projectId: project.id,
+          type: EventType.CUSTOM,
+          props: { path: ['acao'], equals: 'imprimir' },
+        },
       }),
     ])
 
@@ -136,9 +142,7 @@ export class ContentService {
     // Sem um escolhido, usa-se o administrador — é quem já é dono disto, e é
     // melhor um rosto por omissão do que uma porta de entrada anónima.
     const anfitriao = await this.prisma.user.findFirst({
-      where: projeto?.hostUserId
-        ? { id: projeto.hostUserId }
-        : { role: 'ADMIN', status: 'ACTIVE' },
+      where: projeto?.hostUserId ? { id: projeto.hostUserId } : { role: 'ADMIN', status: 'ACTIVE' },
       orderBy: { createdAt: 'asc' },
       select: {
         id: true,
@@ -238,7 +242,10 @@ export class ContentService {
 
     // Só as categorias que têm faixa. Oferecer "só orações" numa lista sem
     // nenhuma oração é prometer o que não existe.
-    const porCategoria = new Map<string, { slug: string; nome: string; posicao: number; total: number }>()
+    const porCategoria = new Map<
+      string,
+      { slug: string; nome: string; posicao: number; total: number }
+    >()
     for (const c of contents) {
       for (const b of c.blocks) {
         if (!b.category) continue
@@ -278,7 +285,15 @@ export class ContentService {
             // aparecer em lado nenhum depois de criada.
             category: { select: { slug: true, name: true } },
             asset: {
-              select: { id: true, kind: true, url: true, mimeType: true, durationMs: true, title: true, altText: true },
+              select: {
+                id: true,
+                kind: true,
+                url: true,
+                mimeType: true,
+                durationMs: true,
+                title: true,
+                altText: true,
+              },
             },
           },
         },
@@ -298,12 +313,20 @@ export class ContentService {
     // Vizinhos, para navegar entre letras sem voltar ao índice.
     const [anterior, proximo] = await Promise.all([
       this.prisma.content.findFirst({
-        where: { projectId: project.id, status: ContentStatus.PUBLISHED, position: { lt: content.position } },
+        where: {
+          projectId: project.id,
+          status: ContentStatus.PUBLISHED,
+          position: { lt: content.position },
+        },
         orderBy: { position: 'desc' },
         select: { slug: true, title: true },
       }),
       this.prisma.content.findFirst({
-        where: { projectId: project.id, status: ContentStatus.PUBLISHED, position: { gt: content.position } },
+        where: {
+          projectId: project.id,
+          status: ContentStatus.PUBLISHED,
+          position: { gt: content.position },
+        },
         orderBy: { position: 'asc' },
         select: { slug: true, title: true },
       }),
@@ -366,6 +389,15 @@ export class ContentService {
          * publicar no painel. O que não faz é apagar do ar o que já lá estava.
          */
         blocks: content.blocks
+          /**
+           * Tirado do ar à mão sai daqui, esteja completo ou não.
+           *
+           * A regra de cima é sobre o que ESTÁ FEITO. Esta é sobre o que ele
+           * DECIDIU, e a decisão manda mais: um cartão inteiro que ele tirou do
+           * ar tem de desaparecer da página, senão o botão mente e ele fica a
+           * carregar nele à espera que aconteça alguma coisa.
+           */
+          .filter((b) => (b.meta as Record<string, unknown> | null)?.foraDoAr !== true)
           .filter((b) => b.type !== 'AUDIO' || Boolean(b.assetId) || Boolean(b.imageAssetId))
           .map((b) => ({
             id: b.id,
@@ -444,6 +476,51 @@ export class ContentService {
     })
 
     return { total: pessoas.length, pessoas }
+  }
+
+  /**
+   * O cartão de impressão da letra, em PDF A4.
+   *
+   * Ele carregou no imprimir do navegador e saiu o site inteiro com o cartão
+   * cortado. Tinha razão em achar aquilo errado, e a correcção não é ajustar o
+   * estilo de impressão: é deixar de mandar o navegador imprimir uma PÁGINA e
+   * passar a dar-lhe um FICHEIRO que já é o cartão.
+   *
+   * Um PDF resolve as duas coisas que ele pediu de uma vez. Imprimir a partir
+   * dele sai exactamente uma folha A4, sem nada do site e sem cortes, porque não
+   * há mais nada no ficheiro. E é o mesmo ficheiro que ele manda à gráfica por
+   * e-mail ou por WhatsApp. Um cartão, uma página, um PDF.
+   *
+   * A folha A4 é a que interessa imprimir. A arte de apresentação é a que
+   * aparece na página, e não é para papel — se ele ainda não tiver enviado a
+   * folha, vai a arte, que é melhor do que devolver um erro a quem carregou
+   * num botão.
+   */
+  async cartaoEmPdf(projectSlug: string, contentSlug: string) {
+    const project = await this.projeto(projectSlug)
+    const content = await this.prisma.content.findUnique({
+      where: { projectId_slug: { projectId: project.id, slug: contentSlug } },
+      select: { id: true, letra: true, title: true },
+    })
+    if (!content) throw new NotFoundException('Conteúdo não encontrado')
+
+    const cartao = await this.prisma.contentBlock.findFirst({
+      where: { contentId: content.id, papel: CardPapel.IMPRESSAO },
+      select: { meta: true, imageAsset: { select: { url: true } } },
+    })
+    if (!cartao) throw new NotFoundException('Esta letra ainda não tem cartão para impressão.')
+
+    const meta = (cartao.meta ?? {}) as Record<string, unknown>
+    const endereco = (meta.folhaA4 as string | undefined) ?? cartao.imageAsset?.url ?? null
+    const original = await this.storage.lerPelaUrl(endereco)
+    if (!original) {
+      throw new NotFoundException('O cartão ainda não tem a folha A4 nem a arte carregadas.')
+    }
+
+    const nome = content.letra
+      ? `cartao-letra-${content.letra.toLowerCase()}`
+      : `cartao-${contentSlug}`
+    return { pdf: await this.storage.imagemEmPdfA4(original), nome: `${nome}.pdf` }
   }
 
   /** SVG do QR, servido direto para impressão ou download pelo painel. */

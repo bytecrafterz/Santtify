@@ -161,7 +161,13 @@ export class AdminContentService {
 
   async atualizarConteudo(
     contentId: string,
-    dados: { title?: string; subtitle?: string; summary?: string; coverUrl?: string; position?: number },
+    dados: {
+      title?: string
+      subtitle?: string
+      summary?: string
+      coverUrl?: string
+      position?: number
+    },
     adminId: string,
   ) {
     const content = await this.prisma.content.update({
@@ -241,7 +247,14 @@ export class AdminContentService {
     // painel antigo ficava eternamente em rascunho e nunca chegava à página —
     // e ele veria a letra a esvaziar-se sem perceber porquê.
     await this.sincronizarEstado(blocoId)
-    await this.auditar(adminId, bloco.content.projectId, 'block.update', 'ContentBlock', blocoId, {})
+    await this.auditar(
+      adminId,
+      bloco.content.projectId,
+      'block.update',
+      'ContentBlock',
+      blocoId,
+      {},
+    )
     return bloco
   }
 
@@ -265,6 +278,28 @@ export class AdminContentService {
     // Quem preenche pelo painel antigo escreve o "rótulo" e não o "título".
     // Enquanto os dois painéis coexistirem, o rótulo vale como título.
     const titulo = b.titulo?.trim() || b.label?.trim() || ''
+    const meta = (b.meta ?? {}) as Record<string, unknown>
+
+    /**
+     * QUEM TIROU DO AR À MÃO MANDA MAIS DO QUE ESTA CONTA.
+     *
+     * Esta função decide o estado a partir do que o cartão tem lá dentro, e um
+     * cartão tirado do ar continua completo — logo, o gravar seguinte punha-o
+     * outra vez no ar sozinho. Ninguém carregou em publicar, e mesmo assim
+     * voltava à página: o pior tipo de defeito, porque parece que se enganou a
+     * carregar no botão. A retirada fica escrita no cartão e só sai por
+     * `porNoAr`, que é o gesto contrário e explícito.
+     */
+    if (meta.foraDoAr === true) {
+      await this.prisma.contentBlock.update({
+        where: { id: blocoId },
+        data: {
+          estado: CardEstado.RASCUNHO,
+          ...(b.titulo?.trim() ? {} : { titulo: titulo || null }),
+        },
+      })
+      return
+    }
 
     /**
      * O CARTÃO DE IMPRESSÃO TEM OUTRAS EXIGÊNCIAS, e não pode ser medido pela
@@ -273,7 +308,6 @@ export class AdminContentService {
      * para sempre, e ele nunca chegaria à página.
      */
     if (b.papel === CardPapel.IMPRESSAO) {
-      const meta = (b.meta ?? {}) as Record<string, unknown>
       const prontoParaImprimir = Boolean(b.imageAssetId) && Boolean(meta.folhaA4)
       await this.prisma.contentBlock.update({
         where: { id: blocoId },
@@ -320,11 +354,7 @@ export class AdminContentService {
     }
   }
 
-  async criarBloco(
-    contentId: string,
-    dados: { type: BlockType; label?: string },
-    adminId: string,
-  ) {
+  async criarBloco(contentId: string, dados: { type: BlockType; label?: string }, adminId: string) {
     const ultimo = await this.prisma.contentBlock.findFirst({
       where: { contentId },
       orderBy: { position: 'desc' },
@@ -353,7 +383,14 @@ export class AdminContentService {
     })
     if (!bloco) throw new NotFoundException('Bloco não encontrado')
     await this.prisma.contentBlock.delete({ where: { id: blocoId } })
-    await this.auditar(adminId, bloco.content.projectId, 'block.delete', 'ContentBlock', blocoId, {})
+    await this.auditar(
+      adminId,
+      bloco.content.projectId,
+      'block.delete',
+      'ContentBlock',
+      blocoId,
+      {},
+    )
   }
 
   /**
@@ -369,7 +406,12 @@ export class AdminContentService {
   async moverBloco(blocoId: string, direcao: 'cima' | 'baixo', adminId: string) {
     const bloco = await this.prisma.contentBlock.findUnique({
       where: { id: blocoId },
-      select: { id: true, position: true, contentId: true, content: { select: { projectId: true } } },
+      select: {
+        id: true,
+        position: true,
+        contentId: true,
+        content: { select: { projectId: true } },
+      },
     })
     if (!bloco) throw new NotFoundException('Bloco não encontrado')
 
@@ -387,8 +429,14 @@ export class AdminContentService {
     // Troca em transação: com duas escritas soltas, uma falha no meio deixaria
     // dois blocos na mesma posição e a ordem viraria sorteio.
     await this.prisma.$transaction([
-      this.prisma.contentBlock.update({ where: { id: bloco.id }, data: { position: vizinho.position } }),
-      this.prisma.contentBlock.update({ where: { id: vizinho.id }, data: { position: bloco.position } }),
+      this.prisma.contentBlock.update({
+        where: { id: bloco.id },
+        data: { position: vizinho.position },
+      }),
+      this.prisma.contentBlock.update({
+        where: { id: vizinho.id },
+        data: { position: bloco.position },
+      }),
     ])
     await this.auditar(adminId, bloco.content.projectId, 'block.move', 'ContentBlock', blocoId, {
       direcao,
@@ -530,11 +578,7 @@ export class AdminContentService {
   }
 
   /** Metadados analíticos do conteúdo — o pedido final do cliente. */
-  async salvarMetadados(
-    contentId: string,
-    dados: Record<string, unknown>,
-    adminId: string,
-  ) {
+  async salvarMetadados(contentId: string, dados: Record<string, unknown>, adminId: string) {
     const campos = ['platform', 'format', 'theme', 'productRef', 'cta', 'testVariant'] as const
     const data: Record<string, unknown> = {}
     for (const campo of campos) {
@@ -1317,15 +1361,25 @@ export class AdminContentService {
   async tirarDoAr(cartaoId: string, adminId: string) {
     const cartao = await this.prisma.contentBlock.findUnique({
       where: { id: cartaoId },
-      select: { id: true, content: { select: { projectId: true } } },
+      select: { id: true, meta: true, content: { select: { projectId: true } } },
     })
     if (!cartao) throw new NotFoundException('Cartão não encontrado')
 
     await this.prisma.contentBlock.update({
       where: { id: cartaoId },
-      data: { estado: CardEstado.RASCUNHO },
+      data: {
+        estado: CardEstado.RASCUNHO,
+        meta: { ...((cartao.meta ?? {}) as Record<string, unknown>), foraDoAr: true },
+      },
     })
-    await this.auditar(adminId, cartao.content.projectId, 'card.unpublish', 'ContentBlock', cartaoId, {})
+    await this.auditar(
+      adminId,
+      cartao.content.projectId,
+      'card.unpublish',
+      'ContentBlock',
+      cartaoId,
+      {},
+    )
     return { estado: CardEstado.RASCUNHO }
   }
 
@@ -1339,9 +1393,18 @@ export class AdminContentService {
   async porNoAr(cartaoId: string, adminId: string) {
     const cartao = await this.prisma.contentBlock.findUnique({
       where: { id: cartaoId },
-      select: { id: true, content: { select: { projectId: true } } },
+      select: { id: true, meta: true, content: { select: { projectId: true } } },
     })
     if (!cartao) throw new NotFoundException('Cartão não encontrado')
+
+    // Levantar a retirada à mão é o primeiro passo; a régua do costume decide
+    // o resto. Se faltar alguma coisa, continua fora do ar por falta e não por
+    // decisão, que é uma mensagem diferente para quem está a olhar.
+    const { foraDoAr: _retirado, ...meta } = (cartao.meta ?? {}) as Record<string, unknown>
+    await this.prisma.contentBlock.update({
+      where: { id: cartaoId },
+      data: { meta: meta as Prisma.InputJsonValue },
+    })
 
     await this.sincronizarEstado(cartaoId)
     const depois = await this.prisma.contentBlock.findUnique({
@@ -1353,7 +1416,14 @@ export class AdminContentService {
         'Este cartão ainda não está completo. Falta preencher alguma coisa antes de o pôr no ar.',
       )
     }
-    await this.auditar(adminId, cartao.content.projectId, 'card.publish', 'ContentBlock', cartaoId, {})
+    await this.auditar(
+      adminId,
+      cartao.content.projectId,
+      'card.publish',
+      'ContentBlock',
+      cartaoId,
+      {},
+    )
     return { estado: CardEstado.PUBLICADO }
   }
 
@@ -1368,7 +1438,12 @@ export class AdminContentService {
   async apagarCartao(cartaoId: string, adminId: string) {
     const cartao = await this.prisma.contentBlock.findUnique({
       where: { id: cartaoId },
-      select: { id: true, slot: true, papel: true, content: { select: { projectId: true, letra: true } } },
+      select: {
+        id: true,
+        slot: true,
+        papel: true,
+        content: { select: { projectId: true, letra: true } },
+      },
     })
     if (!cartao) throw new NotFoundException('Cartão não encontrado')
 
@@ -1380,7 +1455,14 @@ export class AdminContentService {
     }
 
     await this.prisma.contentBlock.delete({ where: { id: cartaoId } })
-    await this.auditar(adminId, cartao.content.projectId, 'card.delete', 'ContentBlock', cartaoId, {})
+    await this.auditar(
+      adminId,
+      cartao.content.projectId,
+      'card.delete',
+      'ContentBlock',
+      cartaoId,
+      {},
+    )
     return { apagado: true, esvaziado: false }
   }
 
@@ -1479,7 +1561,14 @@ export class AdminContentService {
         estado: CardEstado.RASCUNHO,
       },
     })
-    await this.auditar(adminId, cartao.content.projectId, 'card.clear', 'ContentBlock', cartaoId, {})
+    await this.auditar(
+      adminId,
+      cartao.content.projectId,
+      'card.clear',
+      'ContentBlock',
+      cartaoId,
+      {},
+    )
     return { removido: false }
   }
 

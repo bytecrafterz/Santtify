@@ -1,6 +1,7 @@
 'use client'
 
 import { useState } from 'react'
+import { api } from '@/lib/api'
 import { rastrear } from '@/lib/track'
 import { IndicadoresDaPublicacao } from './IndicadoresDaPublicacao'
 
@@ -19,16 +20,22 @@ import { IndicadoresDaPublicacao } from './IndicadoresDaPublicacao'
  *
  * O CONTADOR SÓ SOBE COM ACÇÃO CONCLUÍDA — regra dele desde 20/08, quando tocou
  * várias vezes no botão e viu o número subir sem ter impresso nada.
+ *
+ * IMPRIMIR NÃO MANDA IMPRIMIR ESTA PÁGINA. Mandava, e o que saiu do papel dele
+ * em 26/08 foi o site todo com o cartão cortado ao meio. O navegador imprime o
+ * que está no ecrã, e o que está no ecrã é uma página com cabeçalho, botões e
+ * comentários. Agora abre-se um PDF feito no servidor que só tem o cartão, numa
+ * folha A4 — um cartão, uma página, um ficheiro. Imprime igual em qualquer
+ * telemóvel, e é o mesmo ficheiro que se guarda para enviar à gráfica.
  */
 export function CartaoDeImpressao({
   projectId,
   contentId,
   blockId,
   projectSlug,
+  contentSlug,
   titulo,
   letra,
-  ficheiro,
-  nomeDoFicheiro,
   arte,
   folhaA4,
   linkUpgrade,
@@ -37,10 +44,9 @@ export function CartaoDeImpressao({
   contentId: string
   blockId: string
   projectSlug: string
+  contentSlug: string
   titulo: string
   letra: string
-  ficheiro: string | null
-  nomeDoFicheiro: string | null
   arte: string
   folhaA4: string | null
   linkUpgrade: string | null
@@ -48,24 +54,17 @@ export function CartaoDeImpressao({
   const [aviso, definirAviso] = useState<string | null>(null)
   const nome = letra ? `Letra ${letra}` : titulo
 
+  /** O ficheiro chega ao telemóvel com um nome que se percebe na pasta das transferências. */
+  function nomeDoFicheiro() {
+    return letra ? `letra-${letra.toLowerCase()}` : contentSlug
+  }
+
   async function contar(via: string) {
     try {
       await rastrear({ projectId, contentId, type: 'CUSTOM', props: { acao: 'imprimir', via } })
     } catch {
       // Falhar a contar não pode impedir a acção que a pessoa pediu.
     }
-  }
-
-  function imprimirAgora() {
-    // `afterprint` dispara quando a caixa do sistema se fecha. Não garante que
-    // saiu papel — nada garante — mas garante que a pessoa chegou ao fim.
-    const aoTerminar = () => {
-      window.removeEventListener('afterprint', aoTerminar)
-      void contar('impressora')
-      definirAviso('Obrigado por imprimir.')
-    }
-    window.addEventListener('afterprint', aoTerminar)
-    window.print()
   }
 
   return (
@@ -78,22 +77,29 @@ export function CartaoDeImpressao({
           <img className="foto-publicacao folha-a4" src={folhaA4} alt={`Folha A4 da ${nome}`} />
         )}
         <div className="faixa-imprimir">
-          {ficheiro ? (
-            <a
-              className="botao-imprimir"
-              href={ficheiro}
-              download={nomeDoFicheiro ?? undefined}
-              target="_blank"
-              rel="noopener noreferrer"
-              onClick={() => void contar('download')}
-            >
-              🖨 IMPRIMIR GRÁTIS
-            </a>
-          ) : (
-            <button type="button" className="botao-imprimir" onClick={imprimirAgora}>
-              🖨 IMPRIMIR GRÁTIS
-            </button>
-          )}
+          <a
+            className="botao-imprimir"
+            href={api.cartaoPdfUrl(projectSlug, contentSlug)}
+            target="_blank"
+            rel="noopener noreferrer"
+            onClick={() => {
+              void contar('impressora')
+              definirAviso('Abrimos o cartão em folha A4. É só carregar em imprimir.')
+            }}
+          >
+            🖨 IMPRIMIR GRÁTIS
+          </a>
+          <a
+            className="botao-imprimir secundario"
+            href={api.cartaoPdfUrl(projectSlug, contentSlug, true)}
+            download={`cartao-${nomeDoFicheiro()}.pdf`}
+            onClick={() => {
+              void contar('download')
+              definirAviso('Cartão guardado em PDF.')
+            }}
+          >
+            ⬇ BAIXAR EM PDF
+          </a>
         </div>
       </div>
 

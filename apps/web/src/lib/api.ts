@@ -182,5 +182,15 @@ export const api = {
     buscar<PaginaConteudo>(`/projects/${projeto}/contents/${conteudo}`),
   qrSvgUrl: (projeto: string, conteudo: string) =>
     `${API_URL}/projects/${projeto}/contents/${conteudo}/qr.svg`,
+  /**
+   * O cartão sozinho, numa folha A4, feito no servidor.
+   *
+   * Não é o `window.print()` do navegador: aquilo imprime a PÁGINA, e foi por
+   * isso que lhe saíram o cabeçalho, os comentários e o cartão cortado. Isto é
+   * um ficheiro que só tem o cartão, e por isso imprime sempre igual, em
+   * qualquer telemóvel e em qualquer impressora.
+   */
+  cartaoPdfUrl: (projeto: string, conteudo: string, baixar = false) =>
+    `${API_URL}/projects/${projeto}/contents/${conteudo}/cartao.pdf${baixar ? '?baixar=1' : ''}`,
   url: API_URL,
 }

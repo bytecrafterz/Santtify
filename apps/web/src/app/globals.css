@@ -5895,3 +5895,115 @@ button.linha-menu-capa {
 .folha-identidade .botao-acao {
   margin-top: 0.4rem;
 }
+
+/* ── O QR e a folha A4 no painel do cartão de impressão ────────────────
+   Ele pediu o QR "pronto para baixar e enviar ao designer": isso é uma peça
+   com nome, imagem e um botão de descarregar, e não um ícone escondido. */
+.bloco-qr {
+  margin: 1rem 0 0;
+  padding: 1rem;
+  border: 1px solid var(--cor-borda, #e4e4e7);
+  border-radius: 14px;
+  background: #fff;
+  text-align: center;
+}
+
+.bloco-qr h3 {
+  margin: 0 0 0.6rem;
+  font-size: 0.72rem;
+  font-weight: 800;
+  letter-spacing: 0.08em;
+  color: #52525b;
+}
+
+/* Fundo branco fixo: um QR sobre cinzento perde contraste e há leitores que
+   desistem dele. Impresso é sempre preto sobre branco, e no ecrã também. */
+.imagem-qr {
+  display: block;
+  width: 160px;
+  height: 160px;
+  margin: 0 auto;
+  padding: 8px;
+  border-radius: 10px;
+  background: #fff;
+}
+
+.nota-qr {
+  margin: 0.6rem 0 0.75rem;
+  font-size: 0.85rem;
+  line-height: 1.45;
+  color: #52525b;
+}
+
+.aviso-trocar {
+  margin: 0.5rem 0 0;
+  text-align: center;
+  font-weight: 600;
+}
+
+/* ── TROCAR | TIRAR DO AR | DELETAR ────────────────────────────────────
+   Três acções à mesma largura, porque nenhuma é a principal: a que ele quer
+   num dia não é a que quer no outro, e destacar uma delas empurra a mão. */
+.tres-acoes {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 0.5rem;
+  margin: 1rem 0 0;
+}
+
+.acao-separada {
+  padding: 0.8rem 0.4rem;
+  border: 1px solid var(--cor-borda, #e4e4e7);
+  border-radius: 12px;
+  background: #fff;
+  color: #27272a;
+  font-family: inherit;
+  font-size: 0.78rem;
+  font-weight: 800;
+  letter-spacing: 0.04em;
+  cursor: pointer;
+}
+
+.acao-separada:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+}
+
+/* Vermelho só na que não tem volta. */
+.acao-separada.perigo {
+  border-color: #fca5a5;
+  color: #b91c1c;
+}
+
+.confirmar-apagar {
+  margin: 0.75rem 0 0;
+  padding: 0.9rem 1rem;
+  border: 1px solid #fca5a5;
+  border-radius: 14px;
+  background: #fef2f2;
+}
+
+.confirmar-apagar p {
+  margin: 0;
+  font-size: 0.9rem;
+  line-height: 1.45;
+  color: #7f1d1d;
+}
+
+.confirmar-apagar .linha-acoes {
+  margin: 0.75rem 0 0;
+}
+
+/* Baixar em PDF vive por baixo de imprimir, na mesma faixa: são a mesma
+   decisão vista de dois lados, e não duas decisões. */
+.faixa-imprimir {
+  display: flex;
+  flex-direction: column;
+}
+
+.botao-imprimir.secundario {
+  padding: 0.8rem;
+  border-top: 1px solid rgba(255, 255, 255, 0.18);
+  background: #3f3f46;
+  font-size: 0.9rem;
+}

@@ -16,27 +16,47 @@ import { admin, type CartaoAdmin } from '@/lib/admin'
  * para IMPRIMIR e não para olhar. As duas imagens juntas num formulário sem
  * ordem levam a que se troquem uma pela outra, e aí a criança leva para casa
  * o cartaz em vez da folha.
+ *
+ * O QR ESTÁ AQUI PORQUE É AQUI QUE ELE PRECISA DELE. Ele escreveu em 26/08 que
+ * o QR já devia estar pronto para baixar e enviar ao designer, e tinha razão:
+ * era criado com a letra e depois só aparecia noutro ecrã. Uma coisa criada
+ * automaticamente que ninguém encontra é o mesmo que não existir.
  */
 export function EditorDoCartaoDeImpressao({
   cartao,
   letra,
+  projectSlug,
+  contentSlug,
   aoGuardar,
+  aoApagar,
   aoCancelar,
 }: {
   cartao: CartaoAdmin
   letra: string
+  projectSlug: string
+  contentSlug: string | null
   aoGuardar: () => Promise<void>
+  aoApagar: () => Promise<void>
   aoCancelar: () => void
 }) {
   const [arte, definirArte] = useState(cartao.imagem)
   const [folha, definirFolha] = useState(cartao.folhaA4 ?? null)
   const [link, definirLink] = useState(cartao.linkUpgrade ?? '')
+  const [estado, definirEstado] = useState(cartao.estado)
   const [ocupado, definirOcupado] = useState<string | null>(null)
   const [erro, definirErro] = useState<string | null>(null)
+  const [aConfirmar, definirAConfirmar] = useState(false)
+  const [aEscolherQual, definirAEscolherQual] = useState(false)
 
   const falta = [!arte && 'a arte de apresentação', !folha && 'a folha A4'].filter(
     Boolean,
   ) as string[]
+
+  // Sem slug não há endereço público, e sem endereço público não há QR nem PDF.
+  // Acontece enquanto a letra ainda não foi criada de verdade.
+  const qr = contentSlug ? admin.urlQrSvg(projectSlug, contentSlug) : null
+  const pdf = contentSlug ? admin.urlCartaoPdf(projectSlug, contentSlug) : null
+  const pdfParaBaixar = contentSlug ? admin.urlCartaoPdf(projectSlug, contentSlug, true) : null
 
   /** A imagem aparece assim que é escolhida, como no editor dos outros cartões. */
   async function enviar(qual: 'arte' | 'folha', arquivo: File) {
@@ -46,6 +66,7 @@ export function EditorDoCartaoDeImpressao({
     else definirFolha(local)
     definirOcupado(qual)
     definirErro(null)
+    definirAEscolherQual(false)
     try {
       const r =
         qual === 'arte'
@@ -72,6 +93,50 @@ export function EditorDoCartaoDeImpressao({
     } catch {
       definirErro('Não foi possível guardar.')
       definirOcupado(null)
+    }
+  }
+
+  /**
+   * Sair do ar não é apagar, e é essa a diferença que o botão único escondia.
+   * O cartão fica inteiro, com a arte e a folha, e volta com um toque.
+   */
+  async function tirarDoAr() {
+    definirOcupado('tirar')
+    definirErro(null)
+    try {
+      const r = await admin.tirarCartaoDoAr(cartao.id)
+      definirEstado(r.estado as CartaoAdmin['estado'])
+    } catch {
+      definirErro('Não foi possível tirar do ar.')
+    } finally {
+      definirOcupado(null)
+    }
+  }
+
+  async function porNoAr() {
+    definirOcupado('publicar')
+    definirErro(null)
+    try {
+      const r = await admin.porCartaoNoAr(cartao.id)
+      definirEstado(r.estado as CartaoAdmin['estado'])
+    } catch {
+      definirErro('Não foi possível pôr no ar.')
+    } finally {
+      definirOcupado(null)
+    }
+  }
+
+  /** Não tem volta, e por isso passa por uma pergunta antes. */
+  async function apagar() {
+    definirOcupado('apagar')
+    definirErro(null)
+    try {
+      await admin.apagarCartaoDeVez(cartao.id)
+      await aoApagar()
+    } catch {
+      definirErro('Não foi possível apagar.')
+      definirOcupado(null)
+      definirAConfirmar(false)
     }
   }
 
@@ -105,9 +170,7 @@ export function EditorDoCartaoDeImpressao({
               if (f) void enviar('arte', f)
             }}
           />
-          <span className="acao-area">
-            {ocupado === 'arte' ? 'A enviar...' : 'Tocar para trocar'}
-          </span>
+          <span className="acao-area">{ocupado === 'arte' ? 'A enviar...' : 'TROCAR'}</span>
         </label>
 
         <label className="area-foto folha">
@@ -129,9 +192,7 @@ export function EditorDoCartaoDeImpressao({
               if (f) void enviar('folha', f)
             }}
           />
-          <span className="acao-area">
-            {ocupado === 'folha' ? 'A enviar...' : 'Tocar para trocar'}
-          </span>
+          <span className="acao-area">{ocupado === 'folha' ? 'A enviar...' : 'TROCAR'}</span>
         </label>
 
         <div className="faixa-imprimir">
@@ -156,7 +217,127 @@ export function EditorDoCartaoDeImpressao({
         </label>
       </article>
 
+      {/*
+        O QR da letra, do tamanho de quem o vai conferir e não de quem o vai ler.
+        O ficheiro é vectorial: a gráfica amplia-o para um cartaz sem que fique
+        serrilhado, o que uma fotografia do ecrã nunca permitiria.
+      */}
+      <section className="bloco-qr">
+        <h3>QR CODE DA LETRA {letra}</h3>
+        {qr ? (
+          <>
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img className="imagem-qr" src={qr} alt={`QR Code da Letra ${letra}`} />
+            <p className="nota-qr">
+              Este é o código que leva à Letra {letra}. Baixe e envie ao designer.
+            </p>
+            <a className="botao-acao largo" href={qr} download={`qr-letra-${letra}.svg`}>
+              ⬇ BAIXAR O QR CODE
+            </a>
+          </>
+        ) : (
+          <p className="nota-qr">O QR aparece assim que a letra tiver conteúdo publicado.</p>
+        )}
+      </section>
+
+      {/*
+        Ver o que sai na impressora antes de mandar imprimir. É o mesmo ficheiro
+        que a pessoa em casa recebe, gerado no servidor, uma folha A4 e nada mais.
+      */}
+      {pdf && pdfParaBaixar && folha && (
+        <section className="bloco-qr">
+          <h3>A FOLHA A4</h3>
+          <p className="nota-qr">Uma folha, só o cartão, sem nada do site.</p>
+          <div className="linha-acoes">
+            <a className="botao-acao" href={pdf} target="_blank" rel="noopener noreferrer">
+              🖨 IMPRIMIR
+            </a>
+            <a
+              className="botao-acao"
+              href={pdfParaBaixar}
+              download={`cartao-letra-${letra.toLowerCase()}.pdf`}
+            >
+              ⬇ BAIXAR PDF
+            </a>
+          </div>
+        </section>
+      )}
+
       {erro && <p className="erro">{erro}</p>}
+
+      {/*
+        TROCAR, TIRAR DO AR e DELETAR, separadas, como ele pediu em 26/08.
+        Estavam as três atrás do mesmo gesto, e por isso quem só queria corrigir
+        uma imagem não tinha como tirar o cartão do ar sem o apagar.
+      */}
+      <div className="tres-acoes">
+        <button
+          type="button"
+          className="acao-separada"
+          onClick={() => definirAEscolherQual((v) => !v)}
+          disabled={ocupado !== null}
+        >
+          TROCAR
+        </button>
+        {estado === 'PUBLICADO' ? (
+          <button
+            type="button"
+            className="acao-separada"
+            onClick={() => void tirarDoAr()}
+            disabled={ocupado !== null}
+          >
+            {ocupado === 'tirar' ? 'A tirar...' : 'TIRAR DO AR'}
+          </button>
+        ) : (
+          <button
+            type="button"
+            className="acao-separada"
+            onClick={() => void porNoAr()}
+            disabled={ocupado !== null || falta.length > 0}
+            title={falta.length ? `Falta ${falta.join(' e ')}` : 'Pôr o cartão no ar'}
+          >
+            {ocupado === 'publicar' ? 'A pôr...' : 'PÔR NO AR'}
+          </button>
+        )}
+        <button
+          type="button"
+          className="acao-separada perigo"
+          onClick={() => definirAConfirmar(true)}
+          disabled={ocupado !== null}
+        >
+          DELETAR
+        </button>
+      </div>
+
+      {aEscolherQual && (
+        <p className="nota-qr aviso-trocar">
+          Toque na imagem que quer trocar: a arte de apresentação em cima, a folha A4 por baixo.
+        </p>
+      )}
+
+      {aConfirmar && (
+        <div className="confirmar-apagar">
+          <p>Apagar o cartão de impressão da Letra {letra}? A arte e a folha A4 vão-se embora.</p>
+          <div className="linha-acoes">
+            <button
+              type="button"
+              className="botao-acao"
+              onClick={() => definirAConfirmar(false)}
+              disabled={ocupado === 'apagar'}
+            >
+              MANTER
+            </button>
+            <button
+              type="button"
+              className="acao-separada perigo"
+              onClick={() => void apagar()}
+              disabled={ocupado === 'apagar'}
+            >
+              {ocupado === 'apagar' ? 'A apagar...' : 'APAGAR MESMO'}
+            </button>
+          </div>
+        </div>
+      )}
 
       <div className="acoes-cartao">
         <button
@@ -187,8 +368,10 @@ export function EditorDoCartaoDeImpressao({
       <p className={falta.length ? 'tira-estado rascunho' : 'tira-estado pronto'}>
         {falta.length ? (
           <>RASCUNHO — falta {falta.join(' e ')}</>
+        ) : estado === 'PUBLICADO' ? (
+          <>NO AR — o cartão da Letra {letra} aparece no fim da letra</>
         ) : (
-          <>PRONTO — o cartão da Letra {letra} aparece no fim da letra assim que guardar</>
+          <>FORA DO AR — está inteiro e guardado, mas ninguém o vê</>
         )}
       </p>
     </div>

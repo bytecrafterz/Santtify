@@ -1,8 +1,8 @@
 import { BadRequestException, Injectable, Logger } from '@nestjs/common'
 import { ConfigService } from '@nestjs/config'
 import { randomBytes } from 'node:crypto'
-import { mkdir, writeFile } from 'node:fs/promises'
-import { extname, join } from 'node:path'
+import { mkdir, readFile, writeFile } from 'node:fs/promises'
+import { extname, join, resolve } from 'node:path'
 import sharp from 'sharp'
 import { PDFDocument } from 'pdf-lib'
 import { MediaKind } from '@pv/db'
@@ -123,7 +123,6 @@ export class StorageService {
     }
   }
 
-
   /**
    * Guarda material para imprimir, aceitando PDF ou fotografia.
    *
@@ -200,9 +199,68 @@ export class StorageService {
     return null
   }
 
+  /**
+   * Lê do disco um ficheiro que já servimos, a partir do endereço público.
+   *
+   * O ENDEREÇO É DE FORA e por isso não se confia nele. Só se aceita o que
+   * vier depois de `/uploads/`, e o caminho resolvido tem de continuar dentro
+   * da pasta de uploads — um `..` a meio transformaria isto numa porta para ler
+   * qualquer ficheiro do servidor.
+   */
+  async lerPelaUrl(url: string | null | undefined): Promise<Buffer | null> {
+    if (!url) return null
+    const marca = '/uploads/'
+    const i = url.indexOf(marca)
+    if (i < 0) return null
+
+    const relativo = url.slice(i + marca.length).split('?')[0]
+    const caminho = resolve(join(this.pasta, relativo))
+    if (!caminho.startsWith(resolve(this.pasta))) {
+      this.logger.warn(`Caminho fora da pasta de uploads recusado: ${relativo}`)
+      return null
+    }
+    try {
+      return await readFile(caminho)
+    } catch {
+      return null
+    }
+  }
+
+  /**
+   * Uma imagem numa página A4, para imprimir.
+   *
+   * A4 EM PONTOS e a imagem no tamanho original: o PDF guarda a imagem como
+   * ela é e diz onde a desenhar. Não há redução nenhuma pelo caminho, e é por
+   * isso que sai com a qualidade da arte que ele enviou — o que o cliente pediu
+   * em 26/08 quando disse que ia mandar o ficheiro para a gráfica.
+   *
+   * A conversão para JPEG existe porque um PDF só sabe embutir JPEG e PNG, e o
+   * que sai do iPhone muitas vezes não é nenhum dos dois. A qualidade fica em
+   * 95: acima disso o ficheiro cresce sem se ver diferença no papel.
+   */
+  async imagemEmPdfA4(imagem: Buffer): Promise<Buffer> {
+    const jpeg = await sharp(imagem).rotate().jpeg({ quality: 95 }).toBuffer()
+    const pdf = await PDFDocument.create()
+    const A4 = { largura: 595.28, altura: 841.89 }
+    const pagina = pdf.addPage([A4.largura, A4.altura])
+    const embutida = await pdf.embedJpg(jpeg)
+
+    // Cabe inteira e centrada. Encher a página cortaria a arte, e uma arte
+    // cortada é exactamente a queixa dele sobre a impressão do navegador.
+    const escala = Math.min(A4.largura / embutida.width, A4.altura / embutida.height)
+    const l = embutida.width * escala
+    const a = embutida.height * escala
+    pagina.drawImage(embutida, {
+      x: (A4.largura - l) / 2,
+      y: (A4.altura - a) / 2,
+      width: l,
+      height: a,
+    })
+    return Buffer.from(await pdf.save())
+  }
+
   async salvar(arquivo: Express.Multer.File): Promise<ArquivoSalvo> {
-    const generico =
-      arquivo.mimetype === 'application/octet-stream' || !arquivo.mimetype
+    const generico = arquivo.mimetype === 'application/octet-stream' || !arquivo.mimetype
     if (generico) {
       const adivinhado = this.tipoPelaExtensao(arquivo.originalname)
       if (adivinhado) arquivo = { ...arquivo, mimetype: adivinhado } as Express.Multer.File

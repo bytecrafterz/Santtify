@@ -87,6 +87,12 @@ export function SequenciaDoAlfabeto({ projectSlug }: { projectSlug: string }) {
             key={cartao.id}
             cartao={cartao}
             letra={vagao.letra}
+            projectSlug={projectSlug}
+            contentSlug={vagao.slug}
+            aoApagar={async () => {
+              await recarregar()
+              definirOnde({ tela: 'quadrados', letra: vagao.letra })
+            }}
             aoGuardar={async () => {
               await recarregar()
               definirOnde({ tela: 'quadrados', letra: vagao.letra })

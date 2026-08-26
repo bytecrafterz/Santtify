@@ -233,10 +233,9 @@ export function ExperienciaContinua({
                 contentId={aberta.content.id}
                 blockId={impressao.id}
                 projectSlug={projectSlug}
+                contentSlug={aberta.content.slug}
                 titulo={impressao.titulo ?? aberta.content.title}
                 letra={aberta.content.letra ?? ''}
-                ficheiro={aberta.content.freeFileUrl}
-                nomeDoFicheiro={aberta.content.freeFileName}
                 arte={impressao.arte}
                 folhaA4={(impressao.meta?.folhaA4 as string | undefined) ?? null}
                 linkUpgrade={impressao.linkUpgrade}
