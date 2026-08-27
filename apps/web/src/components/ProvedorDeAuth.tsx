@@ -1,7 +1,7 @@
 'use client'
 
 import { createContext, useCallback, useContext, useEffect, useState } from 'react'
-import { auth, renovarSessao, tokens, type Usuario } from '@/lib/auth'
+import { auth, ErroDeApi, renovarSessao, tokens, type Usuario } from '@/lib/auth'
 
 interface ContextoDeAuth {
   usuario: Usuario | null
@@ -67,8 +67,26 @@ export function ProvedorDeAuth({ children }: { children: React.ReactNode }) {
         try {
           const eu = await auth.me()
           if (!cancelado) definirUsuario(eu)
-        } catch {
-          tokens.limpar()
+        } catch (erro) {
+          /**
+           * FALHAR A REDE NÃO É PERDER A SESSÃO. OUTRA VEZ.
+           *
+           * Isto apagava o token guardado a QUALQUER erro. A renovação já tinha
+           * corrido bem um instante antes: a sessão era válida, o servidor tinha
+           * acabado de emitir um par novo. Bastava a chamada seguinte falhar por
+           * rede, por um 500 ou por o telemóvel acordar a meio, e a aplicação
+           * deitava fora uma sessão boa. A pessoa voltava e estava fora.
+           *
+           * Vê-se nos dados dele: tokens criados e nunca mais usados, sem
+           * rotação e sem revogação. Nasceram da renovação e foram abandonados
+           * aqui, neste `catch`.
+           *
+           * Já tinha corrigido exactamente isto dentro de `renovarSessao` e
+           * deixei a segunda metade por corrigir. Só um 401 apaga: aí o servidor
+           * disse mesmo que a sessão não serve. Tudo o resto é caminho, e o
+           * token fica guardado para a próxima tentativa.
+           */
+          if (erro instanceof ErroDeApi && erro.status === 401) tokens.limpar()
         }
       }
       if (!cancelado) definirCarregando(false)
