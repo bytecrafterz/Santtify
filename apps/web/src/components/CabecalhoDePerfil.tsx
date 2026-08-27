@@ -158,7 +158,8 @@ export function CabecalhoDePerfil({
   async function curtir() {
     if (aCurtir) return
     if (!dono) return
-    if (!usuario) {
+    // Também aqui: quem toca a meio da restauração não é um visitante.
+    if (visitante) {
       definirAviso('Entre na sua conta para curtir.')
       return
     }

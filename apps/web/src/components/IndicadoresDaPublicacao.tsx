@@ -69,7 +69,7 @@ export function IndicadoresDaPublicacao({
   /** O endereço a partilhar: leva a esta publicação e não à página inteira. */
   ligacao: string
 }) {
-  const { usuario } = useAuth()
+  const { usuario, visitante } = useAuth()
   const [estado, definirEstado] = useState<EstadoDaFaixa>(VAZIO)
   const [comentariosAbertos, definirComentariosAbertos] = useState(false)
   const [convite, definirConvite] = useState<string | null>(null)
@@ -117,7 +117,13 @@ export function IndicadoresDaPublicacao({
 
   async function curtir() {
     if (aCurtir) return
-    if (!usuario) {
+    /*
+      `visitante` E NÃO `!usuario`: durante o segundo em que a sessão está a ser
+      restaurada, `usuario` ainda é nulo e quem tem conta era convidado a criar
+      uma. Assim, quem toca a meio da restauração faz a acção quando ela acaba,
+      em vez de levar com um convite que não é para ele.
+    */
+    if (visitante) {
       definirConvite('Para curtir, crie a sua conta grátis')
       return
     }
@@ -168,7 +174,7 @@ export function IndicadoresDaPublicacao({
      * pode partir de alguém que ninguém sabe quem é. A curtida já estava
      * travada; a partilha ficou aberta e era a porta que faltava fechar.
      */
-    if (!usuario) {
+    if (visitante) {
       definirConvite('Para partilhar, crie a sua conta grátis')
       return
     }

@@ -46,7 +46,7 @@ export function CartaoDeConteudo({
   capa: string | null
   blocos: Bloco[]
 }) {
-  const { usuario } = useAuth()
+  const { usuario, visitante } = useAuth()
   const [estado, definirEstado] = useState<EstadoSocial>({
     visualizacoes: 0,
     curtidas: 0,
@@ -80,7 +80,10 @@ export function CartaoDeConteudo({
 
   async function curtir() {
     if (aCurtir.current) return
-    if (!usuario) {
+    // `visitante` e não `!usuario`: durante a restauração da sessão ainda não
+    // se sabe, e convidar a criar conta quem já tem uma é o defeito que ele
+    // fotografou em 27/08.
+    if (visitante) {
       definirConvite('Para curtir, crie a sua conta grátis')
       return
     }
@@ -138,7 +141,7 @@ export function CartaoDeConteudo({
           contentId={contentId}
           rotulo={audios.length > 1 ? a.label : null}
           aoTerminar={() => {
-            if (!usuario) definirConvite('Gostou desta música?')
+            if (visitante) definirConvite('Gostou desta música?')
           }}
         />
       ))}

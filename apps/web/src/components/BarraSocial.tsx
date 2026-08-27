@@ -25,7 +25,7 @@ export function BarraSocial({
   projectSlug: string
   titulo: string
 }) {
-  const { usuario } = useAuth()
+  const { usuario, visitante } = useAuth()
   /**
    * Começa com zeros em vez de `null` para a barra existir já no HTML da
    * primeira renderização. Antes ela só aparecia depois da resposta da API, e
@@ -48,13 +48,16 @@ export function BarraSocial({
   const [recado, definirRecado] = useState('')
 
   useEffect(() => {
-    social.estado(contentId).then(definirEstado).catch(() => {
-      // Sem rede a barra continua visível com zeros: melhor que sumir.
-    })
+    social
+      .estado(contentId)
+      .then(definirEstado)
+      .catch(() => {
+        // Sem rede a barra continua visível com zeros: melhor que sumir.
+      })
   }, [contentId])
 
   async function curtir() {
-    if (!usuario) return definirAviso('entrar')
+    if (visitante) return definirAviso('entrar')
     definirOcupado(true)
     try {
       const r = await social.curtir(contentId, projectId)
@@ -83,13 +86,13 @@ export function BarraSocial({
    * outro lado.
    */
   function abrirCaixaDeCompartilhar() {
-    if (!usuario) return definirAviso('entrar')
+    if (visitante) return definirAviso('entrar')
     definirRecado('')
     definirCaixaAberta(true)
   }
 
   async function compartilhar(recadoDaPessoa: string) {
-    if (!usuario) return definirAviso('entrar')
+    if (visitante) return definirAviso('entrar')
     definirCaixaAberta(false)
     definirOcupado(true)
     try {
@@ -202,8 +205,8 @@ export function BarraSocial({
         <div className="bloco caixa-compartilhar">
           <span className="bloco-rotulo">Compartilhar</span>
           <p className="nota">
-            Escreva um recado, se quiser. Quem receber vê o seu texto e a imagem desta letra,
-            e ao tocar no link abre direto aqui.
+            Escreva um recado, se quiser. Quem receber vê o seu texto e a imagem desta letra, e ao
+            tocar no link abre direto aqui.
           </p>
           <textarea
             value={recado}
@@ -214,11 +217,7 @@ export function BarraSocial({
             autoFocus
           />
           <div className="publicar-acoes">
-            <button
-              type="button"
-              className="secundario"
-              onClick={() => definirCaixaAberta(false)}
-            >
+            <button type="button" className="secundario" onClick={() => definirCaixaAberta(false)}>
               Cancelar
             </button>
             <button type="button" onClick={() => compartilhar(recado)} disabled={ocupado}>
@@ -313,7 +312,9 @@ function Comentarios({
     <section id="comentarios" className="comentarios">
       <h2>Comentários</h2>
 
-      {lista.length === 0 && <p className="bloco-vazio">Nenhum comentário ainda. Seja o primeiro.</p>}
+      {lista.length === 0 && (
+        <p className="bloco-vazio">Nenhum comentário ainda. Seja o primeiro.</p>
+      )}
 
       <ul className="lista">
         {lista.map((c) => (
