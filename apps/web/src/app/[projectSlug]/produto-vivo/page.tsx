@@ -93,12 +93,20 @@ export default async function PaginaProdutoVivo({
           Entre no grupo oficial no WhatsApp: lá saem as novidades, as demonstrações e os números do
           projeto, e dá para acompanhar a evolução junto com outras empresas.
         </p>
+        {/*
+            A MARCA DO FIM NÃO DEPENDE DE HAVER BOTÃO.
+
+            Estava dentro do ramo que só existe quando o link do grupo está
+            configurado, e o link nunca foi configurado neste servidor. A página
+            mostrava "aguardando o link", o marcador nunca chegava a ser
+            desenhado, e o degrau do meio do funil ficaria a zero para sempre
+            sem que nada dissesse porquê. Chegar ao fim da proposta é um facto
+            sobre a pessoa, não sobre o botão que está lá em baixo.
+          */}
+        <ChegouAoFimDoPv projectId={project?.id ?? ''} />
+
         {linkGrupo ? (
-          <>
-            {/* Logo antes do botão: quem vê isto chegou ao fim da proposta. */}
-            <ChegouAoFimDoPv projectId={project?.id ?? ''} />
-            <EntrarNoGrupoPv projectId={project?.id ?? ''} url={linkGrupo} />
-          </>
+          <EntrarNoGrupoPv projectId={project?.id ?? ''} url={linkGrupo} />
         ) : (
           <p className="bloco-vazio">Botão aguardando o link do grupo.</p>
         )}
