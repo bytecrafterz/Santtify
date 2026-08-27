@@ -34,7 +34,7 @@ export function PublicarNoPerfil({
   projectSlug: string
   titulo: string
 }) {
-  const { usuario, visitante } = useAuth()
+  const { visitante } = useAuth()
   const [aberto, definirAberto] = useState(false)
   const [legenda, definirLegenda] = useState('')
   const [foto, definirFoto] = useState<File | null>(null)

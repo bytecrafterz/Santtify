@@ -5,7 +5,6 @@ import {
   HttpCode,
   Patch,
   Post,
-  Query,
   Req,
   Res,
   UnauthorizedException,

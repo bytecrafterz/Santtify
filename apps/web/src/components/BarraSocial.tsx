@@ -25,7 +25,7 @@ export function BarraSocial({
   projectSlug: string
   titulo: string
 }) {
-  const { usuario, visitante } = useAuth()
+  const { visitante } = useAuth()
   /**
    * Começa com zeros em vez de `null` para a barra existir já no HTML da
    * primeira renderização. Antes ela só aparecia depois da resposta da API, e

@@ -5,6 +5,19 @@
     "allowJs": true,
     "skipLibCheck": true,
     "strict": true,
+
+    /**
+     * DECLARAR E NAO LIGAR PASSA A SER ERRO.
+     *
+     * Em 27/08 escrevi a deteccao do navegador Samsung: o estado, os passos e o
+     * ramo que os escolhe. A unica linha que faltava era a que chama o setter, e
+     * o build passou na mesma. A amiga do cliente continuou a receber as
+     * instrucoes do Chrome, e eu ia dizer que estava feito.
+     *
+     * O compilador sabia: `definirEhSamsung` estava declarado e nunca era
+     * chamado. So nao estava a olhar.
+     */
+    "noUnusedLocals": true,
     "noEmit": true,
     "esModuleInterop": true,
     "module": "esnext",

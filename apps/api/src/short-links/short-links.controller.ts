@@ -17,7 +17,6 @@ import { ANON_COOKIE, cookieOptions, ipDaRequisicao } from '../common/http.util'
  */
 @Controller('r')
 export class ShortLinksController {
-  private readonly webUrl: string
 
   constructor(
     private readonly shortLinks: ShortLinksService,
@@ -25,7 +24,6 @@ export class ShortLinksController {
     private readonly events: EventsService,
     config: ConfigService,
   ) {
-    this.webUrl = config.getOrThrow<string>('PUBLIC_WEB_URL').replace(/\/$/, '')
   }
 
   @Get(':code')

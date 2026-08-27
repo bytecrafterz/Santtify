@@ -32,7 +32,6 @@ export function VistaDoCartao({
   const router = useRouter()
   const [aviso, definirAviso] = useState<string | null>(null)
   const nome = letra ? `Letra ${letra}` : titulo
-  const pdf = api.cartaoPdfUrl(projectSlug, contentSlug)
   const pdfParaBaixar = api.cartaoPdfUrl(projectSlug, contentSlug, true)
 
   /**

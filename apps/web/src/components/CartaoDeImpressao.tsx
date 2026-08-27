@@ -51,7 +51,7 @@ export function CartaoDeImpressao({
   folhaA4: string | null
   linkUpgrade: string | null
 }) {
-  const [aviso, definirAviso] = useState<string | null>(null)
+  const [aviso] = useState<string | null>(null)
   const nome = letra ? `Letra ${letra}` : titulo
 
   async function contar(via: string) {

@@ -3,7 +3,7 @@
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 import { useEffect, useState } from 'react'
-import { admin, type ItemAdmin } from '@/lib/admin'
+import { admin } from '@/lib/admin'
 import { useAuth } from '@/components/ProvedorDeAuth'
 
 /**

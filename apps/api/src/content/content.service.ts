@@ -1,5 +1,5 @@
 import { Injectable, NotFoundException } from '@nestjs/common'
-import { BlockType, CardEstado, CardPapel, ContentStatus, EventType } from '@pv/db'
+import { BlockType, CardPapel, ContentStatus, EventType } from '@pv/db'
 import { PrismaService } from '../prisma/prisma.service'
 import { ShortLinksService } from '../short-links/short-links.service'
 import { StorageService } from '../admin/storage.service'

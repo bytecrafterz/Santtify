@@ -1,4 +1,4 @@
-import { Injectable, Logger } from '@nestjs/common'
+import { Injectable } from '@nestjs/common'
 import { ConfigService } from '@nestjs/config'
 import { Platform, ShortLink, Visitor } from '@pv/db'
 import { randomBytes } from 'node:crypto'
@@ -23,7 +23,6 @@ import {
  */
 @Injectable()
 export class AttributionService {
-  private readonly logger = new Logger(AttributionService.name)
 
   /** Hosts que são nossos — usados para reconhecer navegação interna. */
   private readonly hostsProprios: ReadonlySet<string>

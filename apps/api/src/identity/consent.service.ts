@@ -1,4 +1,4 @@
-import { Injectable, Logger } from '@nestjs/common'
+import { Injectable } from '@nestjs/common'
 import { ConfigService } from '@nestjs/config'
 import { ConsentStatus, EventType, Prisma } from '@pv/db'
 import { PrismaService } from '../prisma/prisma.service'
@@ -27,7 +27,6 @@ export interface Finalidades {
  */
 @Injectable()
 export class ConsentService {
-  private readonly logger = new Logger(ConsentService.name)
   private readonly versaoDaPolitica: string
 
   constructor(
