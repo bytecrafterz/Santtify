@@ -483,13 +483,31 @@ export function CabecalhoDePerfil({
           convidar a criar conta quem já tem uma. Ele fotografou isso em 27/08 e
           escreveu "está sempre acontecendo"; os registos do servidor mostram que
           a sessão dele não se tinha perdido. */}
+      {/*
+        DUAS PORTAS, E A DE ENTRAR VEM PRIMEIRO.
+
+        Isto dizia "Ainda não tem uma conta?" e oferecia apenas CRIAR MEU
+        PERFIL. Quem já tem conta e aparece deslogado por um motivo legítimo,
+        como abrir a aplicação instalada pela primeira vez, era recebido com a
+        afirmação de que não tem conta e com o único caminho de criar outra.
+
+        Ele escreveu em 27/08 que "o sistema deixa de reconhecer que a conta já
+        está registrada". Não deixa: a conta está intacta na base de dados, e eu
+        conferi que sair e entrar devolve exactamente o mesmo utilizador. O que
+        faltava era esta tela admitir que ele possa já ser dos nossos.
+
+        CRIAR MEU PERFIL continua à vista, que foi o pedido dele em 24/08 quando
+        amigos não encontravam onde se registar. O que muda é deixar de ser a
+        única saída.
+      */}
       {visitante && (
         <div className="convite-a-criar-conta">
-          <p className="titulo-convite">Ainda não tem uma conta?</p>
-          <p className="nota">
-            Crie o seu perfil para curtir, comentar e fazer parte da nossa comunidade.
-          </p>
-          <Link className="botao-acao largo" href={`/${projectSlug}/cadastrar`}>
+          <p className="titulo-convite">Entre para participar</p>
+          <p className="nota">Curta, comente e faça parte da nossa comunidade.</p>
+          <Link className="botao-acao largo" href={`/${projectSlug}/entrar`}>
+            🔑 ENTRAR NA MINHA CONTA
+          </Link>
+          <Link className="botao-acao largo criar-conta" href={`/${projectSlug}/cadastrar`}>
             👤 CRIAR MEU PERFIL
           </Link>
         </div>

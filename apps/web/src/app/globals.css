@@ -6186,3 +6186,13 @@ h2.funil {
 .marca-fim-pv {
   height: 1px;
 }
+
+/* A segunda porta do convite: criar conta continua à vista, mas quem já é dos
+   nossos entra pela de cima. Contorno em vez de fundo cheio, para que as duas
+   se leiam como caminhos e não como uma escolha certa e uma errada. */
+.convite-a-criar-conta .botao-acao.criar-conta {
+  margin-top: 0.5rem;
+  background: transparent;
+  border: 1px solid var(--cor-acao, #16a34a);
+  color: var(--cor-acao, #16a34a);
+}
