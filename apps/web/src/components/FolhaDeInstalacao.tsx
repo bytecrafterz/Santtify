@@ -60,6 +60,7 @@ export function FolhaDeInstalacao() {
     const ua = window.navigator.userAgent
     const iphone = /iPad|iPhone|iPod/.test(ua) && !('MSStream' in window)
     definirEhIphone(iphone)
+    definirEhSamsung(/SamsungBrowser/i.test(ua))
 
     const instalada =
       window.matchMedia('(display-mode: standalone)').matches ||
