@@ -320,6 +320,11 @@ foi acertar a cópia. Foi apagá-la.
 
 | Item                                               | Bloqueado por     | Nota                                  |
 | -------------------------------------------------- | ----------------- | ------------------------------------- |
+| Link do grupo do WhatsApp                          | Ele               | Sem ele não há botão; o número fica 0 |
+| Conteúdo do Produto Vivo                           | Ele               | Página com zero blocos: funil não mede |
+| Telemóvel e navegador da amiga                     | Ele               | Fecha o ponto do Play Protect         |
+| Os dois blocos de texto antigos da Introdução      | Ele               | Apagar ou converter em cartão         |
+| Teste de geolocalização ao vivo                    | Ele               | 15 minutos; decide a tradução         |
 | Link da Hotmart para o botão de PDF da barra       | Ele               | Espera desde 22/08                    |
 | Nome e foto obrigatórios no perfil                 | Nada; falta ligar | O aviso existe, ainda não impede      |
 | Canal de mensagem do responsável para o utilizador | Orçamento         | Pedido em 25/08                       |
