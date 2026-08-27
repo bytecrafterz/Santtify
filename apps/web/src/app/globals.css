@@ -6238,3 +6238,26 @@ h2.funil {
   font-size: 0.78rem;
   color: #52525b;
 }
+
+/* ── As saídas do formulário de perfil, sempre alcançáveis ─────────────
+   O formulário tem mais de 700px e as saídas ficavam 534px abaixo da dobra
+   num telemóvel. Ele escreveu "fiquei preso nessa parte", e não estava preso:
+   estava a olhar para o meio de um formulário sem ver que havia Cancelar e
+   Gravar mais abaixo. Coladas ao fundo, estão sempre à mão, e o gesto de
+   desistir fica tão perto como o de concluir. */
+.editar-perfil .tocador-controles {
+  position: sticky;
+  bottom: 0;
+  z-index: 2;
+  display: flex;
+  gap: 0.6rem;
+  margin: 0.75rem -1rem -1rem;
+  padding: 0.75rem 1rem;
+  padding-bottom: calc(0.75rem + env(safe-area-inset-bottom));
+  background: var(--cor-superficie, #fff);
+  border-top: 1px solid var(--cor-borda, #e4e4e7);
+}
+
+.editar-perfil .tocador-controles button {
+  flex: 1;
+}

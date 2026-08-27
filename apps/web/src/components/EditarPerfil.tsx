@@ -73,7 +73,28 @@ export function EditarPerfil({
   if (!aberto) {
     return (
       <div className="acoes-perfil">
-        <button type="button" className="secundario" onClick={() => definirAberto(true)}>
+        <button
+          type="button"
+          className="secundario"
+          onClick={() => {
+            definirAberto(true)
+            /*
+              LEVAR A PESSOA ATÉ AO FORMULÁRIO, e não deixá-la a olhar para o
+              sítio onde o botão estava.
+
+              O formulário tem 714px e abre por baixo do que se está a ver. Num
+              ecrã de telemóvel ele ficava fora de vista, e as saídas ficavam a
+              534px abaixo da dobra. Ele escreveu em 27/08 "fiquei preso nessa
+              parte": não estava preso, estava a olhar para o meio de um
+              formulário sem ver que tinha Cancelar e Gravar mais abaixo.
+            */
+            requestAnimationFrame(() => {
+              document
+                .querySelector('.editar-perfil')
+                ?.scrollIntoView({ block: 'start', behavior: 'smooth' })
+            })
+          }}
+        >
           Editar perfil
         </button>
       </div>
