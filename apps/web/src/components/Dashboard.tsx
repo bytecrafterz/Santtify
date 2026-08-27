@@ -245,6 +245,15 @@ export function Dashboard({ projectSlug }: { projectSlug: string }) {
         {/* O degrau do meio: sem ele não se distingue quem não se interessou de
             quem nunca chegou a ler a proposta. */}
         <Cartao valor={n(t.chegaramAoFimDoPv)} rotulo="Chegaram ao fim" />
+        {t.cliquesNoPv > 0 && t.chegaramAoFimDoPv > t.cliquesNoPv && (
+          /* Um degrau do meio maior do que o de cima é um funil impossível, e
+             não se apresenta a uma empresa sem explicação. Enquanto acontecer,
+             o painel di-lo em vez de deixar quem olha tirar a conclusão errada. */
+          <p className="nota aviso-funil">
+            O número de quem chegou ao fim está acima dos cliques porque há quem abra o Produto Vivo
+            pela barra de baixo, sem passar pelo selo de uma letra.
+          </p>
+        )}
         {/*
           "CLIQUES PARA ENTRAR NO GRUPO", e não "entraram no grupo".
 

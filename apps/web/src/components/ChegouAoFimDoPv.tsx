@@ -30,6 +30,22 @@ export function ChegouAoFimDoPv({ projectId }: { projectId: string }) {
     if (!alvo || jaContou.current) return
     if (typeof IntersectionObserver === 'undefined') return
 
+    /**
+     * SE A PÁGINA CABE NO ECRÃ, CHEGAR AO FIM NÃO QUER DIZER NADA.
+     *
+     * Publiquei isto e o painel ficou a dizer 1 clique no Produto Vivo e 2
+     * chegaram ao fim: o degrau do meio maior do que o de cima, que é um funil
+     * impossível. A causa é que a página do PV ainda não tem conteúdo nenhum e
+     * tem 579px num ecrã de 844: toda a gente que a abre vê o fim no mesmo
+     * instante, sem ter lido coisa nenhuma.
+     *
+     * Enquanto não houver o que deslizar, este número não é medido. Fica a
+     * zero, que é a verdade, em vez de um número que contradiz o de cima. Assim
+     * que ele carregar as artes do Produto Vivo, começa a medir sozinho.
+     */
+    const precisaDeDeslizar = document.documentElement.scrollHeight > window.innerHeight * 1.2
+    if (!precisaDeDeslizar) return
+
     const observador = new IntersectionObserver(
       (entradas) => {
         if (!entradas.some((e) => e.isIntersecting) || jaContou.current) return
