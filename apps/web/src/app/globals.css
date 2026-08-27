@@ -6121,3 +6121,50 @@ button.linha-menu-capa {
   cursor: default;
   opacity: 0.85;
 }
+
+/* ── Imprimir o cartão sem sair da página ──────────────────────────────
+   Ele ficou preso no leitor de PDF do sistema, que não tem como cancelar
+   dentro da aplicação instalada. Agora imprime-se esta página, e o que vai
+   para o papel é só a folha. */
+.folha-para-papel {
+  display: none;
+}
+
+@media print {
+  /* Esconder por visibilidade e não por display: assim a folha continua a
+     ocupar a página, em vez de o navegador imprimir uma folha em branco. */
+  body * {
+    visibility: hidden;
+  }
+
+  .vista-cartao,
+  .vista-cartao .folha-para-papel {
+    visibility: visible;
+  }
+
+  .vista-cartao {
+    position: absolute;
+    inset: 0;
+    padding: 0;
+    background: #fff;
+  }
+
+  /* A que se vê no ecrã sai, e entra a de resolução de papel. */
+  .folha-do-cartao,
+  .acoes-do-cartao,
+  .vista-cartao .nota-ok {
+    display: none !important;
+  }
+
+  .folha-para-papel {
+    display: block;
+    width: 100%;
+    height: auto;
+    max-width: none;
+  }
+
+  @page {
+    size: A4 portrait;
+    margin: 0;
+  }
+}

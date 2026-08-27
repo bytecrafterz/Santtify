@@ -190,6 +190,9 @@ export const api = {
    * um ficheiro que só tem o cartão, e por isso imprime sempre igual, em
    * qualquer telemóvel e em qualquer impressora.
    */
+  /** A folha em resolução de papel, usada só quando se manda imprimir. */
+  cartaoImagemUrl: (projeto: string, conteudo: string) =>
+    `${API_URL}/projects/${projeto}/contents/${conteudo}/cartao.jpg`,
   cartaoPdfUrl: (projeto: string, conteudo: string, baixar = false) =>
     `${API_URL}/projects/${projeto}/contents/${conteudo}/cartao.pdf${baixar ? '?baixar=1' : ''}`,
   url: API_URL,

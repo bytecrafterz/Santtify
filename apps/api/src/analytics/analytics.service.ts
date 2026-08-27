@@ -186,7 +186,7 @@ export class AnalyticsService {
 
     return linhas.map((l) => ({
       pais: l.pais,
-      nome: l.pais ? (NOMES_DE_PAIS[l.pais] ?? l.pais) : 'Sem identificar',
+      nome: nomeDoPais(l.pais),
       visitantes: l.visitantes,
       cadastros: l.cadastros,
     }))
@@ -292,20 +292,26 @@ export class AnalyticsService {
  * até haver razão para o contrário. Acrescentar uma linha aqui custa menos do
  * que carregar duzentos nomes que ninguém vai ler.
  */
-const NOMES_DE_PAIS: Record<string, string> = {
-  PT: 'Portugal',
-  BR: 'Brasil',
-  AO: 'Angola',
-  MZ: 'Moçambique',
-  CV: 'Cabo Verde',
-  GW: 'Guiné-Bissau',
-  ST: 'São Tomé e Príncipe',
-  TL: 'Timor-Leste',
-  ES: 'Espanha',
-  FR: 'França',
-  GB: 'Reino Unido',
-  CH: 'Suíça',
-  LU: 'Luxemburgo',
-  US: 'Estados Unidos',
-  CA: 'Canadá',
+/**
+ * O nome do país por extenso, em português, para qualquer código.
+ *
+ * ISTO ERA UMA TABELA DE QUINZE PAÍSES, escrita à mão e toda lusófona ou
+ * europeia. Quem chegasse de fora dela ficava com o código cru na tela, e ele
+ * apanhou-o em 27/08: "aparecem códigos como TH e TW, quero o nome completo".
+ * Tinha razão, e uma tabela à mão nunca ia acompanhar de onde as pessoas vêm.
+ *
+ * `Intl.DisplayNames` sabe os nomes de todos os países e vem com o Node. Não há
+ * lista para manter e não há país que fique de fora. Se um dia o código não for
+ * um país (vem 'XX' de alguma base), devolve o próprio código em vez de
+ * rebentar, que é o que se quer num painel.
+ */
+const NOMES_DE_PAIS = new Intl.DisplayNames(['pt'], { type: 'region' })
+
+function nomeDoPais(codigo: string | null): string {
+  if (!codigo) return 'Sem identificar'
+  try {
+    return NOMES_DE_PAIS.of(codigo) ?? codigo
+  } catch {
+    return codigo
+  }
 }

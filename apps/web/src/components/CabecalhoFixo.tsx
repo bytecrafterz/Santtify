@@ -3,8 +3,14 @@
 import Link from 'next/link'
 
 /**
- * A barra preta que fica sempre no topo: Alfabeto à esquerda, Produto Vivo à
- * direita, e ao meio o nome do sítio onde a pessoa está.
+ * A barra preta que fica sempre no topo: Alfabeto à esquerda e o nome do sítio
+ * onde a pessoa está.
+ *
+ * TINHA UMA SAÍDA PARA O PRODUTO VIVO À DIREITA E SAIU EM 27/08. Levava à página
+ * pública, e ele estava a trabalhar no painel: "quero sair do dashboard somente
+ * quando eu decidir sair". É a mesma queixa da casinha em 25/08, e a mesma
+ * resposta: quem está a trabalhar por trás não quer portas para a frente da loja
+ * no sítio onde procura as ferramentas.
  *
  * Pedido dele em 23/08, e a razão que deu é a certa: "mesmo estando na Letra P,
  * ele não precisa percorrer todas as letras para retornar". Numa página que é
@@ -18,13 +24,11 @@ import Link from 'next/link'
 export function CabecalhoFixo({
   projectSlug,
   onde,
-  avatarUrl,
   voltarPara,
 }: {
   projectSlug: string
   /** O que a pessoa está a ver: "Letra A", "Gerenciar conteúdo"... */
   onde: string
-  avatarUrl?: string | null
   /**
    * Para onde a casinha leva.
    *
@@ -56,22 +60,18 @@ export function CabecalhoFixo({
         <span className="rotulo">Alfabeto</span>
       </Link>
 
+      {/*
+        Só o nome do sítio, sem o retrato ao lado.
+
+        Havia ali um círculo com a fotografia, e vazio era um círculo cinzento
+        que já me deu duas correcções por parecer avaria. Ele mandou-o embora em
+        27/08: "deixe somente o texto Estrutura raiz de forma limpa". Tem razão,
+        e a razão vale para lá do aspecto: no painel a fotografia dele não
+        informa nada, porque só ele lá entra.
+      */}
       <span className="onde-estou">
-        {avatarUrl ? (
-          // eslint-disable-next-line @next/next/no-img-element
-          <img className="retrato-topo" src={avatarUrl} alt="" aria-hidden />
-        ) : (
-          <span className="retrato-topo sem-foto" aria-hidden />
-        )}
         <span className="nome-do-lugar">{onde}</span>
       </span>
-
-      <Link className="ir-pv" href={`/${projectSlug}/produto-vivo`}>
-        <span className="marca-pv" aria-hidden>
-          PV
-        </span>
-        <span className="rotulo">Produto Vivo</span>
-      </Link>
     </header>
   )
 }

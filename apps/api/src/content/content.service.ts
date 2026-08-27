@@ -585,6 +585,37 @@ export class ContentService {
   }
 
   /**
+   * A folha do cartão como imagem, na resolução de papel.
+   *
+   * Serve uma coisa só: a impressão feita a partir da própria página, sem sair
+   * dela. A imagem que se vê no ecrã tem 1200px, que é o certo para o telemóvel
+   * e daria umas cem linhas por polegada em A4. Esta é a cópia de 2480px, que é
+   * A4 a 300, e só é pedida quando alguém manda imprimir.
+   */
+  async cartaoEmImagem(projectSlug: string, contentSlug: string): Promise<Buffer> {
+    const project = await this.projeto(projectSlug)
+    const content = await this.prisma.content.findUnique({
+      where: { projectId_slug: { projectId: project.id, slug: contentSlug } },
+      select: { id: true },
+    })
+    if (!content) throw new NotFoundException('Conteúdo não encontrado')
+
+    const cartao = await this.prisma.contentBlock.findFirst({
+      where: { contentId: content.id, papel: CardPapel.IMPRESSAO },
+      select: { meta: true, imageAsset: { select: { url: true } } },
+    })
+    if (!cartao) throw new NotFoundException('Esta letra ainda não tem cartão para impressão.')
+
+    const meta = (cartao.meta ?? {}) as Record<string, unknown>
+    if (meta.foraDoAr === true) throw new NotFoundException('Este cartão está fora do ar.')
+
+    const endereco = (meta.folhaA4 as string | undefined) ?? cartao.imageAsset?.url ?? null
+    const imagem = await this.storage.lerParaImpressao(endereco)
+    if (!imagem) throw new NotFoundException('O cartão ainda não tem a folha A4 nem a arte.')
+    return imagem
+  }
+
+  /**
    * O mesmo QR em PNG, grande.
    *
    * O vectorial é o que a gráfica quer, e é o que ele deve mandar ao designer.

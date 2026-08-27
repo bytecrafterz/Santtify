@@ -59,6 +59,24 @@ export function VistaDoCartao({
       {/* eslint-disable-next-line @next/next/no-img-element */}
       <img className="folha-do-cartao" src={folha} alt={`Cartão da ${nome} em folha A4`} />
 
+      {/*
+        A MESMA FOLHA, EM RESOLUÇÃO DE PAPEL, só para a impressora.
+
+        A de cima tem 1200px, que é o certo para o telemóvel e sairia a cerca de
+        cem linhas por polegada numa A4. Esta tem 2480px, que é A4 a 300, e o
+        navegador só a vai buscar quando alguém manda imprimir: `loading="lazy"`
+        com `display: none` fora da impressão evita gastar os dados de quem só
+        quer ver.
+      */}
+      {/* eslint-disable-next-line @next/next/no-img-element */}
+      <img
+        className="folha-para-papel"
+        src={api.cartaoImagemUrl(projectSlug, contentSlug)}
+        alt=""
+        aria-hidden
+        loading="lazy"
+      />
+
       {aviso && <p className="nota-ok">{aviso}</p>}
 
       <div className="acoes-do-cartao">
@@ -85,10 +103,25 @@ export function VistaDoCartao({
           BAIXAR PDF
         </a>
 
-        <a className="acao-do-cartao" href={pdf} target="_blank" rel="noopener noreferrer">
+        {/*
+          IMPRIMIR NÃO SAI DESTA PÁGINA.
+
+          Abria o PDF noutro separador. No navegador dá para fechar; dentro da
+          aplicação instalada NÃO HÁ SEPARADOR NEM BOTÃO DE VOLTAR, e ele ficou
+          presto num visualizador sem saída. Escreveu em 27/08: "abre uma página
+          de envio, mas depois fico preso nela". O que ele estava a ver era o
+          leitor de PDF do sistema, não uma página nossa, e por isso não tinha
+          como cancelar.
+
+          Agora manda imprimir ESTA página. A folha de impressão do telemóvel
+          abre por cima, e cancelar devolve a pessoa aqui, com o VOLTAR ao lado.
+          O estilo de impressão esconde tudo menos a folha, e usa a cópia em
+          resolução de papel, não a que se vê no ecrã.
+        */}
+        <button type="button" className="acao-do-cartao" onClick={() => window.print()}>
           <span aria-hidden>🖨</span>
           IMPRIMIR
-        </a>
+        </button>
 
         <button type="button" className="acao-do-cartao" onClick={() => void partilhar()}>
           <span aria-hidden>↗</span>

@@ -134,7 +134,16 @@ export function Dashboard({ projectSlug }: { projectSlug: string }) {
       <h2>Produto Vivo</h2>
       <div className="numeros">
         <Cartao valor={n(t.cliquesNoPv)} rotulo="Cliques no PV (todas as letras)" />
-        <Cartao valor={n(t.contatosPv)} rotulo="Entraram no grupo" />
+        {/*
+          "CLIQUES PARA ENTRAR NO GRUPO", e não "entraram no grupo".
+
+          Dizia que tinham entrado, e nós não sabemos isso: o WhatsApp não conta
+          a ninguém quem entrou num grupo. Sabemos que carregaram no botão, e é
+          só isso que este número pode prometer. Ele próprio o pediu assim em
+          27/08, e tem razão: um número que promete mais do que mede é o que
+          rebenta numa reunião com uma empresa.
+        */}
+        <Cartao valor={n(t.contatosPv)} rotulo="Cliques para entrar no grupo" />
         <Cartao valor={n(t.cliquesEmComprar)} rotulo="Cliques em comprar" />
       </div>
       <p className="nota">

@@ -103,7 +103,33 @@ async function chamarAutenticado<T>(caminho: string, init: RequestInit = {}): Pr
   }
 }
 
-export async function renovarSessao(): Promise<boolean> {
+/**
+ * A renovação em curso, para não haver duas ao mesmo tempo.
+ *
+ * O ecrã faz vários pedidos de uma vez (o perfil, os contadores, a lista) e ao
+ * fim de quinze minutos TODOS falham com 401 ao mesmo tempo. Cada um chamava a
+ * renovação por sua conta, com o MESMO token guardado. O servidor trocava-o
+ * duas vezes, e a segunda resposta gravava um token nascido de um que já tinha
+ * sido trocado.
+ *
+ * Vê-se na base dele: 331 sessões guardadas para uma pessoa, com pares de
+ * trocas dentro do mesmo minuto (06:20 e 06:20, 06:26 e 06:26). A janela de
+ * tolerância de um minuto salvava quase sempre, e "quase" é o que explica ele
+ * ter aberto o Santtify em 27/08 e ter tido de entrar outra vez.
+ *
+ * Quem chega a meio de uma renovação espera pela mesma, em vez de começar outra.
+ */
+let renovacaoEmCurso: Promise<boolean> | null = null
+
+export function renovarSessao(): Promise<boolean> {
+  if (renovacaoEmCurso) return renovacaoEmCurso
+  renovacaoEmCurso = renovarAgora().finally(() => {
+    renovacaoEmCurso = null
+  })
+  return renovacaoEmCurso
+}
+
+async function renovarAgora(): Promise<boolean> {
   const refresh = tokens.refresh
   if (!refresh) return false
   try {

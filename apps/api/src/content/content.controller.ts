@@ -77,6 +77,18 @@ export class ContentController {
     return res.send(svg)
   }
 
+  /** A folha em resolução de papel, para imprimir sem sair da página. */
+  @Get('contents/:contentSlug/cartao.jpg')
+  @Header('Content-Type', 'image/jpeg')
+  @Header('Cache-Control', 'public, max-age=300')
+  async cartaoImagem(
+    @Param('projectSlug') projectSlug: string,
+    @Param('contentSlug') contentSlug: string,
+    @Res() res: Response,
+  ) {
+    return res.send(await this.content.cartaoEmImagem(projectSlug, contentSlug))
+  }
+
   /** O mesmo QR em PNG, para enviar por mensagem. Ver a nota no serviço. */
   @Get('contents/:contentSlug/qr.png')
   async qrPng(
