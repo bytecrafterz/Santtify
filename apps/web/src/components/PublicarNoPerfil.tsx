@@ -34,7 +34,7 @@ export function PublicarNoPerfil({
   projectSlug: string
   titulo: string
 }) {
-  const { usuario } = useAuth()
+  const { usuario, visitante } = useAuth()
   const [aberto, definirAberto] = useState(false)
   const [legenda, definirLegenda] = useState('')
   const [foto, definirFoto] = useState<File | null>(null)
@@ -53,11 +53,14 @@ export function PublicarNoPerfil({
     return () => URL.revokeObjectURL(endereco)
   }, [foto])
 
-  if (!usuario) {
+  // `visitante` e não `!usuario`: durante a restauração da sessão ainda não se
+  // sabe, e dizer "entre na sua conta" a quem já entrou é o mesmo defeito do
+  // convite no perfil.
+  if (visitante) {
     return (
       <p className="aviso-social">
-        <Link href={`/${projectSlug}/entrar`}>Entre na sua conta</Link> para publicar esta
-        música no seu perfil.
+        <Link href={`/${projectSlug}/entrar`}>Entre na sua conta</Link> para publicar esta música no
+        seu perfil.
       </p>
     )
   }
@@ -161,15 +164,13 @@ export function PublicarNoPerfil({
         <div className="aviso-comunidade">
           <strong>Antes de publicar</strong>
           <p>
-            Esta é uma comunidade cristã, infantil e familiar. A publicação deve
-            permanecer dentro do propósito do Jesus Alfabeto Saudável.
+            Esta é uma comunidade cristã, infantil e familiar. A publicação deve permanecer dentro
+            do propósito do Jesus Alfabeto Saudável.
           </p>
+          <p>Evite mostrar endereço, escola ou localização da criança.</p>
           <p>
-            Evite mostrar endereço, escola ou localização da criança.
-          </p>
-          <p>
-            Conteúdo imoral, ofensivo ou incompatível com a comunidade pode levar ao
-            bloqueio da conta.
+            Conteúdo imoral, ofensivo ou incompatível com a comunidade pode levar ao bloqueio da
+            conta.
           </p>
         </div>
       )}

@@ -55,7 +55,7 @@ export function CabecalhoDePerfil({
    */
   pessoa?: PerfilAnfitriao | null
 }) {
-  const { usuario } = useAuth()
+  const { usuario, visitante } = useAuth()
 
   /**
    * DE QUEM É ESTE PERFIL.
@@ -475,8 +475,14 @@ export function CabecalhoDePerfil({
           coisa que não sabe que existe.
 
           Só aparece a quem não entrou, e desaparece sozinho depois do cadastro —
-          foi exactamente o que ele pediu. */}
-      {!temConta && (
+          foi exactamente o que ele pediu.
+
+          `visitante` E NÃO `!temConta`: enquanto a sessão está a ser restaurada
+          ainda não se sabe se a pessoa tem conta, e responder nesse instante é
+          convidar a criar conta quem já tem uma. Ele fotografou isso em 27/08 e
+          escreveu "está sempre acontecendo"; os registos do servidor mostram que
+          a sessão dele não se tinha perdido. */}
+      {visitante && (
         <div className="convite-a-criar-conta">
           <p className="titulo-convite">Ainda não tem uma conta?</p>
           <p className="nota">
