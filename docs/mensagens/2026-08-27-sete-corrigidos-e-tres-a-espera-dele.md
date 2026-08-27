@@ -27,13 +27,15 @@ Rossandro, os sete pontos que eram defeitos estão corrigidos e no ar. Vou pela 
 
 1. Login. Encontrei a causa e ela não é a que eu imaginava. A sua sessão nunca caiu.
 
-Fui ver no servidor o momento exato do seu print. Ele está marcado 10:18, e às 10:18 a renovação da sua sessão funcionou perfeitamente: o código anterior foi trocado por um novo, sem erro nenhum. Você estava conectado o tempo todo.
+Fui ver no servidor o momento exato do seu print. Ele está marcado 10:18, e às 10:18 a renovação da sua sessão funcionou perfeitamente: o código anterior foi trocado por um novo, sem erro nenhum. Você estava conectado o tempo todo. Também testei sair e entrar de novo: volta exatamente a mesma conta, com o mesmo cadastro. Nada se perde no banco.
 
-O que aconteceu é que a tela respondeu antes de saber a resposta. Quando você abre o Santtify, o aplicativo precisa de um instante para reconhecer a sua conta. Nesse instante, cinco partes da página tratavam você como se fosse alguém sem conta, e por isso aparecia o Ainda não tem uma conta, Crie o seu perfil. Assim que o reconhecimento terminava, aquilo sumia. No celular em rede móvel esse instante é de um segundo ou dois, e por isso acontecia toda vez que você abria. Era exatamente o que você descreveu com o Está sempre acontecendo.
+O que acontecia é que a tela respondia antes de saber a resposta. Ao abrir o Santtify, o aplicativo precisa de um instante para reconhecer a sua conta, e nesse instante cinco partes da página tratavam você como alguém sem conta. Por isso aparecia o Ainda não tem uma conta. Assim que o reconhecimento terminava, sumia. No celular em rede móvel esse instante é de um a dois segundos, e por isso acontecia toda vez que você abria. Era o Está sempre acontecendo que você descreveu.
 
-Corrigi na raiz: agora a página só trata alguém como visitante quando tem certeza de que ele não tem conta, e não enquanto ainda está descobrindo. Testei com a rede propositalmente lenta, medindo setenta vezes seguidas durante o carregamento, e o convite não apareceu nenhuma vez para quem está conectado. Para quem realmente não tem conta ele continua aparecendo igual, como você pediu em agosto.
+Corrigi na raiz: a página só trata alguém como visitante quando tem certeza de que não tem conta, e não enquanto ainda está descobrindo. Testei com a rede propositalmente lenta, medindo setenta vezes durante o carregamento, e o convite não apareceu nenhuma vez para quem está conectado.
 
-Aproveitei e corrigi também uma coisa menor que encontrei no caminho: várias partes da tela pediam a renovação da sessão ao mesmo tempo e atrapalhavam umas às outras. Não era o que você viu, mas podia dar problema mais adiante.
+E corrigi uma segunda coisa, que era a parte mais ofensiva. Quando você está mesmo deslogado por um motivo legítimo, aquela tela dizia Ainda não tem uma conta e oferecia um caminho só: criar um perfil novo. Quem já tem conta era recebido com a afirmação de que não tem, e sem nenhum botão para entrar na sua. Agora tem dois caminhos, e o de entrar vem primeiro. Criar conta continua ali, para quem chega pela primeira vez.
+
+Uma observação, porque isso vai acontecer de novo e não é defeito: o aplicativo instalado no telefone tem memória própria, separada do navegador. Da primeira vez que você abrir o ícone ele vai pedir para entrar, mesmo você estando conectado no Safari. É assim em qualquer aplicativo desse tipo, e depois dessa primeira vez ele não pede mais.
 
 2. PDF. Agora entendi o que estava acontecendo e a culpa era minha. O botão de imprimir abria o PDF numa aba nova. No navegador você fecha a aba; dentro do aplicativo instalado não existe aba nem botão de voltar, e você caía no visualizador de PDF do próprio telefone. Aquilo que parecia uma página de envio não era uma tela nossa, era do sistema, e por isso não tinha cancelar.
 
