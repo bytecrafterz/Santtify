@@ -104,7 +104,12 @@ export default async function IndiceDoProjeto({
       />
 
       {/* 1. Perfil */}
+      {/*
+        Quem já tem conta entra no seu próprio perfil; quem chega de fora entra
+        no do anfitrião, que é a apresentação do projecto. Pedido dele em 27/08.
+      */}
       <CabecalhoDePerfil
+        preferirOUtilizador
         projectSlug={projectSlug}
         projectId={project.id}
         perfisCriados={comunidade.perfis}

@@ -35,6 +35,7 @@ export function CabecalhoDePerfil({
   perfisCriados,
   anfitriao,
   donoEhOUtilizador = false,
+  preferirOUtilizador = false,
   pessoa,
 }: {
   projectSlug: string
@@ -44,6 +45,21 @@ export function CabecalhoDePerfil({
   anfitriao: PerfilAnfitriao | null
   /** Em /perfil, o dono é quem entrou, e não o anfitrião. */
   donoEhOUtilizador?: boolean
+  /**
+   * NA ENTRADA DO PROJECTO, QUEM JÁ TEM CONTA VÊ O SEU PRÓPRIO PERFIL.
+   *
+   * Regra dele, de 27/08: "não cadastrado vai para o meu perfil, porque o meu
+   * perfil é a apresentação inicial do projeto; depois de se cadastrar, sempre
+   * que voltar deve ir para o perfil dele".
+   *
+   * Faz sentido para lá do gosto: a quem chega, o rosto do anfitrião explica o
+   * que isto é; a quem já entrou, ver eternamente o perfil de outra pessoa como
+   * página inicial é a plataforma a não reconhecer que ela já faz parte.
+   *
+   * O perfil do anfitrião continua a poder ser visitado: deixa de ser a entrada,
+   * não deixa de existir.
+   */
+  preferirOUtilizador?: boolean
   /**
    * O perfil de OUTRA pessoa, quando se está a ver o dela.
    *
@@ -70,7 +86,7 @@ export function CabecalhoDePerfil({
    */
   const dono = pessoa
     ? pessoa
-    : donoEhOUtilizador && usuario
+    : (donoEhOUtilizador || preferirOUtilizador) && usuario
       ? {
           id: usuario.id,
           displayName: usuario.displayName,
@@ -252,6 +268,21 @@ export function CabecalhoDePerfil({
                 <Link href={`/${projectSlug}/perfil`}>👤 O meu perfil</Link>
               ) : (
                 <Link href={`/${projectSlug}/instalar`}>👤 Criar o meu perfil</Link>
+              )}
+
+              {/*
+                O CAMINHO DE VOLTA AO ANFITRIÃO.
+
+                A entrada passou a mostrar o perfil de quem já tem conta, e sem
+                isto o perfil do anfitrião deixava de ter porta nenhuma para quem
+                está identificado. Ele foi explícito: "meu perfil continua
+                disponível para ele visitar normalmente, mas deixa de ser a
+                página inicial". Deixar de ser a entrada não é desaparecer.
+              */}
+              {preferirOUtilizador && anfitriao && usuario && anfitriao.id !== usuario.id && (
+                <Link href={`/${projectSlug}/pessoa/${anfitriao.id}`}>
+                  🏠 Perfil de {anfitriao.displayName?.split(' ')[0] ?? 'quem criou'}
+                </Link>
               )}
               {/* Tocar no número abre a lista. Ele pediu-o em 25/08 e tem
                   razão: um número de perfis sem ninguém por trás não diz nada
