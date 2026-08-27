@@ -211,6 +211,64 @@ publicar como TWA na Play Store, e isso é trabalho novo.
 
 ---
 
+## 27/08 - a quarta e a quinta listas, e a auditoria das métricas
+
+Ele reviu pelo telemóvel e trouxe treze pontos, depois mais dois, depois a
+desconfiança nas métricas. Sete dos treze eram defeitos meus e foram feitos no
+mesmo dia; o resto está listado no fim deste ficheiro.
+
+**O login: três defeitos diferentes, um só sintoma.** Ele escreveu "estou sendo
+deslogado várias vezes" e "o sistema não reconhece que a conta já está
+registrada". Nada disso estava a acontecer. Fui ao servidor ver o minuto exacto
+do ecrã que ele fotografou: às 09:18 UTC a renovação da sessão dele correu bem, e
+09:18 UTC é 10:18 em Portugal, a hora do print. A conta nunca se perdeu, e
+registar, sair e entrar devolve o mesmo utilizador com o mesmo id.
+
+O que havia era outra coisa: `usuario` é nulo em dois momentos sem relação, quem
+nunca se registou e quem tem sessão a ser restaurada, e **cinco componentes
+tratavam os dois da mesma maneira**. Durante o segundo que a restauração demora
+em rede móvel, a página convidava a criar conta quem já tinha uma. Todas as
+vezes. A pergunta passou a ter uma resposta só, `visitante`, no provedor.
+
+E quando ele estava mesmo deslogado por um motivo legítimo, o painel dizia
+"Ainda não tem uma conta?" com uma saída só: criar outra. Passou a ter duas
+portas, com entrar primeiro.
+
+**A auditoria das métricas, e o que ela encontrou sobre mim.** Ele desconfiou:
+está em Portugal, testa o dia todo, Portugal não aparece e a Alemanha mostra 66.
+Tinha razão. As 69 linhas partilham um único `ipHash`, e `49.12.170.6`, a máquina
+de desenvolvimento num centro de dados alemão, produz exactamente esse hash. Ao
+todo 201 visitas minhas. **Ele ia decidir em que idioma traduzir a plataforma a
+partir de um número que era meu.**
+
+Não se apagou, marcou-se: `ignoradoNasMetricas`. Os eventos são append-only e o
+gatilho recusaria o apagamento em cascata; e esse log é a única coisa deste
+sistema que não se recria. Saíram 204 visitas (201 minhas, 19 de contas de
+administrador, com sobreposição) e ficaram 199. As visitas de administrador
+passam a sair sozinhas no momento em que a visita se liga à conta, porque uma
+limpeza periódica esquece-se e o número volta a mentir.
+
+O filtro vive numa constante, `SO_VISITAS_REAIS`, aplicada às nove consultas.
+Escrevê-lo à mão nove vezes é exactamente como este painel já se contradisse três
+vezes.
+
+**A geolocalização não estava avariada.** Das 43 visitas registadas depois de a
+base de países entrar em 25/08, **43 têm país**. As 156 sem país são todas
+anteriores e são irrecuperáveis: guarda-se um resumo do endereço, nunca o
+endereço. A base resolve Portugal correctamente quando testada com endereços da
+MEO, NOS e Vodafone. Portugal não aparece porque nenhuma visita de endereço
+português foi registada; 35 das 43 são do Brasil, o que aponta para a ligação
+dele ser lida como brasileira. Fica por confirmar com o teste ao vivo que ele
+próprio propôs.
+
+**O que ele pede e a plataforma não guarda:** IP em cru, ASN, operadora, deteção
+de VPN, user-agent, sinal de robô. Nada disso existe, por decisão de privacidade,
+e a política publicada em nome dele promete-o às famílias. O pedido de auditoria
+dele colide com um compromisso que ele já assumiu, e isso tem de lhe ser dito
+assim.
+
+---
+
 ## Defeitos do mês que valem ser lembrados
 
 Estão todos corrigidos. Ficam aqui porque a forma como falharam repete-se.
