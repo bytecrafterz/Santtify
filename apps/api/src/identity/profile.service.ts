@@ -111,13 +111,30 @@ export class ProfileService {
        */
       Promise.all([
         this.prisma.share.count({ where: { userId } }),
+        /**
+         * DOIS `OR` NA MESMA CONSULTA E UM APAGA O OUTRO.
+         *
+         * `eventosDaPessoa` devolve `{ OR: [...] }` para dizer de quem é o
+         * evento. Espalhá-lo aqui e escrever outro `OR` a seguir, para dizer
+         * qual é a acção, não junta as duas condições: a segunda substitui a
+         * primeira. O filtro da pessoa desaparecia sem erro nenhum, e a conta
+         * passava a contar TODAS as partilhas da plataforma.
+         *
+         * Viu-se numa conta criada minutos antes, que nunca partilhou nada, a
+         * mostrar 59 partilhas. Defeito meu, introduzido hoje ao corrigir a
+         * definição de partilha.
+         */
         this.prisma.event.count({
           where: {
-            ...this.eventosDaPessoa(userId),
+            AND: [
+              this.eventosDaPessoa(userId),
+              {
+                OR: ['partilhar_conteudo', 'partilhar_faixa', 'partilhar_perfil'].map((acao) => ({
+                  props: { path: ['acao'], equals: acao },
+                })),
+              },
+            ],
             type: EventType.CUSTOM,
-            OR: ['partilhar_conteudo', 'partilhar_faixa', 'partilhar_perfil'].map((acao) => ({
-              props: { path: ['acao'], equals: acao },
-            })),
           },
         }),
       ]).then(([linhas, eventos]) => linhas + eventos),
