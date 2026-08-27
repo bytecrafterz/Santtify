@@ -14,6 +14,15 @@ import { ContagensService } from '../social/contagens.service'
  * combinado por escrito com o cliente. O que está aqui é exatamente a lista de
  * métricas essenciais do escopo acordado.
  */
+/**
+ * O QUE NÃO CONTA PARA AS MÉTRICAS.
+ *
+ * Uma constante e não um filtro escrito à mão em cada consulta: são nove
+ * consultas neste ficheiro e bastava esquecer uma para o painel voltar a
+ * discordar de si próprio, que é o defeito que este projeto já teve três vezes.
+ */
+const SO_VISITAS_REAIS = { ignoradoNasMetricas: false } as const
+
 @Injectable()
 export class AnalyticsService {
   constructor(
@@ -79,7 +88,7 @@ export class AnalyticsService {
       contatosPv,
       cliquesEmComprar,
     ] = await Promise.all([
-      this.prisma.visitor.count({ where: { projectId } }),
+      this.prisma.visitor.count({ where: { projectId, ...SO_VISITAS_REAIS } }),
       /**
        * CADASTROS SÃO PESSOAS, e não linhas de visitante.
        *
@@ -109,7 +118,12 @@ export class AnalyticsService {
        */
       this.prisma.visitor
         .findMany({
-          where: { projectId, userId: { not: null }, user: { is: { status: 'ACTIVE' } } },
+          where: {
+            projectId,
+            ...SO_VISITAS_REAIS,
+            userId: { not: null },
+            user: { is: { status: 'ACTIVE' } },
+          },
           distinct: ['userId'],
           select: { userId: true },
         })
@@ -196,7 +210,7 @@ export class AnalyticsService {
              count(*)::int                                    AS visitantes,
              count(DISTINCT v."userId")::int                   AS cadastros
       FROM visitors v
-      WHERE v."projectId" = ${projectId}::uuid
+      WHERE v."projectId" = ${projectId}::uuid AND v."ignoradoNasMetricas" = false
       GROUP BY 1 ORDER BY 2 DESC`
 
     return linhas.map((l) => ({
@@ -216,7 +230,7 @@ export class AnalyticsService {
              -- com três aparelhos continua a ser uma pessoa.
              count(DISTINCT v."userId")::int                       AS cadastros
       FROM visitors v
-      WHERE v."projectId" = ${projectId}::uuid AND v."firstSeenAt" >= ${desde}
+      WHERE v."projectId" = ${projectId}::uuid AND v."ignoradoNasMetricas" = false AND v."firstSeenAt" >= ${desde}
       GROUP BY 1 ORDER BY 1`
   }
 
@@ -234,7 +248,7 @@ export class AnalyticsService {
       SELECT COALESCE(v."rootPlatform"::text, 'DESCONHECIDA') AS plataforma,
              count(*)::int                                    AS visitantes
       FROM visitors v
-      WHERE v."projectId" = ${projectId}::uuid
+      WHERE v."projectId" = ${projectId}::uuid AND v."ignoradoNasMetricas" = false
       GROUP BY 1 ORDER BY 2 DESC`
   }
 
@@ -243,7 +257,7 @@ export class AnalyticsService {
       SELECT COALESCE(v."rootPlatform"::text, 'DESCONHECIDA') AS plataforma,
              count(*)::int                                    AS cadastros
       FROM visitors v
-      WHERE v."projectId" = ${projectId}::uuid AND v."userId" IS NOT NULL
+      WHERE v."projectId" = ${projectId}::uuid AND v."ignoradoNasMetricas" = false AND v."userId" IS NOT NULL
       GROUP BY 1 ORDER BY 2 DESC`
   }
 
@@ -255,10 +269,12 @@ export class AnalyticsService {
    */
   private async propagacao(projectId: string) {
     const [diretos, porPartilha, cadastrosPorPartilha] = await Promise.all([
-      this.prisma.visitor.count({ where: { projectId, chainDepth: 0 } }),
-      this.prisma.visitor.count({ where: { projectId, chainDepth: { gt: 0 } } }),
+      this.prisma.visitor.count({ where: { projectId, ...SO_VISITAS_REAIS, chainDepth: 0 } }),
       this.prisma.visitor.count({
-        where: { projectId, chainDepth: { gt: 0 }, userId: { not: null } },
+        where: { projectId, ...SO_VISITAS_REAIS, chainDepth: { gt: 0 } },
+      }),
+      this.prisma.visitor.count({
+        where: { projectId, ...SO_VISITAS_REAIS, chainDepth: { gt: 0 }, userId: { not: null } },
       }),
     ])
 

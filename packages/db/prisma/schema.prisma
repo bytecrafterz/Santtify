@@ -626,11 +626,25 @@ model Visitor {
   deviceType    String?
   countryCode   String?       @db.VarChar(2)
 
+  /**
+   * Esta visita não entra nas métricas.
+   * Em 27/08 o painel mostrava 66 acessos da Alemanha a um projeto nunca
+   * divulgado lá. Eram todos da máquina de desenvolvimento, que fica num centro
+   * de dados alemão. Ele ia decidir em que idioma traduzir a plataforma a partir
+   * daquele número.
+   * Marca-se em vez de apagar: os eventos são append-only e apagar o visitante
+   * levava-os atrás. Quem for administrador do projeto entra aqui à partida, que
+   * foi o pedido dele: entra dezenas de vezes por dia a testar e não quer
+   * contaminar os dados de quem chega de fora.
+   */
+  ignoradoNasMetricas Boolean @default(false)
+
   sessions VisitSession[]
   events   Event[]
   consents Consent[]
 
   @@index([projectId, firstSeenAt])
+  @@index([projectId, ignoradoNasMetricas])
   @@index([projectId, chainDepth])
   @@index([referredByUserId])
   @@index([rootVisitorId])
@@ -757,14 +771,12 @@ model RefreshToken {
   /**
    * Quando este token foi TROCADO por outro — que é diferente de ter sido
    * revogado.
-   *
    * Um token trocado continua a valer durante um minuto, e é isso que salva a
    * sessão de quem tem rede má. O cliente relatou em 24/08 que ficava três
    * horas sem entrar e ao voltar tinha de fazer login outra vez: o telemóvel
    * acorda, pede a troca, o servidor troca e revoga o antigo, e a resposta
    * perde-se pelo caminho. O telefone fica com um token que o servidor já
    * matou, e a sessão morre sem ninguém ter feito nada de errado.
-   *
    * Sair da conta continua a valer imediatamente, e é por isso que são duas
    * colunas e não uma: `revokedAt` sem `rotatedAt` é uma porta fechada à chave.
    */

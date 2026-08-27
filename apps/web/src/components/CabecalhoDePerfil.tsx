@@ -273,7 +273,7 @@ export function CabecalhoDePerfil({
                 O servidor recusa na mesma a quem não for administrador. Isto é
                 para não oferecer uma porta que se vai fechar na cara.
               */}
-              {usuario?.role === 'ADMIN' || usuario?.role === 'OWNER' ? (
+              {usuario?.role === 'ADMIN' ? (
                 <button
                   type="button"
                   className="linha-menu-capa"

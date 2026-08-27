@@ -87,6 +87,23 @@ export class AttributionService {
 
     let visitor = await this.prisma.visitor.findUnique({ where: { anonId } })
 
+    /**
+     * QUEM ADMINISTRA O PROJETO NÃO ENTRA NAS SUAS PRÓPRIAS MÉTRICAS.
+     *
+     * Ele pediu-o em 27/08 com a razão certa: entra no site dezenas de vezes por
+     * dia a testar, e esses acessos afogam os de quem chega de fora. Um painel
+     * que conta o próprio dono não serve para decidir nada.
+     *
+     * Marca-se no momento em que a visita é ligada à conta, e não numa limpeza
+     * depois: uma limpeza esquece-se, e o número volta a mentir sem ninguém dar
+     * por isso.
+     */
+    const ehAdministrador = ctx.userId
+      ? await this.prisma.user
+          .findUnique({ where: { id: ctx.userId }, select: { role: true } })
+          .then((u) => u?.role === 'ADMIN')
+      : false
+
     // ── Origem imediata ──────────────────────────────────────────────
     const origem = this.origemDaVisita(ctx, link, visitor)
 
@@ -97,6 +114,7 @@ export class AttributionService {
           projectId: ctx.projectId,
           anonId,
           userId: ctx.userId ?? null,
+          ignoradoNasMetricas: ehAdministrador,
 
           // Origem 1 — como ESTA pessoa chegou pela primeira vez.
           firstTouchPlatform: origem.platform,
@@ -157,6 +175,8 @@ export class AttributionService {
             : {}),
           // Vincula ao usuário se ele acabou de se autenticar.
           ...(ctx.userId && !visitor.userId ? { userId: ctx.userId } : {}),
+          // Se esta visita acabou de se revelar do administrador, sai das contas.
+          ...(ehAdministrador ? { ignoradoNasMetricas: true } : {}),
           ...(ipHash ? { ipHash } : {}),
           ...(deviceType ? { deviceType } : {}),
         },
@@ -196,7 +216,9 @@ export class AttributionService {
     return { visitor, attribution, anonIdGerado }
   }
 
-  private async buscarLink(code: string): Promise<(ShortLink & { campaignPlatform: Platform | null }) | null> {
+  private async buscarLink(
+    code: string,
+  ): Promise<(ShortLink & { campaignPlatform: Platform | null }) | null> {
     const link = await this.prisma.shortLink.findUnique({
       where: { code },
       include: { campaign: { select: { platform: true } } },
