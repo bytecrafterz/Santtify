@@ -43,6 +43,16 @@ export function FolhaDeInstalacao() {
   const [estado, definirEstado] = useState<Estado>('convite')
   const [pronta, definirPronta] = useState(false)
   const [ehIphone, definirEhIphone] = useState(false)
+  /**
+   * O SAMSUNG INTERNET NÃO É O CHROME, E É O QUE VEM NOS GALAXY.
+   *
+   * A amiga dele conseguiu registar-se num Galaxy A35 e não conseguiu pôr o
+   * ícone no ecrã principal. Os nossos passos mandavam procurar os três
+   * pontinhos e "Instalar aplicativo", que é o caminho do Chrome. No Samsung
+   * Internet o menu é de três traços, em baixo, e a opção chama-se outra coisa.
+   * Ela andou à procura de uma coisa que não existe naquele ecrã.
+   */
+  const [ehSamsung, definirEhSamsung] = useState(false)
   const [abrindo, definirAbrindo] = useState(false)
   const aviso = useRef<Aviso | null>(null)
 
@@ -165,7 +175,13 @@ export function FolhaDeInstalacao() {
               <p>É o site da Santtify instalado no seu telefone.</p>
               <p className="folha-conta-passos">Siga estes {ehIphone ? '4' : '3'} passos:</p>
 
-              {ehIphone ? <PassosDoIphone /> : <PassosDoAndroid />}
+              {ehIphone ? (
+                <PassosDoIphone />
+              ) : ehSamsung ? (
+                <PassosDoSamsung />
+              ) : (
+                <PassosDoAndroid />
+              )}
 
               {/* Só a pessoa sabe se chegou ao fim: nem o iPhone nem o Android
                   nos contam nada quando a instalação é feita pelo menu. É por
@@ -279,6 +295,51 @@ function PassosDoIphone() {
 }
 
 /** O mesmo, para quem está no Android e o navegador não ofereceu a caixa. */
+/**
+ * Os passos do Samsung Internet, que é o navegador dos Galaxy.
+ *
+ * Aqui o menu é de três TRAÇOS e fica em BAIXO à direita, não de três pontinhos
+ * em cima. E a opção não se chama "Instalar aplicativo": chama-se "Adicionar
+ * página a", e só depois se escolhe o ecrã principal. Mandar procurar as
+ * palavras do Chrome neste telefone é mandar procurar o que não existe.
+ */
+function PassosDoSamsung() {
+  return (
+    <ol className="passos-instalar">
+      <li>
+        <span className="numero-passo">1</span>
+        <div className="figura menu-ios">
+          <span className="linha destacada">☰ Menu, em baixo à direita</span>
+        </div>
+        <p>Toque nos três tracinhos, no canto de baixo.</p>
+      </li>
+      <li>
+        <span className="numero-passo">2</span>
+        <div className="figura menu-ios">
+          <span className="linha destacada">Adicionar página a</span>
+          <span className="linha">Marcadores</span>
+        </div>
+        <p>Toque em Adicionar página a.</p>
+      </li>
+      <li>
+        <span className="numero-passo">3</span>
+        <div className="figura caixa-adicionar">
+          <span className="topo">
+            <span className="titulo">Adicionar a</span>
+            <span className="botao">Ecrã inicial</span>
+          </span>
+          <span className="linha-app">
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img src="/icone-192.png" alt="" aria-hidden />
+            <span className="nome">Santtify</span>
+          </span>
+        </div>
+        <p>Escolha Ecrã inicial. O ícone aparece junto aos outros aplicativos.</p>
+      </li>
+    </ol>
+  )
+}
+
 function PassosDoAndroid() {
   return (
     <ol className="passos-instalar">
