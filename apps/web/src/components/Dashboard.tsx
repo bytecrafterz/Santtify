@@ -54,6 +54,42 @@ async function buscar(projectSlug: string, dias: number, jaRenovou = false): Pro
   return corpo as VisaoGeral
 }
 
+interface VisitaDoPais {
+  id: string
+  visitante: string
+  rede: string | null
+  aparelho: string | null
+  primeiraVez: string
+  ultimaVez: string
+  repetida: boolean
+  origem: string
+  temConta: boolean
+}
+
+interface VisitasDoPais {
+  pais: string | null
+  total: number
+  redesDistintas: number
+  visitas: VisitaDoPais[]
+}
+
+async function buscarPais(
+  projectSlug: string,
+  pais: string,
+  jaRenovou = false,
+): Promise<VisitasDoPais> {
+  const res = await fetch(`${API_URL}/admin/analytics/${projectSlug}/paises/${pais}`, {
+    credentials: 'include',
+    headers: tokens.access ? { Authorization: `Bearer ${tokens.access}` } : {},
+  })
+  if (res.status === 401 && !jaRenovou && (await renovarSessao())) {
+    return buscarPais(projectSlug, pais, true)
+  }
+  const corpo = await res.json().catch(() => ({}))
+  if (!res.ok) throw new ErroDeApi(res.status, corpo?.message ?? 'Não foi possível carregar')
+  return corpo as VisitasDoPais
+}
+
 const n = (v: unknown) => Number(v ?? 0)
 
 /**
@@ -70,6 +106,7 @@ export function Dashboard({ projectSlug }: { projectSlug: string }) {
   const { usuario, carregando } = useAuth()
   const [dias, definirDias] = useState(30)
   const [dados, definirDados] = useState<VisaoGeral | null>(null)
+  const [pais, definirPais] = useState<{ nome: string; dados: VisitasDoPais | null } | null>(null)
   const [erro, definirErro] = useState<string | null>(null)
 
   useEffect(() => {
@@ -83,6 +120,16 @@ export function Dashboard({ projectSlug }: { projectSlug: string }) {
       .then(definirDados)
       .catch((e) => definirErro(e.message))
   }, [usuario, carregando, projectSlug, dias, router])
+
+  /** Abre as visitas que formaram o número de um país. */
+  async function abrirPais(chave: string, nome: string) {
+    definirPais({ nome, dados: null })
+    try {
+      definirPais({ nome, dados: await buscarPais(projectSlug, chave) })
+    } catch {
+      definirPais(null)
+    }
+  }
 
   if (erro) return <p className="erro">{erro}</p>
   if (!dados) return <p className="vazio">Carregando...</p>
@@ -182,6 +229,74 @@ export function Dashboard({ projectSlug }: { projectSlug: string }) {
         vazio="Nenhum visitante ainda."
       />
 
+      {/*
+        AS VISITAS QUE FORMARAM O NÚMERO, uma a uma.
+
+        Ele desconfiou do painel em 27/08, e a desconfiança era justificada: 66
+        dos acessos eram meus. Pediu para poder abrir um país e ver o que está lá
+        dentro antes de decidir em que idioma traduzir a plataforma.
+
+        A folha diz também o que NÃO tem. Ele pediu endereço em cru, operadora,
+        ASN e deteção de VPN, e nada disso está guardado: o endereço é reduzido a
+        uma faixa de rede e resumido com uma chave do servidor, e a política de
+        privacidade publicada em nome dele promete isso às famílias. Um painel
+        que esconde os seus próprios limites é o que o pôs a desconfiar.
+      */}
+      {pais && (
+        <div className="fundo-modal" role="dialog" aria-modal="true" aria-label="Visitas do país">
+          <button
+            type="button"
+            className="fundo-clicavel"
+            aria-label="Fechar"
+            onClick={() => definirPais(null)}
+          />
+          <div className="folha-pessoas folha-visitas">
+            <header>
+              <h2>{pais.nome}</h2>
+              <button
+                type="button"
+                className="fechar-x"
+                aria-label="Fechar"
+                onClick={() => definirPais(null)}
+              >
+                ✕
+              </button>
+            </header>
+
+            {!pais.dados ? (
+              <p className="vazio">Carregando...</p>
+            ) : (
+              <>
+                <p className="nota">
+                  {pais.dados.total} {pais.dados.total === 1 ? 'visita' : 'visitas'} de{' '}
+                  {pais.dados.redesDistintas}{' '}
+                  {pais.dados.redesDistintas === 1 ? 'rede diferente' : 'redes diferentes'}. Se o
+                  número de redes for muito menor do que o de visitas, é a mesma origem a repetir.
+                </p>
+                <ul className="lista-visitas">
+                  {pais.dados.visitas.map((v) => (
+                    <li key={v.id}>
+                      <strong>{new Date(v.primeiraVez).toLocaleString('pt-PT')}</strong>
+                      <span>
+                        {v.aparelho ?? 'aparelho desconhecido'} · rede {v.rede ?? 'sem registo'} ·{' '}
+                        {v.repetida ? 'visita repetida' : 'primeira visita'} · veio de {v.origem}
+                        {v.temConta ? ' · tem conta' : ''}
+                      </span>
+                    </li>
+                  ))}
+                </ul>
+                <p className="nota rodape-pessoas">
+                  Não guardamos o endereço de rede em cru, nem operadora, ASN ou deteção de VPN. O
+                  endereço é reduzido a uma faixa e resumido com uma chave do servidor, que é o que
+                  a política de privacidade da plataforma promete às famílias. A &quot;rede&quot;
+                  acima é esse resumo: serve para distinguir origens, não para identificar alguém.
+                </p>
+              </>
+            )}
+          </div>
+        </div>
+      )}
+
       <h2>Origem dos cadastros</h2>
       <Barras
         itens={dados.origemCadastros.map((o) => ({ nome: o.plataforma, valor: n(o.cadastros) }))}
@@ -190,8 +305,13 @@ export function Dashboard({ projectSlug }: { projectSlug: string }) {
 
       <h2>De onde vêm</h2>
       <Barras
-        itens={dados.porPais.map((o) => ({ nome: o.nome, valor: n(o.visitantes) }))}
+        itens={dados.porPais.map((o) => ({
+          nome: o.nome,
+          valor: n(o.visitantes),
+          chave: o.pais ?? 'SEM_PAIS',
+        }))}
         vazio="Ainda sem visitas identificadas."
+        aoAbrir={(chave, nome) => void abrirPais(chave, nome)}
       />
       {/* A NOTA NÃO É DECORAÇÃO. Ele vai tomar decisões de divulgação com este
           quadro, e tem de saber o que ele não sabe: o país é fiável, a cidade
@@ -302,23 +422,43 @@ function Cartao({ valor, rotulo }: { valor: number | string; rotulo: string }) {
 function Barras({
   itens,
   vazio,
+  aoAbrir,
 }: {
-  itens: Array<{ nome: string; valor: number }>
+  itens: Array<{ nome: string; valor: number; chave?: string }>
   vazio: string
+  /** Quando existe, cada barra passa a ser tocável e abre o que a formou. */
+  aoAbrir?: (chave: string, nome: string) => void
 }) {
   if (itens.length === 0) return <p className="bloco-vazio">{vazio}</p>
   const max = Math.max(1, ...itens.map((i) => i.valor))
   return (
     <ul className="barras">
-      {itens.map((i) => (
-        <li key={i.nome}>
-          <span className="rotulo">{i.nome}</span>
-          <span className="trilho">
-            <span className="preenchimento" style={{ width: `${(i.valor / max) * 100}%` }} />
-          </span>
-          <strong>{i.valor}</strong>
-        </li>
-      ))}
+      {itens.map((i) => {
+        const conteudo = (
+          <>
+            <span className="rotulo">{i.nome}</span>
+            <span className="trilho">
+              <span className="preenchimento" style={{ width: `${(i.valor / max) * 100}%` }} />
+            </span>
+            <strong>{i.valor}</strong>
+          </>
+        )
+        return (
+          <li key={i.nome}>
+            {aoAbrir && i.chave ? (
+              <button
+                type="button"
+                className="barra-tocavel"
+                onClick={() => aoAbrir(i.chave!, i.nome)}
+              >
+                {conteudo}
+              </button>
+            ) : (
+              conteudo
+            )}
+          </li>
+        )
+      })}
     </ul>
   )
 }

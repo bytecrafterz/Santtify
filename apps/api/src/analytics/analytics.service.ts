@@ -221,6 +221,83 @@ export class AnalyticsService {
     }))
   }
 
+  /**
+   * As visitas que formaram o número de um país, uma a uma.
+   *
+   * Ele desconfiou do painel em 27/08 e a desconfiança era justificada: 66 dos
+   * acessos eram meus. Pediu para poder abrir "Alemanha 66" e ver o que está lá
+   * dentro, e tem razão em querer isso antes de decidir em que idioma traduzir a
+   * plataforma.
+   *
+   * MOSTRA O QUE EXISTE, E DIZ O QUE NÃO EXISTE. Ele pediu também IP em cru,
+   * ASN, operadora, deteção de VPN e user-agent. Nada disso está guardado, por
+   * decisão de privacidade tomada no princípio: o endereço é truncado a uma
+   * faixa de rede e depois resumido com uma chave do servidor, e o user-agent
+   * idem. A política publicada em nome dele promete isso às famílias. Devolver
+   * essa lista obrigaria a passar a guardar dado pessoal de cada criança que
+   * abre a plataforma.
+   *
+   * O que se pode dar é isto, e chega para a pergunta dele: quantas visitas,
+   * quantas faixas de rede distintas, e cada visita com data, aparelho, se já
+   * cá tinha estado e por onde chegou.
+   */
+  async visitasDoPais(projectSlug: string, pais: string | null, limite = 200) {
+    const project = await this.prisma.project.findUnique({
+      where: { slug: projectSlug },
+      select: { id: true },
+    })
+    if (!project) return { pais, total: 0, redesDistintas: 0, visitas: [] }
+
+    const onde = {
+      projectId: project.id,
+      ...SO_VISITAS_REAIS,
+      countryCode: pais === 'SEM_PAIS' ? null : pais,
+    }
+
+    const [total, visitas] = await Promise.all([
+      this.prisma.visitor.count({ where: onde }),
+      this.prisma.visitor.findMany({
+        where: onde,
+        orderBy: { firstSeenAt: 'desc' },
+        take: limite,
+        select: {
+          id: true,
+          anonId: true,
+          ipHash: true,
+          deviceType: true,
+          firstSeenAt: true,
+          lastSeenAt: true,
+          rootPlatform: true,
+          chainDepth: true,
+          userId: true,
+        },
+      }),
+    ])
+
+    // Faixas de rede distintas: é o mais perto que se chega de "quantas pessoas
+    // diferentes", sem guardar endereços. Foi assim que se provou que os 66 da
+    // Alemanha eram uma máquina só.
+    const redes = new Set(visitas.map((v) => v.ipHash).filter(Boolean))
+
+    return {
+      pais,
+      total,
+      redesDistintas: redes.size,
+      visitas: visitas.map((v) => ({
+        id: v.id,
+        visitante: v.anonId.slice(0, 8),
+        rede: v.ipHash ? v.ipHash.slice(0, 8) : null,
+        aparelho: v.deviceType,
+        primeiraVez: v.firstSeenAt,
+        ultimaVez: v.lastSeenAt,
+        repetida: v.lastSeenAt.getTime() - v.firstSeenAt.getTime() > 60_000,
+        origem: v.rootPlatform ?? 'DIRECT',
+        temConta: Boolean(v.userId),
+        profundidade: v.chainDepth,
+      })),
+    }
+  }
+
   /** Curva de crescimento a partir do Dia Zero. */
   private async novosPorDia(projectId: string, desde: Date) {
     return this.prisma.$queryRaw<Array<{ dia: Date; visitantes: number; cadastros: number }>>`
