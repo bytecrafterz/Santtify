@@ -6168,3 +6168,21 @@ button.linha-menu-capa {
     margin: 0;
   }
 }
+
+/* Os dois funis do painel de métricas. O título de funil separa-se do resto
+   com uma linha por cima, para que ninguém leia um número do Produto Vivo
+   como se fosse da plataforma, que foi o que aconteceu com a propagação. */
+h2.funil {
+  margin-top: 2.5rem;
+  padding-top: 1.25rem;
+  border-top: 2px solid var(--cor-borda, #e4e4e7);
+  font-size: 0.95rem;
+  letter-spacing: 0.12em;
+  color: #52525b;
+}
+
+/* A marca que diz que se chegou ao fim do Produto Vivo. Não se vê: é um ponto
+   de medição, não um elemento da página. */
+.marca-fim-pv {
+  height: 1px;
+}

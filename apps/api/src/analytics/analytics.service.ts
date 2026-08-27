@@ -75,6 +75,7 @@ export class AnalyticsService {
       compartilhamentos,
       cliquesEmPartilha,
       cliquesNoPv,
+      chegaramAoFimDoPv,
       contatosPv,
       cliquesEmComprar,
     ] = await Promise.all([
@@ -133,6 +134,19 @@ export class AnalyticsService {
       this.prisma.event.count({ where: { projectId, type: 'PV_CLICK' } }),
       // Quem foi até o fim e pediu para entrar no grupo. É este o número que
       // responde "existem 10, 20 ou 50 empresas interessadas?".
+      /**
+       * O DEGRAU DO MEIO DO FUNIL, que não existia.
+       *
+       * Havia o primeiro (tocou no selo, por curiosidade) e o último (pediu para
+       * entrar no grupo, por intenção), e nada pelo meio. Sem isto não se sabe
+       * se quem não entrou no grupo se desinteressou pela proposta ou nunca
+       * chegou a lê-la, e são duas conclusões comerciais opostas. Ele pediu-o
+       * em 27/08 e passa a ser marcado quando o fim da apresentação entra mesmo
+       * no ecrã, uma vez por visita.
+       */
+      this.prisma.event.count({
+        where: { projectId, type: 'CUSTOM', props: { path: ['acao'], equals: 'pv_ate_ao_fim' } },
+      }),
       this.prisma.event.count({ where: { projectId, type: 'PV_CONTACT' } }),
       this.prisma.event.count({ where: { projectId, type: 'CHECKOUT_CLICKED' } }),
     ])
@@ -150,6 +164,7 @@ export class AnalyticsService {
       compartilhamentos,
       cliquesEmPartilha,
       cliquesNoPv,
+      chegaramAoFimDoPv,
       contatosPv,
       cliquesEmComprar,
     }

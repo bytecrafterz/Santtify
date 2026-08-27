@@ -21,6 +21,7 @@ interface VisaoGeral {
     compartilhamentos: number
     cliquesEmPartilha: number
     cliquesNoPv: number
+    chegaramAoFimDoPv: number
     contatosPv: number
     cliquesEmComprar: number
   }
@@ -104,6 +105,24 @@ export function Dashboard({ projectSlug }: { projectSlug: string }) {
       <h1>Métricas</h1>
       <p className="subtitulo">{dados.project.name}</p>
 
+      {/*
+        DOIS FUNIS, E NÃO UM SÓ MISTURADO.
+
+        Estava tudo numa lista, e havia uma secção chamada "Propagação do
+        Produto Vivo" que mostrava de onde vieram as pessoas para o SANTTIFY.
+        Ele apanhou-o em 27/08 e a correcção dele é a certa: "as 375 pessoas que
+        vieram das redes não representam propagação do Produto Vivo, essas
+        pessoas chegaram ao Santtify".
+
+        São duas perguntas comerciais diferentes e por isso são dois quadros:
+        quantas pessoas entram na plataforma e por onde, e quantas dessas se
+        interessaram pela proposta que lá está dentro. Misturadas, a segunda
+        parece muito maior do que é, e é justamente a segunda que ele vai
+        apresentar a uma empresa.
+      */}
+      <h2 className="funil">SANTTIFY</h2>
+      <p className="nota">A plataforma: quem chega, por onde chega e o que faz lá dentro.</p>
+
       <div className="numeros">
         <Cartao valor={n(t.visitantes)} rotulo="Visitantes" />
         <Cartao valor={n(t.cadastros)} rotulo="Cadastros" />
@@ -126,32 +145,6 @@ export function Dashboard({ projectSlug }: { projectSlug: string }) {
         <Cartao valor={n(t.comentarios)} rotulo="Comentários" />
         <Cartao valor={n(t.compartilhamentos)} rotulo="Compartilhamentos" />
       </div>
-
-      {/* O Produto Vivo tem quadro próprio, separado das métricas das letras,
-          porque a contagem é de outra natureza: as letras têm números
-          individuais, e o PV é um só somado em todas elas. Misturar os dois
-          quadros faria parecer que este número é da letra. */}
-      <h2>Produto Vivo</h2>
-      <div className="numeros">
-        <Cartao valor={n(t.cliquesNoPv)} rotulo="Cliques no PV (todas as letras)" />
-        {/*
-          "CLIQUES PARA ENTRAR NO GRUPO", e não "entraram no grupo".
-
-          Dizia que tinham entrado, e nós não sabemos isso: o WhatsApp não conta
-          a ninguém quem entrou num grupo. Sabemos que carregaram no botão, e é
-          só isso que este número pode prometer. Ele próprio o pediu assim em
-          27/08, e tem razão: um número que promete mais do que mede é o que
-          rebenta numa reunião com uma empresa.
-        */}
-        <Cartao valor={n(t.contatosPv)} rotulo="Cliques para entrar no grupo" />
-        <Cartao valor={n(t.cliquesEmComprar)} rotulo="Cliques em comprar" />
-      </div>
-      <p className="nota">
-        O PV aparece nas 26 letras e a contagem é a soma de todas. O primeiro número é curiosidade:
-        quantas pessoas quiseram saber o que é a tecnologia. O segundo é intenção: quantas foram até
-        o fim e pediram para entrar no grupo. É esse que responde se existem dez, vinte ou cinquenta
-        empresas interessadas.
-      </p>
 
       <h2>Crescimento</h2>
       {dados.porDia.length === 0 ? (
@@ -212,7 +205,9 @@ export function Dashboard({ projectSlug }: { projectSlug: string }) {
         antes de 25 de agosto aparecem como &quot;Sem identificar&quot;.
       </p>
 
-      <h2>Propagação do Produto Vivo</h2>
+      {/* Isto é propagação do SANTTIFY: como as pessoas chegam à plataforma.
+          O nome dizia Produto Vivo e não tinha nada que ver com ele. */}
+      <h2>Propagação</h2>
       <div className="numeros">
         <Cartao valor={n(p.diretos)} rotulo="Vieram das redes" />
         <Cartao valor={n(p.porPartilha)} rotulo="Vieram de partilha" />
@@ -235,6 +230,40 @@ export function Dashboard({ projectSlug }: { projectSlug: string }) {
           ))}
         </ul>
       )}
+
+      {/*
+        O SEGUNDO FUNIL. A pessoa já está cá dentro; a pergunta agora é outra.
+      */}
+      <h2 className="funil">PRODUTO VIVO</h2>
+      <p className="nota">
+        A proposta apresentada dentro do Santtify. Quem já entrou na plataforma vê o selo, toca por
+        curiosidade, conhece a proposta e, se lhe interessar, pede para entrar no grupo ou compra.
+        Nenhum destes números é de quem chega: são de quem já cá está.
+      </p>
+      <div className="numeros">
+        <Cartao valor={n(t.cliquesNoPv)} rotulo="Cliques no PV (todas as letras)" />
+        {/* O degrau do meio: sem ele não se distingue quem não se interessou de
+            quem nunca chegou a ler a proposta. */}
+        <Cartao valor={n(t.chegaramAoFimDoPv)} rotulo="Chegaram ao fim" />
+        {/*
+          "CLIQUES PARA ENTRAR NO GRUPO", e não "entraram no grupo".
+
+          Dizia que tinham entrado, e nós não sabemos isso: o WhatsApp não conta
+          a ninguém quem entrou num grupo. Sabemos que carregaram no botão, e é
+          só isso que este número pode prometer. Ele próprio o pediu assim em
+          27/08, e tem razão: um número que promete mais do que mede é o que
+          rebenta numa reunião com uma empresa.
+        */}
+        <Cartao valor={n(t.contatosPv)} rotulo="Cliques para entrar no grupo" />
+        <Cartao valor={n(t.cliquesEmComprar)} rotulo="Cliques em comprar" />
+      </div>
+      <p className="nota">
+        O PV aparece nas 26 letras e a contagem é a soma de todas. O primeiro número é curiosidade:
+        quantas pessoas quiseram saber o que é a tecnologia. O segundo diz quantas leram a proposta
+        até ao fim. Os dois últimos são intenção, e são esses que respondem se existem dez, vinte ou
+        cinquenta empresas interessadas. &quot;Chegaram ao fim&quot; começou a ser contado hoje: os
+        acessos anteriores não têm esse registo e não aparecem aqui.
+      </p>
 
       <h2>Dia Zero</h2>
       <p className="nota">

@@ -2,6 +2,7 @@ import Link from 'next/link'
 import { api } from '@/lib/api'
 import { RastreadorDeVisita } from '@/components/RastreadorDeVisita'
 import { EntrarNoGrupoPv } from '@/components/EntrarNoGrupoPv'
+import { ChegouAoFimDoPv } from '@/components/ChegouAoFimDoPv'
 import { IntroducaoEmCartoes } from '@/components/IntroducaoEmCartoes'
 import { BarraInferior } from '@/components/BarraInferior'
 
@@ -93,7 +94,11 @@ export default async function PaginaProdutoVivo({
           projeto, e dá para acompanhar a evolução junto com outras empresas.
         </p>
         {linkGrupo ? (
-          <EntrarNoGrupoPv projectId={project?.id ?? ''} url={linkGrupo} />
+          <>
+            {/* Logo antes do botão: quem vê isto chegou ao fim da proposta. */}
+            <ChegouAoFimDoPv projectId={project?.id ?? ''} />
+            <EntrarNoGrupoPv projectId={project?.id ?? ''} url={linkGrupo} />
+          </>
         ) : (
           <p className="bloco-vazio">Botão aguardando o link do grupo.</p>
         )}
