@@ -35,23 +35,72 @@ export function VistaDoCartao({
   const pdf = api.cartaoPdfUrl(projectSlug, contentSlug)
   const pdfParaBaixar = api.cartaoPdfUrl(projectSlug, contentSlug, true)
 
-  async function partilhar() {
+  /**
+   * DENTRO DA APLICAÇÃO INSTALADA NO IPHONE NÃO EXISTE IMPRESSÃO.
+   *
+   * `window.print()` é ignorado em silêncio num web app em ecrã inteiro no iOS:
+   * não há barra do navegador, e por isso não há para onde abrir a caixa de
+   * impressão. O botão respondia e não acontecia nada, que é exactamente o que
+   * ele descreveu em 27/08: "não consigo concluir a impressão".
+   *
+   * No iOS o sítio onde vive o Imprimir é a folha de partilha do sistema. Por
+   * isso, aí, imprimir e enviar são o mesmo gesto: entrega-se o PDF ao telemóvel
+   * e ele oferece Imprimir, WhatsApp, Ficheiros e o resto.
+   */
+  const dentroDaAppNoIphone =
+    typeof navigator !== 'undefined' &&
+    'standalone' in navigator &&
+    Boolean((navigator as Navigator & { standalone?: boolean }).standalone)
+
+  /**
+   * Entrega o FICHEIRO, e não o endereço.
+   *
+   * Partilhava o link da página. Quem recebia tinha de abrir o site, encontrar o
+   * cartão e imprimir. Ele queria mandar o cartão, e é o cartão que vai. Onde o
+   * telemóvel não souber partilhar ficheiros, vai o endereço como antes.
+   */
+  async function entregarFicheiro(comoImpressao: boolean) {
     const endereco = typeof window === 'undefined' ? '' : window.location.href
-    const dados = {
-      title: `Cartão da ${nome}`,
-      text: `Cartão da ${nome} para imprimir`,
-      url: endereco,
+    try {
+      const resposta = await fetch(pdfParaBaixar)
+      if (!resposta.ok) throw new Error('sem ficheiro')
+      const ficheiro = new File(
+        [await resposta.blob()],
+        `cartao-${letra ? `letra-${letra.toLowerCase()}` : contentSlug}.pdf`,
+        { type: 'application/pdf' },
+      )
+      if (navigator.canShare?.({ files: [ficheiro] })) {
+        await navigator.share({ files: [ficheiro], title: `Cartão da ${nome}` })
+        return true
+      }
+    } catch {
+      // Sem rede ou sem partilha de ficheiros: cai para o caminho de baixo.
     }
     try {
-      if (typeof navigator !== 'undefined' && navigator.share) {
-        await navigator.share(dados)
-        return
+      if (navigator.share) {
+        await navigator.share({ title: `Cartão da ${nome}`, url: endereco })
+        return true
       }
       await navigator.clipboard.writeText(endereco)
       definirAviso('Endereço copiado. É só colar onde quiser enviar.')
+      return true
     } catch {
       // Fechar a folha de partilha do sistema cai aqui, e não é um erro.
+      return false
     }
+  }
+
+  async function partilhar() {
+    await entregarFicheiro(false)
+  }
+
+  async function imprimir() {
+    if (dentroDaAppNoIphone) {
+      definirAviso('Escolha Imprimir na lista que vai abrir.')
+      await entregarFicheiro(true)
+      return
+    }
+    window.print()
   }
 
   return (
@@ -118,7 +167,7 @@ export function VistaDoCartao({
           O estilo de impressão esconde tudo menos a folha, e usa a cópia em
           resolução de papel, não a que se vê no ecrã.
         */}
-        <button type="button" className="acao-do-cartao" onClick={() => window.print()}>
+        <button type="button" className="acao-do-cartao" onClick={() => void imprimir()}>
           <span aria-hidden>🖨</span>
           IMPRIMIR
         </button>
