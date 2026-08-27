@@ -25,9 +25,15 @@
 
 Rossandro, os sete pontos que eram defeitos estão corrigidos e no ar. Vou pela sua numeração e no fim tenho uma coisa importante para te contar, que descobri conferindo e que muda o que dá para medir hoje.
 
-1. Login. Encontrei a causa e ela é real. Quando o seu token de acesso expira, várias partes da tela pedem a renovação ao mesmo tempo, cada uma por sua conta, todas com o mesmo código. O servidor trocava esse código duas vezes e uma das respostas ficava com um código já vencido. Dá para ver na sua conta: 331 sessões guardadas, com pares de troca dentro do mesmo minuto. Agora existe uma renovação de cada vez e quem chega no meio espera por ela.
+1. Login. Encontrei a causa e ela não é a que eu imaginava. A sua sessão nunca caiu.
 
-Só que tem uma segunda parte, e essa não é defeito. Se você instalou o Santtify no telefone pelo ícone, o aplicativo instalado tem memória própria, separada do navegador. Por isso ele pediu login uma vez, mesmo você já estando conectado no Safari. É assim em qualquer aplicativo instalado desse tipo, e depois dessa primeira vez ele não deve mais pedir.
+Fui ver no servidor o momento exato do seu print. Ele está marcado 10:18, e às 10:18 a renovação da sua sessão funcionou perfeitamente: o código anterior foi trocado por um novo, sem erro nenhum. Você estava conectado o tempo todo.
+
+O que aconteceu é que a tela respondeu antes de saber a resposta. Quando você abre o Santtify, o aplicativo precisa de um instante para reconhecer a sua conta. Nesse instante, cinco partes da página tratavam você como se fosse alguém sem conta, e por isso aparecia o Ainda não tem uma conta, Crie o seu perfil. Assim que o reconhecimento terminava, aquilo sumia. No celular em rede móvel esse instante é de um segundo ou dois, e por isso acontecia toda vez que você abria. Era exatamente o que você descreveu com o Está sempre acontecendo.
+
+Corrigi na raiz: agora a página só trata alguém como visitante quando tem certeza de que ele não tem conta, e não enquanto ainda está descobrindo. Testei com a rede propositalmente lenta, medindo setenta vezes seguidas durante o carregamento, e o convite não apareceu nenhuma vez para quem está conectado. Para quem realmente não tem conta ele continua aparecendo igual, como você pediu em agosto.
+
+Aproveitei e corrigi também uma coisa menor que encontrei no caminho: várias partes da tela pediam a renovação da sessão ao mesmo tempo e atrapalhavam umas às outras. Não era o que você viu, mas podia dar problema mais adiante.
 
 2. PDF. Agora entendi o que estava acontecendo e a culpa era minha. O botão de imprimir abria o PDF numa aba nova. No navegador você fecha a aba; dentro do aplicativo instalado não existe aba nem botão de voltar, e você caía no visualizador de PDF do próprio telefone. Aquilo que parecia uma página de envio não era uma tela nossa, era do sistema, e por isso não tinha cancelar.
 
