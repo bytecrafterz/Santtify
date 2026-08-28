@@ -1,6 +1,6 @@
 'use client'
 
-import { useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { api } from '@/lib/api'
 
@@ -31,8 +31,54 @@ export function VistaDoCartao({
 }) {
   const router = useRouter()
   const [aviso, definirAviso] = useState<string | null>(null)
+  const [erro, definirErro] = useState<string | null>(null)
+  const [aTrabalhar, definirATrabalhar] = useState(false)
   const nome = letra ? `Letra ${letra}` : titulo
   const pdfParaBaixar = api.cartaoPdfUrl(projectSlug, contentSlug, true)
+  const nomeDoFicheiro = `cartao-${letra ? `letra-${letra.toLowerCase()}` : contentSlug}.pdf`
+
+  /**
+   * O PDF É BUSCADO ANTES DE ALGUÉM TOCAR EM ALGUMA COISA.
+   *
+   * Esta é a correcção do defeito que ele descreveu três vezes e que eu não
+   * tinha encontrado: "não estou conseguindo fazer corretamente essas ações".
+   *
+   * `navigator.share()` no iOS só abre se for chamado enquanto ainda vale o
+   * toque da pessoa. O código buscava o PDF primeiro e partilhava a seguir, e
+   * numa ligação de dados móveis essa busca demora o suficiente para o iPhone
+   * dar o toque por terminado. A partilha era recusada, a alternativa seguinte
+   * era recusada pela mesma razão, e o `catch` engolia tudo: o botão respondia
+   * e não acontecia absolutamente nada.
+   *
+   * Não era o Safari contra a aplicação instalada, que foi onde procurei
+   * primeiro. Falhava nos dois, e é por isso que a correcção de 27/08 não lhe
+   * mudou nada.
+   *
+   * Buscado aqui, o ficheiro já está em memória quando ela toca, e a partilha
+   * acontece dentro do toque.
+   */
+  const ficheiro = useRef<File | null>(null)
+  const [pronto, definirPronto] = useState(false)
+
+  useEffect(() => {
+    let vivo = true
+    void (async () => {
+      try {
+        const resposta = await fetch(pdfParaBaixar)
+        if (!resposta.ok) throw new Error('sem ficheiro')
+        const blob = await resposta.blob()
+        if (!vivo) return
+        ficheiro.current = new File([blob], nomeDoFicheiro, { type: 'application/pdf' })
+        definirPronto(true)
+      } catch {
+        // Sem rede: BAIXAR PDF continua a funcionar, que é um endereço directo
+        // e não depende disto. O botão de partilhar dirá o que se passa.
+      }
+    })()
+    return () => {
+      vivo = false
+    }
+  }, [pdfParaBaixar, nomeDoFicheiro])
 
   /**
    * DENTRO DA APLICAÇÃO INSTALADA NO IPHONE NÃO EXISTE IMPRESSÃO.
@@ -54,52 +100,90 @@ export function VistaDoCartao({
   /**
    * Entrega o FICHEIRO, e não o endereço.
    *
-   * Partilhava o link da página. Quem recebia tinha de abrir o site, encontrar o
-   * cartão e imprimir. Ele queria mandar o cartão, e é o cartão que vai. Onde o
-   * telemóvel não souber partilhar ficheiros, vai o endereço como antes.
+   * Ele foi explícito em 28/08: "quero compartilhar o cartão/PDF em si, e não
+   * simplesmente o endereço da página". Quem recebia um link tinha de abrir o
+   * site, encontrar o cartão e imprimir.
+   *
+   * NADA AQUI FALHA EM SILÊNCIO. Cada caminho que não dá certo escreve no ecrã
+   * o que aconteceu e para onde ir a seguir. Um botão que responde e não faz
+   * nada é o pior dos dois mundos: a pessoa não sabe se esperou pouco, se
+   * carregou mal, ou se o site está partido. Foi o que lhe aconteceu.
    */
-  async function entregarFicheiro(comoImpressao: boolean) {
-    const endereco = typeof window === 'undefined' ? '' : window.location.href
-    try {
-      const resposta = await fetch(pdfParaBaixar)
-      if (!resposta.ok) throw new Error('sem ficheiro')
-      const ficheiro = new File(
-        [await resposta.blob()],
-        `cartao-${letra ? `letra-${letra.toLowerCase()}` : contentSlug}.pdf`,
-        { type: 'application/pdf' },
-      )
-      if (navigator.canShare?.({ files: [ficheiro] })) {
-        await navigator.share({ files: [ficheiro], title: `Cartão da ${nome}` })
+  async function entregarFicheiro(): Promise<boolean> {
+    definirErro(null)
+    definirAviso(null)
+
+    // Cancelar a folha de partilha do sistema não é um erro, é uma decisão.
+    const cancelou = (e: unknown) => e instanceof Error && e.name === 'AbortError'
+
+    const f = ficheiro.current
+    if (f && navigator.canShare?.({ files: [f] })) {
+      try {
+        await navigator.share({ files: [f], title: `Cartão da ${nome}` })
         return true
+      } catch (e) {
+        if (cancelou(e)) return true
+        // Cai para o endereço em baixo, mas sem fingir que correu bem.
       }
-    } catch {
-      // Sem rede ou sem partilha de ficheiros: cai para o caminho de baixo.
     }
-    try {
-      if (navigator.share) {
+
+    const endereco = typeof window === 'undefined' ? '' : window.location.href
+    if (navigator.share) {
+      try {
         await navigator.share({ title: `Cartão da ${nome}`, url: endereco })
+        definirAviso('Enviei o endereço do cartão. Para enviar o ficheiro, use BAIXAR PDF.')
         return true
+      } catch (e) {
+        if (cancelou(e)) return true
       }
+    }
+
+    try {
       await navigator.clipboard.writeText(endereco)
       definirAviso('Endereço copiado. É só colar onde quiser enviar.')
       return true
     } catch {
-      // Fechar a folha de partilha do sistema cai aqui, e não é um erro.
+      definirErro('Este telemóvel não deixou partilhar daqui. Use BAIXAR PDF e envie o ficheiro.')
       return false
     }
   }
 
   async function partilhar() {
-    await entregarFicheiro(false)
+    if (!pronto) {
+      definirErro('O cartão ainda está a carregar. Tente outra vez daqui a um instante.')
+      return
+    }
+    definirATrabalhar(true)
+    try {
+      await entregarFicheiro()
+    } finally {
+      definirATrabalhar(false)
+    }
   }
 
   async function imprimir() {
-    if (dentroDaAppNoIphone) {
-      definirAviso('Escolha Imprimir na lista que vai abrir.')
-      await entregarFicheiro(true)
+    if (!dentroDaAppNoIphone) {
+      window.print()
       return
     }
-    window.print()
+    /*
+      Na aplicação instalada no iPhone não há caixa de impressão: sem barra de
+      navegador não há para onde ela abrir, e `window.print()` é ignorado sem
+      dizer nada. No iOS o Imprimir vive dentro da folha de partilha, por isso
+      aqui imprimir e enviar são o mesmo gesto.
+    */
+    if (!pronto) {
+      definirErro('O cartão ainda está a carregar. Tente outra vez daqui a um instante.')
+      return
+    }
+    definirATrabalhar(true)
+    definirAviso('Escolha Imprimir na lista que vai abrir.')
+    try {
+      const correu = await entregarFicheiro()
+      if (!correu) definirAviso(null)
+    } finally {
+      definirATrabalhar(false)
+    }
   }
 
   return (
@@ -125,7 +209,10 @@ export function VistaDoCartao({
         loading="lazy"
       />
 
+      {/* O que aconteceu, dito onde ela está a olhar. Antes destas duas linhas,
+          um caminho que falhasse não escrevia nada em lado nenhum. */}
       {aviso && <p className="nota-ok">{aviso}</p>}
+      {erro && <p className="erro">{erro}</p>}
 
       <div className="acoes-do-cartao">
         <button
@@ -166,14 +253,24 @@ export function VistaDoCartao({
           O estilo de impressão esconde tudo menos a folha, e usa a cópia em
           resolução de papel, não a que se vê no ecrã.
         */}
-        <button type="button" className="acao-do-cartao" onClick={() => void imprimir()}>
+        <button
+          type="button"
+          className="acao-do-cartao"
+          disabled={aTrabalhar}
+          onClick={() => void imprimir()}
+        >
           <span aria-hidden>🖨</span>
           IMPRIMIR
         </button>
 
-        <button type="button" className="acao-do-cartao" onClick={() => void partilhar()}>
+        <button
+          type="button"
+          className="acao-do-cartao"
+          disabled={aTrabalhar}
+          onClick={() => void partilhar()}
+        >
           <span aria-hidden>↗</span>
-          COMPARTILHAR
+          {aTrabalhar ? 'A PREPARAR...' : 'COMPARTILHAR'}
         </button>
       </div>
     </main>

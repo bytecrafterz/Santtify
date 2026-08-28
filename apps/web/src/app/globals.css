@@ -6500,3 +6500,12 @@ h2.funil {
     color: #e0b968;
   }
 }
+
+.acao-do-cartao[disabled] {
+  opacity: 0.6;
+  cursor: progress;
+}
+
+.vista-cartao .erro {
+  margin: 0 0 12px;
+}
