@@ -359,6 +359,10 @@ export const admin = {
 
   duplicarCartao: (id: string) => chamar<CartaoAdmin>(`/cards/${id}/duplicate`, { method: 'POST' }),
 
+  /** Um cartão novo e vazio numa publicação da raiz — sem precisar de original. */
+  acrescentarCartaoDaRaiz: (contentId: string) =>
+    chamar<CartaoAdmin>(`/contents/${contentId}/cards`, { method: 'POST' }),
+
   /** Esvazia um original (a casa fica) ou remove uma cópia. */
   esvaziarCartao: (id: string) =>
     chamar<{ removido: boolean }>(`/cards/${id}`, { method: 'DELETE' }),

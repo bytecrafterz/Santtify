@@ -4,6 +4,7 @@ import { PrismaService } from '../prisma/prisma.service'
 import { ShortLinksService } from '../short-links/short-links.service'
 import { StorageService } from '../admin/storage.service'
 import { ContagensService } from '../social/contagens.service'
+import { ordemDoProdutoVivo } from './ordem-do-produto-vivo'
 
 /**
  * Leitura de conteúdo para o PWA.
@@ -345,6 +346,24 @@ export class ContentService {
 
     const code = content.shortLink[0]?.code ?? null
 
+    /*
+      A ORDEM DO PRODUTO VIVO, E SÓ DELE.
+
+      Ele pediu em 28/08 que as imagens viessem primeiro e a arte com som ou
+      vídeo sempre no fim, com o número de imagens livre. Isto substitui a
+      especificação anterior, das três artes fixas.
+
+      É uma regra desta página e não da plataforma: numa letra do alfabeto a
+      ordem é a que ele arrumou no painel, e ordenar as vinte e seis por quem
+      tem áudio baralhava-as todas.
+
+      Ordenado aqui, uma vez, e com a MESMA função que o painel usa. Enquanto
+      forem duas funções, um dia arruma numa ordem e vê outra publicada, que é
+      exactamente a categoria de defeito que mais tempo custou neste projecto.
+    */
+    const blocosOrdenados =
+      contentSlug === 'produto-vivo' ? ordemDoProdutoVivo(content.blocks) : content.blocks
+
     return {
       project,
       content: {
@@ -399,7 +418,7 @@ export class ContentService {
          * "Rascunho" continua a existir e continua a impedir o botão de
          * publicar no painel. O que não faz é apagar do ar o que já lá estava.
          */
-        blocks: content.blocks
+        blocks: blocosOrdenados
           /**
            * Tirado do ar à mão sai daqui, esteja completo ou não.
            *

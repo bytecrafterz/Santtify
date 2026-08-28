@@ -3,6 +3,7 @@ import { BlockType, CardEstado, CardPapel, ContentStatus, MediaKind, Prisma } fr
 import { PrismaService } from '../prisma/prisma.service'
 import { ShortLinksService } from '../short-links/short-links.service'
 import { ContagensService } from '../social/contagens.service'
+import { ordemDoProdutoVivo } from '../content/ordem-do-produto-vivo'
 
 /**
  * Operações do painel administrativo.
@@ -1160,7 +1161,10 @@ export class AdminContentService {
       produtoVivo: {
         contentId: pv.id,
         title: pv.title,
-        cartoes: cartoesPv.map((b) => ({
+        // A mesma ordem que a página pública mostra: as imagens primeiro e a
+        // peça com som no fim. O painel tem de ser o que ele vê publicado,
+        // senão arruma numa ordem e sai outra.
+        cartoes: ordemDoProdutoVivo(cartoesPv).map((b) => ({
           id: b.id,
           slot: b.slot,
           papel: b.papel,
@@ -1483,6 +1487,51 @@ export class AdminContentService {
    * mesma música duas vezes — copiar o conteúdo daria um cartão pronto que
    * ninguém pediu e que iria direito à página.
    */
+  /**
+   * Acrescenta um cartão vazio a uma publicação da raiz.
+   *
+   * Ele pediu em 28/08 que o número de imagens do Produto Vivo fosse livre, e
+   * que desse para acrescentar sem depender de já existir uma para duplicar.
+   * Duplicar precisa de um original; isto não precisa de nada, e é o que torna
+   * possível recomeçar depois de apagar tudo.
+   *
+   * SÓ NA RAIZ. Uma letra do alfabeto tem quatro casas fixas, e é dessa forma
+   * repetida que a composição vive; acrescentar uma quinta faria a letra deixar
+   * de ter a mesma forma das outras vinte e cinco. A raiz — a introdução e o
+   * Produto Vivo — é a parte multiplicável, e é a única onde isto entra.
+   */
+  async acrescentarCartaoDaRaiz(contentId: string, adminId: string) {
+    const content = await this.prisma.content.findUnique({
+      where: { id: contentId },
+      select: { id: true, letra: true, projectId: true },
+    })
+    if (!content) throw new NotFoundException('Publicação não encontrada')
+    if (content.letra !== null) {
+      throw new BadRequestException('As letras têm quatro cartões fixos e não se acrescentam.')
+    }
+
+    const ultimo = await this.prisma.contentBlock.findFirst({
+      where: { contentId },
+      orderBy: { position: 'desc' },
+      select: { position: true },
+    })
+
+    const novo = await this.prisma.contentBlock.create({
+      data: {
+        contentId,
+        type: BlockType.AUDIO,
+        papel: CardPapel.CARTAO,
+        estado: CardEstado.RASCUNHO,
+        slot: null,
+        label: 'Publicação',
+        position: (ultimo?.position ?? 0) + 1,
+      },
+      select: { id: true, slot: true, label: true, position: true, estado: true },
+    })
+    await this.auditar(adminId, content.projectId, 'card.create', 'ContentBlock', novo.id, {})
+    return novo
+  }
+
   async duplicarCartao(cartaoId: string, adminId: string) {
     const original = await this.prisma.contentBlock.findUnique({
       where: { id: cartaoId },

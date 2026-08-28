@@ -73,19 +73,21 @@ export function ListaAdmin({ projectSlug }: { projectSlug: string }) {
       </Link>
 
       {/*
-        O PRODUTO VIVO TEM ENTRADA PRÓPRIA.
+        O PRODUTO VIVO TEM PÁGINA PRÓPRIA.
 
         Vivia dentro da Estrutura raiz e só lá. Eu disse-lhe onde era e ele
         respondeu em 26/08 que entrou no painel e "não encontrou de forma
         clara". Uma coisa que existe mas que é preciso explicar por mensagem
         para se achar não está no painel: está escondida nele.
+
+        Ganhou entrada própria nessa altura, mas a entrada levava a uma âncora
+        DENTRO da página do perfil, e ele voltou a pedir em 28/08 que fossem
+        separados. Tinha razão outra vez: um atalho com nome próprio que abre a
+        página de outra coisa é meio caminho, e meio caminho lê-se como defeito.
       */}
-      <Link
-        className="bloco linha atalho-alfabeto"
-        href={`/${projectSlug}/admin/estrutura#produto-vivo`}
-      >
+      <Link className="bloco linha atalho-alfabeto" href={`/${projectSlug}/admin/produto-vivo`}>
         <span>Produto Vivo</span>
-        <small>a arte, o áudio e o texto que as empresas veem</small>
+        <small>as imagens e a arte com áudio que as empresas veem</small>
       </Link>
 
       <Link className="bloco linha atalho-alfabeto" href={`/${projectSlug}/admin/alfabeto`}>

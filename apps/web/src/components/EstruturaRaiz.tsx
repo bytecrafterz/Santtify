@@ -5,6 +5,7 @@ import { useCallback, useEffect, useState } from 'react'
 import { admin, type CartaoAdmin } from '@/lib/admin'
 import { CabecalhoFixo } from './CabecalhoFixo'
 import { EditorDeCartao } from './EditorDeCartao'
+import { CartaoDaRaiz } from './CartaoDaRaiz'
 import { useAuth } from './ProvedorDeAuth'
 
 /**
@@ -69,7 +70,6 @@ export function EstruturaRaiz({ projectSlug }: { projectSlug: string }) {
   }
 
   const intro = dados?.introducao
-  const pv = dados?.produtoVivo
 
   return (
     <>
@@ -161,64 +161,6 @@ export function EstruturaRaiz({ projectSlug }: { projectSlug: string }) {
             <p className="nota dica-duplicar">↓ Duplicar cria outra INTRODUÇÃO abaixo</p>
           </li>
 
-          {/* 4. PRODUTO VIVO — multiplicável, como a introdução.
-              Ele pediu em 25/08 um modelo vazio para preencher e duplicar
-              quantas vezes quisesse. É o mesmo cartão dos áudios: foto, som,
-              título, texto e os quatro indicadores. O texto institucional que
-              lá estava saiu — era longo e não dizia o que aquilo é. */}
-          <li className="vagao" id="produto-vivo">
-            <div className="cabeca-raiz">
-              <strong>PRODUTO VIVO</strong>
-              {pv && (
-                <button
-                  type="button"
-                  className="tres-pontos"
-                  aria-label="Opções do Produto Vivo"
-                  onClick={() => definirMenuAberto(menuAberto === 'pv' ? null : 'pv')}
-                >
-                  ⋯
-                </button>
-              )}
-              {menuAberto === 'pv' && pv && (
-                <div className="menu-quadrado" role="menu">
-                  <button
-                    type="button"
-                    disabled={ocupado}
-                    onClick={async () => {
-                      definirMenuAberto(null)
-                      definirOcupado(true)
-                      try {
-                        await admin.duplicarIntroducao(pv.contentId)
-                        await recarregar()
-                      } finally {
-                        definirOcupado(false)
-                      }
-                    }}
-                  >
-                    ⧉ Duplicar
-                  </button>
-                </div>
-              )}
-            </div>
-
-            {pv?.cartoes.map((c) => (
-              <CartaoDaRaiz
-                key={c.id}
-                cartao={c}
-                rotuloVazio="CARREGAR PRODUTO VIVO"
-                menuAberto={menuAberto === c.id}
-                aoAbrirMenu={() => definirMenuAberto(menuAberto === c.id ? null : c.id)}
-                aoEditar={() => {
-                  definirMenuAberto(null)
-                  definirAEditar(c)
-                }}
-                aoMudar={recarregar}
-                aoFecharMenu={() => definirMenuAberto(null)}
-              />
-            ))}
-            <p className="nota dica-duplicar">↓ Duplicar cria outra publicação abaixo</p>
-          </li>
-
           {/* 3. ALFABETO — fixo */}
           <li className="vagao">
             <div className="cabeca-raiz">
@@ -242,100 +184,5 @@ export function EstruturaRaiz({ projectSlug }: { projectSlug: string }) {
         <p className="rodape-raiz">Perfil + Introdução + Alfabeto = uma única raiz</p>
       </div>
     </>
-  )
-}
-
-/**
- * Um cartão da raiz — introdução ou Produto Vivo — com o seu menu.
- *
- * UM SÓ COMPONENTE PARA OS DOIS. A introdução e o Produto Vivo comportam-se
- * exactamente da mesma maneira: multiplicam-se, tiram-se do ar, apagam-se.
- * Escrever a mesma coisa duas vezes é como este projecto arranjou três filas de
- * indicadores diferentes, uma delas sem botões nenhuns.
- */
-function CartaoDaRaiz({
-  cartao,
-  rotuloVazio,
-  menuAberto,
-  aoAbrirMenu,
-  aoEditar,
-  aoMudar,
-  aoFecharMenu,
-}: {
-  cartao: CartaoAdmin
-  rotuloVazio: string
-  menuAberto: boolean
-  aoAbrirMenu: () => void
-  aoEditar: () => void
-  aoMudar: () => Promise<void>
-  aoFecharMenu: () => void
-}) {
-  return (
-    <div className="bloco-raiz com-menu">
-      <button type="button" className="tres-pontos" aria-label="Opções" onClick={aoAbrirMenu}>
-        ⋯
-      </button>
-
-      {menuAberto && (
-        <div className="menu-quadrado" role="menu">
-          <button type="button" onClick={aoEditar}>
-            ✎ Editar
-          </button>
-          {cartao.estado === 'PUBLICADO' ? (
-            <button
-              type="button"
-              onClick={async () => {
-                aoFecharMenu()
-                await admin.tirarCartaoDoAr(cartao.id)
-                await aoMudar()
-              }}
-            >
-              🚫 Tirar do ar
-            </button>
-          ) : (
-            <button
-              type="button"
-              onClick={async () => {
-                aoFecharMenu()
-                try {
-                  await admin.porCartaoNoAr(cartao.id)
-                } catch (e) {
-                  alert(e instanceof Error ? e.message : 'Não foi possível pôr no ar.')
-                }
-                await aoMudar()
-              }}
-            >
-              ⬆ Pôr no ar
-            </button>
-          )}
-          <button
-            type="button"
-            className="perigo"
-            onClick={async () => {
-              aoFecharMenu()
-              const nome = cartao.titulo || cartao.audio?.title || 'esta publicação'
-              if (!confirm(`Excluir "${nome}"? Isto não se desfaz.`)) return
-              await admin.apagarCartaoDeVez(cartao.id)
-              await aoMudar()
-            }}
-          >
-            🗑 Excluir
-          </button>
-        </div>
-      )}
-
-      <button type="button" className="area-clicavel" onClick={aoEditar}>
-        {cartao.imagem ? (
-          // eslint-disable-next-line @next/next/no-img-element
-          <img className="foto-raiz" src={cartao.imagem} alt="" />
-        ) : (
-          <div className="lugar-raiz">{rotuloVazio}</div>
-        )}
-        <span className="linha-audio-raiz">▶ {cartao.audio?.title ?? 'Sem áudio'}</span>
-        <span className="estado-quadrado">
-          {cartao.estado === 'PUBLICADO' ? 'PRONTO' : 'RASCUNHO'}
-        </span>
-      </button>
-    </div>
   )
 }

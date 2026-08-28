@@ -23,10 +23,20 @@ export function VoltarParaOInicio({ projectSlug }: { projectSlug: string }) {
       type="button"
       className="voltar-do-perfil"
       onClick={() => {
-        // `back()` devolve a pessoa a onde ela estava. Quem abriu o perfil
-        // directamente pelo endereço não tem histórico, e aí há destino fixo.
-        if (window.history.length > 1) router.back()
-        else router.push(`/${projectSlug}`)
+        /*
+          DESTINO FIXO, E NÃO `back()`.
+
+          Comecei com `back()`, que parece o mais atencioso, e medi: quem acaba
+          de se registar chega ao perfil vindo do FORMULÁRIO DE CADASTRO, e o
+          `back()` devolvia-o a esse formulário. Uma pessoa que acabou de criar
+          a conta a olhar para "criar conta" é o mesmo defeito de sempre neste
+          projecto, o de convidar a entrar quem já entrou.
+
+          O início é o destino certo e é sempre o mesmo. A página do perfil é a
+          inicial com a pessoa no topo, portanto voltar ao início é voltar ao
+          sítio de onde tudo se alcança.
+        */
+        router.push(`/${projectSlug}`)
       }}
     >
       <span aria-hidden>←</span> VOLTAR

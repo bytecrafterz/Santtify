@@ -202,7 +202,7 @@ function ApagarConta({ projectSlug }: { projectSlug: string }) {
             CANCELAR
           </button>
           <button type="submit" className="apagar-conta" disabled={aApagar || senha.length === 0}>
-            {aApagar ? 'A excluir...' : 'EXCLUIR DEFINITIVAMENTE'}
+            {aApagar ? 'A excluir...' : 'SIM, EXCLUIR'}
           </button>
         </div>
       </form>

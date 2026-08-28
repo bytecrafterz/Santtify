@@ -241,21 +241,13 @@ export class AdminController {
 
   /** Define a arte própria da faixa. */
   @Patch('blocks/:id/image')
-  definirArteDoBloco(
-    @Param('id') id: string,
-    @Body() dto: ArteDoBlocoDto,
-    @Req() req: Request,
-  ) {
+  definirArteDoBloco(@Param('id') id: string, @Body() dto: ArteDoBlocoDto, @Req() req: Request) {
     return this.conteudo.definirArteDoBloco(id, dto.assetId ?? null, req.usuario!.id)
   }
 
   /** Classifica um áudio numa categoria (ou tira dela). */
   @Patch('blocks/:id/category')
-  classificarBloco(
-    @Param('id') id: string,
-    @Body() dto: ClassificarBlocoDto,
-    @Req() req: Request,
-  ) {
+  classificarBloco(@Param('id') id: string, @Body() dto: ClassificarBlocoDto, @Req() req: Request) {
     return this.conteudo.definirCategoriaDoBloco(id, dto.categoryId ?? null, req.usuario!.id)
   }
 
@@ -267,11 +259,7 @@ export class AdminController {
 
   /** Marca uma denúncia como tratada ou descartada. */
   @Post('reports/:id/decide')
-  decidirDenuncia(
-    @Param('id') id: string,
-    @Body() dto: DecidirDenunciaDto,
-    @Req() req: Request,
-  ) {
+  decidirDenuncia(@Param('id') id: string, @Body() dto: DecidirDenunciaDto, @Req() req: Request) {
     return this.conteudo.decidirDenuncia(id, dto.status, req.usuario!.id)
   }
 
@@ -333,10 +321,7 @@ export class AdminController {
   }
 
   @Get('projects/:projectSlug/contents/:contentSlug')
-  detalhe(
-    @Param('projectSlug') projectSlug: string,
-    @Param('contentSlug') contentSlug: string,
-  ) {
+  detalhe(@Param('projectSlug') projectSlug: string, @Param('contentSlug') contentSlug: string) {
     return this.conteudo.detalhe(projectSlug, contentSlug)
   }
 
@@ -428,6 +413,12 @@ export class AdminController {
   @Delete('cards/:id/forever')
   apagarCartao(@Param('id') id: string, @Req() req: Request) {
     return this.conteudo.apagarCartao(id, req.usuario!.id)
+  }
+
+  /** Acrescenta um cartão vazio a uma publicação da raiz (introdução ou PV). */
+  @Post('contents/:id/cards')
+  acrescentarCartaoDaRaiz(@Param('id') id: string, @Req() req: Request) {
+    return this.conteudo.acrescentarCartaoDaRaiz(id, req.usuario!.id)
   }
 
   @Post('cards/:id/duplicate')
@@ -546,11 +537,7 @@ export class AdminController {
 
   /** Define (ou remove) a capa da letra. */
   @Patch('contents/:id/cover')
-  definirCapa(
-    @Param('id') id: string,
-    @Body() dto: DefinirCapaDto,
-    @Req() req: Request,
-  ) {
+  definirCapa(@Param('id') id: string, @Body() dto: DefinirCapaDto, @Req() req: Request) {
     return this.conteudo.definirCapa(id, dto.assetId ?? null, req.usuario!.id)
   }
 }
