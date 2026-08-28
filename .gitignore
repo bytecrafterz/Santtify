@@ -31,3 +31,12 @@ ABBC*.png
 *.png
 *.jpeg
 !apps/web/public/*.png
+
+# A conversa com o cliente não entra no repositório.
+#
+# O histórico do git é permanente e público para quem tiver acesso ao
+# repositório. Uma conversa comercial inteira lá dentro, com valores, disputas e
+# nomes, não se tira depois. É a mesma regra do número de telefone dele.
+chatting_history.txt
+*chatting_history*
+conversa-*.txt
