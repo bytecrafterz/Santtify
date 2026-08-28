@@ -48,6 +48,7 @@ services:
       PUBLIC_SHORTLINK_BASE: https://${DOMINIO}/r
       UPLOAD_DIR: /app/uploads
       GEOIP_PAIS_DB: /app/geo/dbip-country-lite.mmdb
+      GEOIP_CIDADE_DB: /app/geo/dbip-city-lite.mmdb
       # Envio de e-mail. Estar no .env.production NÃO CHEGA: o `--env-file` só
       # substitui variáveis dentro deste ficheiro; o que o contentor recebe é o
       # que estiver aqui. Foi assim que o primeiro envio não chegou sequer a ser

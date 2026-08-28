@@ -6261,3 +6261,143 @@ h2.funil {
 .editar-perfil .tocador-controles button {
   flex: 1;
 }
+
+/* ── VOLTAR do perfil e excluir conta (pedidos dele em 28/08) ──────────────
+   O VOLTAR fica antes de tudo o resto porque dentro da aplicação instalada no
+   telemóvel não há barra do navegador nem seta para trás. */
+.voltar-do-perfil {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  margin: 0 0 12px;
+  padding: 10px 14px 10px 12px;
+  border: 1px solid var(--cor-borda);
+  border-radius: 999px;
+  background: var(--cor-superficie);
+  color: var(--cor-primaria);
+  font-family: inherit;
+  font-size: 15px;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+/* A zona de risco é visivelmente outra coisa. Nada aqui se parece com os
+   botões que a pessoa carrega sem pensar. */
+.zona-de-risco {
+  margin-top: 24px;
+  padding-top: 20px;
+  border-top: 1px solid var(--cor-borda);
+}
+
+.zona-de-risco.aberta {
+  padding: 18px;
+  border: 1px solid #f0b4b4;
+  border-radius: 14px;
+  background: #fdf4f4;
+}
+
+@media (prefers-color-scheme: dark) {
+  .zona-de-risco.aberta {
+    border-color: #5c2b2b;
+    background: #2a1c1c;
+  }
+}
+
+.zona-de-risco h2 {
+  margin: 0 0 8px;
+  font-size: 17px;
+  color: #b42318;
+}
+
+.zona-de-risco p {
+  margin: 0 0 8px;
+  font-size: 14px;
+  color: var(--cor-texto-suave);
+}
+
+.zona-de-risco ul {
+  margin: 0 0 16px;
+  padding-left: 20px;
+  font-size: 14px;
+  line-height: 1.6;
+  color: var(--cor-texto-suave);
+}
+
+.zona-de-risco .apagar-conta {
+  width: 100%;
+  padding: 15px 20px;
+  border: 1px solid #d92d20;
+  border-radius: 12px;
+  background: transparent;
+  color: #d92d20;
+  font-family: inherit;
+  font-size: 16px;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.zona-de-risco form .apagar-conta {
+  background: #d92d20;
+  color: #fff;
+}
+
+.zona-de-risco .apagar-conta[disabled] {
+  opacity: 0.55;
+  cursor: not-allowed;
+}
+
+/* Os dois caminhos lado a lado, e do mesmo tamanho: cancelar não pode ser o
+   botão pequeno ao lado do botão que apaga tudo. */
+.par-de-botoes {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+  margin-top: 4px;
+}
+
+.par-de-botoes .secundario {
+  padding: 15px 12px;
+  border: 1px solid var(--cor-borda);
+  border-radius: 12px;
+  background: var(--cor-superficie);
+  color: var(--cor-texto-suave);
+  font-family: inherit;
+  font-size: 16px;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+/* Onde dentro do país (pedido dele em 28/08). */
+.titulo-zonas {
+  margin: 18px 0 8px;
+  font-size: 15px;
+}
+
+.lista-zonas {
+  margin: 0 0 16px;
+  padding: 0;
+  list-style: none;
+  display: grid;
+  gap: 6px;
+}
+
+.lista-zonas li {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 10px 12px;
+  border: 1px solid var(--cor-borda);
+  border-radius: 10px;
+  background: var(--cor-superficie);
+}
+
+.lista-zonas strong {
+  font-size: 15px;
+}
+
+.lista-zonas span {
+  font-size: 13px;
+  color: var(--cor-texto-suave);
+  text-align: right;
+}

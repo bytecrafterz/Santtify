@@ -625,6 +625,13 @@ model Visitor {
   userAgentHash String?
   deviceType    String?
   countryCode   String?       @db.VarChar(2)
+  /// Região e cidade APROXIMADAS, resolvidas na base offline.
+  ///
+  /// Nomes e nunca coordenadas: a base devolve latitude e longitude e nada
+  /// disso é guardado. Num telemóvel isto é onde está o equipamento da
+  /// operadora, e não onde está a pessoa; o painel diz isso ao lado do número.
+  regionName    String?       @db.VarChar(80)
+  cityName      String?       @db.VarChar(80)
 
   /**
    * Esta visita não entra nas métricas.

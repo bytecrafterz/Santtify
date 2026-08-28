@@ -270,6 +270,8 @@ export class AnalyticsService {
           rootPlatform: true,
           chainDepth: true,
           userId: true,
+          regionName: true,
+          cityName: true,
         },
       }),
     ])
@@ -279,10 +281,41 @@ export class AnalyticsService {
     // Alemanha eram uma máquina só.
     const redes = new Set(visitas.map((v) => v.ipHash).filter(Boolean))
 
+    /*
+      As zonas dentro do país, ordenadas pela maior.
+
+      Contadas sobre as visitas trazidas e não sobre a tabela inteira: o que o
+      ecrã mostra e o que o resumo diz têm de sair da mesma lista, senão volta o
+      defeito dos comentários de 26/08, em que o número vinha de uma consulta e
+      a lista de outra, e os dois discordavam à frente dele.
+    */
+    const porZona = new Map<
+      string,
+      { regiao: string | null; cidade: string | null; total: number }
+    >()
+    for (const v of visitas) {
+      if (!v.regionName && !v.cityName) continue
+      const chave = `${v.regionName ?? ''}|${v.cityName ?? ''}`
+      const ja = porZona.get(chave)
+      if (ja) ja.total += 1
+      else porZona.set(chave, { regiao: v.regionName, cidade: v.cityName, total: 1 })
+    }
+    const zonas = [...porZona.values()].sort((a, b) => b.total - a.total)
+
     return {
       pais,
       total,
       redesDistintas: redes.size,
+      zonas,
+      /*
+        Quantas das visitas trazidas não têm zona nenhuma.
+
+        Vai para o ecrã porque a alternativa é ele somar as zonas, dar menos do
+        que o total, e ficar a pensar que o painel perdeu visitas. As linhas
+        anteriores a 28/08 não têm região nem cidade e não há como as recuperar,
+        exactamente como aconteceu com o país em 27/08.
+      */
+      semZona: visitas.filter((v) => !v.regionName && !v.cityName).length,
       visitas: visitas.map((v) => ({
         id: v.id,
         visitante: v.anonId.slice(0, 8),
@@ -294,6 +327,8 @@ export class AnalyticsService {
         origem: v.rootPlatform ?? 'DIRECT',
         temConta: Boolean(v.userId),
         profundidade: v.chainDepth,
+        regiao: v.regionName,
+        cidade: v.cityName,
       })),
     }
   }

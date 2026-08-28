@@ -23,7 +23,6 @@ import {
  */
 @Injectable()
 export class AttributionService {
-
   /** Hosts que são nossos — usados para reconhecer navegação interna. */
   private readonly hostsProprios: ReadonlySet<string>
 
@@ -39,6 +38,25 @@ export class AttributionService {
    */
   private paisDe(ctx: VisitContext): string | null {
     return ctx.countryCode ?? this.geo.pais(ctx.ip)
+  }
+
+  /**
+   * País, região e cidade da visita.
+   *
+   * O mesmo princípio da linha acima e pelo mesmo motivo: o IP cru entra na
+   * consulta e sai um punhado de nomes. Coordenadas não são lidas.
+   *
+   * O país da CDN ganha ao da base quando existe, porque quem está à frente do
+   * pedido sabe mais do que uma tabela de blocos de endereços. A região e a
+   * cidade vêm sempre da base, que é quem as tem.
+   */
+  private localizacaoDe(ctx: VisitContext): {
+    pais: string | null
+    regiao: string | null
+    cidade: string | null
+  } {
+    const daBase = this.geo.localizacao(ctx.ip)
+    return { ...daBase, pais: ctx.countryCode ?? daBase.pais }
   }
 
   constructor(
@@ -97,6 +115,10 @@ export class AttributionService {
      * depois: uma limpeza esquece-se, e o número volta a mentir sem ninguém dar
      * por isso.
      */
+    // Resolvido uma vez e usado nos dois ramos: uma consulta à base por visita,
+    // e não uma por ramo.
+    const localizacao = this.localizacaoDe(ctx)
+
     const ehAdministrador = ctx.userId
       ? await this.prisma.user
           .findUnique({ where: { id: ctx.userId }, select: { role: true } })
@@ -146,7 +168,9 @@ export class AttributionService {
           ipHash,
           userAgentHash,
           deviceType,
-          countryCode: this.paisDe(ctx),
+          countryCode: localizacao.pais,
+          regionName: localizacao.regiao,
+          cityName: localizacao.cidade,
         },
       })
     } else {
@@ -178,6 +202,29 @@ export class AttributionService {
           ...(ehAdministrador ? { ignoradoNasMetricas: true } : {}),
           ...(ipHash ? { ipHash } : {}),
           ...(deviceType ? { deviceType } : {}),
+          /*
+            A região e a cidade das visitas antigas.
+
+            Estas colunas nasceram em 28/08 e todas as linhas anteriores as têm
+            vazias. Sem isto, quem já visitou o site ficava vazio para sempre,
+            porque o `anonId` no cookie faz dele um visitante conhecido e o
+            ramo de criação nunca mais corre. Ele próprio é o caso: vai testar
+            no Wi-Fi de casa e nos dados móveis, do mesmo telemóvel de onde já
+            entrou dezenas de vezes.
+
+            Só preenche o que está em branco. Não reescreve o que já lá está:
+            o valor guardado é o do sítio de onde a pessoa foi vista pela
+            primeira vez, e é esse que a atribuição de aquisição usa.
+          */
+          ...(visitor.regionName === null && localizacao.regiao
+            ? { regionName: localizacao.regiao }
+            : {}),
+          ...(visitor.cityName === null && localizacao.cidade
+            ? { cityName: localizacao.cidade }
+            : {}),
+          ...(visitor.countryCode === null && localizacao.pais
+            ? { countryCode: localizacao.pais }
+            : {}),
         },
       })
     }

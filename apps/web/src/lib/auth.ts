@@ -210,6 +210,21 @@ export const auth = {
     tokens.refresh = r.refreshToken
   },
 
+  /**
+   * Apagar a própria conta.
+   *
+   * A sessão local é limpa aqui e não na tela: o servidor acabou de revogar
+   * tudo, e um `refresh` que ficasse no telemóvel só serviria para a próxima
+   * chamada falhar com 401 e parecer um defeito.
+   */
+  async apagarConta(senha: string): Promise<void> {
+    await chamarAutenticado('/me/delete-account', {
+      method: 'POST',
+      body: JSON.stringify({ senha }),
+    })
+    tokens.limpar()
+  },
+
   /** Edição do próprio perfil. Vai como formulário porque leva a fotografia. */
   async atualizarPerfil(dados: {
     displayName?: string

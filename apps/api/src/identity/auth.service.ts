@@ -233,6 +233,83 @@ export class AuthService {
     return this.emitirTokens(user)
   }
 
+  /**
+   * A pessoa apaga a própria conta.
+   *
+   * Pede a senha outra vez porque este é o único botão da plataforma que não
+   * tem volta: quem chegar aqui por engano, ou num telemóvel que ficou
+   * desbloqueado em cima da mesa, esbarra na senha antes de perder o perfil.
+   *
+   * Não marca apenas `DELETED` e vai embora. `DELETED` esconde a pessoa de
+   * todo o lado (o login, o perfil público, as listas, as contagens já filtram
+   * por `ACTIVE`), mas esconder não é apagar: o nome, o email, a foto e o nome
+   * do responsável continuariam na base. Numa plataforma usada por crianças
+   * isso é precisamente o que não pode ficar para trás. Por isso os dados
+   * pessoais são substituídos na mesma transacção em que a conta fecha.
+   *
+   * O que fica é o rasto anónimo: os eventos, as visitas e as contagens do
+   * projecto continuam a somar, sem nada que ligue de volta a uma pessoa. O
+   * `Event` é append-only por gatilho na base de dados e não se apaga aqui
+   * nem se apagaria noutro sítio.
+   */
+  async apagarConta(userId: string, senha: string): Promise<void> {
+    const user = await this.prisma.user.findUnique({ where: { id: userId } })
+    if (!user || user.status !== 'ACTIVE') throw new UnauthorizedException('Sessão inválida')
+
+    // 400 e não 401: a sessão está boa, o campo é que está errado. Com 401 o
+    // navegador tentaria renovar a sessão e repetir o pedido, e uma senha
+    // enganada passaria a rodar os tokens da pessoa sem motivo nenhum.
+    const confere = await argon2.verify(user.passwordHash, senha)
+    if (!confere) throw new BadRequestException('A senha não confere')
+
+    /*
+      O anfitrião de um projecto não pode desaparecer por baixo do projecto.
+      `content.service.ts` procura o perfil do anfitrião pelo `hostUserId` e a
+      página do projecto ficaria sem dono. Quem está nessa posição fala com a
+      administração; não fica com um botão que parte o site dos outros.
+    */
+    const anfitriaoDe = await this.prisma.project.count({ where: { hostUserId: user.id } })
+    if (anfitriaoDe > 0) {
+      throw new BadRequestException(
+        'Esta conta é a anfitriã de um projeto. Fale com a administração antes de a apagar.',
+      )
+    }
+
+    await this.prisma.$transaction([
+      this.prisma.user.update({
+        where: { id: user.id },
+        data: {
+          status: 'DELETED',
+          email: `apagado-${user.id}@apagado.invalid`,
+          displayName: 'Conta apagada',
+          avatarUrl: null,
+          bio: null,
+          guardianName: null,
+          // Uma senha que ninguém tem. Não é `null` porque a coluna é obrigatória,
+          // e não é a antiga porque a antiga é reutilizada noutros sítios pela pessoa.
+          passwordHash: await argon2.hash(randomBytes(32).toString('hex')),
+        },
+      }),
+      this.prisma.refreshToken.updateMany({
+        where: { userId: user.id, revokedAt: null },
+        data: { revokedAt: new Date() },
+      }),
+      // Os pedidos de reposição pendentes fecham, e o endereço que ficou escrito
+      // em cada um deles sai também: `emailPedido` guarda o email tal como foi
+      // digitado, e apagar a conta sem o apagar deixaria o email para trás.
+      this.prisma.passwordReset.updateMany({
+        where: { userId: user.id, usedAt: null },
+        data: { usedAt: new Date() },
+      }),
+      this.prisma.passwordReset.updateMany({
+        where: { userId: user.id },
+        data: { emailPedido: `apagado-${user.id}@apagado.invalid`, tokenHash: null },
+      }),
+    ])
+
+    this.logger.log(`Conta apagada a pedido da pessoa: ${user.id}`)
+  }
+
   async porId(userId: string): Promise<UsuarioPublico | null> {
     const user = await this.prisma.user.findUnique({ where: { id: userId } })
     return user && user.status === 'ACTIVE' ? this.publico(user) : null
@@ -371,7 +448,9 @@ export class AuthService {
       }
     }
 
-    this.logger.warn(`Pedido de reposição de senha: ${endereco} (conta ${user ? 'existe' : 'não existe'})`)
+    this.logger.warn(
+      `Pedido de reposição de senha: ${endereco} (conta ${user ? 'existe' : 'não existe'})`,
+    )
     return { registado: true }
   }
 

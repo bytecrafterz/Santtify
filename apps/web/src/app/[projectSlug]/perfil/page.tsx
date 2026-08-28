@@ -1,6 +1,7 @@
 import { notFound } from 'next/navigation'
 import { api } from '@/lib/api'
 import { CabecalhoDePerfil } from '@/components/CabecalhoDePerfil'
+import { VoltarParaOInicio } from '@/components/VoltarParaOInicio'
 import { PainelDePerfil } from '@/components/PainelDePerfil'
 import { IntroducaoEmCartoes } from '@/components/IntroducaoEmCartoes'
 import { ExperienciaContinua } from '@/components/ExperienciaContinua'
@@ -46,6 +47,8 @@ export default async function PaginaDePerfil({
 
   return (
     <main className="envoltorio com-barra">
+      <VoltarParaOInicio projectSlug={projectSlug} />
+
       {/* O topo é o perfil de quem entrou: foto, escudo, três pontos e os
           quatro indicadores. Os três pontos levam a editar. */}
       <CabecalhoDePerfil

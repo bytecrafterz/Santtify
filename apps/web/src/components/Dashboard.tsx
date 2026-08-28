@@ -64,12 +64,22 @@ interface VisitaDoPais {
   repetida: boolean
   origem: string
   temConta: boolean
+  regiao: string | null
+  cidade: string | null
+}
+
+interface ZonaDoPais {
+  regiao: string | null
+  cidade: string | null
+  total: number
 }
 
 interface VisitasDoPais {
   pais: string | null
   total: number
   redesDistintas: number
+  zonas: ZonaDoPais[]
+  semZona: number
   visitas: VisitaDoPais[]
 }
 
@@ -273,11 +283,45 @@ export function Dashboard({ projectSlug }: { projectSlug: string }) {
                   {pais.dados.redesDistintas === 1 ? 'rede diferente' : 'redes diferentes'}. Se o
                   número de redes for muito menor do que o de visitas, é a mesma origem a repetir.
                 </p>
+                {/* As zonas antes da lista: é o resumo que ele pediu em 28/08,
+                    e é o que se lê primeiro. A lista fica por baixo para quem
+                    quiser ver visita a visita. */}
+                {pais.dados.zonas.length > 0 && (
+                  <>
+                    <h3 className="titulo-zonas">Onde dentro do país</h3>
+                    <ul className="lista-zonas">
+                      {pais.dados.zonas.map((z) => (
+                        <li key={`${z.regiao}|${z.cidade}`}>
+                          <strong>{z.cidade ?? z.regiao}</strong>
+                          <span>
+                            {z.cidade && z.regiao && z.cidade !== z.regiao ? `${z.regiao} · ` : ''}
+                            {z.total} {z.total === 1 ? 'visita' : 'visitas'}
+                          </span>
+                        </li>
+                      ))}
+                    </ul>
+                  </>
+                )}
+
+                {pais.dados.semZona > 0 && (
+                  <p className="nota">
+                    {pais.dados.semZona}{' '}
+                    {pais.dados.semZona === 1
+                      ? 'destas visitas não tem zona'
+                      : 'destas visitas não têm zona'}
+                    . A região e a cidade passaram a ser guardadas em 28/08; o que entrou antes
+                    dessa data não as tem e não há como as recuperar.
+                  </p>
+                )}
+
                 <ul className="lista-visitas">
                   {pais.dados.visitas.map((v) => (
                     <li key={v.id}>
                       <strong>{new Date(v.primeiraVez).toLocaleString('pt-PT')}</strong>
                       <span>
+                        {v.cidade || v.regiao
+                          ? `${[v.cidade, v.regiao].filter(Boolean).join(', ')} · `
+                          : ''}
                         {v.aparelho ?? 'aparelho desconhecido'} · rede {v.rede ?? 'sem registo'} ·{' '}
                         {v.repetida ? 'visita repetida' : 'primeira visita'} · veio de {v.origem}
                         {v.temConta ? ' · tem conta' : ''}
@@ -290,6 +334,12 @@ export function Dashboard({ projectSlug }: { projectSlug: string }) {
                   endereço é reduzido a uma faixa e resumido com uma chave do servidor, que é o que
                   a política de privacidade da plataforma promete às famílias. A &quot;rede&quot;
                   acima é esse resumo: serve para distinguir origens, não para identificar alguém.
+                </p>
+                <p className="nota rodape-pessoas">
+                  A região e a cidade são APROXIMADAS e vêm da rede, não do aparelho. Num telemóvel
+                  em dados móveis, o que aparece é onde está o equipamento da operadora, que pode
+                  ficar a dezenas de quilómetros da pessoa. Em Wi-Fi de casa costuma acertar na
+                  cidade. Não guardamos coordenadas nem pedimos localização a ninguém.
                 </p>
               </>
             )}

@@ -79,6 +79,10 @@ class TrocarSenhaDto {
   @IsString() @MinLength(10) @MaxLength(200) senhaNova!: string
 }
 
+class ApagarContaDto {
+  @IsString() senha!: string
+}
+
 class ConsentimentoDto {
   @IsUUID() projectId!: string
   @IsBoolean() granted!: boolean
@@ -155,6 +159,21 @@ export class IdentityController {
     return this.auth.trocarSenha(req.usuario!.id, dto.senhaAtual, dto.senhaNova)
   }
 
+  /**
+   * Apagar a própria conta.
+   *
+   * `Post` e não `Delete` porque leva a senha no corpo, e um corpo em `Delete`
+   * é tratado de maneira diferente por cada proxy pelo caminho. O Caddy à
+   * frente disto não é sítio para descobrir isso.
+   */
+  @Post('me/delete-account')
+  @HttpCode(200)
+  @UseGuards(AuthGuard)
+  async apagarConta(@Body() dto: ApagarContaDto, @Req() req: Request) {
+    await this.auth.apagarConta(req.usuario!.id, dto.senha)
+    return { apagada: true }
+  }
+
   @Get('auth/me')
   @UseGuards(AuthGuard)
   async eu(@Req() req: Request) {
@@ -203,7 +222,11 @@ export class IdentityController {
   @HttpCode(200)
   async consentir(@Body() dto: ConsentimentoDto, @Req() req: Request, @Res() res: Response) {
     const resultado = await this.consent.registrar(
-      { granted: dto.granted, analytics: dto.analytics ?? false, marketing: dto.marketing ?? false },
+      {
+        granted: dto.granted,
+        analytics: dto.analytics ?? false,
+        marketing: dto.marketing ?? false,
+      },
       this.contexto(dto, req),
     )
     if (resultado.anonId) res.cookie(ANON_COOKIE, resultado.anonId, cookieOptions())
@@ -219,7 +242,13 @@ export class IdentityController {
   }
 
   private contexto(
-    dto: { projectId: string; linkCode?: string; utmSource?: string; utmMedium?: string; campaignRef?: string },
+    dto: {
+      projectId: string
+      linkCode?: string
+      utmSource?: string
+      utmMedium?: string
+      campaignRef?: string
+    },
     req: Request,
   ): VisitContext {
     return {
