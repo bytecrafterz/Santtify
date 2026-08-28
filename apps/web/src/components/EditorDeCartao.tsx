@@ -37,11 +37,26 @@ export function EditorDeCartao({
   projectSlug,
   aoGuardar,
   aoCancelar,
+  somOpcional = false,
 }: {
   cartao: CartaoAdmin
   projectSlug: string
   aoGuardar: () => Promise<void>
   aoCancelar: () => void
+  /**
+   * O áudio deixa de ser obrigatório para o cartão ficar inteiro.
+   *
+   * É o caso do Produto Vivo, e vem do pedido dele de 28/08: várias imagens
+   * primeiro, e só a última com áudio ou vídeo. Com o áudio obrigatório, as
+   * imagens que ele quer à frente ficavam todas com o cadeado em PUBLICAR e a
+   * dizer "falta o áudio" — ele acrescentava cinco imagens, via cinco
+   * cadeados, e concluía que a função não tinha sido feita.
+   *
+   * Nas letras continua obrigatório. Ali um cartão é imagem, áudio, título e
+   * descrição numa peça só, e foi esse o trabalho de 23/08: impedir que meio
+   * cartão fosse para o ar. Não é a mesma coisa e não leva a mesma regra.
+   */
+  somOpcional?: boolean
 }) {
   const [titulo, definirTitulo] = useState(cartao.titulo ?? '')
   const [descricao, definirDescricao] = useState(cartao.descricao ?? '')
@@ -65,7 +80,7 @@ export function EditorDeCartao({
 
   const falta = [
     !imagem && 'a foto',
-    !audio && 'o áudio',
+    !somOpcional && !audio && 'o áudio',
     !titulo.trim() && 'o título',
     !descricao.trim() && 'a descrição',
   ].filter(Boolean) as string[]

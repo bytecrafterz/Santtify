@@ -81,6 +81,7 @@ export function ProdutoVivoAdmin({ projectSlug }: { projectSlug: string }) {
             definirAEditar(null)
           }}
           aoCancelar={() => definirAEditar(null)}
+          somOpcional
         />
       </>
     )
@@ -89,7 +90,19 @@ export function ProdutoVivoAdmin({ projectSlug }: { projectSlug: string }) {
   const pv = dados?.produtoVivo
   const cartoes = pv?.cartoes ?? []
   const comSom = cartoes.filter((c) => c.audio).length
-  const noAr = cartoes.filter((c) => c.estado === 'PUBLICADO').length
+  /*
+    O QUE ESTÁ NO AR É O QUE A PÁGINA DESENHA, e não o que o estado diz.
+
+    Escrevi este aviso a contar os PUBLICADO e estava errado: a página pública
+    mostra qualquer cartão que tenha imagem ou som, rascunho ou não, e é assim
+    de propósito desde 23/08, para que tirar do ar seja uma decisão e não um
+    efeito secundário de estar por acabar. Com a contagem por estado, o painel
+    dizia "nada está no ar" enquanto as imagens dele estavam lá.
+
+    É o mesmo defeito dos comentários de 26/08 com outra roupa: o número vinha
+    de um sítio e o ecrã de outro. O número tem de sair de onde sai o desenho.
+  */
+  const noAr = cartoes.filter((c) => c.imagem || c.audio).length
   const temGrupoConfigurado = TEM_GRUPO
 
   return (
@@ -123,8 +136,8 @@ export function ProdutoVivoAdmin({ projectSlug }: { projectSlug: string }) {
             */}
             {cartoes.length > 0 && noAr === 0 && (
               <p className="aviso-painel">
-                Nenhuma destas publicações está no ar. Elas só aparecem na página pública quando
-                estiverem completas, com imagem, título e descrição. Toque numa para preencher.
+                Nenhuma destas publicações está na página ainda: falta a imagem em todas. Toque numa
+                para a carregar.
               </p>
             )}
             {cartoes.length === 0 && (
@@ -198,8 +211,9 @@ export function ProdutoVivoAdmin({ projectSlug }: { projectSlug: string }) {
             )}
 
             <p className="rodape-raiz">
+              {noAr} de {cartoes.length} na página.{' '}
               {comSom === 0
-                ? 'Nenhuma publicação tem áudio ainda. A que receber áudio passa para o fim.'
+                ? 'O áudio é opcional aqui: a que o receber passa para o fim.'
                 : comSom === 1
                   ? 'A publicação com áudio fica sempre no fim da página.'
                   : `${comSom} publicações têm áudio e ficam no fim da página.`}
