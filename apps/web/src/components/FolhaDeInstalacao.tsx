@@ -304,40 +304,86 @@ function PassosDoIphone() {
  * página a", e só depois se escolhe o ecrã principal. Mandar procurar as
  * palavras do Chrome neste telefone é mandar procurar o que não existe.
  */
+/**
+ * O caminho do Samsung Internet, com o desvio para o Chrome à frente.
+ *
+ * O amigo dele, num Galaxy A35, viu "App de risco bloqueado" do Play Protect
+ * ao instalar, em 26/08. Eu corrigi primeiro as INSTRUÇÕES, que estavam a
+ * mostrar o menu do Chrome a quem usava o Samsung Internet; ele testou de novo
+ * em 28/08 no aparelho real e o aviso continuou. Ou seja: não era só a
+ * instrução errada.
+ *
+ * O QUE ACHO QUE SE PASSA, e digo "acho" de propósito. Isto não é um aplicativo
+ * da Play Store: é o próprio site instalado, e quem monta o pacote é o
+ * NAVEGADOR. O Samsung Internet monta o seu, e é esse pacote que o Play Protect
+ * do Android 14 marca. O Chrome não tem o mesmo problema, porque o pacote dele
+ * vem dos serviços do Google e é actualizado por eles.
+ *
+ * NÃO TENHO UM GALAXY A35 PARA CONFIRMAR. Por isso o desvio para o Chrome fica
+ * à frente, mas os passos do Samsung ficam por baixo e continuam a funcionar: se
+ * eu estiver enganado, ninguém perdeu o caminho que já tinha.
+ */
 function PassosDoSamsung() {
   return (
-    <ol className="passos-instalar">
-      <li>
-        <span className="numero-passo">1</span>
-        <div className="figura menu-ios">
-          <span className="linha destacada">☰ Menu, em baixo à direita</span>
-        </div>
-        <p>Toque nos três tracinhos, no canto de baixo.</p>
-      </li>
-      <li>
-        <span className="numero-passo">2</span>
-        <div className="figura menu-ios">
-          <span className="linha destacada">Adicionar página a</span>
-          <span className="linha">Marcadores</span>
-        </div>
-        <p>Toque em Adicionar página a.</p>
-      </li>
-      <li>
-        <span className="numero-passo">3</span>
-        <div className="figura caixa-adicionar">
-          <span className="topo">
-            <span className="titulo">Adicionar a</span>
-            <span className="botao">Ecrã inicial</span>
-          </span>
-          <span className="linha-app">
-            {/* eslint-disable-next-line @next/next/no-img-element */}
-            <img src="/icone-192.png" alt="" aria-hidden />
-            <span className="nome">Santtify</span>
-          </span>
-        </div>
-        <p>Escolha Ecrã inicial. O ícone aparece junto aos outros aplicativos.</p>
-      </li>
-    </ol>
+    <>
+      <div className="aviso-play-protect">
+        <strong>Se aparecer um aviso do Play Protect</strong>
+        <p>
+          Acontece quando a instalação é feita pelo Samsung Internet. Instale pelo Chrome e o aviso
+          não aparece: copie o endereço aqui, abra o Chrome, cole, e siga os mesmos passos.
+        </p>
+        <button
+          type="button"
+          className="copiar-endereco"
+          onClick={async (evento) => {
+            const botao = evento.currentTarget
+            try {
+              await navigator.clipboard.writeText(window.location.origin)
+              botao.textContent = 'ENDEREÇO COPIADO'
+            } catch {
+              // Sem permissão para a área de transferência, o endereço fica à
+              // vista para ser escrito à mão. É curto de propósito.
+              botao.textContent = window.location.host
+            }
+          }}
+        >
+          COPIAR ENDEREÇO
+        </button>
+      </div>
+
+      <ol className="passos-instalar">
+        <li>
+          <span className="numero-passo">1</span>
+          <div className="figura menu-ios">
+            <span className="linha destacada">☰ Menu, em baixo à direita</span>
+          </div>
+          <p>Toque nos três tracinhos, no canto de baixo.</p>
+        </li>
+        <li>
+          <span className="numero-passo">2</span>
+          <div className="figura menu-ios">
+            <span className="linha destacada">Adicionar página a</span>
+            <span className="linha">Marcadores</span>
+          </div>
+          <p>Toque em Adicionar página a.</p>
+        </li>
+        <li>
+          <span className="numero-passo">3</span>
+          <div className="figura caixa-adicionar">
+            <span className="topo">
+              <span className="titulo">Adicionar a</span>
+              <span className="botao">Ecrã inicial</span>
+            </span>
+            <span className="linha-app">
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img src="/icone-192.png" alt="" aria-hidden />
+              <span className="nome">Santtify</span>
+            </span>
+          </div>
+          <p>Escolha Ecrã inicial. O ícone aparece junto aos outros aplicativos.</p>
+        </li>
+      </ol>
+    </>
   )
 }
 
