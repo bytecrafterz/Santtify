@@ -78,6 +78,17 @@ export function EditorDeCartao({
       .catch(() => {})
   }, [projectSlug])
 
+  /*
+    A MESMA RÉGUA DO SERVIDOR, e tem de continuar a ser.
+
+    Isto é a cópia no navegador de `apps/api/src/content/cartao-inteiro.ts`, que
+    é quem decide de verdade. Em 28/08 mudei esta e não mudei aquela: o PUBLICAR
+    acendeu, ele carregava, e o servidor punha o cartão de volta em rascunho sem
+    dizer nada. Quem mexer numa TEM de mexer na outra.
+
+    Existe aqui apenas para o botão poder estar apagado antes de haver pedido
+    nenhum. Não é a autoridade; a autoridade está no servidor.
+  */
   const falta = [
     !imagem && 'a foto',
     !somOpcional && !audio && 'o áudio',

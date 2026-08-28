@@ -4,6 +4,7 @@ import { PrismaService } from '../prisma/prisma.service'
 import { ShortLinksService } from '../short-links/short-links.service'
 import { ContagensService } from '../social/contagens.service'
 import { ordemDoProdutoVivo } from '../content/ordem-do-produto-vivo'
+import { cartaoEstaInteiro, somEhOpcional } from '../content/cartao-inteiro'
 
 /**
  * Operações do painel administrativo.
@@ -273,6 +274,9 @@ export class AdminContentService {
         papel: true,
         meta: true,
         contentId: true,
+        // O SLUG DO CONTEÚDO, porque a régua não é a mesma em todo o lado: no
+        // Produto Vivo o som é opcional e nas letras não. Ver cartao-inteiro.ts.
+        content: { select: { slug: true } },
         assetId: true,
         imageAssetId: true,
         titulo: true,
@@ -325,8 +329,10 @@ export class AdminContentService {
       return
     }
 
-    const inteiro =
-      Boolean(b.assetId) && Boolean(b.imageAssetId) && Boolean(titulo) && Boolean(b.text?.trim())
+    const inteiro = cartaoEstaInteiro(
+      { assetId: b.assetId, imageAssetId: b.imageAssetId, titulo, text: b.text },
+      somEhOpcional(b.content?.slug),
+    )
     await this.prisma.contentBlock.update({
       where: { id: blocoId },
       data: {
@@ -932,18 +938,18 @@ export class AdminContentService {
   // não há meio cartão — há um rascunho, e um rascunho não chega à página.
 
   /** Um cartão está inteiro quando tem imagem, som, título e descrição. */
-  private estadoDoCartao(b: {
-    assetId: string | null
-    imageAssetId: string | null
-    titulo: string | null
-    text: string | null
-  }): CardEstado {
-    const inteiro =
-      Boolean(b.assetId) &&
-      Boolean(b.imageAssetId) &&
-      Boolean(b.titulo?.trim()) &&
-      Boolean(b.text?.trim())
-    return inteiro ? CardEstado.PUBLICADO : CardEstado.RASCUNHO
+  private estadoDoCartao(
+    b: {
+      assetId: string | null
+      imageAssetId: string | null
+      titulo: string | null
+      text: string | null
+    },
+    contentSlug?: string | null,
+  ): CardEstado {
+    return cartaoEstaInteiro(b, somEhOpcional(contentSlug))
+      ? CardEstado.PUBLICADO
+      : CardEstado.RASCUNHO
   }
 
   /**
@@ -1273,7 +1279,8 @@ export class AdminContentService {
   ) {
     const antes = await this.prisma.contentBlock.findUnique({
       where: { id: cartaoId },
-      select: { id: true, content: { select: { projectId: true } } },
+      // O slug vem junto: é ele que diz se este cartão precisa de som.
+      select: { id: true, content: { select: { projectId: true, slug: true } } },
     })
     if (!antes) throw new NotFoundException('Cartão não encontrado')
 
@@ -1341,7 +1348,7 @@ export class AdminContentService {
     })
 
     await this.sincronizarEstado(cartaoId)
-    const estado = this.estadoDoCartao(guardado)
+    const estado = this.estadoDoCartao(guardado, antes.content.slug)
     await this.auditar(adminId, antes.content.projectId, 'card.save', 'ContentBlock', cartaoId, {
       estado,
     })
