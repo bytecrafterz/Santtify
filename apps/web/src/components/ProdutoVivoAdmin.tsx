@@ -8,6 +8,18 @@ import { CartaoDaRaiz } from './CartaoDaRaiz'
 import { useAuth } from './ProvedorDeAuth'
 
 /**
+ * O convite do grupo do Produto Vivo está configurado?
+ *
+ * Lê-se a mesma variável que a página pública lê. Ler outra coisa qualquer aqui
+ * era repetir o erro que criou este defeito: a página lia um nome e o build
+ * passava outro, e ninguém deu por isso durante dias porque uma variável que
+ * falta é uma string vazia, e não um erro.
+ */
+const TEM_GRUPO = /^https:\/\/chat\.whatsapp\.com\/[A-Za-z0-9]+/.test(
+  process.env.NEXT_PUBLIC_PV_GRUPO_URL ?? '',
+)
+
+/**
  * O Produto Vivo, no seu próprio sítio.
  *
  * Vivia dentro da Estrutura raiz, a seguir ao perfil e à introdução, numa
@@ -77,6 +89,8 @@ export function ProdutoVivoAdmin({ projectSlug }: { projectSlug: string }) {
   const pv = dados?.produtoVivo
   const cartoes = pv?.cartoes ?? []
   const comSom = cartoes.filter((c) => c.audio).length
+  const noAr = cartoes.filter((c) => c.estado === 'PUBLICADO').length
+  const temGrupoConfigurado = TEM_GRUPO
 
   return (
     <>
@@ -96,6 +110,29 @@ export function ProdutoVivoAdmin({ projectSlug }: { projectSlug: string }) {
               A página que as empresas veem. As imagens aparecem primeiro e a arte com áudio ou
               vídeo fica sempre por último, independentemente da ordem em que forem criadas.
             </p>
+
+            {/*
+              O ESTADO DA PÁGINA PÚBLICA, DITO AQUI.
+
+              Um cartão em rascunho não sai na página, e é assim de propósito
+              desde 23/08. Mas o painel mostrava-o na mesma sem dizer que ele
+              não está no ar, e a diferença entre "está lá" e "está lá em
+              rascunho" é a diferença entre a página ter conteúdo e estar vazia.
+              Ele abriu a página pública em 28/08 e encontrou-a vazia sem que
+              nada, em lado nenhum, lhe dissesse porquê.
+            */}
+            {cartoes.length > 0 && noAr === 0 && (
+              <p className="aviso-painel">
+                Nenhuma destas publicações está no ar. Elas só aparecem na página pública quando
+                estiverem completas, com imagem, título e descrição. Toque numa para preencher.
+              </p>
+            )}
+            {cartoes.length === 0 && (
+              <p className="aviso-painel">
+                A página pública do Produto Vivo está vazia neste momento. Use ACRESCENTAR
+                PUBLICAÇÃO para começar.
+              </p>
+            )}
 
             <ol className="composicao-raiz">
               <li className="vagao" id="produto-vivo">
@@ -150,6 +187,15 @@ export function ProdutoVivoAdmin({ projectSlug }: { projectSlug: string }) {
                 </button>
               </li>
             </ol>
+
+            {/* O convite do grupo, avisado a quem o pode resolver. Estava
+                escrito na página pública, à frente das empresas. */}
+            {dados.produtoVivo && !temGrupoConfigurado && (
+              <p className="aviso-painel">
+                O botão do grupo do WhatsApp não está a aparecer na página pública porque o convite
+                não está configurado neste servidor. Envie-me o link do grupo e eu ponho no ar.
+              </p>
+            )}
 
             <p className="rodape-raiz">
               {comSom === 0

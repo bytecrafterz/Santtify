@@ -6480,3 +6480,23 @@ h2.funil {
   font-weight: 700;
   cursor: pointer;
 }
+
+/* Avisos do painel: o que o administrador precisa de saber e pode resolver. */
+.aviso-painel {
+  margin: 0 0 16px;
+  padding: 12px 14px;
+  border: 1px solid #f0d4a4;
+  border-radius: 10px;
+  background: #fdf8ee;
+  font-size: 14px;
+  line-height: 1.55;
+  color: #92610a;
+}
+
+@media (prefers-color-scheme: dark) {
+  .aviso-painel {
+    border-color: #5c4a2b;
+    background: #2a241c;
+    color: #e0b968;
+  }
+}

@@ -24,14 +24,22 @@ COPY apps/web apps/web
 # desenvolvimento. Por isso entra como argumento de build.
 ARG NEXT_PUBLIC_API_URL
 ARG NEXT_PUBLIC_PROJETO_PADRAO=jesus-alfabeto-saudavel
-ARG NEXT_PUBLIC_WHATSAPP_PV=
+# O CONVITE DO GRUPO DO PRODUTO VIVO.
+#
+# Isto esteve com DOIS NOMES desde o dia em que foi escrito. A página lê
+# NEXT_PUBLIC_PV_GRUPO_URL, o .env.production.exemplo documenta esse mesmo nome,
+# e o build passava NEXT_PUBLIC_WHATSAPP_PV, que ninguém lia. Resultado: ele
+# preencheu o convite correctamente e a página comercial continuou a dizer
+# "Botão aguardando o link do grupo" à frente de quem lá chegasse. Nunca deu
+# erro nenhum, porque uma variável que falta é uma string vazia.
+ARG NEXT_PUBLIC_PV_GRUPO_URL=
 # O número do suporte. Passá-lo no compose não chega: se o Dockerfile não o
 # declarar aqui, o build recebe-o e ignora-o em silêncio, e o botão de suporte
 # nunca aparece — foi o que aconteceu à primeira.
 ARG NEXT_PUBLIC_SUPORTE_WHATSAPP=
 ENV NEXT_PUBLIC_API_URL=$NEXT_PUBLIC_API_URL \
     NEXT_PUBLIC_PROJETO_PADRAO=$NEXT_PUBLIC_PROJETO_PADRAO \
-    NEXT_PUBLIC_WHATSAPP_PV=$NEXT_PUBLIC_WHATSAPP_PV \
+    NEXT_PUBLIC_PV_GRUPO_URL=$NEXT_PUBLIC_PV_GRUPO_URL \
     NEXT_PUBLIC_SUPORTE_WHATSAPP=$NEXT_PUBLIC_SUPORTE_WHATSAPP \
     NEXT_TELEMETRY_DISABLED=1
 

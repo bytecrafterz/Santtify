@@ -105,11 +105,20 @@ export default async function PaginaProdutoVivo({
           */}
         <ChegouAoFimDoPv projectId={project?.id ?? ''} />
 
-        {linkGrupo ? (
-          <EntrarNoGrupoPv projectId={project?.id ?? ''} url={linkGrupo} />
-        ) : (
-          <p className="bloco-vazio">Botão aguardando o link do grupo.</p>
-        )}
+        {/*
+            SEM ANDAIME À VISTA DE QUEM VISITA.
+
+            Aqui estava "Botão aguardando o link do grupo", e isso é um recado
+            para o administrador, não para a empresa que abriu a página. Esta é
+            a porta comercial do projecto: quem lá chega tem de ver o convite ou
+            não ver nada, nunca uma nota interna sobre o que falta configurar.
+
+            O aviso não desapareceu, mudou de sítio: vai para o painel, em
+            /admin/produto-vivo, que é onde ele pode fazer alguma coisa a
+            respeito. Um aviso mostrado a quem não pode agir é ruído; mostrado a
+            quem pode, é um pedido.
+          */}
+        {linkGrupo && <EntrarNoGrupoPv projectId={project?.id ?? ''} url={linkGrupo} />}
       </div>
 
       {/* Discreto, como ele pediu, e com a palavra certa: o pedido foi

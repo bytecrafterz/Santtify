@@ -89,6 +89,39 @@ fi
 export PV_COMMIT
 ok "publicando o commit ${PV_COMMIT}"
 
+# ── Cada NEXT_PUBLIC_* que o código lê chega ao build? ──────────────
+#
+# Esta conferência existe por causa de um defeito que sobreviveu dias sem dar
+# um único erro. A página do Produto Vivo lia NEXT_PUBLIC_PV_GRUPO_URL, o
+# .env.production.exemplo documentava esse nome, ele preencheu o convite
+# correctamente, e o docker-compose passava ao build um NEXT_PUBLIC_WHATSAPP_PV
+# que ninguém lia. A página comercial ficou a dizer "aguardando o link do
+# grupo" à frente de quem lá chegava.
+#
+# Nada disto falha: uma variável que não chega ao build é uma string vazia, e
+# uma string vazia é um valor válido. Por isso é preciso conferir os NOMES.
+info "Conferindo as variáveis NEXT_PUBLIC_* do site"
+lidas="$(grep -rho 'process\.env\.NEXT_PUBLIC_[A-Z0-9_]*' apps/web/src 2>/dev/null \
+  | sed 's/process\.env\.//' | sort -u)"
+# A CHAVE, e não o que está do lado direito. `grep` por NEXT_PUBLIC_X: apanhava
+# também o `${NEXT_PUBLIC_X:-}` do valor por omissão, e portanto dava por
+# passada uma variável cujo nome só aparecia à direita. A primeira versão desta
+# conferência não apanhava o defeito que a motivou; só dei por isso porque a
+# experimentei a estragar o ficheiro de propósito para a ver falhar.
+passadas="$(grep -oE '^[[:space:]]+NEXT_PUBLIC_[A-Z0-9_]+:' docker-compose.prod.yml 2>/dev/null \
+  | tr -d ': ' | sort -u)"
+em_falta=""
+for v in $lidas; do
+  echo "$passadas" | grep -qx "$v" || em_falta="$em_falta $v"
+done
+if [ -n "$em_falta" ]; then
+  erro "o site lê estas variáveis e o build nunca as recebe:$em_falta"
+  echo "  Acrescente cada uma ao docker-compose.prod.yml (build.args) e ao apps/web/Dockerfile (ARG + ENV)."
+  echo "  Sem isso elas chegam ao navegador vazias, sem erro nenhum, e a função fica calada."
+  exit 1
+fi
+ok "as $(echo "$lidas" | grep -c .) variáveis do site chegam todas ao build"
+
 info "Carimbando a versão no service worker"
 VERSAO="$(date +%Y%m%d%H%M%S)"
 sed -i "s/self.__VERSAO__ || '[^']*'/self.__VERSAO__ || '${VERSAO}'/" apps/web/public/sw.js

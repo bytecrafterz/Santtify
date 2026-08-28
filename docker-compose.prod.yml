@@ -73,7 +73,7 @@ services:
         # Mudar qualquer uma exige rebuild da imagem, não basta reiniciar.
         NEXT_PUBLIC_API_URL: https://${DOMINIO}/api
         NEXT_PUBLIC_PROJETO_PADRAO: ${NEXT_PUBLIC_PROJETO_PADRAO:-jesus-alfabeto-saudavel}
-        NEXT_PUBLIC_WHATSAPP_PV: ${NEXT_PUBLIC_WHATSAPP_PV:-}
+        NEXT_PUBLIC_PV_GRUPO_URL: ${NEXT_PUBLIC_PV_GRUPO_URL:-}
         # O número de suporte NUNCA entra no repositório: o histórico do git é
         # permanente e um número lá dentro nunca mais sai. Vive só no servidor.
         NEXT_PUBLIC_SUPORTE_WHATSAPP: ${NEXT_PUBLIC_SUPORTE_WHATSAPP:-}
