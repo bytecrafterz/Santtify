@@ -27,6 +27,27 @@ ao fim, e o caminho do cancelar é andado também.
 node deploy/percursos/percurso-completo.mjs
 ```
 
+## `editor-igual-ao-publico.mjs`
+
+A regra que ele escreveu em 29/08, depois de mandar duas fotografias do ecrã:
+
+> O QUE EU VEJO NO EDITOR = O QUE O PÚBLICO VÊ NO PERFIL.
+
+Carrega uma arte deitada com um bloco branco no meio, enquadra-a no editor,
+grava, e compara **onde o bloco branco ficou** nas duas. Se o editor e o perfil
+mostrarem o mesmo pedaço da arte, o bloco cai no mesmo sítio.
+
+```bash
+node deploy/percursos/editor-igual-ao-publico.mjs
+```
+
+A primeira versão desta verificação comparava a cor média e dava 33 em 255, e eu
+ia dar isso por defeito. Guardei as duas imagens e olhei para elas: o
+enquadramento estava certo e a diferença toda vinha do nome escrito por cima da
+capa e do painel branco na borda de baixo. **Estava a medir o desenho da página
+em vez do recorte da fotografia.** Vale para qualquer verificação automática:
+quando ela acusa, olhar para o que ela viu antes de acreditar nela.
+
 ## As duas regras destes ficheiros
 
 **Conta descartável, nunca uma conta real.** Cada corrida cria a sua, com um
