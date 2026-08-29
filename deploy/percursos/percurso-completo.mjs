@@ -21,6 +21,11 @@ console.log(`\nconta descartavel: ${EMAIL}\n`)
 await pg.goto(`${SITE}/${PROJ}/cadastrar`,{waitUntil:'domcontentloaded'});await pg.waitForTimeout(2500);await limpar()
 await pg.fill('input[type=email]',EMAIL);await pg.fill('input[name=displayName], input[type=text]',NOME)
 await pg.fill('input[type=password]',SENHA);await pg.click('button[type=submit]');await pg.waitForTimeout(4500)
+
+// A limpeza corre mesmo que o percurso falhe a meio. Sem isto, uma falha
+// deixa a conta de teste na base dele: aconteceu em 29/08 com o percurso
+// do editor, que ficou a apontar para um botao que eu tinha mudado.
+try {
 p_('1. ENTRAR', !pg.url().includes('/cadastrar'))
 
 // 2. PERFIL
@@ -115,6 +120,7 @@ p_('14. ENTRAR NOVAMENTE', !pg.url().includes('/entrar'), pg.url().replace(SITE,
 
 // LIMPEZA: a conta descartavel apaga-se a si propria pelo botao novo
 await pg.goto(`${SITE}/${PROJ}/perfil`,{waitUntil:'domcontentloaded'});await pg.waitForTimeout(3500);await limpar()
+} finally {
 // Apagar a conta mudou para a pagina de edicao, com a troca de senha.
 await pg.goto(`${SITE}/${PROJ}/perfil/editar`,{waitUntil:'domcontentloaded'});await pg.waitForTimeout(3500);await limpar()
 const ap=await pg.$('button.apagar-conta')
@@ -124,3 +130,5 @@ if(ap){await ap.scrollIntoViewIfNeeded();await ap.click();await pg.waitForTimeou
 console.log(`\n  (limpeza: conta de teste apagada = ${!pg.url().includes('/perfil')})`)
 console.log(falhas.length? `\n${falhas.length} FALHA(S): ${falhas.join(' | ')}` : '\nO percurso inteiro passa.')
 await nav.close()
+
+}

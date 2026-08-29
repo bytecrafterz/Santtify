@@ -17,9 +17,14 @@ await pg.goto(`${SITE}/${PROJ}/cadastrar`,{waitUntil:'domcontentloaded'});await 
 await pg.fill('input[type=email]',EMAIL);await pg.fill('input[name=displayName], input[type=text]',`Wys ${marca}`)
 await pg.fill('input[type=password]',SENHA);await pg.click('button[type=submit]');await pg.waitForTimeout(4500)
 
+try {
+
 await pg.goto(`${SITE}/${PROJ}/perfil`,{waitUntil:'domcontentloaded'});await pg.waitForTimeout(4000);await limpar()
-const abrir=await pg.$('button:has-text("Editar perfil")')
-await abrir.scrollIntoViewIfNeeded();await abrir.click();await pg.waitForTimeout(1500)
+// A edicao tem pagina propria desde 29/08. Este ficheiro ficou a apontar para o
+// botao antigo e rebentou na primeira corrida seguinte, deixando duas contas de
+// teste na base dele. Mudar uma pagina obriga a seguir TODOS os caminhos que
+// entram nela, e os percursos guardados sao um deles.
+await pg.goto(`${SITE}/${PROJ}/perfil/editar`,{waitUntil:'domcontentloaded'});await pg.waitForTimeout(3500);await limpar()
 await pg.setInputFiles('#perfil-foto','arte-deitada.png');await pg.waitForTimeout(3000)
 
 // as proporcoes tem de ser a MESMA
@@ -109,6 +114,10 @@ if(ma&&mb){
   p_('o que se ve no editor E o que sai no perfil', d<0.04, `desvio ${(d*100).toFixed(1)}%`)
 }
 
+
+} catch (e) {
+  console.log('  ! ' + String(e.message).split('\n')[0])
+} finally {
 // limpeza
 const ap=await pg.$('button.apagar-conta')
 if(ap){await ap.scrollIntoViewIfNeeded();await ap.click();await pg.waitForTimeout(700)
@@ -117,3 +126,4 @@ if(ap){await ap.scrollIntoViewIfNeeded();await ap.click();await pg.waitForTimeou
 console.log(`\n  (conta de teste apagada = ${!pg.url().includes('/perfil')})`)
 console.log(falhas.length? `\n${falhas.length} FALHA(S): ${falhas.join(' | ')}` : '\nO editor e o perfil mostram o mesmo.')
 await nav.close()
+}
