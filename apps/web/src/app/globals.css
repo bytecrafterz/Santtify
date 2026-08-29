@@ -23,6 +23,16 @@
      TÊM de concordar: a capa pública, o enquadrador e a pré-visualização. Ver
      a nota em `.perfil-capa`. */
   --proporcao-da-capa: 4 / 3;
+  /*
+    Quanto do fundo da capa fica TAPADO pelo que se desenha por cima dela: o
+    nome, a seta e a pega do painel que sobe. Medido em 29/08 na página inicial
+    num telemóvel de 390px: 35px de 293px.
+
+    Existe para o enquadrador poder mostrar essa faixa a quem está a enquadrar.
+    Sem isto, a promessa "o que vê é o que sai" era verdade a 88%, e os 12% que
+    faltavam eram precisamente onde a arte dele tem a tira dos selos.
+  */
+  --tapado-da-capa: 12%;
   --cor-texto: #171a22;
   --cor-texto-suave: #5b6478;
   --cor-borda: #e6e8ef;
@@ -6637,4 +6647,30 @@ h2.funil {
 .ajustar-foto .botao-acao[disabled] {
   opacity: 0.6;
   cursor: progress;
+}
+
+/* A faixa que o painel do perfil cobre, mostrada a quem está a enquadrar. */
+.faixa-tapada {
+  position: absolute;
+  inset: auto 0 0 0;
+  height: var(--tapado-da-capa);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: repeating-linear-gradient(
+    -45deg,
+    rgba(10, 12, 18, 0.42),
+    rgba(10, 12, 18, 0.42) 6px,
+    rgba(10, 12, 18, 0.28) 6px,
+    rgba(10, 12, 18, 0.28) 12px
+  );
+  pointer-events: none;
+}
+
+.faixa-tapada span {
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.02em;
+  color: #fff;
+  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.6);
 }

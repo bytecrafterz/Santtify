@@ -224,8 +224,20 @@ export function AjustarFoto({
             }}
           />
         )}
-        {/* Sem véu nem guia por cima: a moldura INTEIRA é o que fica no
-            perfil, e desenhar um recorte seria dizer que parte dela não conta. */}
+        {/*
+          A FAIXA DE BAIXO É A QUE FICA TAPADA.
+
+          Na página, o nome, a seta e a pega do painel desenham-se por cima do
+          fundo da capa. Medi: 35px de 293px, 12%. Sem isto no ecrã, eu teria
+          prometido "o que vê é o que sai" e estaria certo a 88% — e os 12% que
+          faltavam são precisamente onde a arte dele tem a tira dos selos.
+
+          Não é um recorte: a imagem inteira é gravada e a faixa continua lá.
+          É um aviso de que ali por cima passa texto.
+        */}
+        <span className="faixa-tapada" aria-hidden>
+          <span>o painel cobre esta faixa</span>
+        </span>
       </div>
 
       <input
