@@ -33,9 +33,12 @@ p_('3. VOLTAR sai do perfil', pg.url().endsWith(`/${PROJ}`), pg.url().replace(SI
 
 // 4. EDITAR -> SALVAR
 await pg.goto(`${SITE}/${PROJ}/perfil`,{waitUntil:'domcontentloaded'});await pg.waitForTimeout(3500);await limpar()
-const abrirEditar = await pg.$('button:has-text("Editar perfil")')
-p_('4. EDITAR: o botao existe', !!abrirEditar)
-if(abrirEditar){await abrirEditar.scrollIntoViewIfNeeded();await abrirEditar.click();await pg.waitForTimeout(1500)}
+// A edicao tem pagina propria desde 29/08: /perfil/editar. O atalho no perfil
+// e um link e nao um botao que abre um formulario ali mesmo.
+const abrirEditar = await pg.$('a[href$="/perfil/editar"]')
+p_('4. EDITAR: o atalho para a pagina de edicao existe', !!abrirEditar)
+if(abrirEditar){await abrirEditar.scrollIntoViewIfNeeded();await abrirEditar.click();await pg.waitForTimeout(3500);await limpar()}
+p_('4. EDITAR: abre em pagina propria', pg.url().endsWith('/perfil/editar'), pg.url().replace(SITE,''))
 const campoNome = await pg.$('.editar-perfil input[name=displayName], .editar-perfil input[type=text]')
 p_('4. EDITAR: o formulario abre', !!campoNome)
 if(campoNome){
@@ -44,15 +47,17 @@ if(campoNome){
   const gravar = await pg.$('.editar-perfil button[type=submit]')
   const visivel = gravar ? await gravar.isVisible() : false
   p_('5. SALVAR esta a vista sem procurar', visivel)
-  await gravar.click();await pg.waitForTimeout(4000)
-  await pg.reload({waitUntil:'domcontentloaded'});await pg.waitForTimeout(3500);await limpar()
+  await gravar.click();await pg.waitForTimeout(6000)
+  p_('5. SALVAR devolve ao perfil publico sozinho', pg.url().endsWith('/perfil'), pg.url().replace(SITE,''))
+  await pg.waitForTimeout(500);await limpar()
   const guardou = (await pg.textContent('body'))?.includes('editado')
   p_('5. SALVAR guardou mesmo', !!guardou)
 }
 
 // 6. CANCELAR (a outra porta: entrar, cancelar, voltar)
-const reabrir = await pg.$('button:has-text("Editar perfil")')
-if(reabrir){await reabrir.scrollIntoViewIfNeeded();await reabrir.click();await pg.waitForTimeout(1500)}
+// Gravar devolve ao perfil, por isso volta-se a entrar na edicao para a porta
+// do cancelar.
+await pg.goto(`${SITE}/${PROJ}/perfil/editar`,{waitUntil:'domcontentloaded'});await pg.waitForTimeout(3500);await limpar()
 const campo2 = await pg.$('.editar-perfil input[name=displayName], .editar-perfil input[type=text]')
 if(campo2){
   await campo2.scrollIntoViewIfNeeded()
@@ -110,6 +115,8 @@ p_('14. ENTRAR NOVAMENTE', !pg.url().includes('/entrar'), pg.url().replace(SITE,
 
 // LIMPEZA: a conta descartavel apaga-se a si propria pelo botao novo
 await pg.goto(`${SITE}/${PROJ}/perfil`,{waitUntil:'domcontentloaded'});await pg.waitForTimeout(3500);await limpar()
+// Apagar a conta mudou para a pagina de edicao, com a troca de senha.
+await pg.goto(`${SITE}/${PROJ}/perfil/editar`,{waitUntil:'domcontentloaded'});await pg.waitForTimeout(3500);await limpar()
 const ap=await pg.$('button.apagar-conta')
 if(ap){await ap.scrollIntoViewIfNeeded();await ap.click();await pg.waitForTimeout(700)
   await pg.fill('.zona-de-risco input[type=password]',SENHA)
