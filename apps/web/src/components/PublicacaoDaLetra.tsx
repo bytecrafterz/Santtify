@@ -39,10 +39,19 @@ export function PublicacaoDaLetra({
   ancora,
   categorias,
   aoTerminarAudio,
+  somFazParteDaEstrutura = false,
 }: {
   etiqueta: string | null
   imagem: string | null
   bloco: Bloco | null
+  /**
+   * O lugar do som faz parte da estrutura desta peça?
+   *
+   * Nas LETRAS faz: um cartão tem quatro lugares e eles existem estejam ou não
+   * preenchidos, que é a regra dele de 23/08. No PRODUTO VIVO não faz: ali o
+   * som é opcional desde 28/08 e uma publicação só com foto é uma foto.
+   */
+  somFazParteDaEstrutura?: boolean
   titulo: string
   texto: string | null
   alvo: AlvoSocial
@@ -95,22 +104,31 @@ export function PublicacaoDaLetra({
           </div>
         )}
         {/*
-          SÓ HÁ TOCADOR ONDE HÁ SOM.
+          O LUGAR DO SOM FICA, MESMO SEM SOM — NAS LETRAS.
 
-          Isto desenhava o tocador sempre que houvesse cartão, e quem escolhe os
-          cartões deixa passar os que só têm imagem — de propósito, desde que o
-          áudio passou a ser opcional. Resultado: uma publicação só com foto
-          ganhava um tocador parado em 00:00 / 00:00.
+          Escrevi aqui, há duas horas, que só haveria tocador onde houvesse
+          ficheiro, e estava errado. Ele respondeu com a regra que já me tinha
+          dado em 23/08 e que está escrita no servidor, em `content.service`:
 
-          Ele fotografou-o em 29/08 na "Repetição do versículo". São 26 cartões
-          com esse nome, um por letra, todos por preencher: o tocador aparecia
-          nos 26 e não tocava em nenhum, porque não há lá ficheiro nenhum.
+            "Se eu colocar somente o áudio, o espaço da imagem continuará
+             visível. Se ainda não houver título ou texto, os lugares deles
+             permanecerão em branco dentro da mesma estrutura."
 
-          É o mesmo defeito do "Sem áudio" que tirei do painel esta manhã, com
-          outra roupa: uma foto sozinha é uma foto, e não uma peça a que falta
-          qualquer coisa.
+          O que é indivisível é a ESTRUTURA. Um cartão de uma letra tem quatro
+          lugares e eles existem estejam ou não preenchidos. Esconder o lugar do
+          som fez desaparecer parte da peça, e foi por isso que ele perguntou
+          como é que um bloco fixo tinha sumido.
+
+          O defeito verdadeiro não era o lugar existir: era ele fingir que
+          tocava. Um tocador parado em 00:00 / 00:00 promete um áudio que não
+          está lá. Agora o lugar continua, e diz o que é.
+
+          NO PRODUTO VIVO NÃO. Ali o som é opcional desde 28/08, a pedido dele:
+          uma publicação só com foto é uma foto, e não uma peça a que falta
+          qualquer coisa. Por isso isto é uma decisão de quem monta a página, e
+          não deste componente.
         */}
-        {bloco?.asset?.url && (
+        {bloco?.asset?.url ? (
           <TocadorDeOnda
             bloco={bloco}
             projectId={projectId}
@@ -119,6 +137,13 @@ export function PublicacaoDaLetra({
             categorias={categorias}
             aoTerminar={aoTerminarAudio}
           />
+        ) : (
+          somFazParteDaEstrutura && (
+            <div className="lugar-do-som" role="note">
+              <span aria-hidden>🎵</span>
+              <span>Áudio ainda não carregado</span>
+            </div>
+          )
         )}
       </div>
 

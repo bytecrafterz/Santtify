@@ -199,6 +199,7 @@ export function ExperienciaContinua({
               é onde ele a manda com as setas — não a invento aqui. */}
           {publicacoesDe(aberta).map((pub) => (
             <PublicacaoDaLetra
+              somFazParteDaEstrutura
               key={pub.ancora}
               etiqueta={pub.etiqueta}
               imagem={pub.imagem}

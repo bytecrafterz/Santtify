@@ -6754,3 +6754,21 @@ h2.funil {
   color: var(--cor-texto-suave);
   font-size: 13px;
 }
+
+/* O lugar do som, quando ainda não há som. Nas letras o cartão tem quatro
+   lugares e eles existem preenchidos ou não: é a regra dele de 23/08. O que
+   não pode é fingir que toca, como fazia o tocador parado em 00:00. */
+.lugar-do-som {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  min-height: 56px;
+  margin: 0;
+  padding: 12px;
+  border-top: 1px dashed rgba(255, 255, 255, 0.18);
+  background: rgba(10, 12, 18, 0.55);
+  color: rgba(255, 255, 255, 0.6);
+  font-size: 13px;
+  font-weight: 600;
+}
