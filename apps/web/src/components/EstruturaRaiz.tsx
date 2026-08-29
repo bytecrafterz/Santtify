@@ -97,7 +97,9 @@ export function EstruturaRaiz({ projectSlug }: { projectSlug: string }) {
                 <div className="lugar-raiz">CARREGAR PERFIL</div>
               )}
               <p className="nome-raiz">{dados?.perfil?.displayName ?? 'Sem perfil definido'}</p>
-              <Link className="editar-raiz" href={`/${projectSlug}/perfil`}>
+              {/* Directo para a edição, como no menu da capa: quem carrega em
+                  "Editar perfil" pediu a edição, e não o perfil. */}
+              <Link className="editar-raiz" href={`/${projectSlug}/perfil/editar`}>
                 Editar perfil
               </Link>
             </div>

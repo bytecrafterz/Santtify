@@ -265,8 +265,23 @@ export function CabecalhoDePerfil({
 
           {opcoesAbertas && (
             <div className="menu-da-capa" role="menu">
+              {/*
+                EDITAR PERFIL VAI DIRECTO PARA A EDIÇÃO.
+
+                Apontava para `/perfil`, que é o perfil com os indicadores e a
+                plataforma por baixo, e lá dentro havia outro "Editar perfil"
+                para a página que edita mesmo. Dois toques para uma coisa só, e
+                o primeiro abria um ecrã que não era o pedido.
+
+                Reparou nisso em 29/08, poucas horas depois de eu separar a
+                edição em página própria: a separação estava certa e eu deixei o
+                caminho antigo a apontar para o meio dela.
+
+                "O meu perfil" continua a ir para `/perfil`, e deve: aí o que se
+                pede é o perfil, não a edição.
+              */}
               {souOAnfitriao ? (
-                <Link href={`/${projectSlug}/perfil`}>✎ Editar perfil</Link>
+                <Link href={`/${projectSlug}/perfil/editar`}>✎ Editar perfil</Link>
               ) : temConta ? (
                 <Link href={`/${projectSlug}/perfil`}>👤 O meu perfil</Link>
               ) : (
