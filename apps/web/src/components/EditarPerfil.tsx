@@ -176,7 +176,21 @@ export function EditarPerfil({
         hidden={Boolean(porEnquadrar)}
         type="file"
         accept="image/*,.jpg,.jpeg,.png,.heic,.webp"
-        onChange={(e) => escolherFoto(e.target.files?.[0] ?? null)}
+        onChange={(e) => {
+          escolherFoto(e.target.files?.[0] ?? null)
+          /*
+            O CAMPO ESVAZIA-SE PARA A MESMA FOTOGRAFIA PODER SER ESCOLHIDA OUTRA VEZ.
+
+            Sem isto, quem cancela o enquadramento e volta a escolher a MESMA
+            imagem não faz acontecer nada: o valor do campo não mudou, o
+            navegador não avisa ninguém, e o ecrã de enquadrar não abre. Parece
+            que o botão morreu.
+
+            É o caso mais provável dele, que passou uma tarde a tentar enquadrar
+            a mesma arte. Encontrado ao andar pelo ecrã, e não a lê-lo.
+          */
+          e.target.value = ''
+        }}
       />
 
       <label htmlFor="perfil-nome">Nome</label>
