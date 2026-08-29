@@ -3,6 +3,7 @@
 import { useState } from 'react'
 import { auth, ErroDeApi, type PerfilResposta } from '@/lib/auth'
 import { useAuth } from './ProvedorDeAuth'
+import { AjustarFoto } from './AjustarFoto'
 
 /**
  * Edição do próprio perfil: fotografia, nome, descrição e responsável.
@@ -28,20 +29,40 @@ export function EditarPerfil({
   const [descricao, definirDescricao] = useState(perfil.user.bio ?? '')
   const [responsavel, definirResponsavel] = useState(perfil.user.guardianName ?? '')
   const [foto, definirFoto] = useState<File | null>(null)
+  const [porEnquadrar, definirPorEnquadrar] = useState<File | null>(null)
   const [previa, definirPrevia] = useState<string | null>(null)
   const [gravando, definirGravando] = useState(false)
   const [erro, definirErro] = useState<string | null>(null)
 
+  /**
+   * A fotografia escolhida vai PRIMEIRO para o enquadramento.
+   *
+   * Antes ia direita para a pré-visualização e daí para o servidor, e o corte
+   * era decidido pelo `object-fit` do avatar, sem ninguém poder opinar. Ele
+   * refez a arte mais de dez vezes a tentar adivinhar esse corte.
+   */
   function escolherFoto(arquivo: File | null) {
-    definirFoto(arquivo)
+    definirErro(null)
+    if (!arquivo) {
+      definirPorEnquadrar(null)
+      return
+    }
+    definirPorEnquadrar(arquivo)
+  }
+
+  /** Sai do enquadramento com a imagem já cortada: é esta que sobe. */
+  function usarRecorte(recortada: File) {
+    definirPorEnquadrar(null)
+    definirFoto(recortada)
     if (previa) URL.revokeObjectURL(previa)
-    definirPrevia(arquivo ? URL.createObjectURL(arquivo) : null)
+    definirPrevia(URL.createObjectURL(recortada))
   }
 
   function fechar() {
     if (previa) URL.revokeObjectURL(previa)
     definirPrevia(null)
     definirFoto(null)
+    definirPorEnquadrar(null)
     definirErro(null)
     definirAberto(false)
   }
@@ -133,10 +154,18 @@ export function EditarPerfil({
       <span className="bloco-rotulo">Editar perfil</span>
 
       <label htmlFor="perfil-foto">Fotografia</label>
-      {previa ? (
+      {porEnquadrar && (
+        <AjustarFoto
+          ficheiro={porEnquadrar}
+          aoConfirmar={usarRecorte}
+          aoCancelar={() => definirPorEnquadrar(null)}
+        />
+      )}
+      {!porEnquadrar && previa ? (
         // eslint-disable-next-line @next/next/no-img-element
         <img className="previa-avatar" src={previa} alt="Pré-visualização da fotografia" />
       ) : (
+        !porEnquadrar &&
         perfil.user.avatarUrl && (
           // eslint-disable-next-line @next/next/no-img-element
           <img className="previa-avatar" src={perfil.user.avatarUrl} alt="Fotografia actual" />
@@ -144,6 +173,7 @@ export function EditarPerfil({
       )}
       <input
         id="perfil-foto"
+        hidden={Boolean(porEnquadrar)}
         type="file"
         accept="image/*,.jpg,.jpeg,.png,.heic,.webp"
         onChange={(e) => escolherFoto(e.target.files?.[0] ?? null)}

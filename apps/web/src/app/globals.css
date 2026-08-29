@@ -6528,3 +6528,84 @@ h2.funil {
 .vista-cartao .erro {
   margin: 0 0 12px;
 }
+
+/* ── Enquadrar a fotografia (pedido dele em 29/08) ──────────────────────
+   Ele refez a arte mais de dez vezes a tentar adivinhar o corte. O corte é
+   trabalho do computador. */
+.ajustar-foto {
+  display: grid;
+  gap: 12px;
+  margin-bottom: 14px;
+}
+
+.ajustar-foto .nota {
+  margin: 0;
+  font-size: 13px;
+  color: var(--cor-texto-suave);
+}
+
+.moldura-foto {
+  position: relative;
+  width: 100%;
+  max-width: 280px;
+  aspect-ratio: 1;
+  margin: 0 auto;
+  overflow: hidden;
+  border-radius: 14px;
+  background: #10131a;
+  /* Sem isto o telemóvel rola a página em vez de mover a fotografia, e os dois
+     dedos dão zoom ao site inteiro em vez de à imagem. */
+  touch-action: none;
+  cursor: grab;
+  user-select: none;
+}
+
+.moldura-foto img {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  margin-top: -50%;
+  margin-left: -50%;
+  max-width: none;
+  transform-origin: center;
+  pointer-events: none;
+}
+
+/* O círculo diz o que fica no perfil. O escuro à volta é o que sai fora. */
+.guia-circulo {
+  position: absolute;
+  inset: 0;
+  border-radius: 50%;
+  box-shadow: 0 0 0 9999px rgba(10, 12, 18, 0.55);
+  pointer-events: none;
+}
+
+.barra-zoom {
+  width: 100%;
+  max-width: 280px;
+  margin: 0 auto;
+  accent-color: var(--cor-primaria);
+}
+
+.ajustar-foto .par-de-botoes {
+  max-width: 280px;
+  margin: 0 auto;
+  width: 100%;
+}
+
+.ajustar-foto .botao-acao {
+  padding: 15px 12px;
+  border: 0;
+  border-radius: 12px;
+  background: var(--cor-primaria);
+  color: #fff;
+  font-family: inherit;
+  font-size: 16px;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.ajustar-foto .botao-acao[disabled] {
+  opacity: 0.6;
+  cursor: progress;
+}
