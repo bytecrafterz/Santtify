@@ -111,7 +111,13 @@ export function CartaoDaRaiz({
         ) : (
           <div className="lugar-raiz">{rotuloVazio}</div>
         )}
-        <span className="linha-audio-raiz">▶ {cartao.audio?.title ?? 'Sem áudio'}</span>
+        {/* SÓ DIZ DO ÁUDIO QUANDO HÁ ÁUDIO.
+            Dizia "Sem áudio" nas publicações que não têm, e no Produto Vivo
+            isso é ruído: uma publicação só com a foto é uma foto, e não uma
+            publicação a que falta qualquer coisa. Ele pediu-o em 29/08 com
+            estas palavras: "não precisa aparecer foto sem áudio nem qualquer
+            aviso semelhante. É simplesmente uma foto." */}
+        {cartao.audio && <span className="linha-audio-raiz">▶ {cartao.audio.title}</span>}
         <span className="estado-quadrado">
           {cartao.estado === 'PUBLICADO' ? 'PRONTO' : 'RASCUNHO'}
         </span>
