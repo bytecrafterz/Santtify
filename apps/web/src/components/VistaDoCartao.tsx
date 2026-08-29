@@ -161,6 +161,28 @@ export function VistaDoCartao({
     }
   }
 
+  /**
+   * Guardar o ficheiro, dentro da aplicação instalada.
+   *
+   * A folha de partilha do iOS tem "Guardar em Ficheiros", que é o que a
+   * pessoa quer, e tem Cancelar, que a devolve aqui. Um link levava-a para
+   * dentro do PDF sem porta de saída.
+   */
+  async function baixar() {
+    if (!pronto) {
+      definirErro('O cartão ainda está a carregar. Tente outra vez daqui a um instante.')
+      return
+    }
+    definirATrabalhar(true)
+    definirAviso('Escolha Guardar em Ficheiros na lista que vai abrir.')
+    try {
+      const correu = await entregarFicheiro()
+      if (!correu) definirAviso(null)
+    } finally {
+      definirATrabalhar(false)
+    }
+  }
+
   async function imprimir() {
     if (!dentroDaAppNoIphone) {
       window.print()
@@ -229,14 +251,40 @@ export function VistaDoCartao({
           VOLTAR
         </button>
 
-        <a
-          className="acao-do-cartao"
-          href={pdfParaBaixar}
-          download={`cartao-${letra ? `letra-${letra.toLowerCase()}` : contentSlug}.pdf`}
-        >
-          <span aria-hidden>⬇</span>
-          BAIXAR PDF
-        </a>
+        {/*
+          DENTRO DA APLICAÇÃO INSTALADA, BAIXAR NÃO PODE SER UM LINK.
+
+          Era `<a href="...pdf" download>`. Num navegador normal isso descarrega
+          e pronto. Na aplicação instalada no iPhone o atributo `download` é
+          ignorado e o link NAVEGA para o PDF, na mesma janela — e ali não há
+          barra de navegador, nem separador, nem seta para trás. A pessoa fica
+          a olhar para o PDF sem nenhuma maneira de voltar.
+
+          É a descrição exacta dele, repetida três vezes: "entro na tela para
+          imprimir/enviar o PDF e continuo ficando preso nela". Eu andei à
+          procura disto no botão de imprimir e no de partilhar, e estava no de
+          baixar, que era o único que eu não tinha tocado.
+
+          Ali o BAIXAR passa a ser a folha de partilha do sistema, que traz
+          "Guardar em Ficheiros" lá dentro e fecha-se com Cancelar, devolvendo
+          a pessoa a esta página.
+        */}
+        {dentroDaAppNoIphone ? (
+          <button
+            type="button"
+            className="acao-do-cartao"
+            disabled={aTrabalhar}
+            onClick={() => void baixar()}
+          >
+            <span aria-hidden>⬇</span>
+            BAIXAR PDF
+          </button>
+        ) : (
+          <a className="acao-do-cartao" href={pdfParaBaixar} download={nomeDoFicheiro}>
+            <span aria-hidden>⬇</span>
+            BAIXAR PDF
+          </a>
+        )}
 
         {/*
           IMPRIMIR NÃO SAI DESTA PÁGINA.
