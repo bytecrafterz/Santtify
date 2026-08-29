@@ -72,21 +72,38 @@ export function AjustarFoto({
   }, [ficheiro])
 
   /**
-   * O zoom mínimo é o que faz a imagem COBRIR a moldura.
+   * O AFASTAR VAI ATÉ A ARTE CABER INTEIRA, e não até só cobrir a moldura.
    *
-   * Não é 1. Se fosse, uma fotografia mais alta do que larga podia ser
-   * afastada até deixar tiras vazias nos lados — precisamente as bordas
-   * brancas de que ele se queixou. Assim, por muito que se afaste, a moldura
-   * nunca fica a descoberto.
+   * Fiz primeiro o contrário: o mínimo era o que cobria a moldura, para nunca
+   * haver tiras vazias — as bordas brancas de que ele se queixou no ponto 8.
+   * Estava a resolver um problema criando outro. Em 29/08 ele disse o que
+   * faltava: "preciso também conseguir afastar a foto, para mostrar uma área
+   * maior da imagem".
+   *
+   * Os dois pedidos são legítimos e parecem opostos: quer ver a arte toda, e
+   * não quer faixas vazias. A saída não é escolher um deles, é tirar o vazio
+   * da equação. Onde a arte não chega, desenha-se a própria arte esborratada
+   * por trás — é o que os leitores de música fazem com as capas. Ele afasta
+   * quanto quiser, vê tudo, e nunca aparece uma tira branca.
+   *
+   * E o borrão fica GRAVADO no ficheiro, não é um efeito do ecrã. Tem de
+   * ficar: senão o editor mostrava uma coisa e o perfil publicava outra, que é
+   * exactamente o que este ecrã existe para acabar.
    */
   const [minimo, definirMinimo] = useState(1)
+  /** O que COBRE a moldura. Não é o mínimo; é onde o borrão deixa de aparecer. */
+  const [cobrir, definirCobrir] = useState(1)
 
   const aoCarregarImagem = useCallback(() => {
     const img = imagem.current
     const m = moldura.current
     if (!img || !m) return
-    const escala = Math.max(m.clientWidth / img.naturalWidth, m.clientHeight / img.naturalHeight)
-    definirMinimo(escala)
+    const cobre = Math.max(m.clientWidth / img.naturalWidth, m.clientHeight / img.naturalHeight)
+    // `min` e não `max`: é a escala com que a arte INTEIRA cabe na moldura.
+    const cabe = Math.min(m.clientWidth / img.naturalWidth, m.clientHeight / img.naturalHeight)
+    definirCobrir(cobre)
+    definirMinimo(cabe)
+    const escala = cobre
     /*
       COMEÇA UM POUCO ACIMA DO MÍNIMO, PARA HAVER FOLGA NOS DOIS SENTIDOS.
 
@@ -111,8 +128,14 @@ export function AjustarFoto({
     if (!img || !m) return p
     const larg = img.naturalWidth * z
     const alt = img.naturalHeight * z
-    const maxX = Math.max(0, (larg - m.clientWidth) / 2)
-    const maxY = Math.max(0, (alt - m.clientHeight) / 2)
+    /*
+      Quando a arte é MENOR do que a moldura, o limite deixava de existir e ela
+      ficava presa ao centro. Com o borrão por trás já não há razão para isso:
+      ele pode encostá-la onde quiser. O limite passa a ser meia moldura, para
+      a arte não poder ser empurrada inteiramente para fora do ecrã.
+    */
+    const maxX = Math.max(m.clientWidth / 2, (larg - m.clientWidth) / 2)
+    const maxY = Math.max(m.clientHeight / 2, (alt - m.clientHeight) / 2)
     return {
       x: Math.min(maxX, Math.max(-maxX, p.x)),
       y: Math.min(maxY, Math.max(-maxY, p.y)),
@@ -144,7 +167,7 @@ export function AjustarFoto({
       const [a, b] = [...dedos.current.values()]
       const agora = Math.hypot(a.x - b.x, a.y - b.y)
       const z = Math.min(
-        minimo * 6,
+        cobrir * 6,
         Math.max(minimo, (zoomInicial.current * agora) / distanciaInicial.current),
       )
       definirZoom(z)
@@ -185,6 +208,26 @@ export function AjustarFoto({
       ctx.fillStyle = '#fff'
       ctx.fillRect(0, 0, LARGURA, altura)
 
+      /*
+        O FUNDO ESBORRATADO VAI DENTRO DO FICHEIRO.
+
+        Onde a arte não chega, desenha-se a própria arte ampliada e desfocada.
+        Fica gravada aqui, e não aplicada por CSS na página, porque o que sobe
+        tem de ser exactamente o que ele viu: um efeito só no ecrã voltava a
+        separar o editor do resultado.
+
+        `ctx.filter` não existe em navegadores antigos. Aí o desfoque é
+        ignorado e sai a mesma arte ampliada sem borrão — menos bonito, e
+        continua a não ser uma tira branca, que era o defeito a evitar.
+      */
+      const escalaFundo = Math.max(LARGURA / img.naturalWidth, altura / img.naturalHeight)
+      const lf = img.naturalWidth * escalaFundo * 1.15
+      const af = img.naturalHeight * escalaFundo * 1.15
+      ctx.save()
+      ctx.filter = 'blur(28px) brightness(0.82)'
+      ctx.drawImage(img, LARGURA / 2 - lf / 2, altura / 2 - af / 2, lf, af)
+      ctx.restore()
+
       // As mesmas contas que a moldura usa para mostrar, na escala do ficheiro.
       const larg = img.naturalWidth * zoom * fator
       const alt = img.naturalHeight * zoom * fator
@@ -219,6 +262,9 @@ export function AjustarFoto({
         onPointerUp={aoSubir}
         onPointerCancel={aoSubir}
       >
+        {/* O mesmo fundo que vai ficar gravado, para o ecrã não mentir. */}
+        {origem && <img className="fundo-borrado" src={origem} alt="" aria-hidden />}
+
         {origem && (
           // eslint-disable-next-line @next/next/no-img-element
           <img
@@ -257,8 +303,8 @@ export function AjustarFoto({
         className="barra-zoom"
         type="range"
         min={minimo}
-        max={minimo * 6}
-        step={minimo / 100}
+        max={cobrir * 6}
+        step={minimo / 200}
         value={zoom}
         onChange={(e) => definirZoom(Number(e.target.value))}
         aria-label="Aproximar ou afastar a fotografia"

@@ -20,14 +20,24 @@ export function EditarPerfil({
   perfil,
   projectSlug,
   aoGravar,
+  sempreAberto = false,
+  aoSair,
 }: {
   perfil: PerfilResposta
   /** Para mandar o servidor esquecer as páginas deste projecto depois de gravar. */
   projectSlug: string
   aoGravar: (novo: PerfilResposta) => void
+  /**
+   * Numa página só de edição não faz sentido um botão que abre o formulário:
+   * a pessoa já lá chegou de propósito. Sem isto, ela teria de tocar em
+   * "Editar perfil" dentro da página chamada Editar perfil.
+   */
+  sempreAberto?: boolean
+  /** Onde ir quando ela cancela numa página que é só a edição. */
+  aoSair?: () => void
 }) {
   const { usuario, definirUsuario } = useAuth()
-  const [aberto, definirAberto] = useState(false)
+  const [aberto, definirAberto] = useState(sempreAberto)
   const [nome, definirNome] = useState(perfil.user.displayName)
   const [descricao, definirDescricao] = useState(perfil.user.bio ?? '')
   const [responsavel, definirResponsavel] = useState(perfil.user.guardianName ?? '')
@@ -61,13 +71,15 @@ export function EditarPerfil({
     definirPrevia(URL.createObjectURL(recortada))
   }
 
+  /** Numa página só de edição, cancelar volta ao perfil em vez de esconder. */
   function fechar() {
     if (previa) URL.revokeObjectURL(previa)
     definirPrevia(null)
     definirFoto(null)
     definirPorEnquadrar(null)
     definirErro(null)
-    definirAberto(false)
+    if (sempreAberto) aoSair?.()
+    else definirAberto(false)
   }
 
   async function gravar(e: React.FormEvent) {
@@ -268,7 +280,7 @@ export function EditarPerfil({
           Cancelar
         </button>
         <button type="submit" disabled={gravando}>
-          {gravando ? 'A gravar...' : 'Gravar'}
+          {gravando ? 'A guardar...' : 'SALVAR PERFIL'}
         </button>
       </div>
     </form>

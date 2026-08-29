@@ -6709,3 +6709,48 @@ h2.funil {
 .reproducoes-faixa span {
   font-size: 8px;
 }
+
+/* O fundo esborratado da moldura: a própria arte, ampliada e desfocada, para
+   afastar a foto nunca deixar tira branca. É o mesmo que fica gravado no
+   ficheiro; se fossem diferentes, o editor voltava a mentir. */
+.moldura-foto .fundo-borrado {
+  position: absolute;
+  inset: -8%;
+  width: 116%;
+  height: 116%;
+  object-fit: cover;
+  filter: blur(18px) brightness(0.82);
+  pointer-events: none;
+  z-index: 0;
+}
+
+.moldura-foto img:not(.fundo-borrado) {
+  z-index: 1;
+}
+
+.moldura-foto .faixa-tapada {
+  z-index: 2;
+}
+
+/* A página só de edição do perfil. */
+.titulo-da-edicao {
+  margin: 4px 0 16px;
+  font-size: 22px;
+}
+
+.atalho-editar {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  text-decoration: none;
+  color: inherit;
+}
+
+.atalho-editar span {
+  font-weight: 700;
+}
+
+.atalho-editar small {
+  color: var(--cor-texto-suave);
+  font-size: 13px;
+}
