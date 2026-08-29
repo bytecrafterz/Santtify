@@ -119,11 +119,18 @@ if(ma&&mb){
   console.log('  ! ' + String(e.message).split('\n')[0])
 } finally {
 // limpeza
+// VAI PRIMEIRO A ONDE O BOTAO VIVE. Ele mudou para /perfil/editar em 29/08, e
+// esta limpeza continuou a procura-lo na pagina onde o percurso tinha acabado.
+// Nao dava erro: nao encontrava, seguia em frente, e a conta ficava na base
+// dele. Uma limpeza que falha calada e pior do que limpeza nenhuma.
+await pg.goto(`${SITE}/${PROJ}/perfil/editar`,{waitUntil:'domcontentloaded'}).catch(()=>{})
+await pg.waitForTimeout(3000);await limpar().catch(()=>{})
 const ap=await pg.$('button.apagar-conta')
 if(ap){await ap.scrollIntoViewIfNeeded();await ap.click();await pg.waitForTimeout(700)
   await pg.fill('.zona-de-risco input[type=password]',SENHA)
   await pg.click('.par-de-botoes button[type=submit]');await pg.waitForTimeout(4500)}
-console.log(`\n  (conta de teste apagada = ${!pg.url().includes('/perfil')})`)
+const apagou = !!ap && !pg.url().includes('/perfil')
+console.log(apagou ? '\n  (conta de teste apagada)' : `\n  !! CONTA DE TESTE NAO FOI APAGADA: ${EMAIL} !!`)
 console.log(falhas.length? `\n${falhas.length} FALHA(S): ${falhas.join(' | ')}` : '\nO editor e o perfil mostram o mesmo.')
 await nav.close()
 }
