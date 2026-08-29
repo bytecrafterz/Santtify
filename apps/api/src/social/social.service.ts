@@ -508,6 +508,20 @@ export class SocialService {
         where: {
           type: EventType.PAGE_VIEW,
           AND: [{ props: { path: ['perfilId'], equals: profileUserId } }],
+          /*
+            E SEM AS MINHAS VISITAS, NEM AS DELE.
+
+            Este contador não passava pelo filtro das visitas marcadas fora das
+            métricas, e reparei nisso ao prová-lo a funcionar: abri um perfil
+            três vezes para mostrar que o número mexia, e acabei de somar três
+            visitas minhas ao perfil de uma pessoa real.
+
+            É o defeito de 27/08 outra vez, o dos 66 "visitantes alemães" que
+            eram a minha máquina, a partir dos quais ele ia escolher a língua da
+            tradução. Um número que conta quem o está a construir não é um
+            número dele.
+          */
+          visitor: { is: { ignoradoNasMetricas: false } },
         },
       }),
       this.prisma.profileReaction.count({
@@ -582,6 +596,20 @@ export class SocialService {
         where: {
           type: EventType.PAGE_VIEW,
           AND: [{ props: { path: ['perfilId'], equals: profileUserId } }],
+          /*
+            E SEM AS MINHAS VISITAS, NEM AS DELE.
+
+            Este contador não passava pelo filtro das visitas marcadas fora das
+            métricas, e reparei nisso ao prová-lo a funcionar: abri um perfil
+            três vezes para mostrar que o número mexia, e acabei de somar três
+            visitas minhas ao perfil de uma pessoa real.
+
+            É o defeito de 27/08 outra vez, o dos 66 "visitantes alemães" que
+            eram a minha máquina, a partir dos quais ele ia escolher a língua da
+            tradução. Um número que conta quem o está a construir não é um
+            número dele.
+          */
+          visitor: { is: { ignoradoNasMetricas: false } },
         },
       }),
     ])
@@ -773,6 +801,9 @@ export class SocialService {
           { props: { path: ['blockId'], equals: blockId } },
           ...(acao ? [{ props: { path: ['acao'], equals: acao } }] : []),
         ],
+        // Fora das métricas quer dizer fora de todos os números, e não só dos
+        // do painel. Ver a nota no contador de visualizações do perfil.
+        visitor: { is: { ignoradoNasMetricas: false } },
       },
     })
   }
@@ -780,38 +811,49 @@ export class SocialService {
   async estadoDaFaixa(blockId: string, userId: string | null) {
     await this.faixaExiste(blockId)
 
-    const [visualizacoes, curtidas, compartilhamentos, curtido, lista] = await Promise.all([
-      /**
-       * O OLHO CONTA ABERTURAS, e não reproduções.
-       *
-       * Contava MEDIA_PLAY — quantas vezes o áudio foi tocado. Isso não é uma
-       * visualização, é uma escuta, e o cliente esperava outra coisa: "se
-       * Explicação está com 24 visualizações e eu realmente abro aquele
-       * conteúdo, deve passar para 25".
-       *
-       * Tinha razão, e o número antigo era pior do que parecia: um cartão que
-       * ninguém tocasse ficava eternamente a zero mesmo tendo sido visto por
-       * cem pessoas.
-       */
-      this.contarEventoDaFaixa(blockId, EventType.CONTENT_VIEW),
-      this.prisma.blockReaction.count({ where: { blockId, type: ReactionType.LIKE } }),
-      this.contarEventoDaFaixa(blockId, EventType.CUSTOM, 'partilhar_faixa'),
-      userId
-        ? this.prisma.blockReaction
-            .findUnique({
-              where: { blockId_userId_type: { blockId, userId, type: ReactionType.LIKE } },
-              select: { id: true },
-            })
-            .then(Boolean)
-        : Promise.resolve(false),
-      this.listarComentariosDaFaixa(blockId, userId),
-    ])
+    const [visualizacoes, curtidas, compartilhamentos, reproducoes, curtido, lista] =
+      await Promise.all([
+        /**
+         * O OLHO CONTA ABERTURAS, e não reproduções.
+         *
+         * Contava MEDIA_PLAY — quantas vezes o áudio foi tocado. Isso não é uma
+         * visualização, é uma escuta, e o cliente esperava outra coisa: "se
+         * Explicação está com 24 visualizações e eu realmente abro aquele
+         * conteúdo, deve passar para 25".
+         *
+         * Tinha razão, e o número antigo era pior do que parecia: um cartão que
+         * ninguém tocasse ficava eternamente a zero mesmo tendo sido visto por
+         * cem pessoas.
+         */
+        this.contarEventoDaFaixa(blockId, EventType.CONTENT_VIEW),
+        this.prisma.blockReaction.count({ where: { blockId, type: ReactionType.LIKE } }),
+        this.contarEventoDaFaixa(blockId, EventType.CUSTOM, 'partilhar_faixa'),
+        /**
+         * QUANTAS VEZES ESTA MÚSICA FOI TOCADA.
+         *
+         * Ele pediu-o em 29/08, "pequeno e discreto perto dos três pontinhos".
+         * O dado já existia: o tocador emite MEDIA_PLAY desde sempre e ninguém
+         * lhe perguntava. Não é o mesmo que o olho, que conta aberturas da
+         * página: dá para abrir a letra e nunca carregar em tocar.
+         */
+        this.contarEventoDaFaixa(blockId, EventType.MEDIA_PLAY),
+        userId
+          ? this.prisma.blockReaction
+              .findUnique({
+                where: { blockId_userId_type: { blockId, userId, type: ReactionType.LIKE } },
+                select: { id: true },
+              })
+              .then(Boolean)
+          : Promise.resolve(false),
+        this.listarComentariosDaFaixa(blockId, userId),
+      ])
 
     return {
       visualizacoes,
       curtidas,
       comentarios: this.contagens.desenhaveis(lista),
       compartilhamentos,
+      reproducoes,
       curtidoPorMim: curtido,
       lista,
     }

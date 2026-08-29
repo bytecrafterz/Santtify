@@ -1,8 +1,9 @@
 'use client'
 
-import { useRef, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import type { Bloco } from '@/lib/api'
 import { rastrear } from '@/lib/track'
+import { social } from '@/lib/social'
 
 /**
  * O tocador escuro com a onda, colado à imagem de cima.
@@ -75,6 +76,34 @@ export function TocadorDeOnda({
   const audio = useRef<HTMLAudioElement>(null)
   const [tocando, definirTocando] = useState(false)
   const [menuAberto, definirMenuAberto] = useState(false)
+  /**
+   * Quantas vezes esta faixa foi tocada.
+   *
+   * Ele pediu em 29/08 "algo pequeno e discreto próximo aos três pontinhos,
+   * mostrando o número real de reproduções sem poluir o layout". O dado já
+   * existia desde sempre: o tocador emite MEDIA_PLAY e ninguém lhe perguntava.
+   *
+   * Buscado depois da primeira pintura e não antes: este número é o menos
+   * importante do ecrã e não pode atrasar o botão de tocar. Enquanto não
+   * chega, não se desenha nada — um zero a piscar seria pior do que o silêncio.
+   */
+  const [reproducoes, definirReproducoes] = useState<number | null>(null)
+
+  useEffect(() => {
+    let vivo = true
+    const t = setTimeout(() => {
+      void social
+        .estadoDaFaixa(bloco.id)
+        .then((e) => {
+          if (vivo && typeof e.reproducoes === 'number') definirReproducoes(e.reproducoes)
+        })
+        .catch(() => {})
+    }, 600)
+    return () => {
+      vivo = false
+      clearTimeout(t)
+    }
+  }, [bloco.id])
   const [agora, definirAgora] = useState(0)
   const [total, definirTotal] = useState(0)
 
@@ -144,6 +173,15 @@ export function TocadorDeOnda({
         >
           ⋮
         </button>
+
+        {/* Ao lado dos três pontos, como ele pediu. Só aparece quando já houve
+            pelo menos uma reprodução: um "0 reproduções" por baixo de cada
+            música é ruído em toda a página e não diz nada a ninguém. */}
+        {reproducoes !== null && reproducoes > 0 && (
+          <span className="reproducoes-faixa" title={`${reproducoes} reproduções`}>
+            <span aria-hidden>▶</span> {reproducoes}
+          </span>
+        )}
 
         {menuAberto && (
           <div className="menu-categorias" role="menu">

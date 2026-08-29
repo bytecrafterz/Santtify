@@ -87,6 +87,8 @@ export interface EstadoDaFaixa {
   curtidas: number
   comentarios: number
   compartilhamentos: number
+  /** Quantas vezes esta faixa foi tocada. Ausente no estado do perfil. */
+  reproducoes?: number
   curtidoPorMim: boolean
   lista: ComentarioDaFaixa[]
 }

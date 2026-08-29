@@ -6692,3 +6692,20 @@ h2.funil {
   font-weight: 700;
   cursor: pointer;
 }
+
+/* As reproduções da faixa, ao lado dos três pontos. Discreto, como ele pediu. */
+.reproducoes-faixa {
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+  margin-left: 2px;
+  font-size: 11px;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+  color: rgba(255, 255, 255, 0.72);
+  white-space: nowrap;
+}
+
+.reproducoes-faixa span {
+  font-size: 8px;
+}
