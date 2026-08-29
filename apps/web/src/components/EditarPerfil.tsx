@@ -18,9 +18,12 @@ import { AjustarFoto } from './AjustarFoto'
  */
 export function EditarPerfil({
   perfil,
+  projectSlug,
   aoGravar,
 }: {
   perfil: PerfilResposta
+  /** Para mandar o servidor esquecer as páginas deste projecto depois de gravar. */
+  projectSlug: string
   aoGravar: (novo: PerfilResposta) => void
 }) {
   const { usuario, definirUsuario } = useAuth()
@@ -109,6 +112,23 @@ export function EditarPerfil({
           guardianName: novo.user.guardianName,
         })
       }
+
+      /*
+        E as páginas que o SERVIDOR desenha também têm de esquecer o que
+        guardaram. O cabeçalho aqui em cima já mudou, mas a página inicial —
+        onde a fotografia dele é a capa do projecto — foi desenhada no servidor
+        e fica guardada 30 segundos. Era isso que o fazia dizer que "muitas
+        vezes" continuava a ver a imagem antiga: dependia dos segundos.
+
+        Sem `await`: isto é limpeza, não faz parte de gravar. Se falhar, o
+        máximo que acontece é a página velha durar os tais 30 segundos, que é
+        exactamente o que acontecia antes.
+      */
+      void fetch('/revalidar', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ projectSlug, userId: novo.user.id }),
+      }).catch(() => {})
 
       fechar()
     } catch (e) {

@@ -98,7 +98,9 @@ export function PainelDePerfil({ projectSlug }: { projectSlug: string }) {
         </div>
       )}
 
-      {perfil && <EditarPerfil perfil={perfil} aoGravar={definirPerfil} />}
+      {perfil && (
+        <EditarPerfil perfil={perfil} projectSlug={projectSlug} aoGravar={definirPerfil} />
+      )}
 
       <TrocarSenha />
 
