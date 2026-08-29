@@ -21,6 +21,11 @@ export interface Usuario {
   email: string
   displayName: string
   avatarUrl: string | null
+  /** Ver a nota em `UsuarioPublico`, do lado do servidor: o cabeçalho do
+   *  perfil monta-se a partir daqui, e sem estes dois campos mostrava sempre o
+   *  texto de exemplo em vez da descrição que a pessoa escreveu. */
+  bio: string | null
+  guardianName: string | null
   role: string
   createdAt: string
 }

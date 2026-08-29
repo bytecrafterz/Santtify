@@ -2210,7 +2210,26 @@ img.avatar {
   opacity: 0.75;
 }
 
+/*
+  A MINIATURA PREENCHE O QUADRADO INTEIRO, seja qual for o formato da arte.
+
+  Isto já dizia `width: 100%; height: 100%`, e mesmo assim a Letra A saía com
+  78x111 e a B com 78x104 dentro de um quadrado de 80x80. Medido em 29/08,
+  depois de ele dizer que o A não preenchia como o B.
+
+  A causa é o `place-items: center` do bloco: a imagem é um item de grelha
+  centrado, a linha da grelha dimensiona-se ao conteúdo, e nesse caso o
+  `height: 100%` não tem contra o que resolver e comporta-se como `auto`. A
+  altura passava a sair do formato da arte, e por isso cada letra saía
+  diferente da outra — que é exactamente o que ele viu.
+
+  `position: absolute` com `inset: 0` preenche a caixa do bloco e não passa
+  pela grelha nenhuma. As 26 ficam iguais, e artes de formatos diferentes
+  deixam de dar resultados diferentes.
+*/
 .letra-bloco img {
+  position: absolute;
+  inset: 0;
   width: 100%;
   height: 100%;
   object-fit: cover;

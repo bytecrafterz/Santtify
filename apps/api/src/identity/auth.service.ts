@@ -27,6 +27,18 @@ export interface UsuarioPublico {
   email: string
   displayName: string
   avatarUrl: string | null
+  /**
+   * A descrição pessoal e o responsável VIAJAM COM A SESSÃO.
+   *
+   * Faltavam aqui, e o defeito que isso causou é o de 28/08: o topo do perfil
+   * monta-se a partir deste objecto, e como ele não trazia a descrição, o
+   * cabeçalho escrevia `bio: null` à mão e mostrava sempre o texto de exemplo.
+   * A descrição estava gravada, aparecia na edição, e não aparecia
+   * publicamente. Ele descreveu-o exactamente assim: "o sistema está
+   * armazenando o texto, mas não está mostrando".
+   */
+  bio: string | null
+  guardianName: string | null
   role: string
   createdAt: Date
 }
@@ -567,6 +579,8 @@ export class AuthService {
       email: user.email,
       displayName: user.displayName,
       avatarUrl: user.avatarUrl,
+      bio: user.bio,
+      guardianName: user.guardianName,
       role: user.role,
       createdAt: user.createdAt,
     }

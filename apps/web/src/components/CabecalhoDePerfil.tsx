@@ -91,8 +91,11 @@ export function CabecalhoDePerfil({
           id: usuario.id,
           displayName: usuario.displayName,
           avatarUrl: usuario.avatarUrl,
-          bio: null,
-          guardianName: null,
+          // Estes dois estavam escritos `null` à mão, e era esse o defeito que
+          // ele relatou em 28/08: a descrição ficava gravada, aparecia na
+          // edição, e o perfil público mostrava para sempre o texto de exemplo.
+          bio: usuario.bio,
+          guardianName: usuario.guardianName,
           createdAt: usuario.createdAt,
         }
       : anfitriao

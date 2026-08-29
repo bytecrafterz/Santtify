@@ -2,6 +2,7 @@
 
 import { useState } from 'react'
 import { auth, ErroDeApi, type PerfilResposta } from '@/lib/auth'
+import { useAuth } from './ProvedorDeAuth'
 
 /**
  * Edição do próprio perfil: fotografia, nome, descrição e responsável.
@@ -21,6 +22,7 @@ export function EditarPerfil({
   perfil: PerfilResposta
   aoGravar: (novo: PerfilResposta) => void
 }) {
+  const { usuario, definirUsuario } = useAuth()
   const [aberto, definirAberto] = useState(false)
   const [nome, definirNome] = useState(perfil.user.displayName)
   const [descricao, definirDescricao] = useState(perfil.user.bio ?? '')
@@ -62,6 +64,31 @@ export function EditarPerfil({
         foto,
       })
       aoGravar(novo)
+
+      /*
+        O TOPO DO PERFIL TEM DE MUDAR AGORA, e não no próximo carregamento.
+
+        `aoGravar` actualiza o painel de baixo, que é onde este formulário vive.
+        O cabeçalho lá em cima monta-se a partir do utilizador da sessão, que é
+        outro objecto, carregado uma vez quando a pessoa entra — e portanto
+        continuava a mostrar o nome e a fotografia antigos até se recarregar a
+        página. Ele relatou-o em 28/08 com a frase exacta: "preciso sair da
+        página e entrar novamente para conseguir enxergar a nova imagem".
+
+        Actualizar aqui os dois é o mínimo honesto. O correcto a prazo é haver
+        um só sítio de onde ambos leiam, mas isso é mexer no provedor de sessão
+        inteiro, e não é hoje que se faz isso com ele a testar.
+      */
+      if (usuario) {
+        definirUsuario({
+          ...usuario,
+          displayName: novo.user.displayName,
+          avatarUrl: novo.user.avatarUrl,
+          bio: novo.user.bio,
+          guardianName: novo.user.guardianName,
+        })
+      }
+
       fechar()
     } catch (e) {
       definirErro(e instanceof ErroDeApi ? e.message : 'Não foi possível gravar agora.')
