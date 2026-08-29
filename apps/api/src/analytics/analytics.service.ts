@@ -116,11 +116,24 @@ export class AnalyticsService {
        * desde 25/08; este número não, e por isso os dois discordavam no mesmo
        * ecrã outra vez.
        */
+      /**
+       * E CONTA GENTE, NÃO VISITAS.
+       *
+       * Aqui estava também `SO_VISITAS_REAIS`, que deixa de fora as visitas de
+       * quem é administrador do projecto. Isso está certo para VISITAS e para
+       * VISUALIZAÇÕES: foi ele que pediu, em 27/08, que os seus próprios
+       * testes não contaminassem os dados de quem chega de fora.
+       *
+       * Mas cadastro não é visita. É um facto sobre uma pessoa, e uma pessoa
+       * que criou conta criou conta, seja qual for o papel dela. Com o filtro
+       * aqui, ele tinha nove contas e o painel dizia sete: as duas que faltavam
+       * eram as duas de administrador, a dele e a minha de testes. Perguntou-o
+       * em 29/08 e a pergunta estava certa.
+       */
       this.prisma.visitor
         .findMany({
           where: {
             projectId,
-            ...SO_VISITAS_REAIS,
             userId: { not: null },
             user: { is: { status: 'ACTIVE' } },
           },

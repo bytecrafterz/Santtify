@@ -7,6 +7,7 @@ import { IntroducaoEmCartoes } from '@/components/IntroducaoEmCartoes'
 import { IntroducaoRecolhivel } from '@/components/IntroducaoRecolhivel'
 import { ExperienciaContinua } from '@/components/ExperienciaContinua'
 import { BarraInferior } from '@/components/BarraInferior'
+import { RastreadorDeVisita } from '@/components/RastreadorDeVisita'
 
 export const metadata = { title: 'Perfil' }
 
@@ -52,6 +53,25 @@ export default async function PaginaDePessoa({
 
   return (
     <main className="envoltorio com-barra">
+      {/*
+        A VISITA A ESTE PERFIL CONTA.
+
+        O contador de visualizações do perfil lê os eventos PAGE_VIEW que
+        trazem `perfilId`, e isso só era emitido na página inicial, para o
+        perfil do anfitrião. Abrir o perfil de uma pessoa qualquer não emitia
+        nada, e por isso o número ficava parado para sempre.
+
+        Ele apanhou-o em 29/08 do único jeito que se apanha: "entrei várias
+        vezes em diferentes perfis e as views não estão aumentando". As
+        curtidas subiam, porque essas passam por outro caminho.
+
+        SÓ CONTA QUEM VEM DE FORA. Este ecrã é o perfil visto por outra pessoa;
+        o dono a olhar para si próprio entra por `/perfil`, que não emite isto.
+        Se emitisse, qualquer um inflacionava o seu próprio número recarregando
+        a página, e ele já tem motivos de sobra para desconfiar de números.
+      */}
+      <RastreadorDeVisita projectId={projeto.id} type="PAGE_VIEW" props={{ perfilId: userId }} />
+
       <div className="cabecalho">
         <Link href={`/${projectSlug}`}>← Voltar</Link>
       </div>

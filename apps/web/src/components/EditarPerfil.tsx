@@ -171,6 +171,21 @@ export function EditarPerfil({
 
   return (
     <form className="bloco formulario editar-perfil" onSubmit={gravar}>
+      {/*
+        A SAÍDA TAMBÉM NO TOPO.
+
+        Havia Cancelar, mas no fim de um formulário de 714px. Quem está em cima
+        não vê saída nenhuma, e foi o que ele disse em 29/08: "o usuário não
+        pode ficar preso na edição e precisar fechar ou recarregar a página".
+        Ele tem razão duas vezes — uma saída que é preciso procurar não é uma
+        saída, e esta é a segunda vez que o mesmo formulário me ensina isso.
+      */}
+      <div className="topo-do-editor">
+        <button type="button" className="voltar-do-editor" onClick={fechar}>
+          <span aria-hidden>←</span> VOLTAR AO PERFIL
+        </button>
+      </div>
+
       <span className="bloco-rotulo">Editar perfil</span>
 
       <label htmlFor="perfil-foto">Fotografia</label>

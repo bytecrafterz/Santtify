@@ -87,7 +87,20 @@ export function AjustarFoto({
     if (!img || !m) return
     const escala = Math.max(m.clientWidth / img.naturalWidth, m.clientHeight / img.naturalHeight)
     definirMinimo(escala)
-    definirZoom(escala)
+    /*
+      COMEÇA UM POUCO ACIMA DO MÍNIMO, PARA HAVER FOLGA NOS DOIS SENTIDOS.
+
+      No mínimo exacto a imagem toca os dois lados da moldura num dos eixos, e
+      nesse eixo não sobra nada para arrastar. Com uma arte deitada numa moldura
+      4:3, o que não sobra é a altura: ele conseguia mover para os lados e não
+      conseguia subir nem descer. Disse-o assim em 29/08, e não era um bloqueio
+      escrito por mim, era geometria.
+
+      Começar a 1,12 do mínimo dá folga em ambos desde o primeiro instante. O
+      mínimo continua a ser o mínimo: quem quiser a arte inteira, sem nada
+      cortado nos lados, puxa a barra até ao fim e volta a tê-la.
+    */
+    definirZoom(escala * 1.12)
     definirPos({ x: 0, y: 0 })
   }, [])
 
