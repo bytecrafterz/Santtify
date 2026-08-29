@@ -94,7 +94,23 @@ export function PublicacaoDaLetra({
             </svg>
           </div>
         )}
-        {bloco && (
+        {/*
+          SÓ HÁ TOCADOR ONDE HÁ SOM.
+
+          Isto desenhava o tocador sempre que houvesse cartão, e quem escolhe os
+          cartões deixa passar os que só têm imagem — de propósito, desde que o
+          áudio passou a ser opcional. Resultado: uma publicação só com foto
+          ganhava um tocador parado em 00:00 / 00:00.
+
+          Ele fotografou-o em 29/08 na "Repetição do versículo". São 26 cartões
+          com esse nome, um por letra, todos por preencher: o tocador aparecia
+          nos 26 e não tocava em nenhum, porque não há lá ficheiro nenhum.
+
+          É o mesmo defeito do "Sem áudio" que tirei do painel esta manhã, com
+          outra roupa: uma foto sozinha é uma foto, e não uma peça a que falta
+          qualquer coisa.
+        */}
+        {bloco?.asset?.url && (
           <TocadorDeOnda
             bloco={bloco}
             projectId={projectId}

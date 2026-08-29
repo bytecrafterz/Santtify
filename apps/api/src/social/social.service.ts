@@ -508,20 +508,6 @@ export class SocialService {
         where: {
           type: EventType.PAGE_VIEW,
           AND: [{ props: { path: ['perfilId'], equals: profileUserId } }],
-          /*
-            E SEM AS MINHAS VISITAS, NEM AS DELE.
-
-            Este contador não passava pelo filtro das visitas marcadas fora das
-            métricas, e reparei nisso ao prová-lo a funcionar: abri um perfil
-            três vezes para mostrar que o número mexia, e acabei de somar três
-            visitas minhas ao perfil de uma pessoa real.
-
-            É o defeito de 27/08 outra vez, o dos 66 "visitantes alemães" que
-            eram a minha máquina, a partir dos quais ele ia escolher a língua da
-            tradução. Um número que conta quem o está a construir não é um
-            número dele.
-          */
-          visitor: { is: { ignoradoNasMetricas: false } },
         },
       }),
       this.prisma.profileReaction.count({
@@ -596,20 +582,6 @@ export class SocialService {
         where: {
           type: EventType.PAGE_VIEW,
           AND: [{ props: { path: ['perfilId'], equals: profileUserId } }],
-          /*
-            E SEM AS MINHAS VISITAS, NEM AS DELE.
-
-            Este contador não passava pelo filtro das visitas marcadas fora das
-            métricas, e reparei nisso ao prová-lo a funcionar: abri um perfil
-            três vezes para mostrar que o número mexia, e acabei de somar três
-            visitas minhas ao perfil de uma pessoa real.
-
-            É o defeito de 27/08 outra vez, o dos 66 "visitantes alemães" que
-            eram a minha máquina, a partir dos quais ele ia escolher a língua da
-            tradução. Um número que conta quem o está a construir não é um
-            número dele.
-          */
-          visitor: { is: { ignoradoNasMetricas: false } },
         },
       }),
     ])
@@ -793,6 +765,25 @@ export class SocialService {
     return bloco
   }
 
+  /**
+   * ONDE O "FORA DAS MÉTRICAS" SE APLICA, E ONDE NÃO SE APLICA.
+   *
+   * Em 27/08 ele pediu que os testes dele próprio não contaminassem os dados, e
+   * as visitas de quem é administrador passaram a ser marcadas. Isso vale para
+   * o PAINEL — visitantes, cadastros, origem, funil — que existe para ele
+   * perceber quem chega de fora.
+   *
+   * NÃO VALE PARA ESTES CONTADORES. Estes são a conta do que aconteceu numa
+   * peça: quantas vezes foi aberta, tocada, partilhada. Uma reprodução é uma
+   * reprodução, tenha-a feito quem a fez.
+   *
+   * Cheguei a pôr o filtro aqui, na tarde de 29/08, a seguir a poluir sem
+   * querer o perfil de uma pessoa com três visitas minhas. Foi a correcção
+   * errada para o problema certo: o cliente é administrador, todas as visitas
+   * dele estão marcadas, e ele passou a tocar as próprias músicas sem o número
+   * mexer. Escreveu-o na mesma noite. A poluição dos meus testes resolve-se
+   * apagando os meus eventos, e não escondendo os dele.
+   */
   private contarEventoDaFaixa(blockId: string, tipo: EventType, acao?: string) {
     return this.prisma.event.count({
       where: {
@@ -801,9 +792,6 @@ export class SocialService {
           { props: { path: ['blockId'], equals: blockId } },
           ...(acao ? [{ props: { path: ['acao'], equals: acao } }] : []),
         ],
-        // Fora das métricas quer dizer fora de todos os números, e não só dos
-        // do painel. Ver a nota no contador de visualizações do perfil.
-        visitor: { is: { ignoradoNasMetricas: false } },
       },
     })
   }
