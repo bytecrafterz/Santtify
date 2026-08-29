@@ -19,6 +19,10 @@
 :root {
   --cor-fundo: #f6f7fb;
   --cor-superficie: #ffffff;
+  /* A proporção da capa do perfil. Vive aqui porque é lida em três sítios que
+     TÊM de concordar: a capa pública, o enquadrador e a pré-visualização. Ver
+     a nota em `.perfil-capa`. */
+  --proporcao-da-capa: 4 / 3;
   --cor-texto: #171a22;
   --cor-texto-suave: #5b6478;
   --cor-borda: #e6e8ef;
@@ -1940,10 +1944,20 @@ img.avatar {
   object-fit: cover;
 }
 
+/*
+  A PRÉ-VISUALIZAÇÃO TEM A FORMA DA CAPA, e não a de um avatar redondo.
+
+  Era um círculo de 96px. A capa do perfil é um rectângulo largo. Ele
+  enquadrava olhando para um círculo pequeno e o resultado saía num rectângulo
+  grande, cortado noutro sítio. "Não adianta eu acertar a imagem no editor e
+  depois o perfil aplicar outro crop."
+*/
 .previa-avatar {
-  width: 96px;
-  height: 96px;
-  border-radius: 50%;
+  display: block;
+  width: 100%;
+  max-width: 280px;
+  aspect-ratio: var(--proporcao-da-capa);
+  border-radius: 12px;
   object-fit: cover;
   margin-bottom: 0.5rem;
 }
@@ -2273,6 +2287,25 @@ img.avatar {
 }
 
 /* ── Perfil com capa ────────────────────────────────────────────────── */
+/*
+  A CAPA DO PERFIL TEM UMA PROPORÇÃO SÓ, E É ESTA.
+
+  Tinha `aspect-ratio: 4/3` E `min-height: 380px` ao mesmo tempo, e as duas
+  coisas não cabem juntas: num telemóvel de 390px de largura, 4/3 dá 292px de
+  altura, o mínimo de 380 ganha, e a caixa passa a 390x380 — quase quadrada.
+  A arte dele é deitada, e `cover` numa caixa quase quadrada enche a altura e
+  corta os lados. Foi exactamente o que ele descreveu em 29/08: "a mesma
+  fotografia aparece muito maior e cortada".
+
+  Pior do que estar cortada: a proporção MUDAVA com a largura do ecrã. Num
+  telemóvel era 1,03; num tablet passava a 1,33. Não havia enquadramento
+  possível que servisse os dois, e por isso nenhuma pré-visualização podia
+  prometer o resultado.
+
+  Uma proporção fixa é a condição para o que ele pediu: o que se vê no editor é
+  o que fica publicado. Está declarada aqui uma vez e as outras duas peças —
+  o enquadrador e a pré-visualização — leem esta mesma variável.
+*/
 .perfil-capa {
   position: relative;
   border-radius: var(--raio-grande);
@@ -2280,14 +2313,12 @@ img.avatar {
   box-shadow: var(--sombra);
   margin-bottom: 1rem;
   background: linear-gradient(160deg, #dfe6f5, #cfd8ec);
-  min-height: 380px;
 }
 
 .perfil-capa .foto-capa {
   display: block;
   width: 100%;
-  aspect-ratio: 4 / 3;
-  min-height: 380px;
+  aspect-ratio: var(--proporcao-da-capa);
   object-fit: cover;
 }
 
@@ -6548,7 +6579,10 @@ h2.funil {
   position: relative;
   width: 100%;
   max-width: 280px;
-  aspect-ratio: 1;
+  /* A MESMA proporção da capa pública. É isto que faz o que ele vê aqui ser o
+     que sai lá: uma moldura de outra forma seria uma promessa que o perfil não
+     cumpre. */
+  aspect-ratio: var(--proporcao-da-capa);
   margin: 0 auto;
   overflow: hidden;
   border-radius: 14px;
@@ -6560,23 +6594,18 @@ h2.funil {
   user-select: none;
 }
 
+/* A centragem vai no MESMO `transform` do arrasto, e não numa propriedade
+   `translate` à parte nem em margens negativas.
+   `margin-left: -50%` resolvia contra a LARGURA da moldura, e numa moldura que
+   deixou de ser quadrada isso desalinhava a imagem na vertical. E a
+   propriedade `translate` separada só existe em navegadores recentes: aqui há
+   telemóveis Android antigos, e ali a imagem saltava para fora. */
 .moldura-foto img {
   position: absolute;
   top: 50%;
   left: 50%;
-  margin-top: -50%;
-  margin-left: -50%;
   max-width: none;
   transform-origin: center;
-  pointer-events: none;
-}
-
-/* O círculo diz o que fica no perfil. O escuro à volta é o que sai fora. */
-.guia-circulo {
-  position: absolute;
-  inset: 0;
-  border-radius: 50%;
-  box-shadow: 0 0 0 9999px rgba(10, 12, 18, 0.55);
   pointer-events: none;
 }
 

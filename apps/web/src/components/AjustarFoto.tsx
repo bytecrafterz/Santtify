@@ -11,20 +11,39 @@ import { useCallback, useEffect, useRef, useState } from 'react'
  * não da pessoa.
  *
  * O RECORTE É FEITO AQUI, NO TELEMÓVEL, e não no servidor. O que sobe já é a
- * imagem enquadrada, quadrada, e é por isso que não foi preciso mexer em nada do
- * lado de lá: o servidor continua a receber uma fotografia e a guardá-la. Também
- * poupa a ligação dele: sobe 800x800 em vez dos vários megabytes que uma câmara
- * moderna produz.
+ * imagem enquadrada, na proporção exacta da capa, e é por isso que não foi
+ * preciso mexer em nada do lado de lá: o servidor continua a receber uma
+ * fotografia e a guardá-la. Também poupa a ligação dele: sobe 1200 de largura
+ * em vez dos vários megabytes que uma câmara moderna produz.
  *
- * QUADRADO PORQUE O AVATAR É REDONDO. Um círculo desenha-se cortando um
- * quadrado, e uma fonte quadrada nunca dá bordas: seja qual for a proporção da
- * arte que ele gerar, o que sai daqui encaixa.
+ * A MOLDURA TEM A FORMA DA CAPA DO PERFIL, e é a coisa mais importante deste
+ * ficheiro. Comecei por fazê-la quadrada, a pensar no avatar redondo, e estava
+ * errado: o que se vê no perfil é uma capa larga. Ele enquadrava num quadrado,
+ * o perfil recortava outra vez num rectângulo, e o resultado não era o que ele
+ * tinha visto. A frase dele é a especificação inteira: "o que eu vejo no editor
+ * = o que o público vê no perfil".
+ *
+ * A proporção não está escrita aqui. Vem de `--proporcao-da-capa`, o mesmo
+ * valor que a capa pública usa, lido do CSS. Escrevê-la nos dois sítios era
+ * garantir que um dia divergissem, e divergir aqui é o defeito que este ecrã
+ * existe para acabar.
  *
  * TRÊS MANEIRAS DE FAZER A MESMA COISA, de propósito: arrastar, dois dedos, e a
  * barra de aproximar. A barra existe porque é a única que se vê. Quem não sabe
  * que pode arrastar descobre pela barra; quem já sabe, arrasta.
  */
-const LADO = 800
+/** A largura do ficheiro gravado. A altura sai da proporção da capa. */
+const LARGURA = 1200
+
+/** Lê a proporção da capa do CSS: um número só para a mesma coisa. */
+function proporcaoDaCapa(): number {
+  if (typeof window === 'undefined') return 4 / 3
+  const bruto = getComputedStyle(document.documentElement)
+    .getPropertyValue('--proporcao-da-capa')
+    .trim()
+  const [a, b] = bruto.split('/').map((n) => Number(n.trim()))
+  return a && b ? a / b : 4 / 3
+}
 
 export function AjustarFoto({
   ficheiro,
@@ -66,8 +85,7 @@ export function AjustarFoto({
     const img = imagem.current
     const m = moldura.current
     if (!img || !m) return
-    const lado = m.clientWidth
-    const escala = Math.max(lado / img.naturalWidth, lado / img.naturalHeight)
+    const escala = Math.max(m.clientWidth / img.naturalWidth, m.clientHeight / img.naturalHeight)
     definirMinimo(escala)
     definirZoom(escala)
     definirPos({ x: 0, y: 0 })
@@ -78,11 +96,10 @@ export function AjustarFoto({
     const img = imagem.current
     const m = moldura.current
     if (!img || !m) return p
-    const lado = m.clientWidth
     const larg = img.naturalWidth * z
     const alt = img.naturalHeight * z
-    const maxX = Math.max(0, (larg - lado) / 2)
-    const maxY = Math.max(0, (alt - lado) / 2)
+    const maxX = Math.max(0, (larg - m.clientWidth) / 2)
+    const maxY = Math.max(0, (alt - m.clientHeight) / 2)
     return {
       x: Math.min(maxX, Math.max(-maxX, p.x)),
       y: Math.min(maxY, Math.max(-maxY, p.y)),
@@ -145,29 +162,30 @@ export function AjustarFoto({
     if (!img || !m) return
     definirAGravar(true)
     try {
-      const lado = m.clientWidth
-      const fator = LADO / lado
+      const fator = LARGURA / m.clientWidth
+      const altura = Math.round(LARGURA / proporcaoDaCapa())
       const tela = document.createElement('canvas')
-      tela.width = LADO
-      tela.height = LADO
+      tela.width = LARGURA
+      tela.height = altura
       const ctx = tela.getContext('2d')
       if (!ctx) throw new Error('sem canvas')
       ctx.fillStyle = '#fff'
-      ctx.fillRect(0, 0, LADO, LADO)
+      ctx.fillRect(0, 0, LARGURA, altura)
 
+      // As mesmas contas que a moldura usa para mostrar, na escala do ficheiro.
       const larg = img.naturalWidth * zoom * fator
       const alt = img.naturalHeight * zoom * fator
       ctx.drawImage(
         img,
-        LADO / 2 - larg / 2 + pos.x * fator,
-        LADO / 2 - alt / 2 + pos.y * fator,
+        LARGURA / 2 - larg / 2 + pos.x * fator,
+        altura / 2 - alt / 2 + pos.y * fator,
         larg,
         alt,
       )
 
       const blob = await new Promise<Blob | null>((r) => tela.toBlob(r, 'image/jpeg', 0.9))
       if (!blob) throw new Error('sem imagem')
-      aoConfirmar(new File([blob], 'foto-de-perfil.jpg', { type: 'image/jpeg' }))
+      aoConfirmar(new File([blob], 'capa-do-perfil.jpg', { type: 'image/jpeg' }))
     } finally {
       definirAGravar(false)
     }
@@ -175,7 +193,10 @@ export function AjustarFoto({
 
   return (
     <div className="ajustar-foto">
-      <p className="nota">Arraste para mover. Use dois dedos ou a barra para aproximar.</p>
+      <p className="nota">
+        Isto é exactamente o que vai aparecer no seu perfil. Arraste para mover, use dois dedos ou a
+        barra para aproximar.
+      </p>
 
       <div
         ref={moldura}
@@ -195,12 +216,16 @@ export function AjustarFoto({
             draggable={false}
             style={{
               width: imagem.current ? imagem.current.naturalWidth * zoom : undefined,
-              transform: `translate(${pos.x}px, ${pos.y}px)`,
+              // A altura vai declarada e não deduzida: as contas do recorte
+              // usam `naturalHeight * zoom`, e se o CSS decidisse outra altura
+              // o que se vê deixava de ser o que se grava.
+              height: imagem.current ? imagem.current.naturalHeight * zoom : undefined,
+              transform: `translate(calc(-50% + ${pos.x}px), calc(-50% + ${pos.y}px))`,
             }}
           />
         )}
-        {/* O círculo mostra exactamente o que vai ficar no perfil. */}
-        <span className="guia-circulo" aria-hidden />
+        {/* Sem véu nem guia por cima: a moldura INTEIRA é o que fica no
+            perfil, e desenhar um recorte seria dizer que parte dela não conta. */}
       </div>
 
       <input
