@@ -817,14 +817,21 @@ export class SocialService {
         this.prisma.blockReaction.count({ where: { blockId, type: ReactionType.LIKE } }),
         this.contarEventoDaFaixa(blockId, EventType.CUSTOM, 'partilhar_faixa'),
         /**
-         * QUANTAS VEZES ESTA MÚSICA FOI TOCADA.
+         * QUANTAS VEZES ESTA MÚSICA FOI OUVIDA ATÉ AO FIM.
          *
-         * Ele pediu-o em 29/08, "pequeno e discreto perto dos três pontinhos".
-         * O dado já existia: o tocador emite MEDIA_PLAY desde sempre e ninguém
-         * lhe perguntava. Não é o mesmo que o olho, que conta aberturas da
-         * página: dá para abrir a letra e nunca carregar em tocar.
+         * Conta MEDIA_COMPLETE e não MEDIA_PLAY, e a diferença é grande. A
+         * regra é dele, escrita em 30/08 sem margem para dúvida: "a pessoa toca
+         * a música e, quando a reprodução chegar ao final, soma +1".
+         *
+         * Comecei por contar os toques, que é o que a maior parte dos sítios
+         * faz, e medi a diferença antes de trocar: numa faixa, 82 toques para 4
+         * audições até ao fim; noutra, 42 toques e nenhuma. Carregar em tocar e
+         * ouvir uma música inteira não são a mesma coisa, e ele quer a segunda.
+         *
+         * Os números vão descer muito, e isso é a mudança a funcionar, não um
+         * defeito. Avisei-o antes de trocar.
          */
-        this.contarEventoDaFaixa(blockId, EventType.MEDIA_PLAY),
+        this.contarEventoDaFaixa(blockId, EventType.MEDIA_COMPLETE),
         userId
           ? this.prisma.blockReaction
               .findUnique({

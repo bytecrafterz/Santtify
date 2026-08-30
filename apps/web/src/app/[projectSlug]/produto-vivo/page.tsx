@@ -82,44 +82,22 @@ export default async function PaginaProdutoVivo({
         />
       )}
 
-      <div className="bloco chamada-pv">
-        <p className="bloco-texto">
-          Tem uma empresa e gostaria de conhecer ou acompanhar o desenvolvimento do Produto Vivo?
-        </p>
-        {/* Diz que é grupo ANTES do toque. Quem espera conversa privada e cai
-            num grupo com desconhecidos sai na hora — e teria sido um contato
-            perdido por surpresa, não por falta de interesse. */}
-        <p className="nota">
-          Entre no grupo oficial no WhatsApp: lá saem as novidades, as demonstrações e os números do
-          projeto, e dá para acompanhar a evolução junto com outras empresas.
-        </p>
-        {/*
-            A MARCA DO FIM NÃO DEPENDE DE HAVER BOTÃO.
+      {/*
+        O QUADRO EXPLICATIVO SAIU, E FICA SÓ O BOTÃO.
 
-            Estava dentro do ramo que só existe quando o link do grupo está
-            configurado, e o link nunca foi configurado neste servidor. A página
-            mostrava "aguardando o link", o marcador nunca chegava a ser
-            desenhado, e o degrau do meio do funil ficaria a zero para sempre
-            sem que nada dissesse porquê. Chegar ao fim da proposta é um facto
-            sobre a pessoa, não sobre o botão que está lá em baixo.
-          */}
-        <ChegouAoFimDoPv projectId={project?.id ?? ''} />
+        Ele pediu-o em 30/08 e diz que já o tinha pedido antes: "retire todo
+        esse texto explicativo, não quero esse quadro nem essas explicações,
+        quero deixar somente o botão verde para entrar no grupo".
 
-        {/*
-            SEM ANDAIME À VISTA DE QUEM VISITA.
+        O MARCADOR DO FIM FICA, E FICA FORA DE QUALQUER CONDIÇÃO. Chegar ao fim
+        da página é um facto sobre a pessoa, não sobre o que está desenhado à
+        volta. Já o perdi uma vez, em 26/08, por o ter deixado dentro do ramo
+        que só existia quando havia link de grupo: o degrau do meio do funil
+        dele ficou a zero durante dias sem nada dizer porquê. Não se repete.
+      */}
+      <ChegouAoFimDoPv projectId={project?.id ?? ''} />
 
-            Aqui estava "Botão aguardando o link do grupo", e isso é um recado
-            para o administrador, não para a empresa que abriu a página. Esta é
-            a porta comercial do projecto: quem lá chega tem de ver o convite ou
-            não ver nada, nunca uma nota interna sobre o que falta configurar.
-
-            O aviso não desapareceu, mudou de sítio: vai para o painel, em
-            /admin/produto-vivo, que é onde ele pode fazer alguma coisa a
-            respeito. Um aviso mostrado a quem não pode agir é ruído; mostrado a
-            quem pode, é um pedido.
-          */}
-        {linkGrupo && <EntrarNoGrupoPv projectId={project?.id ?? ''} url={linkGrupo} />}
-      </div>
+      {linkGrupo && <EntrarNoGrupoPv projectId={project?.id ?? ''} url={linkGrupo} />}
 
       {/* Discreto, como ele pediu, e com a palavra certa: o pedido foi
           depositado, não concedido. Escrever "patenteado" seria afirmar uma

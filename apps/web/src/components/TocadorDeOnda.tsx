@@ -225,6 +225,20 @@ export function TocadorDeOnda({
           onPause={() => definirTocando(false)}
           onEnded={() => {
             definirTocando(false)
+            /*
+              O NÚMERO SOBE NO ECRÃ, NO INSTANTE EM QUE A MÚSICA ACABA.
+
+              O número era buscado uma vez ao abrir a página e nunca mais. Ele
+              ouvia a música até ao fim, o servidor registava, e no ecrã não
+              mexia nada até recarregar — por isso disse "eu termino de ouvir e
+              o número não muda". O registo estava certo; era o ecrã que não
+              contava.
+
+              Somado aqui e não pedido outra vez ao servidor: a pessoa acabou de
+              o fazer, sabemos que aconteceu, e uma ida à rede para confirmar o
+              que acabámos de causar só serve para o número aparecer tarde.
+            */
+            definirReproducoes((n) => (n ?? 0) + 1)
             void rastrear({
               projectId,
               contentId,
