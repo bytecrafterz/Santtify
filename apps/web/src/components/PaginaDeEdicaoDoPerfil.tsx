@@ -25,8 +25,24 @@ export function PaginaDeEdicaoDoPerfil({ projectSlug }: { projectSlug: string })
   const [perfil, definirPerfil] = useState<PerfilResposta | null>(null)
   const [erro, definirErro] = useState<string | null>(null)
 
+  /**
+   * VOLTAR É VOLTAR A ONDE ELA ESTAVA, e não a uma página escolhida por mim.
+   *
+   * Mandava sempre para `/perfil`, e `/perfil` é a página com os indicadores, o
+   * Editar perfil, o Sair da conta, o "Sobre" e o progresso das letras. Quem
+   * estava a ver o alfabeto, entrou na edição e gravou, aterrava nessa página
+   * sem nunca a ter pedido. Ele descreveu-a em 30/08 como "aquela tela antiga
+   * que se abre no caminho", e a frase seguinte é a especificação: "voltei do
+   * perfil, retorno exatamente para a tela onde eu estava".
+   *
+   * `back()` faz isso e não inventa destino. O `push` fica como rede para quem
+   * abriu a edição directamente pelo endereço e não tem para onde voltar — foi
+   * por não ter essa rede que o `back()` do perfil, em 28/08, devolvia ao
+   * formulário de cadastro quem acabara de se registar.
+   */
   const voltarAoPerfil = useCallback(() => {
-    router.push(`/${projectSlug}/perfil`)
+    if (typeof window !== 'undefined' && window.history.length > 1) router.back()
+    else router.push(`/${projectSlug}/perfil`)
   }, [router, projectSlug])
 
   useEffect(() => {

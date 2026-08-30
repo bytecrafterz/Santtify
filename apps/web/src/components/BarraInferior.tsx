@@ -1,6 +1,8 @@
 'use client'
 
 import Link from 'next/link'
+import { useEffect, useRef } from 'react'
+import { usePathname } from 'next/navigation'
 
 /**
  * A barra fixa de baixo, com os quatro acessos.
@@ -28,9 +30,47 @@ export function BarraInferior({
   linkPdf?: string | null
 }) {
   const suporte = process.env.NEXT_PUBLIC_SUPORTE_WHATSAPP
+  const barra = useRef<HTMLElement | null>(null)
+
+  /**
+   * REPOR A BARRA NO FUNDO DEPOIS DE NAVEGAR.
+   *
+   * Ele viu-a duas vezes presa a meio do ecrã, a tapar o conteúdo, e sair e
+   * voltar àquele ecrã resolvia. Eu não consigo reproduzir: testei quatro
+   * páginas em cinco alturas de rolagem cada e ficou colada em todas, e não há
+   * transform nem `100vh` em nenhum antepassado que explicasse.
+   *
+   * Isto é o iOS a não repintar um elemento `fixed` depois de certas
+   * navegações e do embalo do dedo. Não é uma teoria que eu goste, mas é a que
+   * sobra, e a sugestão dele — "verificar o estado da barra depois da
+   * navegação" — é a certa: forçar o navegador a recalcular a posição.
+   *
+   * Mexer no `transform` e desfazer no fotograma seguinte obriga a esse
+   * recálculo sem se ver nada. É barato e não muda nada quando já está no
+   * sítio, que é o caso quase sempre. Se voltar a acontecer, sei que a causa é
+   * outra e digo-lho.
+   */
+  const caminho = usePathname()
+  useEffect(() => {
+    const repor = () => {
+      const el = barra.current
+      if (!el) return
+      el.style.transform = 'translateZ(0)'
+      requestAnimationFrame(() => {
+        if (barra.current) barra.current.style.transform = ''
+      })
+    }
+    repor()
+    window.addEventListener('pageshow', repor)
+    document.addEventListener('visibilitychange', repor)
+    return () => {
+      window.removeEventListener('pageshow', repor)
+      document.removeEventListener('visibilitychange', repor)
+    }
+  }, [caminho])
 
   return (
-    <nav className="barra-inferior" aria-label="Acessos principais">
+    <nav ref={barra} className="barra-inferior" aria-label="Acessos principais">
       <Link href={`/${projectSlug}`} className="item-barra">
         <span className="icone" aria-hidden>
           <svg
