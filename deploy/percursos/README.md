@@ -48,6 +48,20 @@ capa e do painel branco na borda de baixo. **Estava a medir o desenho da página
 em vez do recorte da fotografia.** Vale para qualquer verificação automática:
 quando ela acusa, olhar para o que ela viu antes de acreditar nela.
 
+## `suite-de-correccoes.mjs`
+
+As dezassete verificações de tudo o que foi corrigido, num ficheiro só, feito
+para **correr várias vezes**:
+
+```bash
+for i in 1 2 3; do node deploy/percursos/suite-de-correccoes.mjs $i; done
+```
+
+Passar uma vez não prova nada quando o defeito é intermitente. A barra inferior
+apareceu a meio do ecrã duas vezes ao cliente e nunca a mim; a única maneira de
+a apanhar é repetir e comparar as corridas. Por isso cada corrida imprime
+`RESULTADO CORRIDA n: x/17`, para se poderem alinhar lado a lado.
+
 ## As duas regras destes ficheiros
 
 **Conta descartável, nunca uma conta real.** Cada corrida cria a sua, com um
