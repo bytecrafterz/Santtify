@@ -142,7 +142,19 @@ export function EditarPerfil({
         body: JSON.stringify({ projectSlug, userId: novo.user.id }),
       }).catch(() => {})
 
-      fechar()
+      /*
+        NUMA PÁGINA SÓ DE EDIÇÃO, QUEM SAI É O `aoGravar`, E SÓ ELE.
+
+        Aqui estava `fechar()` sempre. Numa página de edição `fechar()` também
+        navega para trás, e como o `aoGravar` já tinha navegado, gravar dava
+        DOIS passos atrás em vez de um: ele saía da edição e ia parar duas
+        páginas antes de onde tinha entrado. Apanhado a medir o endereço depois
+        de gravar, não a ler isto.
+
+        Dentro do perfil, onde o formulário abre e fecha no mesmo ecrã, o
+        `fechar()` continua a ser preciso: ali ele não navega, esconde.
+      */
+      if (!sempreAberto) fechar()
     } catch (e) {
       definirErro(e instanceof ErroDeApi ? e.message : 'Não foi possível gravar agora.')
     } finally {
