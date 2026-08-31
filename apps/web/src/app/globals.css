@@ -7158,3 +7158,29 @@ h2.funil {
   transform: scale(1.12);
   pointer-events: none;
 }
+
+/* A cópia acabada de criar acende por um instante: saber que foi criada não
+   chega, é preciso ver onde ficou no meio dos outros cartões. */
+.quadrado.acabada-de-criar {
+  outline: 3px solid var(--cor-primaria);
+  outline-offset: 2px;
+  animation: acende-copia 2.6s ease-out;
+}
+
+@keyframes acende-copia {
+  0% {
+    box-shadow: 0 0 0 0 rgba(37, 99, 235, 0.45);
+  }
+  60% {
+    box-shadow: 0 0 0 14px rgba(37, 99, 235, 0);
+  }
+  100% {
+    box-shadow: 0 0 0 0 rgba(37, 99, 235, 0);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .quadrado.acabada-de-criar {
+    animation: none;
+  }
+}

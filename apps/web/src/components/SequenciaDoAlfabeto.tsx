@@ -45,6 +45,21 @@ export function SequenciaDoAlfabeto({ projectSlug }: { projectSlug: string }) {
   const [carregando, definirCarregando] = useState(true)
   const [erro, definirErro] = useState<string | null>(null)
   const [menuAberto, definirMenuAberto] = useState<string | null>(null)
+  /**
+   * Duplicar demorava sem dizer nada.
+   *
+   * Ele escreveu em 31/08 que a função "simplesmente não está funcionando".
+   * Fui ver e ela funciona: o servidor responde 201 e a cópia fica criada. O
+   * que não havia era sinal nenhum. Carrega-se, o menu fecha, e durante alguns
+   * segundos o ecrã fica igual enquanto a cópia é criada e a lista recarrega.
+   * Com oito cartões na letra, a cópia nasce no meio da lista e passa
+   * despercebida.
+   *
+   * É a mesma queixa que ele já me tinha feito do botão PUBLICAR em 29/08, e eu
+   * corrigi só naquele botão em vez de perceber que era um padrão meu.
+   */
+  const [aDuplicar, definirADuplicar] = useState<string | null>(null)
+  const [copiaNova, definirCopiaNova] = useState<string | null>(null)
   const [aCriarImpressao, definirACriarImpressao] = useState(false)
   const { usuario, carregando: aRestaurarSessao } = useAuth()
 
@@ -202,10 +217,31 @@ export function SequenciaDoAlfabeto({ projectSlug }: { projectSlug: string }) {
                   definirMenuAberto(null)
                   definirOnde({ tela: 'cartao', letra: vagao.letra, cartaoId: c.id })
                 }}
+                aDuplicar={aDuplicar === c.id}
+                acabadaDeCriar={copiaNova === c.id}
                 aoDuplicar={async () => {
                   definirMenuAberto(null)
-                  await admin.duplicarCartao(c.id)
-                  await recarregar()
+                  definirADuplicar(c.id)
+                  definirErro(null)
+                  try {
+                    const copia = await admin.duplicarCartao(c.id)
+                    await recarregar()
+                    definirCopiaNova(copia.id)
+                    // Levar a pessoa até à cópia e acendê-la por um instante:
+                    // saber que foi criada não chega, é preciso ver ONDE.
+                    requestAnimationFrame(() => {
+                      document
+                        .getElementById(`quadrado-${copia.id}`)
+                        ?.scrollIntoView({ block: 'center', behavior: 'smooth' })
+                    })
+                    setTimeout(() => definirCopiaNova(null), 2600)
+                  } catch (e) {
+                    definirErro(
+                      e instanceof Error ? e.message : 'Não foi possível duplicar este cartão.',
+                    )
+                  } finally {
+                    definirADuplicar(null)
+                  }
                 }}
                 aoApagar={async () => {
                   definirMenuAberto(null)
@@ -423,6 +459,8 @@ function Quadrado({
   menuAberto,
   aoAbrirMenu,
   aoEditar,
+  aDuplicar,
+  acabadaDeCriar,
   aoDuplicar,
   aoApagar,
   aoTirarDoAr,
@@ -438,6 +476,10 @@ function Quadrado({
   aoAbrirMenu: () => void
   aoEditar: () => void
   aoDuplicar: () => Promise<void>
+  /** Este cartão está a ser duplicado agora. */
+  aDuplicar: boolean
+  /** É a cópia acabada de criar: acende por um instante para se ver onde ficou. */
+  acabadaDeCriar: boolean
   aoApagar: () => Promise<void>
   aoTirarDoAr: () => Promise<void>
   aoPorNoAr: () => Promise<void>
@@ -446,7 +488,13 @@ function Quadrado({
   aoCriarImpressao?: () => Promise<void>
 }) {
   return (
-    <div className={cartao.estado === 'PUBLICADO' ? 'quadrado pronto' : 'quadrado'}>
+    <div
+      id={`quadrado-${cartao.id}`}
+      className={
+        (cartao.estado === 'PUBLICADO' ? 'quadrado pronto' : 'quadrado') +
+        (acabadaDeCriar ? ' acabada-de-criar' : '')
+      }
+    >
       <span className="numero" style={{ background: cor }}>
         {numero}
       </span>
@@ -494,8 +542,8 @@ function Quadrado({
           <button type="button" onClick={aoEditar}>
             ✎ Editar
           </button>
-          <button type="button" onClick={() => void aoDuplicar()}>
-            ⧉ Duplicar
+          <button type="button" disabled={aDuplicar} onClick={() => void aoDuplicar()}>
+            {aDuplicar ? '⧉ A duplicar...' : '⧉ Duplicar'}
           </button>
           {/* TIRAR DO AR e EXCLUIR são duas acções, e não uma com aviso.
               Tirar do ar é reversível e usa-se com pressa — publicou-se o que
