@@ -1,0 +1,54 @@
+// O BOTAO, e nao um endereco que eu escrevi a mao. Intercepta o que a pagina
+// entrega ao sistema de partilha e le o endereco que la vai dentro.
+import { chromium } from 'playwright'
+const SITE='https://santtify.com', PROJ='jesus-alfabeto-saudavel'
+const falhas=[]
+const p_=(n,v,e='')=>{console.log(`  ${v?'✓':'✗'} ${n}${e?'   '+e:''}`); if(!v) falhas.push(n)}
+const nav=await chromium.launch()
+const pg=await (await nav.newContext({viewport:{width:390,height:844}})).newPage()
+pg.on('dialog',d=>d.accept())
+const limpar=async()=>{for(const t of ['AGORA NÃO','CONTINUAR EXPLORANDO','Aceitar']){const b=await pg.$(`button:has-text("${t}")`);if(b){await b.click();await pg.waitForTimeout(400)}}}
+try{
+await pg.goto(`${SITE}/${PROJ}/entrar`,{waitUntil:'domcontentloaded'});await pg.waitForTimeout(2500);await limpar()
+await pg.fill('input[type=email]','bruno.dev@santtify.dev');await pg.fill('input[type=password]','Bruno.Dev.2708')
+await pg.click('button[type=submit]');await pg.waitForTimeout(4000)
+
+await pg.goto(`${SITE}/${PROJ}`,{waitUntil:'domcontentloaded'});await pg.waitForTimeout(3000);await limpar()
+// Instalar o espiao ANTES de tocar em nada.
+await pg.evaluate(()=>{ window.__partilhado=null
+  navigator.share = async (d)=>{ window.__partilhado=d; return }
+  navigator.clipboard = { writeText: async (t)=>{ window.__partilhado={url:t}; } } })
+// A Letra A e o primeiro botao da grade: a grade tem 26 casas pela ordem do
+// alfabeto e as trancadas sao <div>, nao <button>.
+await pg.click('.grade-letras button.letra-bloco >> nth=0')
+await pg.waitForTimeout(4000)
+const pubs = await pg.evaluate(()=>[...document.querySelectorAll('.publicacao')].map(a=>a.id))
+console.log(`   publicacoes na Letra A: ${pubs.length}`)
+p_('a letra abriu com publicacoes', pubs.length>0)
+
+// Carregar no compartilhar DA SEGUNDA publicacao, para o endereco ter de a
+// distinguir das outras.
+const alvo = pubs[1] ?? pubs[0]
+await pg.evaluate((id)=>{
+  const art=document.getElementById(id)
+  const b=art.querySelector('button[aria-label="Partilhar"]')
+  if(!b) throw new Error('sem botao de partilhar nesta publicacao')
+  b.click()
+}, alvo)
+await pg.waitForTimeout(3000)
+const r = await pg.evaluate(()=>window.__partilhado)
+console.log(`   endereco entregue ao compartilhar: ${r?.url}`)
+const idAlvo = alvo.replace('cartao-','')
+p_('o botao entrega mesmo um endereco', Boolean(r?.url))
+p_('e esse endereco identifica ESTA publicacao', (r?.url||'').includes(`pub=${idAlvo}`), r?.url)
+p_('e nao e a pagina geral', !/^https?:\/\/[^/]+\/[^?#]*$/.test(r?.url||'x'), r?.url)
+
+// E abrindo-o, chega-se a ela.
+await pg.goto(r.url,{waitUntil:'domcontentloaded'});await pg.waitForTimeout(2500);await limpar()
+const chegou = await pg.evaluate((id)=>{ const el=document.getElementById(id); if(!el) return null
+  const b=el.getBoundingClientRect(); return {acesa:el.classList.contains('publicacao-apontada'), topo:Math.round(b.top)} }, alvo)
+p_('quem recebe o link cai nesta publicacao', chegou!==null && chegou.topo>-250 && chegou.topo<844, `topo ${chegou?.topo}`)
+p_('e ela acende para se saber qual e', chegou?.acesa===true)
+}catch(e){falhas.push(`excepcao: ${e.message}`);console.log(`  ✗ excepcao: ${e.message}`)}
+await nav.close()
+console.log(falhas.length?`\nFALHOU: ${falhas.length}\n  - ${falhas.join('\n  - ')}`:'\nTUDO CERTO')
