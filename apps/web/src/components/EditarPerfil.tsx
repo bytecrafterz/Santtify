@@ -43,6 +43,8 @@ export function EditarPerfil({
   const [responsavel, definirResponsavel] = useState(perfil.user.guardianName ?? '')
   const [foto, definirFoto] = useState<File | null>(null)
   const [porEnquadrar, definirPorEnquadrar] = useState<File | null>(null)
+  /** Marcado pelo Remover Foto; só se aplica ao gravar, como o Cancelar. */
+  const [removerFoto, definirRemoverFoto] = useState(false)
   const [previa, definirPrevia] = useState<string | null>(null)
   const [gravando, definirGravando] = useState(false)
   const [erro, definirErro] = useState<string | null>(null)
@@ -56,6 +58,7 @@ export function EditarPerfil({
    */
   function escolherFoto(arquivo: File | null) {
     definirErro(null)
+    definirRemoverFoto(false)
     if (!arquivo) {
       definirPorEnquadrar(null)
       return
@@ -77,6 +80,7 @@ export function EditarPerfil({
     definirPrevia(null)
     definirFoto(null)
     definirPorEnquadrar(null)
+    definirRemoverFoto(false)
     definirErro(null)
     if (sempreAberto) aoSair?.()
     else definirAberto(false)
@@ -98,6 +102,7 @@ export function EditarPerfil({
         bio: descricao,
         guardianName: responsavel,
         foto,
+        removerFoto,
       })
       aoGravar(novo)
 
@@ -212,7 +217,43 @@ export function EditarPerfil({
 
       <span className="bloco-rotulo">Editar perfil</span>
 
-      <label htmlFor="perfil-foto">Fotografia</label>
+      {/*
+        A ORDEM É A DO DESENHO DELE, de 31/08: a descrição primeiro e grande, o
+        responsável a seguir, depois a fotografia e o nome no fim.
+
+        Não é arrumação por gosto. A descrição é o campo em que ele passa mais
+        tempo e o único que precisa de espaço; tê-la em terceiro obrigava a
+        rolar até lá com o teclado aberto, que foi a queixa dele.
+      */}
+      <label htmlFor="perfil-descricao">Descrição</label>
+      <p className="ajuda-campo">Fale um pouco sobre este perfil, sua missão e propósito.</p>
+      <textarea
+        id="perfil-descricao"
+        className="descricao-grande"
+        maxLength={1000}
+        rows={9}
+        value={descricao}
+        onChange={(e) => definirDescricao(e.target.value)}
+      />
+      <span className="contador-campo">{descricao.length}/1000</span>
+
+      <label htmlFor="perfil-responsavel">Quem acompanha este perfil</label>
+      <p className="ajuda-campo">
+        Se este perfil for de uma criança, diga aqui quem toma conta dele. Fica visível junto ao
+        perfil.
+      </p>
+      <textarea
+        id="perfil-responsavel"
+        rows={2}
+        maxLength={200}
+        placeholder="Ex.: Perfil infantil acompanhado e monitorado pelo pai, Rossandro Caxito."
+        value={responsavel}
+        onChange={(e) => definirResponsavel(e.target.value)}
+      />
+      <span className="contador-campo">{responsavel.length}/200</span>
+
+      <label htmlFor="perfil-foto">Foto do Perfil</label>
+      <p className="ajuda-campo">Escolha uma imagem que represente bem este perfil.</p>
       {porEnquadrar && (
         <AjustarFoto
           ficheiro={porEnquadrar}
@@ -230,9 +271,40 @@ export function EditarPerfil({
           <img className="previa-avatar" src={perfil.user.avatarUrl} alt="Fotografia actual" />
         )
       )}
+      {!porEnquadrar && (
+        <div className="accoes-da-foto">
+          <button
+            type="button"
+            className="alterar-foto"
+            onClick={() => document.getElementById('perfil-foto')?.click()}
+          >
+            <span aria-hidden>📷</span> Alterar Foto
+          </button>
+          {(previa || perfil.user.avatarUrl) && (
+            <button
+              type="button"
+              className="remover-foto"
+              onClick={() => {
+                /*
+                  Marca para remover e limpa a pré-visualização. A remoção só
+                  acontece ao gravar: assim ela pode mudar de ideias sem ter
+                  perdido nada, que é o mesmo princípio do Cancelar.
+                */
+                if (previa) URL.revokeObjectURL(previa)
+                definirPrevia(null)
+                definirFoto(null)
+                definirRemoverFoto(true)
+              }}
+            >
+              <span aria-hidden>🗑</span> Remover Foto
+            </button>
+          )}
+        </div>
+      )}
+
       <input
         id="perfil-foto"
-        hidden={Boolean(porEnquadrar)}
+        hidden
         type="file"
         accept="image/*,.jpg,.jpeg,.png,.heic,.webp"
         onChange={(e) => {
@@ -252,7 +324,7 @@ export function EditarPerfil({
         }}
       />
 
-      <label htmlFor="perfil-nome">Nome</label>
+      <label htmlFor="perfil-nome">Nome do Perfil</label>
       <input
         id="perfil-nome"
         type="text"
@@ -261,29 +333,7 @@ export function EditarPerfil({
         onChange={(e) => definirNome(e.target.value)}
         required
       />
-
-      <label htmlFor="perfil-descricao">Descrição</label>
-      <textarea
-        id="perfil-descricao"
-        maxLength={1000}
-        rows={5}
-        value={descricao}
-        onChange={(e) => definirDescricao(e.target.value)}
-      />
-
-      <label htmlFor="perfil-responsavel">Quem acompanha este perfil</label>
-      <input
-        id="perfil-responsavel"
-        type="text"
-        maxLength={80}
-        placeholder="Ex.: acompanhado pelo pai, Rossandro Caxito"
-        value={responsavel}
-        onChange={(e) => definirResponsavel(e.target.value)}
-      />
-      <p className="nota">
-        Se este perfil for de uma criança, diga aqui quem toma conta dele. Fica visível junto ao
-        nome.
-      </p>
+      <span className="contador-campo">{nome.length}/80</span>
 
       {erro && <p className="erro">{erro}</p>}
 

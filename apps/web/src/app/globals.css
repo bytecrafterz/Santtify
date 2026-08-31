@@ -6963,3 +6963,70 @@ h2.funil {
   opacity: 0.6;
   cursor: progress;
 }
+
+/* ── A edição do perfil, com a forma do desenho dele de 31/08 ──────────── */
+
+/* O texto de ajuda por baixo de cada rótulo: diz para que serve o campo. */
+.ajuda-campo {
+  margin: 2px 0 8px;
+  font-size: 13px;
+  line-height: 1.45;
+  color: var(--cor-texto-suave);
+}
+
+/* O contador, alinhado à direita, por baixo do campo. */
+.contador-campo {
+  display: block;
+  margin: 4px 0 14px;
+  text-align: right;
+  font-size: 12px;
+  font-variant-numeric: tabular-nums;
+  color: var(--cor-texto-suave);
+}
+
+/*
+  A CAIXA DA DESCRIÇÃO É GRANDE, E ESSA É A CORREÇÃO.
+
+  Tinha cinco linhas. Ele escreveu que "principalmente no telefone, quando o
+  teclado abre, sobra pouquíssimo espaço para visualizar e editar o texto", e
+  tem razão: com o teclado aberto num telemóvel restam cerca de 350px de altura,
+  e cinco linhas de texto dentro de um formulário que ainda tem outros campos
+  não deixam ler o que já se escreveu.
+*/
+.descricao-grande {
+  min-height: 220px;
+  line-height: 1.55;
+  resize: vertical;
+}
+
+/* Os dois botões da fotografia, lado a lado, como no desenho. */
+.accoes-da-foto {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin: 4px 0 14px;
+}
+
+.alterar-foto,
+.remover-foto {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 11px 16px;
+  border-radius: 10px;
+  background: var(--cor-superficie);
+  font-family: inherit;
+  font-size: 14px;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.alterar-foto {
+  border: 1px solid var(--cor-primaria);
+  color: var(--cor-primaria);
+}
+
+.remover-foto {
+  border: 1px solid #e6b4b4;
+  color: #b42318;
+}

@@ -60,7 +60,23 @@ class EditarPerfilDto {
   /** Mil caracteres: ele quis contar a história do projeto aqui, e trezentos
    *  não chegavam para uma frase inteira sobre o filho. */
   @IsOptional() @IsString() @MaxLength(1000) bio?: string
-  @IsOptional() @IsString() @MaxLength(80) guardianName?: string
+  /**
+   * Duzentos e não oitenta.
+   *
+   * O desenho dele de 31/08 mostra 200, e o texto que ele próprio usa — "Perfil
+   * infantil acompanhado e monitorado pelo pai, Rossandro Balbino Caxito" — já
+   * gasta mais de metade dos oitenta. Um limite que corta a frase de quem o
+   * pediu está errado por definição.
+   */
+  @IsOptional() @IsString() @MaxLength(200) guardianName?: string
+  /**
+   * Apagar a fotografia, deixando o perfil sem nenhuma.
+   *
+   * Vem como texto e não como booleano porque o formulário sobe em multipart,
+   * por causa do ficheiro, e ali tudo é texto. `class-validator` receberia
+   * `"false"` como verdadeiro se isto fosse `@IsBoolean()`.
+   */
+  @IsOptional() @IsString() removerFoto?: string
 }
 
 class PedirReposicaoDto {

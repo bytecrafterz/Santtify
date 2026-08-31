@@ -236,12 +236,15 @@ export const auth = {
     bio?: string
     guardianName?: string
     foto?: File | null
+    /** Apagar a fotografia. Ignorado quando vai uma foto nova no mesmo pedido. */
+    removerFoto?: boolean
   }): Promise<PerfilResposta> {
     const form = new FormData()
     if (dados.displayName !== undefined) form.append('displayName', dados.displayName)
     if (dados.bio !== undefined) form.append('bio', dados.bio)
     if (dados.guardianName !== undefined) form.append('guardianName', dados.guardianName)
     if (dados.foto) form.append('foto', dados.foto)
+    else if (dados.removerFoto) form.append('removerFoto', 'sim')
     return chamarAutenticado<PerfilResposta>('/me/profile', { method: 'PATCH', body: form })
   },
 

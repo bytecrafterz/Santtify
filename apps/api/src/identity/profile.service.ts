@@ -34,14 +34,14 @@ export class ProfileService {
    */
   async atualizarPerfil(
     userId: string,
-    dados: { displayName?: string; bio?: string; guardianName?: string },
+    dados: { displayName?: string; bio?: string; guardianName?: string; removerFoto?: string },
     foto?: Express.Multer.File,
   ) {
     const dadosParaGravar: {
       displayName?: string
       bio?: string | null
       guardianName?: string | null
-      avatarUrl?: string
+      avatarUrl?: string | null
     } = {}
 
     if (dados.displayName !== undefined) dadosParaGravar.displayName = dados.displayName.trim()
@@ -56,6 +56,18 @@ export class ProfileService {
       }
       const salvo = await this.storage.salvar(foto)
       dadosParaGravar.avatarUrl = salvo.url
+    } else if (dados.removerFoto === 'sim') {
+      /*
+        Remover a fotografia, que o desenho dele de 31/08 pede ao lado de
+        "Alterar Foto". Só quando NÃO vem ficheiro: enviar uma foto nova e
+        pedir para remover ao mesmo tempo é uma contradição, e nesse caso vale
+        a foto nova, que é a acção mais recente da pessoa.
+
+        O ficheiro antigo fica no disco. Apagá-lo daria trabalho e nenhum
+        proveito: ninguém tem o endereço, e quem apaga a conta inteira já leva
+        os dados pessoais atrás.
+      */
+      dadosParaGravar.avatarUrl = null
     }
 
     if (Object.keys(dadosParaGravar).length === 0) return this.perfil(userId)
