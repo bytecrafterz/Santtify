@@ -29,6 +29,11 @@ import { OlhoGrande, CoracaoGrande, BalaoGrande, SetaGrande } from './IconesGran
  * padrão que qualquer pessoa já usou noutras aplicações, e por isso não
  * precisa de instruções.
  */
+/** O que a arte diz, para quem não a pode ver. */
+const AVISO =
+  'Não é permitido perfil sem foto e sem nomes verdadeiros, para a segurança da plataforma. ' +
+  'Os perfis que não tiverem foto nem nome verdadeiro serão deletados automaticamente.'
+
 export function CabecalhoDePerfil({
   projectSlug,
   projectId,
@@ -232,10 +237,24 @@ export function CabecalhoDePerfil({
           // eslint-disable-next-line @next/next/no-img-element
           <img className="foto-capa" src={dono.avatarUrl} alt={nome} />
         ) : (
-          <div className="foto-capa capa-vazia">
-            <span aria-hidden>📷</span>
-            <span>Coloque sua foto aqui</span>
-          </div>
+          /*
+            A ARTE DELE NO LUGAR DA FOTOGRAFIA QUE FALTA.
+
+            Ele mandou-a em 31/08 com uma condição clara: "não pode aparecer
+            por cima nem abaixo da fotografia de quem já tem foto". Não pode
+            mesmo, e a estrutura garante-o sozinha: isto é o ramo ELSE de quem
+            tem `avatarUrl`. Havendo fotografia, esta arte não chega a existir
+            no ecrã; não havendo, é ela que ocupa o espaço inteiro. Tirar a
+            fotografia devolve-a sem ninguém fazer nada.
+
+            `contain` e não `cover`: a arte é quadrada e a capa é 4:3, e cortá-la
+            para encher levava à frente a tira vermelha de baixo, que é a parte
+            que diz que os perfis sem foto podem ser apagados. Ou seja, o corte
+            comeria exactamente a frase que a arte existe para dar. O azul do
+            fundo é o das bordas dela, para não se ver onde acaba.
+          */
+          // eslint-disable-next-line @next/next/no-img-element
+          <img className="foto-capa arte-sem-foto" src="/perfil-sem-foto.png" alt={AVISO} />
         )}
 
         {/* SOBRE A FOTO, SÓ DOIS CONTROLOS: o escudo à esquerda e os três

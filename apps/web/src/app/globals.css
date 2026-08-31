@@ -7102,3 +7102,15 @@ h2.funil {
   font-weight: 800;
   cursor: pointer;
 }
+
+/*
+  A arte que ocupa o lugar da fotografia quando não há nenhuma.
+
+  `contain` porque a arte é quadrada e a capa é 4:3: com `cover` o corte comia a
+  tira vermelha de baixo, que é a frase mais importante da arte. O azul é o das
+  bordas da própria imagem, para não se ver onde ela acaba.
+*/
+.foto-capa.arte-sem-foto {
+  object-fit: contain;
+  background: #96cadf;
+}
