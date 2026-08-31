@@ -7112,5 +7112,20 @@ h2.funil {
 */
 .foto-capa.arte-sem-foto {
   object-fit: contain;
+  /*
+    ENCOSTADA AO TOPO, E COM O FUNDO LIVRE PARA O QUE SE DESENHA POR CIMA.
+
+    Medido no ecrã, não deduzido: o nome da pessoa começa aos 79% da altura da
+    capa e a pega do painel aos 88%. Centrada, a arte ficava com a tira
+    vermelha — a que diz que os perfis sem foto podem ser apagados — debaixo do
+    nome, ilegível. Ou seja, a mensagem inteira aparecia e a frase que importa
+    não se lia.
+
+    `padding-bottom` reserva essa faixa e `object-position: top` empurra a arte
+    para cima dela. A arte continua inteira; o que muda é onde cabe.
+  */
+  object-position: top;
+  box-sizing: border-box;
+  padding-bottom: 21%;
   background: #96cadf;
 }
