@@ -1185,6 +1185,15 @@ export class AdminContentService {
           categoriaNome: b.category?.name ?? null,
           folhaA4: ((b.meta ?? {}) as Record<string, unknown>).folhaA4 ?? null,
           subtitulo: ((b.meta ?? {}) as Record<string, unknown>).subtitulo ?? null,
+          /*
+            ESTE CARTÃO ESTÁ FORA DO AR?
+
+            Não vinha, e por isso o ecrã de edição não tinha como o mostrar. Ele
+            publicou três artes e viu duas: uma estava marcada como tirada do ar
+            desde o painel antigo, e o ecrã novo desenhava-a igual às outras.
+            Ele não tinha maneira nenhuma de perceber porquê.
+          */
+          foraDoAr: ((b.meta ?? {}) as Record<string, unknown>).foraDoAr === true,
         })),
       },
       introducao: introducao

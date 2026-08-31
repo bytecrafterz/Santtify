@@ -161,6 +161,8 @@ export interface CartaoAdmin {
   titulo: string | null
   /** Opcional, só no Produto Vivo. Ver a nota em `salvarCartao`. */
   subtitulo?: string | null
+  /** Tirado do ar à mão: existe no painel e não aparece na página pública. */
+  foraDoAr?: boolean
   descricao: string | null
   linkUpgrade: string | null
   audio: { id: string; url: string; title: string | null; durationMs: number | null } | null

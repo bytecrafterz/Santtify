@@ -24,6 +24,7 @@ export function IntroducaoEmCartoes({
   projectId,
   projectSlug,
   categorias = [],
+  publicacaoUnica = false,
 }: {
   contentId: string
   blocos: Bloco[]
@@ -31,6 +32,11 @@ export function IntroducaoEmCartoes({
   projectSlug: string
   /** As categorias do projeto, para o filtro do tocador. */
   categorias?: Array<{ slug: string; name: string }>
+  /**
+   * Desenhar tudo como UMA publicação: as artes como páginas, e a fila de
+   * indicadores uma só vez, no fim. É o Produto Vivo. Ver a nota lá dentro.
+   */
+  publicacaoUnica?: boolean
 }) {
   const cartoes = blocos.filter(
     (b) => b.type === 'AUDIO' && b.papel === 'CARTAO' && (b.asset?.url || b.arte),

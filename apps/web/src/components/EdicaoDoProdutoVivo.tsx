@@ -30,6 +30,15 @@ export function EdicaoDoProdutoVivo({ projectSlug }: { projectSlug: string }) {
   const [erro, definirErro] = useState<string | null>(null)
   const [ocupado, definirOcupado] = useState<string | null>(null)
   const [aviso, definirAviso] = useState<string | null>(null)
+  /**
+   * O botão diz em que passo está: parado, a publicar, publicado.
+   *
+   * Ele carregou em publicar e o botão não mudou de aspecto nenhum: "não sei se
+   * o clique funcionou, se está enviando, ou se preciso clicar novamente". Um
+   * botão que não responde convida a segunda carregada, e a segunda carregada
+   * num botão que publica é um problema de verdade.
+   */
+  const [passo, definirPasso] = useState<'parado' | 'a publicar' | 'publicado'>('parado')
 
   const recarregar = useCallback(async () => {
     try {
@@ -78,6 +87,22 @@ export function EdicaoDoProdutoVivo({ projectSlug }: { projectSlug: string }) {
     try {
       await tarefa()
       await recarregar()
+      /*
+        E a página pública tem de esquecer o que guardou.
+
+        Ela é desenhada no servidor com `revalidate: 30`, e por isso a
+        publicação só aparecia lá meio minuto depois — ele descreveu-o como
+        "preciso sair da página e entrar novamente para ela aparecer". É o
+        mesmo que aconteceu com a fotografia do perfil em 29/08, e a solução é
+        a mesma rota de esquecimento.
+
+        Sem `await`: é limpeza, não faz parte de gravar.
+      */
+      void fetch('/revalidar', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ projectSlug }),
+      }).catch(() => {})
     } catch (e) {
       definirErro(e instanceof Error ? e.message : 'Não foi possível concluir.')
     } finally {
@@ -110,6 +135,7 @@ export function EdicaoDoProdutoVivo({ projectSlug }: { projectSlug: string }) {
           }
           aoDuplicar={() => comOcupado(`dup-${arte.id}`, () => admin.duplicarCartao(arte.id))}
           aoApagar={() => comOcupado(`del-${arte.id}`, () => admin.apagarCartaoDeVez(arte.id))}
+          aoPorNoAr={() => comOcupado(`ar-${arte.id}`, () => admin.porCartaoNoAr(arte.id))}
         />
       ))}
 
@@ -137,12 +163,16 @@ export function EdicaoDoProdutoVivo({ projectSlug }: { projectSlug: string }) {
           aoTrocarAudio={(f) =>
             comOcupado(`som-${principal.id}`, () => admin.porAudioNoCartao(principal.id, f))
           }
-          aoGravar={(campos) =>
-            comOcupado(`txt-${principal.id}`, async () => {
-              await admin.salvarCartao(principal.id, campos)
-              definirAviso('Publicação guardada.')
-            })
-          }
+          passo={passo}
+          aoGravar={async (campos) => {
+            definirPasso('a publicar')
+            await comOcupado(`txt-${principal.id}`, () => admin.salvarCartao(principal.id, campos))
+            definirPasso('publicado')
+            definirAviso(null)
+            // Volta ao normal passado um instante, para o botão poder ser usado
+            // outra vez sem recarregar a página.
+            setTimeout(() => definirPasso('parado'), 2500)
+          }}
         />
       ) : (
         <div className="sem-principal">
@@ -163,6 +193,7 @@ function Arte({
   aoTrocarImagem,
   aoDuplicar,
   aoApagar,
+  aoPorNoAr,
 }: {
   numero: number
   cartao: CartaoAdmin
@@ -170,14 +201,33 @@ function Arte({
   aoTrocarImagem: (f: File) => void
   aoDuplicar: () => void
   aoApagar: () => void
+  aoPorNoAr: () => void
 }) {
   const [menu, definirMenu] = useState(false)
   const campo = useRef<HTMLInputElement | null>(null)
   const aTrabalhar = ocupado?.endsWith(cartao.id) ?? false
 
   return (
-    <div className="arte-pv">
+    <div className={cartao.foraDoAr ? 'arte-pv fora-do-ar' : 'arte-pv'}>
       <span className="numero-arte">{numero}</span>
+
+      {/*
+        UMA ARTE FORA DO AR TEM DE SE VER QUE ESTÁ FORA DO AR.
+
+        Ele publicou três artes e apareceram duas. A que faltava estava marcada
+        como tirada do ar no painel antigo, e este ecrã desenhava-a igual às
+        outras: ele via três e o público via duas, sem nada que explicasse a
+        diferença. O ecrã novo não tem sequer como tirar do ar, por isso o único
+        caminho honesto é mostrar quando está e dar um botão para a repor.
+      */}
+      {cartao.foraDoAr && (
+        <div className="marca-fora-do-ar">
+          <span>Esta arte não aparece na página</span>
+          <button type="button" onClick={aoPorNoAr} disabled={aTrabalhar}>
+            Pôr no ar
+          </button>
+        </div>
+      )}
 
       <button
         type="button"
@@ -253,12 +303,14 @@ function ConteudoPrincipal({
   aoTrocarCapa,
   aoTrocarAudio,
   aoGravar,
+  passo,
 }: {
   cartao: CartaoAdmin
   ocupado: string | null
   aoTrocarCapa: (f: File) => void
   aoTrocarAudio: (f: File) => void
   aoGravar: (campos: { titulo: string; subtitulo: string; descricao: string }) => void
+  passo: 'parado' | 'a publicar' | 'publicado'
 }) {
   const [titulo, definirTitulo] = useState(cartao.titulo ?? '')
   const [subtitulo, definirSubtitulo] = useState(cartao.subtitulo ?? '')
@@ -384,11 +436,15 @@ function ConteudoPrincipal({
 
       <button
         type="button"
-        className="guardar-publicacao"
-        disabled={aTrabalhar}
+        className={`guardar-publicacao passo-${passo.replace(' ', '-')}`}
+        disabled={passo !== 'parado'}
         onClick={() => aoGravar({ titulo, subtitulo, descricao })}
       >
-        {aTrabalhar ? 'A guardar...' : 'Salvar publicação'}
+        {passo === 'a publicar'
+          ? 'PUBLICANDO...'
+          : passo === 'publicado'
+            ? 'PUBLICADO ✓'
+            : 'Salvar publicação'}
       </button>
     </>
   )

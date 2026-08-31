@@ -7030,3 +7030,75 @@ h2.funil {
   border: 1px solid #e6b4b4;
   color: #b42318;
 }
+
+/* As artes de uma publicação do Produto Vivo: páginas da mesma peça, sem
+   indicadores próprios. A fila social aparece uma vez, no fim. */
+.publicacao-unica {
+  display: grid;
+  gap: 0;
+}
+
+.arte-da-publicacao {
+  display: block;
+  width: 100%;
+  height: auto;
+  border-radius: 18px 18px 0 0;
+}
+
+.publicacao-unica .arte-da-publicacao + .arte-da-publicacao {
+  border-radius: 0;
+}
+
+.publicacao-unica .cartao-publicacao {
+  margin-top: 0;
+  border-radius: 0 0 18px 18px;
+}
+
+/* Os três passos do botão de publicar, para se ver o que está a acontecer. */
+.guardar-publicacao.passo-a-publicar {
+  opacity: 0.75;
+  cursor: progress;
+}
+
+.guardar-publicacao.passo-publicado {
+  background: #0f9d58;
+}
+
+/* Uma arte fora do ar: existe no painel e não aparece na página. */
+.arte-pv.fora-do-ar .area-da-arte {
+  opacity: 0.45;
+}
+
+.marca-fora-do-ar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  padding: 10px 12px;
+  background: #fdf4f4;
+  border-bottom: 1px solid #f0b4b4;
+  color: #b42318;
+  font-size: 13px;
+  font-weight: 700;
+}
+
+@media (prefers-color-scheme: dark) {
+  .marca-fora-do-ar {
+    background: #2a1c1c;
+    border-bottom-color: #5c2b2b;
+    color: #f0a9a9;
+  }
+}
+
+.marca-fora-do-ar button {
+  padding: 7px 13px;
+  border: 1px solid currentColor;
+  border-radius: 999px;
+  background: transparent;
+  color: inherit;
+  font-family: inherit;
+  font-size: 12px;
+  font-weight: 800;
+  cursor: pointer;
+}

@@ -79,6 +79,7 @@ export default async function PaginaProdutoVivo({
           projectId={project?.id ?? ''}
           projectSlug={projectSlug}
           categorias={cats?.categorias ?? []}
+          publicacaoUnica
         />
       )}
 

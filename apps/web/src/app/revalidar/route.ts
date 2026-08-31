@@ -40,7 +40,9 @@ export async function POST(pedido: Request) {
     return NextResponse.json({ erro: 'projeto inválido' }, { status: 400 })
   }
 
-  const caminhos = [`/${slug}`, `/${slug}/perfil`]
+  // O Produto Vivo entra desde 31/08: uma publicação nova lá também ficava
+  // meio minuto sem aparecer, pela mesma razão.
+  const caminhos = [`/${slug}`, `/${slug}/perfil`, `/${slug}/produto-vivo`]
   if (corpo.userId && /^[0-9a-f-]{36}$/.test(corpo.userId)) {
     caminhos.push(`/${slug}/pessoa/${corpo.userId}`)
   }
