@@ -397,8 +397,8 @@ export class StorageService {
    *   ACIMA DE 4 POR CENTO. Abaixo disso é uma borda, e cortá-la seria mexer no
    *   trabalho dele por causa de nada.
    *
-   * Mede numa cópia pequena, em cinzento, porque a decisão é sobre onde a
-   * imagem começa e acaba e não precisa da imagem inteira para isso.
+   * Mede em cinzento e em duas passagens estreitas, porque a decisão é só
+   * sobre onde a imagem começa e onde acaba.
    */
   private async tirarTarjasPretas(
     entrada: sharp.Sharp,
@@ -408,50 +408,68 @@ export class StorageService {
     const A = meta.height ?? 0
     if (L < 64 || A < 64) return { entrada, meta }
 
-    const AMOSTRA = 64
-    const altaAmostra = Math.max(1, Math.round((A / L) * AMOSTRA))
-    const { data } = await entrada
+    /** Preto puro, com folga para a compressão. */
+    const PRETO = 24
+    const ESTREITO = 64
+
+    /*
+      DUAS LEITURAS, CADA UMA ESTREITA NUM SENTIDO E EXACTA NO OUTRO.
+
+      A primeira versão encolhia a imagem nos dois sentidos e depois multiplicava
+      o resultado de volta. Funcionava e deixava um erro: na arte dele sobraram
+      5 linhas pretas em cima e 5 em baixo, porque cada linha da amostra valia
+      17 pixéis do original e a fronteira caía dentro de uma delas.
+
+      Cinco pixéis são um fio de 1,6 pixéis no telemóvel — invisível em quase
+      tudo, e visível exactamente aqui, que é uma risca preta entre duas artes
+      brancas encostadas. Era o defeito de que ele se queixou, em pequeno.
+
+      Encolher só no sentido que não interessa dá a fronteira ao pixel certo e
+      custa duas leituras de 64 pixéis de largo. Não vale a pena ser aproximado
+      quando ser exacto é assim barato.
+    */
+    const { data: porLinha } = await entrada
       .clone()
-      .resize(AMOSTRA, altaAmostra, { fit: 'fill' })
+      .resize(ESTREITO, A, { fit: 'fill' })
+      .greyscale()
+      .raw()
+      .toBuffer({ resolveWithObject: true })
+    const { data: porColuna } = await entrada
+      .clone()
+      .resize(L, ESTREITO, { fit: 'fill' })
       .greyscale()
       .raw()
       .toBuffer({ resolveWithObject: true })
 
-    /** Preto puro, com folga para a compressão. */
-    const PRETO = 24
     const linhaPreta = (y: number) => {
-      for (let x = 0; x < AMOSTRA; x++) if (data[y * AMOSTRA + x] > PRETO) return false
+      for (let x = 0; x < ESTREITO; x++) if (porLinha[y * ESTREITO + x] > PRETO) return false
       return true
     }
     const colunaPreta = (x: number) => {
-      for (let y = 0; y < altaAmostra; y++) if (data[y * AMOSTRA + x] > PRETO) return false
+      for (let y = 0; y < ESTREITO; y++) if (porColuna[y * L + x] > PRETO) return false
       return true
     }
 
     let cima = 0
-    while (cima < altaAmostra && linhaPreta(cima)) cima++
+    while (cima < A && linhaPreta(cima)) cima++
     // Toda preta: não há nada para cortar, e cortar deixaria zero pixéis.
-    if (cima >= altaAmostra) return { entrada, meta }
+    if (cima >= A) return { entrada, meta }
     let baixo = 0
-    while (baixo < altaAmostra && linhaPreta(altaAmostra - 1 - baixo)) baixo++
+    while (baixo < A && linhaPreta(A - 1 - baixo)) baixo++
     let esq = 0
-    while (esq < AMOSTRA && colunaPreta(esq)) esq++
+    while (esq < L && colunaPreta(esq)) esq++
     let dir = 0
-    while (dir < AMOSTRA && colunaPreta(AMOSTRA - 1 - dir)) dir++
+    while (dir < L && colunaPreta(L - 1 - dir)) dir++
 
     const MINIMO = 0.04
-    const cortarAltura = cima > 0 && baixo > 0 && (cima + baixo) / altaAmostra >= MINIMO
-    const cortarLargura = esq > 0 && dir > 0 && (esq + dir) / AMOSTRA >= MINIMO
+    const cortarAltura = cima > 0 && baixo > 0 && (cima + baixo) / A >= MINIMO
+    const cortarLargura = esq > 0 && dir > 0 && (esq + dir) / L >= MINIMO
     if (!cortarAltura && !cortarLargura) return { entrada, meta }
 
-    // De volta à escala do original, por defeito para dentro: é melhor deixar
-    // um pixel de preto do que comer um pixel da arte.
-    const py = A / altaAmostra
-    const px = L / AMOSTRA
-    const topo = cortarAltura ? Math.ceil(cima * py) : 0
-    const fundo = cortarAltura ? Math.ceil(baixo * py) : 0
-    const oeste = cortarLargura ? Math.ceil(esq * px) : 0
-    const leste = cortarLargura ? Math.ceil(dir * px) : 0
+    const topo = cortarAltura ? cima : 0
+    const fundo = cortarAltura ? baixo : 0
+    const oeste = cortarLargura ? esq : 0
+    const leste = cortarLargura ? dir : 0
 
     const novaLargura = L - oeste - leste
     const novaAltura = A - topo - fundo
