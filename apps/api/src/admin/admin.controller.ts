@@ -86,6 +86,7 @@ class SalvarCartaoDto {
   @IsOptional() @IsString() imageAssetId?: string | null
   @IsOptional() @IsString() @MaxLength(500) linkUpgrade?: string | null
   @IsOptional() @IsString() folhaA4AssetId?: string | null
+  @IsOptional() @IsString() @MaxLength(160) subtitulo?: string | null
 }
 
 class DecidirDenunciaDto {

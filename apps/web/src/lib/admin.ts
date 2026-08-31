@@ -159,6 +159,8 @@ export interface CartaoAdmin {
   /** Nome da casa — só para o painel, nunca para a página. */
   nomeInterno: string | null
   titulo: string | null
+  /** Opcional, só no Produto Vivo. Ver a nota em `salvarCartao`. */
+  subtitulo?: string | null
   descricao: string | null
   linkUpgrade: string | null
   audio: { id: string; url: string; title: string | null; durationMs: number | null } | null
@@ -337,6 +339,8 @@ export const admin = {
     id: string,
     dados: {
       titulo?: string | null
+      /** Opcional, e só o Produto Vivo o usa. Guardado no `meta` do cartão. */
+      subtitulo?: string | null
       descricao?: string | null
       assetId?: string | null
       imageAssetId?: string | null

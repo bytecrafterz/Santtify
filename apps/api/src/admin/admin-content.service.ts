@@ -1184,6 +1184,7 @@ export class AdminContentService {
           categoriaId: b.category?.id ?? null,
           categoriaNome: b.category?.name ?? null,
           folhaA4: ((b.meta ?? {}) as Record<string, unknown>).folhaA4 ?? null,
+          subtitulo: ((b.meta ?? {}) as Record<string, unknown>).subtitulo ?? null,
         })),
       },
       introducao: introducao
@@ -1274,6 +1275,15 @@ export class AdminContentService {
       linkUpgrade?: string | null
       /** A folha A4 do cartão de impressão. Vive no `meta`, que já existe. */
       folhaA4AssetId?: string | null
+      /**
+       * O subtítulo da publicação, opcional.
+       *
+       * Vive no `meta` pela mesma razão que a folha A4: é um campo que só as
+       * publicações do Produto Vivo usam, e uma coluna nova para uma coisa que
+       * quase nenhuma linha preenche paga-se em todas as consultas seguintes.
+       * Ele pediu-o no desenho de 31/08, marcado "(opcional)".
+       */
+      subtitulo?: string | null
     },
     adminId: string,
   ) {
@@ -1293,12 +1303,34 @@ export class AdminContentService {
      * para isto.
      */
     let metaNova: Prisma.InputJsonValue | undefined
-    if (dados.folhaA4AssetId !== undefined) {
+
+    // O subtítulo entra no mesmo `meta`, e antes da folha A4 para as duas
+    // poderem ser gravadas no mesmo pedido sem uma apagar a outra.
+    if (dados.subtitulo !== undefined) {
       const actual = await this.prisma.contentBlock.findUnique({
         where: { id: cartaoId },
         select: { meta: true },
       })
       const base = ((actual?.meta ?? {}) as Record<string, unknown>) || {}
+      const limpo = dados.subtitulo?.trim()
+      if (limpo) metaNova = { ...base, subtitulo: limpo } as Prisma.InputJsonValue
+      else {
+        const { subtitulo: _fora, ...resto } = base
+        metaNova = resto as Prisma.InputJsonValue
+      }
+    }
+
+    if (dados.folhaA4AssetId !== undefined) {
+      const actual = await this.prisma.contentBlock.findUnique({
+        where: { id: cartaoId },
+        select: { meta: true },
+      })
+      // Parte do que já foi calculado acima, se o subtítulo veio no mesmo
+      // pedido: senão a segunda escrita apagava a primeira.
+      const base =
+        (metaNova as Record<string, unknown> | undefined) ??
+        ((actual?.meta ?? {}) as Record<string, unknown>) ??
+        {}
       if (dados.folhaA4AssetId) {
         const asset = await this.prisma.mediaAsset.findUnique({
           where: { id: dados.folhaA4AssetId },

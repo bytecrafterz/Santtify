@@ -6772,3 +6772,194 @@ h2.funil {
   font-size: 13px;
   font-weight: 600;
 }
+
+/* ── A publicação do Produto Vivo, num ecrã só (desenho dele de 31/08) ──── */
+.edicao-pv {
+  display: grid;
+  gap: 10px;
+}
+
+.seccao-pv {
+  margin: 20px 0 2px;
+  font-size: 12px;
+  font-weight: 800;
+  letter-spacing: 0.06em;
+  color: var(--cor-texto-suave);
+}
+
+.arte-pv {
+  position: relative;
+  border: 1px solid var(--cor-borda);
+  border-radius: 14px;
+  background: var(--cor-superficie);
+  overflow: hidden;
+}
+
+.numero-arte {
+  position: absolute;
+  top: 10px;
+  left: 10px;
+  z-index: 2;
+  display: grid;
+  place-items: center;
+  width: 24px;
+  height: 24px;
+  border-radius: 50%;
+  background: var(--cor-primaria);
+  color: #fff;
+  font-size: 12px;
+  font-weight: 800;
+}
+
+.arte-pv .tres-pontos {
+  position: absolute;
+  top: 8px;
+  right: 8px;
+  z-index: 2;
+}
+
+.area-da-arte {
+  display: block;
+  width: 100%;
+  min-height: 150px;
+  padding: 0;
+  border: 0;
+  background: var(--cor-fundo);
+  cursor: pointer;
+}
+
+.area-da-arte img {
+  display: block;
+  width: 100%;
+  height: auto;
+}
+
+.vazio-arte {
+  display: grid;
+  place-items: center;
+  gap: 6px;
+  min-height: 150px;
+  padding: 20px;
+  color: var(--cor-texto-suave);
+  font-size: 14px;
+  font-weight: 600;
+}
+
+/* O conteúdo principal é escuro, como no desenho: é a peça que leva o som. */
+.principal-pv {
+  border-radius: 14px;
+  overflow: hidden;
+  background: #10131a;
+}
+
+.capa-principal {
+  display: block;
+  width: 100%;
+  min-height: 170px;
+  padding: 0;
+  border: 0;
+  background: #171b24;
+  cursor: pointer;
+}
+
+.capa-principal img {
+  display: block;
+  width: 100%;
+  height: auto;
+}
+
+.capa-principal .vazio-arte {
+  color: rgba(255, 255, 255, 0.65);
+}
+
+.linha-audio-pv {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  width: 100%;
+  padding: 12px 14px;
+  border: 0;
+  border-top: 1px solid rgba(255, 255, 255, 0.08);
+  background: #0c0f15;
+  color: #fff;
+  font-family: inherit;
+  font-size: 13px;
+  cursor: pointer;
+  text-align: left;
+}
+
+.linha-audio-pv .tocar {
+  display: grid;
+  place-items: center;
+  flex: 0 0 auto;
+  width: 30px;
+  height: 30px;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.14);
+}
+
+.linha-audio-pv .nome-do-som {
+  flex: 1;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.linha-audio-pv .tempo {
+  color: rgba(255, 255, 255, 0.5);
+  font-variant-numeric: tabular-nums;
+}
+
+.indicadores-pv {
+  display: flex;
+  justify-content: space-around;
+  padding: 10px;
+  background: var(--cor-superficie);
+  border-top: 1px solid var(--cor-borda);
+  color: var(--cor-texto-suave);
+  font-size: 13px;
+}
+
+.rotulo-pv {
+  margin-top: 12px;
+  font-size: 11px;
+  font-weight: 800;
+  letter-spacing: 0.06em;
+  color: var(--cor-texto-suave);
+}
+
+.edicao-pv input[type='text'],
+.edicao-pv textarea {
+  width: 100%;
+  padding: 12px 14px;
+  border: 1px solid var(--cor-borda);
+  border-radius: 10px;
+  background: var(--cor-superficie);
+  color: var(--cor-texto);
+  font-family: inherit;
+  font-size: 15px;
+}
+
+.edicao-pv textarea {
+  resize: vertical;
+  min-height: 130px;
+  line-height: 1.5;
+}
+
+.guardar-publicacao {
+  margin-top: 16px;
+  padding: 16px;
+  border: 0;
+  border-radius: 12px;
+  background: var(--cor-primaria);
+  color: #fff;
+  font-family: inherit;
+  font-size: 16px;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.guardar-publicacao[disabled] {
+  opacity: 0.6;
+  cursor: progress;
+}
