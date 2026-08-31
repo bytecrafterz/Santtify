@@ -244,9 +244,9 @@ export function BarraSocial({
 
       {/* O My Post saiu da interface em 12/08, a pedido do cliente: o MVP fica
           em ver, curtir, comentar e compartilhar, sem publicação própria. O
-          componente e a API continuam de pé, sem tela apontando para eles —
-          este cliente já mudou de direção quatro vezes, e reconstruir custa
-          enquanto deixar parado não custa. Ver docs/PROGRESSO.md. */}
+          componente e a API continuam de pé, sem tela apontando para eles.
+          Ficam porque desligar uma tela custa uma linha e reconstruí-la custa
+          dias, e esta já foi pedida e despedida mais de uma vez. */}
 
       <Comentarios
         contentId={contentId}
