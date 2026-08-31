@@ -7128,4 +7128,33 @@ h2.funil {
   box-sizing: border-box;
   padding-bottom: 21%;
   background: #96cadf;
+  position: relative;
+  z-index: 1;
+}
+
+/*
+  O ESPAÇO À VOLTA DA ARTE, NUM ECRÃ LARGO.
+
+  No telemóvel a arte quase enche a capa. No computador a capa é muito mais
+  larga do que alta, e a arte, que é quadrada, fica pequena no meio de um campo
+  de azul liso. Funciona e lê-se, mas parece um engano.
+
+  Por trás dela põe-se a própria arte, ampliada e desfocada — o mesmo que faço
+  no enquadrador da fotografia, e o que os leitores de música fazem com as
+  capas. O espaço deixa de ser vazio e passa a ser parte da peça.
+
+  `:has()` não existe em navegadores antigos; aí não se desenha nada e fica o
+  azul liso, que é exactamente o que havia antes. Degrada para o que já era.
+*/
+.perfil-capa:has(.arte-sem-foto)::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+  background-image: url('/perfil-sem-foto.png');
+  background-size: cover;
+  background-position: center;
+  filter: blur(26px) brightness(1.03) saturate(0.9);
+  transform: scale(1.12);
+  pointer-events: none;
 }
