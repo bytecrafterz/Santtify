@@ -12,6 +12,13 @@
 // exactamente como estava.
 import { chromium } from 'playwright'
 const SITE = 'https://santtify.com', PROJ = 'jesus-alfabeto-saudavel'
+// A CONTA DE ADMINISTRADOR VEM DO AMBIENTE, e nunca escrita aqui.
+// Uma senha de administrador do site que esta no ar, escrita num ficheiro do
+// repositorio, e uma senha publicada: fica no historico para sempre e vai com o
+// repositorio para todas as maos que o receberem.
+//   PV_ADMIN_EMAIL=... PV_ADMIN_SENHA=... node este-ficheiro.mjs
+const CONTA = process.env.PV_ADMIN_EMAIL, SENHA = process.env.PV_ADMIN_SENHA
+if (!CONTA || !SENHA) { console.log('Faltam PV_ADMIN_EMAIL e PV_ADMIN_SENHA no ambiente.'); process.exit(2) }
 const falhas = []
 const p_ = (n, v, e = '') => { console.log(`  ${v ? '✓' : '✗'} ${n}${e ? '   ' + e : ''}`); if (!v) falhas.push(n) }
 const nav = await chromium.launch()
@@ -101,7 +108,7 @@ p_('e volta ao fundo sozinha', Math.abs(depois.agora) <= 2, `desvio final ${depo
 // ── 1,2,3. O painel ────────────────────────────────────────────────
 console.log('\nPAINEL — o indice e a mensagem de publicar')
 await pg.goto(`${SITE}/${PROJ}/entrar`, { waitUntil: 'domcontentloaded' }); await pg.waitForTimeout(2500); await limpar()
-await pg.fill('input[type=email]', 'bruno.dev@santtify.dev'); await pg.fill('input[type=password]', 'Bruno.Dev.2708')
+await pg.fill('input[type=email]', CONTA); await pg.fill('input[type=password]', SENHA)
 await pg.click('button[type=submit]'); await pg.waitForTimeout(4000)
 await pg.goto(`${SITE}/${PROJ}/admin/alfabeto`, { waitUntil: 'domcontentloaded' }); await pg.waitForTimeout(4500); await limpar()
 

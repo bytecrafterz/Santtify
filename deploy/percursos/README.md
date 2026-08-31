@@ -3,6 +3,20 @@
 Verificações que abrem o site publicado num navegador de verdade e andam por ele
 como uma pessoa anda.
 
+## A conta de administrador vem do ambiente
+
+Os percursos que entram no painel precisam de uma conta de administrador, e essa conta
+**nunca está escrita nos ficheiros**:
+
+```bash
+PV_ADMIN_EMAIL=... PV_ADMIN_SENHA=... node deploy/percursos/percurso-completo.mjs
+```
+
+Sem as duas variáveis o percurso recusa-se a correr, em vez de falhar no meio a fingir
+outra coisa. Uma senha de administrador de um site que está no ar, escrita num ficheiro
+do repositório, é uma senha publicada: fica no histórico para sempre e vai com o
+repositório para todas as mãos que o receberem.
+
 ## Porquê aqui e não testes normais
 
 Os testes normais já passavam em todos os defeitos que ele encontrou. O build

@@ -1,6 +1,13 @@
 // O ecra unico do Produto Vivo. Cria o minimo, e apaga pelos ids que criou.
 import { chromium } from 'playwright'
 const SITE='https://santtify.com', PROJ='jesus-alfabeto-saudavel'
+// A CONTA DE ADMINISTRADOR VEM DO AMBIENTE, e nunca escrita aqui.
+// Uma senha de administrador do site que esta no ar, escrita num ficheiro do
+// repositorio, e uma senha publicada: fica no historico para sempre e vai com o
+// repositorio para todas as maos que o receberem.
+//   PV_ADMIN_EMAIL=... PV_ADMIN_SENHA=... node este-ficheiro.mjs
+const CONTA = process.env.PV_ADMIN_EMAIL, SENHA = process.env.PV_ADMIN_SENHA
+if (!CONTA || !SENHA) { console.log('Faltam PV_ADMIN_EMAIL e PV_ADMIN_SENHA no ambiente.'); process.exit(2) }
 const falhas=[]
 const p_=(n,v,e='')=>{console.log(`  ${v?'✓':'✗'} ${n}${e?'   '+e:''}`); if(!v) falhas.push(n)}
 const nav=await chromium.launch()
@@ -8,7 +15,7 @@ const pg=await (await nav.newContext({viewport:{width:390,height:844},deviceScal
 const limpar=async()=>{for(const t of ['AGORA NÃO','CONTINUAR EXPLORANDO','Aceitar']){const b=await pg.$(`button:has-text("${t}")`);if(b){await b.click();await pg.waitForTimeout(400)}}}
 pg.on('dialog',d=>d.accept())
 await pg.goto(`${SITE}/${PROJ}/entrar`,{waitUntil:'domcontentloaded'});await pg.waitForTimeout(2500);await limpar()
-await pg.fill('input[type=email]','bruno.dev@santtify.dev');await pg.fill('input[type=password]','Bruno.Dev.2708')
+await pg.fill('input[type=email]', CONTA); await pg.fill('input[type=password]', SENHA)
 await pg.click('button[type=submit]');await pg.waitForTimeout(4000)
 
 const ids=async()=>pg.evaluate(async(s)=>{
