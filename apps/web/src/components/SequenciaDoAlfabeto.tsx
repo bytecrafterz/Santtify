@@ -220,7 +220,16 @@ export function SequenciaDoAlfabeto({ projectSlug }: { projectSlug: string }) {
                 aDuplicar={aDuplicar === c.id}
                 acabadaDeCriar={copiaNova === c.id}
                 aoDuplicar={async () => {
-                  definirMenuAberto(null)
+                  /*
+                    O MENU FICA ABERTO ENQUANTO DUPLICA.
+
+                    Fechava-o na primeira linha, e com ele desaparecia o botão
+                    que devia dizer "A duplicar...". Ou seja: pus o aviso e
+                    tirei-o do ecrã no mesmo gesto. Medido — o rótulo nunca
+                    chegou a ser visto uma única vez.
+
+                    Fecha no fim, quando já há uma cópia acesa para onde olhar.
+                  */
                   definirADuplicar(c.id)
                   definirErro(null)
                   try {
@@ -234,8 +243,10 @@ export function SequenciaDoAlfabeto({ projectSlug }: { projectSlug: string }) {
                         .getElementById(`quadrado-${copia.id}`)
                         ?.scrollIntoView({ block: 'center', behavior: 'smooth' })
                     })
-                    setTimeout(() => definirCopiaNova(null), 2600)
+                    definirMenuAberto(null)
+                    setTimeout(() => definirCopiaNova(null), 4000)
                   } catch (e) {
+                    definirMenuAberto(null)
                     definirErro(
                       e instanceof Error ? e.message : 'Não foi possível duplicar este cartão.',
                     )

@@ -7164,7 +7164,7 @@ h2.funil {
 .quadrado.acabada-de-criar {
   outline: 3px solid var(--cor-primaria);
   outline-offset: 2px;
-  animation: acende-copia 2.6s ease-out;
+  animation: acende-copia 4s ease-out;
 }
 
 @keyframes acende-copia {
