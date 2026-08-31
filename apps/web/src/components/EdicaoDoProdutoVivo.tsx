@@ -55,8 +55,22 @@ export function EdicaoDoProdutoVivo({ projectSlug }: { projectSlug: string }) {
     servidor recusava: duas cópias da mesma regra, uma delas actualizada.
   */
   const cartoes = pv?.cartoes ?? []
-  const artes = cartoes.filter((c) => !c.audio)
-  const principal = cartoes.find((c) => c.audio) ?? null
+  /*
+    QUAL DELES É O CONTEÚDO PRINCIPAL.
+
+    À primeira escolhi "o que tem áudio", e estava errado de uma maneira que só
+    se vê a usar: enquanto não houvesse áudio nenhum, não havia principal, e
+    então o título, o subtítulo e a descrição não apareciam de todo. Ficava um
+    ecrã onde só dá para carregar imagens, e a pessoa teria de adivinhar que os
+    textos aparecem depois de enviar um som. O desenho dele mostra o contrário:
+    o bloco principal está lá desde o início, vazio, à espera da capa e do som.
+
+    A regra certa é a mesma da ordem: o principal é o ÚLTIMO cartão. Quando um
+    deles ganha áudio, a ordem do servidor põe-no no fim, e ele passa a ser o
+    principal sem ninguém mexer em nada.
+  */
+  const principal = cartoes.length > 0 ? cartoes[cartoes.length - 1] : null
+  const artes = principal ? cartoes.slice(0, -1) : cartoes
 
   async function comOcupado(chave: string, tarefa: () => Promise<unknown>) {
     definirOcupado(chave)
@@ -133,18 +147,8 @@ export function EdicaoDoProdutoVivo({ projectSlug }: { projectSlug: string }) {
       ) : (
         <div className="sem-principal">
           <p className="nota">
-            Esta publicação ainda não tem o conteúdo principal, que é a arte com o áudio.
+            Esta publicação ainda não tem nenhum cartão. Acrescente um acima para começar.
           </p>
-          <button
-            type="button"
-            className="acrescentar-cartao"
-            disabled={ocupado !== null}
-            onClick={() =>
-              comOcupado('novo-principal', () => admin.acrescentarCartaoDaRaiz(pv.contentId))
-            }
-          >
-            + Criar o conteúdo principal
-          </button>
         </div>
       )}
     </div>
