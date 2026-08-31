@@ -43,6 +43,54 @@ export function IntroducaoEmCartoes({
   )
   if (cartoes.length === 0) return null
 
+  /*
+    AS ARTES SÃO PÁGINAS DA MESMA PUBLICAÇÃO, E NÃO PUBLICAÇÕES.
+
+    Cada cartão desenhava-se como uma publicação inteira, com a sua própria
+    fila de ver, curtir, comentar e partilhar. Ele publicou três artes e um
+    áudio e apareceram três filas. A frase dele é a especificação: "as três
+    artes são apenas páginas da MESMA publicação; a camada social aparece UMA
+    ÚNICA VEZ, debaixo do áudio".
+
+    E tem razão pelo argumento: curtir a arte 2 e não a arte 3 não quer dizer
+    nada, e um comentário pertence ao que a pessoa viu, que é a publicação
+    inteira.
+
+    Por isso, aqui, as artes saem como imagens e só a peça final — a que leva o
+    som — tem a fila de indicadores, apontada ao CONTEÚDO e não a uma faixa. O
+    conteúdo é a publicação.
+  */
+  if (publicacaoUnica) {
+    const principal = cartoes[cartoes.length - 1]
+    const artes = cartoes.slice(0, -1)
+    return (
+      <div className="publicacao-unica">
+        {artes.map((a, i) =>
+          a.arte ? (
+            // eslint-disable-next-line @next/next/no-img-element
+            <img key={a.id} className="arte-da-publicacao" src={a.arte} alt={`Arte ${i + 1}`} />
+          ) : null,
+        )}
+
+        <PublicacaoDaLetra
+          key={principal.id}
+          etiqueta={null}
+          imagem={principal.arte}
+          bloco={principal}
+          titulo={principal.titulo ?? ''}
+          texto={principal.text?.trim() ?? null}
+          alvo={{ tipo: 'conteudo', contentId }}
+          projectId={projectId}
+          contentId={contentId}
+          projectSlug={projectSlug}
+          ligacao={`/${projectSlug}/produto-vivo`}
+          ancora={`publicacao-${contentId}`}
+          categorias={categorias}
+        />
+      </div>
+    )
+  }
+
   return (
     <>
       {cartoes.map((b) => (
