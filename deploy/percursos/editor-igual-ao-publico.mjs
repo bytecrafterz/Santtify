@@ -116,7 +116,16 @@ if(ma&&mb){
 
 
 } catch (e) {
-  console.log('  ! ' + String(e.message).split('\n')[0])
+  /*
+    UMA EXCEPÇÃO É UMA FALHA.
+
+    Isto só escrevia a mensagem no ecrã, e o resumo no fim continuava a dizer
+    "o editor e o perfil mostram o mesmo" — porque `falhas` estava vazio. Em
+    31/08 faltou a imagem de teste, o corpo rebentou na primeira linha, e a
+    verificação anunciou sucesso na mesma. É a pior mentira que uma
+    verificação pode contar, e mais perigosa do que não existir.
+  */
+  falhas.push('rebentou: ' + String(e.message).split('\n')[0].slice(0, 60))
 } finally {
 // limpeza
 // VAI PRIMEIRO A ONDE O BOTAO VIVE. Ele mudou para /perfil/editar em 29/08, e

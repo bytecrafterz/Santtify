@@ -120,6 +120,9 @@ p_('14. ENTRAR NOVAMENTE', !pg.url().includes('/entrar'), pg.url().replace(SITE,
 
 // LIMPEZA: a conta descartavel apaga-se a si propria pelo botao novo
 await pg.goto(`${SITE}/${PROJ}/perfil`,{waitUntil:'domcontentloaded'});await pg.waitForTimeout(3500);await limpar()
+} catch (e) {
+  // Uma excepção é uma falha: ver a nota em editor-igual-ao-publico.mjs.
+  falhas.push('rebentou: ' + String(e.message).split('\n')[0].slice(0, 60))
 } finally {
 // Apagar a conta mudou para a pagina de edicao, com a troca de senha.
 await pg.goto(`${SITE}/${PROJ}/perfil/editar`,{waitUntil:'domcontentloaded'});await pg.waitForTimeout(3500);await limpar()
