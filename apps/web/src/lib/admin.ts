@@ -183,7 +183,12 @@ export interface VagaoAdmin {
   publicado: boolean
   coverUrl: string | null
   cartoes: CartaoAdmin[]
+  /** Quantas das quatro casas de origem estão no ar. */
   prontos: number
+  /** Publicações que ele criou além das quatro casas e que têm alguma coisa. */
+  extras: number
+  /** Tudo o que está no ar nesta letra, casas e criações dele. */
+  noAr: number
 }
 
 /** Um pedido de reposição de senha, tal como o responsável o vê. */

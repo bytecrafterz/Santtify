@@ -368,6 +368,107 @@ export class StorageService {
    * gerar imagem no meio dessa requisição é a diferença entre o cartão aparecer
    * e o link sair pelado.
    */
+
+  /**
+   * TIRA AS TARJAS PRETAS DE UMA IMAGEM ANTES DE A GUARDAR.
+   *
+   * Em 31/08 ele repôs a arte do meio do Produto Vivo e escreveu: "as três
+   * artes ficaram separadas, com um espaço grande entre elas". Medi a página:
+   * a distância entre as três no desenho era ZERO. O espaço estava DENTRO do
+   * ficheiro dele. A arte reposta tinha 1125x2436 — o tamanho exacto do ecrã
+   * de um iPhone — com 338 pixéis de preto puro em cima e 339 em baixo, 28 por
+   * cento da imagem. As outras duas artes são 1086x1448, sem tarja nenhuma.
+   *
+   * Ele trabalha no telemóvel e guarda as artes por captura de ecrã. Isto vai
+   * repetir-se, e não é razoável pedir-lhe que meça ficheiros.
+   *
+   * A REGRA É ESTREITA DE PROPÓSITO, e cada condição existe para não estragar
+   * uma arte legítima:
+   *
+   *   PRETO, e não "uniforme". Uma margem branca ou colorida pode ser desenho —
+   *   a primeira arte dele tem 50 linhas brancas em cima e 152 em baixo, e são
+   *   parte da peça. Preto encostado à borda não é desenho, é o que um telemóvel
+   *   põe à volta de uma imagem que não tem a forma do ecrã.
+   *
+   *   NOS DOIS LADOS. Uma tarja só em cima é quase sempre desenho. Em cima E em
+   *   baixo (ou à esquerda E à direita) é a assinatura de uma imagem encaixada
+   *   num ecrã de outra forma.
+   *
+   *   ACIMA DE 4 POR CENTO. Abaixo disso é uma borda, e cortá-la seria mexer no
+   *   trabalho dele por causa de nada.
+   *
+   * Mede numa cópia pequena, em cinzento, porque a decisão é sobre onde a
+   * imagem começa e acaba e não precisa da imagem inteira para isso.
+   */
+  private async tirarTarjasPretas(
+    entrada: sharp.Sharp,
+    meta: sharp.Metadata,
+  ): Promise<{ entrada: sharp.Sharp; meta: sharp.Metadata }> {
+    const L = meta.width ?? 0
+    const A = meta.height ?? 0
+    if (L < 64 || A < 64) return { entrada, meta }
+
+    const AMOSTRA = 64
+    const altaAmostra = Math.max(1, Math.round((A / L) * AMOSTRA))
+    const { data } = await entrada
+      .clone()
+      .resize(AMOSTRA, altaAmostra, { fit: 'fill' })
+      .greyscale()
+      .raw()
+      .toBuffer({ resolveWithObject: true })
+
+    /** Preto puro, com folga para a compressão. */
+    const PRETO = 24
+    const linhaPreta = (y: number) => {
+      for (let x = 0; x < AMOSTRA; x++) if (data[y * AMOSTRA + x] > PRETO) return false
+      return true
+    }
+    const colunaPreta = (x: number) => {
+      for (let y = 0; y < altaAmostra; y++) if (data[y * AMOSTRA + x] > PRETO) return false
+      return true
+    }
+
+    let cima = 0
+    while (cima < altaAmostra && linhaPreta(cima)) cima++
+    // Toda preta: não há nada para cortar, e cortar deixaria zero pixéis.
+    if (cima >= altaAmostra) return { entrada, meta }
+    let baixo = 0
+    while (baixo < altaAmostra && linhaPreta(altaAmostra - 1 - baixo)) baixo++
+    let esq = 0
+    while (esq < AMOSTRA && colunaPreta(esq)) esq++
+    let dir = 0
+    while (dir < AMOSTRA && colunaPreta(AMOSTRA - 1 - dir)) dir++
+
+    const MINIMO = 0.04
+    const cortarAltura = cima > 0 && baixo > 0 && (cima + baixo) / altaAmostra >= MINIMO
+    const cortarLargura = esq > 0 && dir > 0 && (esq + dir) / AMOSTRA >= MINIMO
+    if (!cortarAltura && !cortarLargura) return { entrada, meta }
+
+    // De volta à escala do original, por defeito para dentro: é melhor deixar
+    // um pixel de preto do que comer um pixel da arte.
+    const py = A / altaAmostra
+    const px = L / AMOSTRA
+    const topo = cortarAltura ? Math.ceil(cima * py) : 0
+    const fundo = cortarAltura ? Math.ceil(baixo * py) : 0
+    const oeste = cortarLargura ? Math.ceil(esq * px) : 0
+    const leste = cortarLargura ? Math.ceil(dir * px) : 0
+
+    const novaLargura = L - oeste - leste
+    const novaAltura = A - topo - fundo
+    if (novaLargura < 32 || novaAltura < 32) return { entrada, meta }
+
+    const cortada = await entrada
+      .clone()
+      .extract({ left: oeste, top: topo, width: novaLargura, height: novaAltura })
+      .toBuffer()
+    const nova = sharp(cortada, { failOn: 'none' })
+    this.logger.log(
+      `tarjas pretas removidas: ${L}x${A} -> ${novaLargura}x${novaAltura} ` +
+        `(cima ${topo}, baixo ${fundo}, esq ${oeste}, dir ${leste})`,
+    )
+    return { entrada: nova, meta: await nova.metadata() }
+  }
+
   private async salvarImagem(
     arquivo: Express.Multer.File,
     destino: string,
@@ -383,7 +484,9 @@ export class StorageService {
     try {
       entrada = sharp(arquivo.buffer, { failOn: 'none' }).rotate()
       meta = await entrada.metadata()
-    } catch {
+      ;({ entrada, meta } = await this.tirarTarjasPretas(entrada, meta))
+    } catch (e) {
+      if (e instanceof BadRequestException) throw e
       throw new BadRequestException('Não foi possível ler esta imagem. Tente JPG ou PNG.')
     }
 

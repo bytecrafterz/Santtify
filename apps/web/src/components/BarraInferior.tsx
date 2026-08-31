@@ -33,39 +33,89 @@ export function BarraInferior({
   const barra = useRef<HTMLElement | null>(null)
 
   /**
-   * REPOR A BARRA NO FUNDO DEPOIS DE NAVEGAR.
+   * A BARRA NÃO PODE FICAR PRESA A MEIO DO ECRÃ.
    *
-   * Ele viu-a duas vezes presa a meio do ecrã, a tapar o conteúdo, e sair e
-   * voltar àquele ecrã resolvia. Eu não consigo reproduzir: testei quatro
-   * páginas em cinco alturas de rolagem cada e ficou colada em todas, e não há
-   * transform nem `100vh` em nenhum antepassado que explicasse.
+   * Ele reportou-a três vezes em 24/08 e mais três em 31/08, e desta vez com
+   * uma fotografia: a barra desenhada por cima da arte, a meio da página, com
+   * conteúdo a continuar por baixo dela.
    *
-   * Isto é o iOS a não repintar um elemento `fixed` depois de certas
-   * navegações e do embalo do dedo. Não é uma teoria que eu goste, mas é a que
-   * sobra, e a sugestão dele — "verificar o estado da barra depois da
-   * navegação" — é a certa: forçar o navegador a recalcular a posição.
+   * O que eu tinha aqui era um repinte forçado a cada navegação, e não chegou.
+   * Era só metade da ideia: eu mandava o navegador recalcular, mas nunca
+   * confirmava o resultado, e por isso quando falhava falhava em silêncio —
+   * exactamente o defeito que ele me apontou noutras três coisas este mês.
    *
-   * Mexer no `transform` e desfazer no fotograma seguinte obriga a esse
-   * recálculo sem se ver nada. É barato e não muda nada quando já está no
-   * sítio, que é o caso quase sempre. Se voltar a acontecer, sei que a causa é
-   * outra e digo-lho.
+   * A CAUSA, lida da fotografia dele. A barra está parada a meio do ecrã e o
+   * conteúdo continua por baixo. Isso não é a barra a ser empurrada por um
+   * antepassado (não há `transform` nem `filter` em nenhum) nem a página a ser
+   * mais curta. É a assinatura do teclado do iOS: enquanto o teclado está
+   * aberto, a área visível encolhe e o Safari reposiciona os elementos fixos
+   * no fundo dessa área menor; quando o teclado fecha, às vezes o Safari não
+   * devolve o elemento fixo ao fundo real. Fica onde o teclado acabava. E o
+   * caminho dele bate certo: "entro no perfil de outra pessoa, MEXO nesse
+   * perfil e depois volto" — mexer num perfil é escrever num comentário, e
+   * escrever é abrir o teclado.
+   *
+   * Por isso deixa de ser um repinte às cegas e passa a ser uma medição:
+   * pergunta-se onde a barra ACABA e onde ela DEVIA acabar, e corrige-se a
+   * diferença. Se a teoria do teclado estiver errada, isto corrige na mesma,
+   * porque não depende da causa — depende do sítio onde ela ficou.
+   *
+   * SÓ CORRIGE PARA BAIXO, e essa condição é deliberada. Com o teclado ABERTO,
+   * o lugar certo da barra é fora do ecrã, por baixo do teclado; puxá-la para
+   * cima nessa altura punha-a em cima do campo onde a pessoa está a escrever.
+   * O defeito é sempre a barra ficar ALTA de mais, e é só isso que se desfaz.
    */
   const caminho = usePathname()
   useEffect(() => {
-    const repor = () => {
+    const janela = window.visualViewport
+
+    /** O fundo da área realmente visível, que é onde a barra tem de acabar. */
+    const fundoVisivel = () =>
+      janela ? janela.height + janela.offsetTop : window.innerHeight
+
+    const conferir = () => {
       const el = barra.current
       if (!el) return
-      el.style.transform = 'translateZ(0)'
-      requestAnimationFrame(() => {
-        if (barra.current) barra.current.style.transform = ''
-      })
+      // Limpar a correcção anterior ANTES de medir. Medir por cima dela seria
+      // medir o meu próprio ajuste e ir somando erro a cada evento.
+      el.style.transform = ''
+      const desvio = el.getBoundingClientRect().bottom - fundoVisivel()
+      if (desvio < -2) el.style.transform = `translateY(${-desvio}px)`
     }
-    repor()
-    window.addEventListener('pageshow', repor)
-    document.addEventListener('visibilitychange', repor)
+
+    /*
+      Duas vezes por evento, e não uma. O Safari devolve a área visível ao
+      tamanho normal em passos, com animação, e uma medição tirada no primeiro
+      fotograma depois de o teclado fechar ainda apanha o ecrã a meio caminho.
+      A segunda passagem é a que fica.
+    */
+    let adiado: ReturnType<typeof setTimeout> | undefined
+    const reagir = () => {
+      requestAnimationFrame(conferir)
+      clearTimeout(adiado)
+      adiado = setTimeout(conferir, 350)
+    }
+
+    reagir()
+
+    const alvos: Array<[EventTarget, string]> = [
+      [window, 'pageshow'],
+      [window, 'orientationchange'],
+      [window, 'resize'],
+      [document, 'visibilitychange'],
+      // `focusout` é o fecho do teclado visto de dentro da página: é o evento
+      // que dispara quando o campo de texto deixa de estar activo.
+      [document, 'focusout'],
+    ]
+    if (janela) {
+      alvos.push([janela, 'resize'], [janela, 'scroll'])
+    }
+    for (const [alvo, evento] of alvos) alvo.addEventListener(evento, reagir)
+
     return () => {
-      window.removeEventListener('pageshow', repor)
-      document.removeEventListener('visibilitychange', repor)
+      clearTimeout(adiado)
+      for (const [alvo, evento] of alvos) alvo.removeEventListener(evento, reagir)
+      if (barra.current) barra.current.style.transform = ''
     }
   }, [caminho])
 

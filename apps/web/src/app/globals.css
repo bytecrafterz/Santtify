@@ -4838,6 +4838,24 @@ button.letra-bloco {
   color: var(--cor-acao);
 }
 
+/* RASCUNHO: tem trabalho dentro e ainda não está no ar. Cor própria, porque a
+   pergunta que ele faz ao olhar para o índice é "onde é que eu parei", e um
+   rascunho pintado como vazio responde-lhe que não parou em lado nenhum. */
+.quadradinho.meio {
+  border-color: #d97706;
+  border-style: dashed;
+}
+
+.quadradinho.meio small {
+  color: #b45309;
+}
+
+/* As casas são quatro e fixas; as publicações dele podem ser muitas. A grelha
+   deixa de ser de quatro colunas exactas e passa a quebrar linha sozinha. */
+.quadradinhos {
+  grid-template-columns: repeat(auto-fill, minmax(64px, 1fr));
+}
+
 .fim-composicao {
   margin: 1.2rem 0 2rem;
   padding: 0.8rem;
@@ -7182,5 +7200,24 @@ h2.funil {
 @media (prefers-reduced-motion: reduce) {
   .quadrado.acabada-de-criar {
     animation: none;
+  }
+}
+
+/* A publicação que veio num link partilhado acende por um instante. Chegar ao
+   sítio certo não chega: numa página comprida, quem recebe o link precisa de
+   ver QUAL das publicações lhe mandaram. */
+.publicacao.publicacao-apontada {
+  outline: 3px solid var(--cor-acao);
+  outline-offset: 3px;
+  animation: apontar-publicacao 4s ease-out;
+}
+
+@keyframes apontar-publicacao {
+  0%,
+  70% {
+    box-shadow: 0 0 0 6px rgba(22, 163, 74, 0.18);
+  }
+  100% {
+    box-shadow: var(--sombra);
   }
 }

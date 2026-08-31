@@ -57,3 +57,37 @@ export function faltaNoCartao(c: CartaoParaMedir, somOpcional = false): string[]
 export function cartaoEstaInteiro(c: CartaoParaMedir, somOpcional = false): boolean {
   return faltaNoCartao(c, somOpcional).length === 0
 }
+
+/**
+ * Um cartão "tem alguma coisa dentro".
+ *
+ * É outra pergunta, e não a mesma com menos exigência. `cartaoEstaInteiro`
+ * pergunta se PODE IR AO AR. Esta pergunta se EXISTE — se alguém já lá pôs
+ * trabalho. As duas fazem falta e confundi-las tem um custo concreto: o índice
+ * do painel escrevia VAZIO por cima de um cartão com foto, áudio e título só
+ * porque lhe faltava a descrição, e em 31/08 ele leu isso, correctamente, como
+ * "os meus conteúdos desapareceram".
+ *
+ * Aceita o cartão como vem da base (`assetId`) ou já resolvido (`asset`),
+ * porque as duas consultas do painel trazem formas diferentes e a regra não
+ * pode depender de qual delas chamou.
+ */
+export function cartaoTemAlgo(c: {
+  assetId?: string | null
+  imageAssetId?: string | null
+  asset?: unknown
+  imageAsset?: unknown
+  titulo?: string | null
+  text?: string | null
+}): boolean {
+  // `||` e não `??`: um título gravado como string vazia não é nulo, e com
+  // `??` a cadeia parava nele e nunca chegava a olhar para a descrição.
+  return Boolean(
+    c.assetId ||
+      c.asset ||
+      c.imageAssetId ||
+      c.imageAsset ||
+      c.titulo?.trim() ||
+      c.text?.trim(),
+  )
+}

@@ -4,7 +4,12 @@ import { PrismaService } from '../prisma/prisma.service'
 import { ShortLinksService } from '../short-links/short-links.service'
 import { ContagensService } from '../social/contagens.service'
 import { ordemDoProdutoVivo } from '../content/ordem-do-produto-vivo'
-import { cartaoEstaInteiro, somEhOpcional } from '../content/cartao-inteiro'
+import {
+  cartaoEstaInteiro,
+  cartaoTemAlgo,
+  faltaNoCartao,
+  somEhOpcional,
+} from '../content/cartao-inteiro'
 
 /**
  * Operações do painel administrativo.
@@ -1031,6 +1036,25 @@ export class AdminContentService {
           prontos: (c?.blocks ?? []).filter(
             (b) => b.slot !== null && b.estado === CardEstado.PUBLICADO,
           ).length,
+          /*
+            O QUE ELE CRIOU ALÉM DAS QUATRO CASAS TAMBÉM TEM DE SE VER AQUI.
+
+            As quatro casas são as que vieram de origem. Tudo o que ele cria
+            depois — duplicar, publicar uma música nova — nasce sem casa, e o
+            índice desenhava só as quatro. Em 31/08 ele publicou na Letra E, a
+            publicação entrou e ficou no ar, e o índice continuou a dizer "1 de
+            4": do lado dele isso lia-se como "os conteúdos desapareceram".
+
+            E não era um caso isolado. Nesse dia a Letra A tinha 8 cartões no ar
+            e o índice dizia 4 de 4; a Letra D tinha 6 e dizia 3 de 4. O número
+            estava a medir o esqueleto e não o trabalho dele.
+
+            Contar aqui, e não no navegador, porque é a mesma regra que decide
+            os quadrados e a legenda. Foi a lição de 26/08, quando o contador
+            dos comentários vinha de uma consulta e a lista de outra.
+          */
+          extras: (c?.blocks ?? []).filter((b) => b.slot === null && cartaoTemAlgo(b)).length,
+          noAr: (c?.blocks ?? []).filter((b) => b.estado === CardEstado.PUBLICADO).length,
         }
       }),
     }
@@ -1455,7 +1479,11 @@ export class AdminContentService {
   async porNoAr(cartaoId: string, adminId: string) {
     const cartao = await this.prisma.contentBlock.findUnique({
       where: { id: cartaoId },
-      select: { id: true, meta: true, content: { select: { projectId: true } } },
+      select: {
+        id: true,
+        meta: true,
+        content: { select: { projectId: true, slug: true } },
+      },
     })
     if (!cartao) throw new NotFoundException('Cartão não encontrado')
 
@@ -1471,11 +1499,23 @@ export class AdminContentService {
     await this.sincronizarEstado(cartaoId)
     const depois = await this.prisma.contentBlock.findUnique({
       where: { id: cartaoId },
-      select: { estado: true },
+      select: { estado: true, assetId: true, imageAssetId: true, titulo: true, text: true },
     })
     if (depois?.estado !== CardEstado.PUBLICADO) {
+      /*
+        DIZER QUAL DAS QUATRO COISAS FALTA.
+
+        Estava escrito "falta preencher alguma coisa", e em 31/08 ele passou uma
+        hora a tentar publicar na Letra E sem saber o que faltava — tinha posto
+        a foto e o áudio e faltava-lhe a descrição. A lista existe desde 28/08,
+        em `faltaNoCartao`, e é o próprio comentário desse ficheiro que diz
+        porquê: "complete o cartão" obriga a adivinhar qual das quatro é.
+        Construí a lista e depois não a usei no único sítio onde a pessoa está
+        parada à espera de saber.
+      */
+      const falta = faltaNoCartao(depois ?? {}, somEhOpcional(cartao.content.slug))
       throw new BadRequestException(
-        'Este cartão ainda não está completo. Falta preencher alguma coisa antes de o pôr no ar.',
+        `Falta ${falta.join(', ').replace(/, ([^,]*)$/, ' e $1')} para pôr este cartão no ar.`,
       )
     }
     await this.auditar(

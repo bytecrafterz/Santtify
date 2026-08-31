@@ -44,6 +44,8 @@ export function ExperienciaContinua({
   const [carregando, definirCarregando] = useState(false)
   const [erro, definirErro] = useState<string | null>(null)
   const destino = useRef<HTMLDivElement>(null)
+  /** A publicação que o endereço pediu, enquanto ainda não foi mostrada. */
+  const pedida = useRef<string | null>(null)
 
   const porcento = progresso.total ? (progresso.liberadas / progresso.total) * 100 : 0
   const aberta = escolhida ? cache[escolhida] : null
@@ -121,7 +123,51 @@ export function ExperienciaContinua({
   // fora do ecrã e parece que o toque não fez nada.
   useEffect(() => {
     if (!aberta) return
+    // Quem veio por um link de publicação vai para a publicação, e não para o
+    // topo da letra: o segundo apagava o primeiro, e ficava tudo igual a antes.
+    if (pedida.current) return
     destino.current?.scrollIntoView({ behavior: 'smooth', block: 'start' })
+  }, [aberta])
+
+  /*
+    ABRIR A PUBLICAÇÃO QUE O ENDEREÇO PEDE.
+
+    `?letra=e&pub=<id>` é o que sai do botão de compartilhar. Corre uma vez, na
+    entrada, e só se a letra existir e estiver publicada — um endereço colado à
+    mão com uma letra que não existe não pode deixar a página em branco.
+  */
+  useEffect(() => {
+    const q = new URLSearchParams(window.location.search)
+    const letra = q.get('letra')
+    const pub = q.get('pub')
+    if (!letra) return
+    const item = contents.find((c) => c.slug === letra)
+    if (!item?.publicado) return
+    pedida.current = pub
+    void escolher(item)
+    // Só à entrada: se corresse a cada render, tocar noutra letra seria
+    // desfeito pelo endereço e a pessoa ficava presa nesta.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [])
+
+  /*
+    E LEVA A PESSOA ATÉ ELA, com um realce curto.
+
+    Sem o realce, quem recebe o link cai a meio de uma página comprida sem
+    saber qual das publicações é a que lhe mandaram. É a mesma correcção que o
+    duplicar levou em 31/08: chegar ao sítio certo não chega, é preciso ver-se
+    que se chegou.
+  */
+  useEffect(() => {
+    const alvo = pedida.current
+    if (!aberta || !alvo) return
+    const el = document.getElementById(`cartao-${alvo}`)
+    if (!el) return
+    pedida.current = null
+    el.scrollIntoView({ behavior: 'smooth', block: 'start' })
+    el.classList.add('publicacao-apontada')
+    const t = setTimeout(() => el.classList.remove('publicacao-apontada'), 4000)
+    return () => clearTimeout(t)
   }, [aberta])
 
   return (
@@ -210,7 +256,20 @@ export function ExperienciaContinua({
               projectId={projectId}
               contentId={aberta.content.id}
               projectSlug={projectSlug}
-              ligacao={`/${projectSlug}#${pub.ancora}`}
+              /*
+                O LINK PARTILHADO ABRE ESTA PUBLICAÇÃO, E NÃO A PÁGINA.
+
+                Pedido dele em 31/08: "quero compartilhar exatamente aquela
+                música que estou vendo, e não uma página geral". Estava a
+                partilhar-se `/projecto#cartao-xxx`, e essa âncora não existe
+                no momento em que a página abre — as letras só entram no
+                documento depois de alguém tocar numa. Quem recebia o link caía
+                no alfabeto fechado, sem nada que lhe dissesse o que tinha
+                vindo ver.
+
+                Agora o endereço leva a letra e o cartão, e a página abre-os.
+              */
+              ligacao={`/${projectSlug}?letra=${aberta.content.slug}&pub=${pub.bloco.id}`}
               ancora={pub.ancora}
               categorias={categorias}
             />

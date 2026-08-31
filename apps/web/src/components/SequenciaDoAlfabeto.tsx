@@ -420,32 +420,41 @@ export function SequenciaDoAlfabeto({ projectSlug }: { projectSlug: string }) {
                 </span>
                 <span className="dados-vagao">
                   <strong>LETRA {v.letra}</strong>
-                  <small>{v.prontos} de 4 preenchidos</small>
+                  {/* AS CASAS E O QUE ELE CRIOU SÃO DUAS CONTAS, E DIZEM-SE AS
+                      DUAS. Dizer só "1 de 4" numa letra onde ele acabou de
+                      publicar é, do lado dele, dizer que o trabalho sumiu. */}
+                  <small>
+                    {v.prontos} de 4 preenchidos
+                    {v.extras > 0 && (
+                      <>
+                        {' · '}
+                        <b>
+                          +{v.extras} {v.extras === 1 ? 'publicação sua' : 'publicações suas'}
+                        </b>
+                      </>
+                    )}
+                  </small>
                 </span>
               </button>
 
               <div className="quadradinhos">
                 {CASAS.map((nome, i) => {
                   const c = v.cartoes.find((x) => x.slot === i + 1)
-                  return (
-                    <span
-                      key={nome}
-                      className={c?.estado === 'PUBLICADO' ? 'quadradinho cheio' : 'quadradinho'}
-                      title={nome}
-                    >
-                      <em>{i + 1}</em>
-                      {c?.imagem ? (
-                        // eslint-disable-next-line @next/next/no-img-element
-                        <img src={c.imagem} alt="" aria-hidden />
-                      ) : (
-                        <span className="marca" aria-hidden>
-                          ▤
-                        </span>
-                      )}
-                      <small>{c?.estado === 'PUBLICADO' ? 'PRONTO' : 'VAZIO'}</small>
-                    </span>
-                  )
+                  return <Quadradinho key={nome} cartao={c} etiqueta={String(i + 1)} nome={nome} />
                 })}
+                {/* AS PUBLICAÇÕES DELE ENTRAM NO ÍNDICE A SEGUIR ÀS CASAS.
+                    Sem isto, tudo o que ele cria existe na letra, existe na
+                    página pública, e não existe no ecrã onde ele confere. */}
+                {v.cartoes
+                  .filter((c) => c.slot === null && c.papel !== 'IMPRESSAO')
+                  .map((c) => (
+                    <Quadradinho
+                      key={c.id}
+                      cartao={c}
+                      etiqueta="+"
+                      nome={c.titulo || c.nomeInterno || 'Publicação'}
+                    />
+                  ))}
               </div>
             </li>
           ))}
@@ -454,6 +463,45 @@ export function SequenciaDoAlfabeto({ projectSlug }: { projectSlug: string }) {
         <p className="fim-composicao">CONTINUA ATÉ A LETRA Z</p>
       </div>
     </>
+  )
+}
+
+/**
+ * Um quadradinho do índice.
+ *
+ * TRÊS ESTADOS E NÃO DOIS. Dizia PRONTO ou VAZIO, e por isso um cartão com
+ * foto, áudio e título a que faltasse a descrição aparecia como VAZIO. Em
+ * 31/08 ele viu isso na Letra E e escreveu "como se os outros conteúdos
+ * tivessem desaparecido" — e tinha razão, porque era o que estava escrito.
+ * VAZIO é agora só quando não há lá nada mesmo.
+ */
+function Quadradinho({
+  cartao,
+  etiqueta,
+  nome,
+}: {
+  cartao?: { estado?: string; imagem?: string | null; titulo?: string | null; text?: string | null }
+  etiqueta: string
+  nome: string
+}) {
+  const noAr = cartao?.estado === 'PUBLICADO'
+  const temAlgo = Boolean(cartao && (cartao.imagem || cartao.titulo?.trim() || noAr))
+  return (
+    <span
+      className={noAr ? 'quadradinho cheio' : temAlgo ? 'quadradinho meio' : 'quadradinho'}
+      title={nome}
+    >
+      <em>{etiqueta}</em>
+      {cartao?.imagem ? (
+        // eslint-disable-next-line @next/next/no-img-element
+        <img src={cartao.imagem} alt="" aria-hidden />
+      ) : (
+        <span className="marca" aria-hidden>
+          ▤
+        </span>
+      )}
+      <small>{noAr ? 'PRONTO' : temAlgo ? 'RASCUNHO' : 'VAZIO'}</small>
+    </span>
   )
 }
 
