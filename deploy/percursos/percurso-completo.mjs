@@ -130,7 +130,17 @@ const ap=await pg.$('button.apagar-conta')
 if(ap){await ap.scrollIntoViewIfNeeded();await ap.click();await pg.waitForTimeout(700)
   await pg.fill('.zona-de-risco input[type=password]',SENHA)
   await pg.click('.par-de-botoes button[type=submit]');await pg.waitForTimeout(4500)}
-console.log(`\n  (limpeza: conta de teste apagada = ${!pg.url().includes('/perfil')})`)
+/*
+  UMA LIMPEZA FALHADA E UMA FALHA, e nao uma linha de registo.
+
+  Isto escrevia "apagada = false" e seguia. Em 31/08 uma conta de teste minha
+  sobreviveu assim, apareceu na comunidade dele como "Pf 005981" sem foto e sem
+  nome a serio, e ele escreveu-me a pedir regras de seguranca no cadastro por
+  causa dela. Um aviso que nao entra na lista de falhas desaparece de qualquer
+  resumo filtrado — e eu filtro sempre.
+*/
+if (ap && !pg.url().includes('/perfil')) console.log('\n  (conta de teste apagada)')
+else falhas.push(`A CONTA DE TESTE NAO FOI APAGADA: ${EMAIL}`)
 console.log(falhas.length? `\n${falhas.length} FALHA(S): ${falhas.join(' | ')}` : '\nO percurso inteiro passa.')
 await nav.close()
 

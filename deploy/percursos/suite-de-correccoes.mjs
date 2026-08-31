@@ -104,7 +104,8 @@ finally {
   if(ap){await ap.scrollIntoViewIfNeeded();await ap.click();await pg.waitForTimeout(700)
     await pg.fill('.zona-de-risco input[type=password]',SENHA).catch(()=>{})
     await pg.click('.par-de-botoes button[type=submit]').catch(()=>{});await pg.waitForTimeout(4000)}
-  console.log(ap? '  (conta apagada)' : `  !! CONTA NAO APAGADA: ${EMAIL} !!`)
+  if (ap && !pg.url().includes('/perfil')) console.log('  (conta apagada)')
+else falhas.push(`A CONTA DE TESTE NAO FOI APAGADA: ${EMAIL}`)
   const maus=r.filter(x=>!x.v)
   console.log(`RESULTADO CORRIDA ${CORRIDA}: ${r.length-maus.length}/${r.length}` + (maus.length?`  FALHAS: ${maus.map(m=>m.n).join(' | ')}`:'  tudo passa'))
   await nav.close()

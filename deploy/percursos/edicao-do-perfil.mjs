@@ -59,6 +59,7 @@ const ap=await pg.$('button.apagar-conta')
 if(ap){await ap.scrollIntoViewIfNeeded();await ap.click();await pg.waitForTimeout(700)
   await pg.fill('.zona-de-risco input[type=password]',SENHA).catch(()=>{})
   await pg.click('.par-de-botoes button[type=submit]').catch(()=>{});await pg.waitForTimeout(4000)}
-console.log(ap? '  (conta apagada)' : `  !! CONTA NAO APAGADA: ${EMAIL} !!`)
+if (ap && !pg.url().includes('/perfil')) console.log('  (conta apagada)')
+else falhas.push(`A CONTA DE TESTE NAO FOI APAGADA: ${EMAIL}`)
 console.log(falhas.length? `\n${falhas.length} FALHA(S): ${falhas.join(' | ')}` : '\nA edicao tem a forma do desenho dele.')
 await nav.close() }

@@ -139,7 +139,8 @@ if(ap){await ap.scrollIntoViewIfNeeded();await ap.click();await pg.waitForTimeou
   await pg.fill('.zona-de-risco input[type=password]',SENHA)
   await pg.click('.par-de-botoes button[type=submit]');await pg.waitForTimeout(4500)}
 const apagou = !!ap && !pg.url().includes('/perfil')
-console.log(apagou ? '\n  (conta de teste apagada)' : `\n  !! CONTA DE TESTE NAO FOI APAGADA: ${EMAIL} !!`)
+if (apagou) console.log('\n  (conta de teste apagada)')
+else falhas.push(`A CONTA DE TESTE NAO FOI APAGADA: ${EMAIL}`)
 console.log(falhas.length? `\n${falhas.length} FALHA(S): ${falhas.join(' | ')}` : '\nO editor e o perfil mostram o mesmo.')
 await nav.close()
 }
