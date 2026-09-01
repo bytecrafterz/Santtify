@@ -130,6 +130,25 @@ export class AuthService {
     const email = dados.email.trim().toLowerCase()
 
     /*
+      O QUE SE ESCREVE É MEDIDO ANTES DO QUE SE ENVIA.
+
+      A fotografia era conferida primeiro, e a ordem tem consequência: quem
+      escrevesse um nome inválido escolhia a fotografia, esperava o envio, e só
+      então era mandado corrigir o nome — e escolhia a fotografia outra vez.
+      É a mesma queixa que ele me fez do identificador, e eu tinha-a resolvido
+      só lá.
+
+      Texto primeiro, ficheiro depois.
+    */
+    // O nome tem de ser um nome. Pedido dele em 01/09, depois de "Pf 005981".
+    const problemaNoNome = problemaNoNomeDePerfil(dados.displayName)
+    if (problemaNoNome) throw new BadRequestException(problemaNoNome)
+
+    const username = normalizarNomeDeUtilizador(dados.username)
+    const problema = problemaNoNomeDeUtilizador(username)
+    if (problema) throw new BadRequestException(problema)
+
+    /*
       A FOTOGRAFIA É EXIGIDA AQUI, e não só no formulário.
       Uma exigência que só existe no navegador não é uma exigência: é uma
       sugestão que qualquer pedido feito por fora ignora, e foi um perfil sem
@@ -139,14 +158,6 @@ export class AuthService {
     if (this.storage.tipoDe(foto.mimetype) !== MediaKind.IMAGE) {
       throw new BadRequestException('A foto do perfil precisa ser uma imagem.')
     }
-
-    // O nome tem de ser um nome. Pedido dele em 01/09, depois de "Pf 005981".
-    const problemaNoNome = problemaNoNomeDePerfil(dados.displayName)
-    if (problemaNoNome) throw new BadRequestException(problemaNoNome)
-
-    const username = normalizarNomeDeUtilizador(dados.username)
-    const problema = problemaNoNomeDeUtilizador(username)
-    if (problema) throw new BadRequestException(problema)
 
     const existente = await this.prisma.user.findUnique({ where: { email }, select: { id: true } })
     if (existente) throw new ConflictException('Este e-mail já está cadastrado')
