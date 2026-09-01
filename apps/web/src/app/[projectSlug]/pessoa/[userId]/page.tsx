@@ -189,6 +189,7 @@ export default async function PaginaDePessoa({
           {introducao && (
             <IntroducaoEmCartoes
               contentId={introducao.content.id}
+            contentSlug={introducao.content.slug}
               blocos={introducao.content.blocks}
               projectId={projeto.id}
               projectSlug={projectSlug}

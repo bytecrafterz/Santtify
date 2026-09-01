@@ -85,6 +85,7 @@ export default async function PaginaDePerfil({
           {introducao && (
             <IntroducaoEmCartoes
               contentId={introducao.content.id}
+            contentSlug={introducao.content.slug}
               blocos={introducao.content.blocks}
               projectId={project.id}
               projectSlug={projectSlug}

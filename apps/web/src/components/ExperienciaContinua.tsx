@@ -48,6 +48,21 @@ export function ExperienciaContinua({
   /** A publicação que o endereço pediu, enquanto ainda não foi mostrada. */
   const pedida = useRef<string | null>(null)
 
+  /**
+   * Leva a página até uma publicação e acende-a por um instante.
+   *
+   * Chegar ao sítio certo não chega: numa página comprida, quem recebe o link
+   * precisa de ver QUAL das publicações lhe mandaram.
+   */
+  function levarAte(blockId: string) {
+    const el = document.getElementById(`cartao-${blockId}`)
+    if (!el) return
+    el.scrollIntoView({ behavior: 'smooth', block: 'start' })
+    el.classList.add('publicacao-apontada')
+    const t = setTimeout(() => el.classList.remove('publicacao-apontada'), 4000)
+    return () => clearTimeout(t)
+  }
+
   const porcento = progresso.total ? (progresso.liberadas / progresso.total) * 100 : 0
   const aberta = escolhida ? cache[escolhida] : null
 
@@ -143,7 +158,18 @@ export function ExperienciaContinua({
     const pub = q.get('pub')
     if (!letra) return
     const item = contents.find((c) => c.slug === letra)
-    if (!item?.publicado) return
+    if (!item?.publicado) {
+      /*
+        A INTRODUÇÃO NÃO É UMA LETRA, e o link dela vem pelo mesmo caminho.
+
+        Os cartões da introdução são desenhados nesta página, fora da grade das
+        letras, e por isso já estão no documento quando ela abre. Não há letra
+        para abrir: há um sítio para onde ir. Sem isto, quem recebia um link da
+        introdução caía no topo e tinha de a procurar.
+      */
+      if (pub) levarAte(pub)
+      return
+    }
     pedida.current = pub
     void escolher(item)
     // Só à entrada: se corresse a cada render, tocar noutra letra seria
@@ -162,13 +188,8 @@ export function ExperienciaContinua({
   useEffect(() => {
     const alvo = pedida.current
     if (!aberta || !alvo) return
-    const el = document.getElementById(`cartao-${alvo}`)
-    if (!el) return
     pedida.current = null
-    el.scrollIntoView({ behavior: 'smooth', block: 'start' })
-    el.classList.add('publicacao-apontada')
-    const t = setTimeout(() => el.classList.remove('publicacao-apontada'), 4000)
-    return () => clearTimeout(t)
+    return levarAte(alvo)
   }, [aberta])
 
   return (

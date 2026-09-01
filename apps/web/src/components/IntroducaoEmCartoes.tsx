@@ -20,6 +20,7 @@ import { PublicacaoDaLetra } from './PublicacaoDaLetra'
  */
 export function IntroducaoEmCartoes({
   contentId,
+  contentSlug,
   blocos,
   projectId,
   projectSlug,
@@ -27,6 +28,9 @@ export function IntroducaoEmCartoes({
   publicacaoUnica = false,
 }: {
   contentId: string
+  /** O endereço deste conteúdo. Vai no link partilhado, para o cartão da
+   *  mensagem poder trazer a publicação certa e não a capa do projeto. */
+  contentSlug?: string
   blocos: Bloco[]
   projectId: string
   projectSlug: string
@@ -105,7 +109,19 @@ export function IntroducaoEmCartoes({
           projectId={projectId}
           contentId={contentId}
           projectSlug={projectSlug}
-          ligacao={`/${projectSlug}#cartao-${b.id}`}
+          /*
+            O LINK DA INTRODUÇÃO TAMBÉM IDENTIFICA A PUBLICAÇÃO.
+
+            Partilhava `#cartao-xxx`, e uma âncora não chega ao servidor: o
+            cartão da mensagem saía com a capa do projeto, que foi a queixa
+            dele de 02/09. Com `?letra=&pub=` a página sabe o que foi
+            partilhado antes de desenhar seja o que for.
+          */
+          ligacao={
+            contentSlug
+              ? `/${projectSlug}?letra=${contentSlug}&pub=${b.id}`
+              : `/${projectSlug}#cartao-${b.id}`
+          }
           ancora={`cartao-${b.id}`}
           categorias={categorias}
         />
