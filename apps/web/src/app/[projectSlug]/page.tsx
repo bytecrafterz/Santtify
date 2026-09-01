@@ -29,14 +29,68 @@ import type { Metadata } from 'next'
  * A imagem é a capa do projeto, e a descrição é a dele. Quem recebe o link vê
  * o produto, e não a marca da plataforma que o serve.
  */
+/**
+ * O CARTÃO QUE CHEGA AO WHATSAPP É O DA PUBLICAÇÃO PARTILHADA.
+ *
+ * Ele repetiu três vezes que o compartilhar "continua chegando de forma
+ * genérica", e eu andei a corrigir o sítio errado. O endereço já estava certo
+ * desde 01/09: abre na publicação e acende-a. O que continuava genérico era a
+ * PRÉ-VISUALIZAÇÃO — a mensagem que chega ao outro lado trazia o nome do
+ * projeto, a descrição do projeto e a capa do projeto, fosse qual fosse a
+ * música partilhada. Do lado dele isso é indistinguível de partilhar a página
+ * geral, e a frase dele descrevia exactamente o que ele via.
+ *
+ * Fui procurar isto sem esperar pela resposta dele porque a pergunta que eu lhe
+ * fiz — de que ecrã partilhou — não era a que interessava. Qualquer ecrã dava
+ * o mesmo cartão.
+ *
+ * Lê `?letra=&pub=`, que é o que o botão de partilhar produz, e devolve o
+ * título, o texto e a arte daquela publicação. Se o endereço não trouxer nada
+ * ou trouxer coisa que não existe, fica o cartão do projeto, como era.
+ */
 export async function generateMetadata({
   params,
+  searchParams,
 }: {
   params: Promise<{ projectSlug: string }>
+  searchParams: Promise<Record<string, string | string[] | undefined>>
 }): Promise<Metadata> {
   const { projectSlug } = await params
   const dados = await api.indice(projectSlug)
   if (!dados) return { title: 'Projeto não encontrado' }
+
+  const q = await searchParams
+  const letra = typeof q.letra === 'string' ? q.letra : null
+  const pub = typeof q.pub === 'string' ? q.pub : null
+  if (letra && pub) {
+    const pagina = await api.conteudo(projectSlug, letra).catch(() => null)
+    const bloco = pagina?.content.blocks.find((b) => b.id === pub)
+    if (bloco) {
+      const titulo = bloco.titulo?.trim() || pagina!.content.title
+      const texto =
+        bloco.text?.trim().replace(/\s+/g, ' ').slice(0, 200) ??
+        pagina!.content.summary ??
+        undefined
+      const arte = bloco.arte ?? pagina!.content.coverUrl ?? undefined
+      return {
+        title: `${titulo} — ${dados.project.name}`,
+        description: texto,
+        openGraph: {
+          title: titulo,
+          description: texto,
+          siteName: dados.project.name,
+          images: arte ? [{ url: arte, alt: titulo }] : undefined,
+          type: 'music.song',
+        },
+        twitter: {
+          card: 'summary_large_image',
+          title: titulo,
+          description: texto,
+          images: arte ? [arte] : undefined,
+        },
+      }
+    }
+  }
 
   const logo = dados.project.branding?.logoUrl
   const capa =
