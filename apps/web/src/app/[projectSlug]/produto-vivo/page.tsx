@@ -1,4 +1,5 @@
 import Link from 'next/link'
+import type { Metadata } from 'next'
 import { api } from '@/lib/api'
 import { RastreadorDeVisita } from '@/components/RastreadorDeVisita'
 import { EntrarNoGrupoPv } from '@/components/EntrarNoGrupoPv'
@@ -28,10 +29,47 @@ import { BarraInferior } from '@/components/BarraInferior'
  */
 const GRUPO_PV = process.env.NEXT_PUBLIC_PV_GRUPO_URL ?? ''
 
-export const metadata = {
-  title: 'Produto Vivo — a tecnologia por trás desta plataforma',
-  description:
-    'O Produto Vivo transforma qualquer site ou aplicativo em uma mini rede social comercial.',
+/**
+ * O CARTÃO DE PARTILHA DO PRODUTO VIVO É O PRODUTO VIVO.
+ *
+ * Ele apanhou-o em 02/09: "se compartilhar Produto Vivo, o cartão precisa
+ * representar Produto Vivo". Havia título e descrição, e faltava a imagem — e
+ * sem imagem própria o WhatsApp vai buscar a do projeto, que é a capa do
+ * alfabeto. Esta página é a porta de entrada comercial dele; chegar com a capa
+ * de um projeto infantil é o contrário do que ela existe para fazer.
+ *
+ * A imagem é a PRIMEIRA ARTE da publicação dele, e não uma escolhida por mim:
+ * assim, no dia em que ele trocar a arte, o cartão troca sozinho.
+ */
+export async function generateMetadata({
+  params,
+}: {
+  params: Promise<{ projectSlug: string }>
+}): Promise<Metadata> {
+  const { projectSlug } = await params
+  const pv = await api.conteudo(projectSlug, 'produto-vivo').catch(() => null)
+  const arte = pv?.content.blocks.find((b) => b.arte)?.arte ?? pv?.content.coverUrl ?? undefined
+
+  const titulo = 'Produto Vivo — a tecnologia por trás desta plataforma'
+  const descricao =
+    'O Produto Vivo transforma qualquer site ou aplicativo em uma mini rede social comercial.'
+
+  return {
+    title: titulo,
+    description: descricao,
+    openGraph: {
+      title: 'Produto Vivo',
+      description: descricao,
+      images: arte ? [{ url: arte, alt: 'Produto Vivo' }] : undefined,
+      type: 'website',
+    },
+    twitter: {
+      card: 'summary_large_image',
+      title: 'Produto Vivo',
+      description: descricao,
+      images: arte ? [arte] : undefined,
+    },
+  }
 }
 
 export default async function PaginaProdutoVivo({

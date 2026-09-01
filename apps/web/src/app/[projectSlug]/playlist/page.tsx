@@ -4,6 +4,7 @@ import { api } from '@/lib/api'
 import { Playlist } from '@/components/Playlist'
 import { RastreadorDeVisita } from '@/components/RastreadorDeVisita'
 import { BannerDeConsentimento } from '@/components/BannerDeConsentimento'
+import { BarraInferior } from '@/components/BarraInferior'
 
 export const metadata = { title: 'Minha Playlist' }
 
@@ -25,7 +26,7 @@ export default async function PaginaPlaylist({
   const filtroInicial = dados.categorias.some((c) => c.slug === filtro) ? filtro! : null
 
   return (
-    <main className="envoltorio">
+    <main className="envoltorio com-barra">
       <RastreadorDeVisita projectId={dados.project.id} type="PAGE_VIEW" />
 
       <Link className="voltar" href={`/${projectSlug}`}>
@@ -45,6 +46,17 @@ export default async function PaginaPlaylist({
       />
 
       <BannerDeConsentimento projectId={dados.project.id} />
+      {/*
+        A BARRA FICA, POR MAIS QUE SE DESÇA.
+
+        Ele apanhou isto em 02/09 e o argumento é o certo: "desço dezenas de
+        publicações para ouvir e depois quero ir para outra área; como a barra
+        desapareceu, sou obrigado a subir a página inteira". Nesta página nunca
+        houve barra, e antes quase não se notava porque ela era curta. Ao passar
+        a desenhar as sete publicações da letra, tornou-se a página mais comprida
+        do site — e a única sem saída.
+      */}
+      <BarraInferior projectSlug={projectSlug} linkPdf={dados.project?.checkoutUrl ?? null} />
     </main>
   )
 }

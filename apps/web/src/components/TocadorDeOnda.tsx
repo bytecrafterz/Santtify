@@ -4,6 +4,7 @@ import { useEffect, useRef, useState } from 'react'
 import type { Bloco } from '@/lib/api'
 import { rastrear } from '@/lib/track'
 import { social } from '@/lib/social'
+import { tocarASeguinte } from '@/lib/tocar-em-sequencia'
 
 /**
  * O tocador escuro com a onda, colado à imagem de cima.
@@ -246,6 +247,13 @@ export function TocadorDeOnda({
               props: { bloco: bloco.label, blockId: bloco.id },
             })
             aoTerminar?.()
+            /*
+              E SEGUE PARA A SEGUINTE.
+              Pedido dele em 02/09, pela segunda vez. Fica aqui, no fim de
+              qualquer faixa, e não numa propriedade que quatro páginas teriam
+              de passar: a que se esquecesse falhava calada.
+            */
+            if (audio.current) tocarASeguinte(audio.current)
           }}
         >
           <source src={bloco.asset?.url} type={bloco.asset?.mimeType ?? undefined} />

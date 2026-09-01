@@ -1,4 +1,5 @@
 import Link from 'next/link'
+import type { Metadata } from 'next'
 import { notFound } from 'next/navigation'
 import { api, type PerfilAnfitriao } from '@/lib/api'
 import { PerfilDePessoa } from '@/components/PerfilDePessoa'
@@ -9,7 +10,56 @@ import { ExperienciaContinua } from '@/components/ExperienciaContinua'
 import { BarraInferior } from '@/components/BarraInferior'
 import { RastreadorDeVisita } from '@/components/RastreadorDeVisita'
 
-export const metadata = { title: 'Perfil' }
+/**
+ * O CARTÃO DE PARTILHA DE UM PERFIL É A PESSOA.
+ *
+ * Ele apanhou isto em 02/09, logo a seguir a eu corrigir o das publicações:
+ * "se eu compartilhar meu perfil, quem recebe precisa entender visualmente que
+ * é o meu perfil, e não simplesmente receber a capa da Santtify". Estava a
+ * chegar sempre a capa do projeto, fosse qual fosse o perfil.
+ *
+ * A fotografia da pessoa, e não a arte de quem não tem: mandar a arte que diz
+ * "perfis sem foto serão deletados" como cartão de alguém seria uma acusação
+ * pública. Sem fotografia, fica a capa do projeto, que é neutra.
+ */
+export async function generateMetadata({
+  params,
+}: {
+  params: Promise<{ projectSlug: string; userId: string }>
+}): Promise<Metadata> {
+  const { projectSlug, userId } = await params
+  const base = process.env.NEXT_PUBLIC_API_URL ?? ''
+  const [projeto, pessoaRes] = await Promise.all([
+    api.projeto(projectSlug).catch(() => null),
+    fetch(`${base}/profiles/${userId}`, { next: { revalidate: 30 } }).catch(() => null),
+  ])
+  if (!pessoaRes?.ok) return { title: 'Perfil' }
+  const pessoa = (await pessoaRes.json()) as PerfilAnfitriao
+
+  const nome = pessoa.displayName
+  const arroba = pessoa.username ? `@${pessoa.username}` : null
+  const descricao =
+    pessoa.bio?.trim().replace(/\s+/g, ' ').slice(0, 200) ??
+    (arroba ? `${arroba} no ${projeto?.name ?? 'Santtify'}` : undefined)
+
+  return {
+    title: `${nome} — ${projeto?.name ?? 'Santtify'}`,
+    description: descricao,
+    openGraph: {
+      title: arroba ? `${nome} (${arroba})` : nome,
+      description: descricao,
+      siteName: projeto?.name,
+      images: pessoa.avatarUrl ? [{ url: pessoa.avatarUrl, alt: nome }] : undefined,
+      type: 'profile',
+    },
+    twitter: {
+      card: 'summary_large_image',
+      title: nome,
+      description: descricao,
+      images: pessoa.avatarUrl ? [pessoa.avatarUrl] : undefined,
+    },
+  }
+}
 
 /**
  * O perfil público de uma pessoa qualquer, aberto a partir de um comentário.

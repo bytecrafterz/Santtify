@@ -9,6 +9,7 @@ import { SeloProdutoVivo } from '@/components/SeloProdutoVivo'
 import { BannerDeConsentimento } from '@/components/BannerDeConsentimento'
 import { BarraSocial } from '@/components/BarraSocial'
 import { OfertaDaLetra } from '@/components/OfertaDaLetra'
+import { BarraInferior } from '@/components/BarraInferior'
 
 export async function generateMetadata({
   params,
@@ -79,7 +80,7 @@ export default async function PaginaDeConteudo({
   const { project, content, navegacao } = dados
 
   return (
-    <main className="envoltorio">
+    <main className="envoltorio com-barra">
       <RastreadorDeVisita projectId={project.id} contentId={content.id} type="CONTENT_VIEW" />
 
       <div className="cabecalho">
@@ -198,6 +199,17 @@ export default async function PaginaDeConteudo({
 
       <SeloProdutoVivo projectSlug={projectSlug} />
       <BannerDeConsentimento projectId={project.id} />
+      {/*
+        A BARRA FICA, POR MAIS QUE SE DESÇA.
+
+        Ele apanhou isto em 02/09 e o argumento é o certo: "desço dezenas de
+        publicações para ouvir e depois quero ir para outra área; como a barra
+        desapareceu, sou obrigado a subir a página inteira". Nesta página nunca
+        houve barra, e antes quase não se notava porque ela era curta. Ao passar
+        a desenhar as sete publicações da letra, tornou-se a página mais comprida
+        do site — e a única sem saída.
+      */}
+      <BarraInferior projectSlug={projectSlug} linkPdf={project.checkoutUrl ?? null} />
     </main>
   )
 }

@@ -3,7 +3,41 @@ import type { Metadata } from 'next'
 import { api } from '@/lib/api'
 import { VistaDoCartao } from '@/components/VistaDoCartao'
 
-export const metadata: Metadata = { title: 'Cartão para impressão' }
+/**
+ * O CARTÃO DE PARTILHA DO CARTÃO É O PRÓPRIO CARTÃO.
+ *
+ * Ele apanhou-o em 02/09: "se compartilhar Cartão, precisa representar aquele
+ * cartão". Chegava a capa do projeto. E aqui existe a imagem certa desde
+ * sempre: o `cartao.jpg` que o servidor já gera para impressão é exactamente a
+ * peça que a pessoa está a partilhar.
+ */
+export async function generateMetadata({
+  params,
+}: {
+  params: Promise<{ projectSlug: string; contentSlug: string }>
+}): Promise<Metadata> {
+  const { projectSlug, contentSlug } = await params
+  const dados = await api.conteudo(projectSlug, contentSlug).catch(() => null)
+  if (!dados) return { title: 'Cartão para impressão' }
+
+  const nome = dados.content.title
+  const titulo = `Cartão da ${nome}`
+  const descricao = `O cartão da ${nome} para imprimir em A4, com o QR Code que abre o conteúdo.`
+  const imagem = `${process.env.NEXT_PUBLIC_API_URL ?? ''}/projects/${projectSlug}/contents/${contentSlug}/cartao.jpg`
+
+  return {
+    title: titulo,
+    description: descricao,
+    openGraph: {
+      title: titulo,
+      description: descricao,
+      siteName: dados.project.name,
+      images: [{ url: imagem, alt: titulo }],
+      type: 'article',
+    },
+    twitter: { card: 'summary_large_image', title: titulo, description: descricao, images: [imagem] },
+  }
+}
 
 /**
  * O cartão sozinho, em página própria.

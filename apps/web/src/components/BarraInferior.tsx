@@ -8,7 +8,8 @@ import { usePathname } from 'next/navigation'
  * A barra fixa de baixo, com os quatro acessos.
  *
  * Pedida por ele em 24/08, e pedida duas vezes na mesma tarde com a mesma
- * lista — Alfabeto, Produto Vivo, PDF e Suporte. A barra preta que estava em
+ * lista: Alfabeto, Produto Vivo, PDF e Suporte. Meu Perfil entrou em 02/09,
+ * quando ele descreveu o caminho que faz de verdade. A barra preta que estava em
  * cima sai: ele tinha-a desenhado dois dias antes e concluiu, a usar, que
  * roubava a fotografia de perfil sem dar nada em troca.
  *
@@ -145,6 +146,39 @@ export function BarraInferior({
           PV
         </span>
         Produto Vivo
+      </Link>
+
+      {/*
+        MEU PERFIL NA BARRA, pedido dele em 02/09.
+
+        A lista de 24/08 era Alfabeto, Produto Vivo, PDF e Suporte, e o perfil
+        chegava-se por cima. Agora ele diz o caminho que faz de verdade: "sair
+        de qualquer conteúdo e ir imediatamente para Alfabeto, Produto Vivo ou
+        Meu Perfil". O perfil é a página onde ele passa mais tempo e era a
+        única das três sem botão.
+
+        Leva sempre a `/perfil`. Quem não tiver sessão é levado a entrar e
+        volta aqui, que é o que essa página já faz — e é melhor do que esconder
+        o botão, porque um botão que aparece e desaparece conforme o estado da
+        sessão ensina a não confiar na barra.
+      */}
+      <Link href={`/${projectSlug}/perfil`} className="item-barra">
+        <span className="icone" aria-hidden>
+          <svg
+            viewBox="0 0 24 24"
+            width="22"
+            height="22"
+            fill="none"
+            stroke="currentColor"
+            strokeWidth="1.9"
+            strokeLinecap="round"
+            strokeLinejoin="round"
+          >
+            <circle cx="12" cy="8" r="3.6" />
+            <path d="M4.8 20a7.2 7.2 0 0 1 14.4 0" />
+          </svg>
+        </span>
+        Meu Perfil
       </Link>
 
       {linkPdf && (
