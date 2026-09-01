@@ -7310,3 +7310,53 @@ h2.funil {
   object-fit: cover;
   margin-top: 0.5rem;
 }
+
+/* ── O perfil de outra pessoa (01/09) ──────────────────────────────── */
+
+/* Quem é a pessoa, na página. Estava só dentro da gaveta que se puxa por cima
+   da fotografia, e uma gaveta é uma espreitadela: quem abre o perfil de alguém
+   não tem de descobrir que há ali uma pega para arrastar. */
+.identidade-da-pessoa {
+  margin: 0.6rem 0 1.1rem;
+  padding: 0 0.15rem;
+}
+
+.identidade-da-pessoa h2 {
+  margin: 0 0 0.1rem;
+  font-size: 1.32rem;
+  line-height: 1.2;
+  font-weight: 800;
+}
+
+.identidade-da-pessoa .bio-perfil {
+  margin: 0.45rem 0 0.35rem;
+  font-size: 1rem;
+  line-height: 1.5;
+}
+
+.identidade-da-pessoa .nota {
+  margin: 0.35rem 0 0;
+}
+
+/* A fronteira entre a pessoa e a plataforma. Uma linha com um nome no meio:
+   sem ela, a plataforma logo a seguir às publicações de alguém lê-se como
+   sendo ainda o perfil dessa pessoa. */
+.divisor-de-seccao {
+  display: flex;
+  align-items: center;
+  gap: 0.7rem;
+  margin: 2.2rem 0 1rem;
+  font-size: 0.78rem;
+  font-weight: 800;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--cor-texto-suave);
+}
+
+.divisor-de-seccao::before,
+.divisor-de-seccao::after {
+  content: '';
+  flex: 1 1 auto;
+  height: 1px;
+  background: var(--cor-borda);
+}

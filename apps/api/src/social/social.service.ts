@@ -484,6 +484,7 @@ export class SocialService {
       select: {
         id: true,
         displayName: true,
+        username: true,
         avatarUrl: true,
         bio: true,
         guardianName: true,

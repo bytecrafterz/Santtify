@@ -51,6 +51,40 @@ export function PerfilDePessoa({
           cabeçalho que desenha o perfil do anfitrião e o de quem entra. Aqui
           fica só o que é próprio desta pessoa, que são as publicações dela. */}
 
+      {/*
+        QUEM É ESTA PESSOA, NA PÁGINA E NÃO DENTRO DE UMA GAVETA.
+
+        Isto faltava, e o que faltava não era decoração. Em 31/08 ele escreveu
+        que ao tocar no perfil de outra pessoa aparecia "aquela estrutura
+        antiga no meio do caminho". Eu respondi-lhe que as duas páginas eram
+        iguais, porque comparei a ESTRUTURA. Comparei a coisa errada. Medido o
+        ECRÃ, a diferença é enorme: no perfil dele há 357 pixéis dele próprio
+        antes da plataforma começar; no perfil de outra pessoa há 48, e por
+        isso "Sobre o Jesus", "letras liberadas" e "Escolha uma letra" caem
+        todos dentro do primeiro ecrã. Ele tinha razão e eu não.
+
+        O @identificador, a descrição e quem acompanha o perfil existiam só
+        dentro da gaveta que se puxa por cima da fotografia. Uma gaveta é uma
+        espreitadela; a página é o registo. Quem abre o perfil de alguém quer
+        saber quem é sem ter de descobrir que há ali uma pega para arrastar.
+      */}
+      <div className="identidade-da-pessoa">
+        <h2>{pessoa.displayName}</h2>
+        {pessoa.username && <p className="identificador-perfil">@{pessoa.username}</p>}
+        {pessoa.guardianName && <p className="responsavel-perfil">{pessoa.guardianName}</p>}
+        {pessoa.bio && <p className="bio-perfil">{pessoa.bio}</p>}
+        {pessoa.createdAt && (
+          <p className="nota">
+            Na plataforma desde{' '}
+            {new Date(pessoa.createdAt).toLocaleDateString('pt-PT', {
+              day: '2-digit',
+              month: 'long',
+              year: 'numeric',
+            })}
+          </p>
+        )}
+      </div>
+
       <h2 className="titulo-feed">Publicações</h2>
       {carregando && <p className="nota">A carregar...</p>}
       {!carregando && publicacoes.length === 0 && (

@@ -92,6 +92,20 @@ export default async function PaginaDePessoa({
 
       <PerfilDePessoa pessoa={pessoa} projectId={projeto.id} projectSlug={projectSlug} />
 
+      {/*
+        A FRONTEIRA ENTRE A PESSOA E A PLATAFORMA, ESCRITA.
+
+        Sem esta linha, "Sobre o Jesus Alfabeto Saudável" logo a seguir às
+        publicações de alguém lê-se como se ainda fizesse parte do perfil dela,
+        e foi assim que ele o leu: "aparece aquela estrutura antiga no meio do
+        caminho". A plataforma continua aqui, que foi o pedido dele de 25/08 —
+        um perfil que não leva a lado nenhum é uma saída sem porta. O que muda
+        é que passa a estar assinada como outra coisa.
+      */}
+      <p className="divisor-de-seccao">
+        <span>Conheça o {projeto.name}</span>
+      </p>
+
       {/* E POR BAIXO, A PLATAFORMA — igual ao perfil dele e ao de quem entra.
           Ele disse-o em 25/08 depois de abrir o perfil da Kadosh: "não pode
           abrir numa página praticamente vazia mostrando apenas Publicações".
