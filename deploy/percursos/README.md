@@ -205,3 +205,19 @@ Cheguei a pedir-lhe que me dissesse de que ecrã tinha partilhado. A pergunta n�
 era a que interessava: qualquer ecrã dava o mesmo cartão. **Quando um relato se
 repete três vezes depois de eu "corrigir", o que está errado é a minha leitura
 do relato.**
+
+## `tres-de-02-09.mjs`
+
+O cartão de partilha de cada área, tocar em sequência, e a barra que fica.
+
+```bash
+node deploy/percursos/tres-de-02-09.mjs
+```
+
+O do **tocar em sequência** não espera cinco minutos por uma música: salta o
+áudio para dois décimos do fim e mede se o seguinte começou. Uma verificação que
+demora o tempo real do conteúdo é uma verificação que ninguém corre.
+
+O dos **cartões** compara as quatro áreas entre si e exige que as quatro imagens
+sejam diferentes. Comparar cada uma com a capa do projeto não chegava: bastava
+eu enganar-me e mandar a mesma arte para duas áreas para tudo passar na mesma.
