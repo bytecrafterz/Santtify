@@ -186,3 +186,22 @@ prova-se a régua nos dois sentidos sem deixar nada para trás na base dele.
 
 Verifica também o que a régua **aceita**, e essa metade importa tanto como a
 outra: uma regra que recusa "24055" e recusa "Ana" junto não serve a ninguém.
+
+## `cartao-do-link.mjs`
+
+O que aparece **na mensagem** quando alguém partilha uma publicação.
+
+```bash
+node deploy/percursos/cartao-do-link.mjs
+```
+
+Ele disse três vezes que o compartilhar "chega de forma genérica" e eu andei a
+olhar para o endereço, que já estava certo desde 01/09: abre na publicação e
+acende-a. O que continuava genérico era a **pré-visualização** — o cartão que
+chega ao WhatsApp trazia o nome, a descrição e a capa do PROJETO, fosse qual
+fosse a música partilhada.
+
+Cheguei a pedir-lhe que me dissesse de que ecrã tinha partilhado. A pergunta não
+era a que interessava: qualquer ecrã dava o mesmo cartão. **Quando um relato se
+repete três vezes depois de eu "corrigir", o que está errado é a minha leitura
+do relato.**
