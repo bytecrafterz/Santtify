@@ -2,6 +2,8 @@
 // Nao se prova com opinioes. Fotografa-se a moldura do editor, fotografa-se a
 // capa publica, e comparam-se os pixels.
 import { chromium } from 'playwright'
+import { criarConta } from './criar-conta.mjs'
+import { arteDeitada } from './imagem-de-teste.mjs'
 import { readFileSync } from 'node:fs'
 const SITE='https://santtify.com', PROJ='jesus-alfabeto-saudavel'
 const falhas=[]
@@ -13,9 +15,7 @@ const pg=await (await nav.newContext({viewport:{width:390,height:844},deviceScal
 const limpar=async()=>{for(const t of ['AGORA NÃO','CONTINUAR EXPLORANDO','Aceitar']){const b=await pg.$(`button:has-text("${t}")`);if(b){await b.click();await pg.waitForTimeout(400)}}}
 pg.on('dialog',d=>d.accept())
 
-await pg.goto(`${SITE}/${PROJ}/cadastrar`,{waitUntil:'domcontentloaded'});await pg.waitForTimeout(2500);await limpar()
-await pg.fill('input[type=email]',EMAIL);await pg.fill('input[name=displayName], input[type=text]',`Wys ${marca}`)
-await pg.fill('input[type=password]',SENHA);await pg.click('button[type=submit]');await pg.waitForTimeout(4500)
+await criarConta(pg,{site:SITE,projeto:PROJ,email:EMAIL,senha:SENHA,nome:`Wys ${marca}`,limpar})
 
 try {
 
@@ -25,7 +25,7 @@ await pg.goto(`${SITE}/${PROJ}/perfil`,{waitUntil:'domcontentloaded'});await pg.
 // teste na base dele. Mudar uma pagina obriga a seguir TODOS os caminhos que
 // entram nela, e os percursos guardados sao um deles.
 await pg.goto(`${SITE}/${PROJ}/perfil/editar`,{waitUntil:'domcontentloaded'});await pg.waitForTimeout(3500);await limpar()
-await pg.setInputFiles('#perfil-foto','arte-deitada.png');await pg.waitForTimeout(3000)
+await pg.setInputFiles('#perfil-foto', arteDeitada());await pg.waitForTimeout(3000)
 
 // as proporcoes tem de ser a MESMA
 const formas=await pg.evaluate(()=>{

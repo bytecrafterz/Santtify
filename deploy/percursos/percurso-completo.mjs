@@ -3,6 +3,7 @@
 // -> Conteudo -> Audio -> PDF -> Imprimir -> Compartilhar -> Voltar -> Fechar
 // -> Entrar novamente.
 import { chromium } from 'playwright'
+import { criarConta } from './criar-conta.mjs'
 const SITE='https://santtify.com', PROJ='jesus-alfabeto-saudavel'
 const falhas=[]
 const p_=(n,ok,e='')=>{console.log(`  ${ok?'✓':'✗'} ${n}${e?'   '+e:''}`); if(!ok) falhas.push(n)}
@@ -18,9 +19,7 @@ const limpar=async()=>{for(const t of ['AGORA NÃO','CONTINUAR EXPLORANDO','Acei
 console.log(`\nconta descartavel: ${EMAIL}\n`)
 
 // 1. ENTRAR (cadastro conta como entrar pela primeira vez)
-await pg.goto(`${SITE}/${PROJ}/cadastrar`,{waitUntil:'domcontentloaded'});await pg.waitForTimeout(2500);await limpar()
-await pg.fill('input[type=email]',EMAIL);await pg.fill('input[name=displayName], input[type=text]',NOME)
-await pg.fill('input[type=password]',SENHA);await pg.click('button[type=submit]');await pg.waitForTimeout(4500)
+await criarConta(pg,{site:SITE,projeto:PROJ,email:EMAIL,senha:SENHA,nome:NOME,limpar})
 
 // A limpeza corre mesmo que o percurso falhe a meio. Sem isto, uma falha
 // deixa a conta de teste na base dele: aconteceu em 29/08 com o percurso

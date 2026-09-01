@@ -3,6 +3,19 @@
 Verificações que abrem o site publicado num navegador de verdade e andam por ele
 como uma pessoa anda.
 
+## Criar contas e imagens: `criar-conta.mjs` e `imagem-de-teste.mjs`
+
+Quatro percursos criavam contas de teste com a sua própria cópia dos passos do
+cadastro. Em 01/09 o cadastro passou a exigir @identificador e fotografia, e os
+quatro partiram-se no mesmo minuto. Agora criar conta é `criarConta()`, num sítio
+só: quando o cadastro mudar outra vez, muda aqui.
+
+As imagens de teste também são feitas em código, em `imagem-de-teste.mjs`. Antes
+disto, `editor-igual-ao-publico.mjs` carregava `arte-deitada.png`, um ficheiro
+que existia na minha máquina e em mais lado nenhum. **Um percurso que só corre
+onde foi escrito não serve para o que estes existem**, que é serem corridos por
+outra pessoa, noutro dia, antes de dar uma correção por feita.
+
 ## A conta de administrador vem do ambiente
 
 Os percursos que entram no painel precisam de uma conta de administrador, e essa conta

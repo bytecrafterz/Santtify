@@ -1,6 +1,7 @@
 // A edicao do perfil com a forma do desenho dele. Mede a caixa da descricao
 // COM O TECLADO ABERTO, que e a queixa concreta.
 import { chromium } from 'playwright'
+import { criarConta } from './criar-conta.mjs'
 const SITE='https://santtify.com', PROJ='jesus-alfabeto-saudavel'
 const falhas=[]
 const p_=(n,v,e='')=>{console.log(`  ${v?'✓':'✗'} ${n}${e?'   '+e:''}`); if(!v) falhas.push(n)}
@@ -10,9 +11,7 @@ const nav=await chromium.launch()
 const pg=await (await nav.newContext({viewport:{width:390,height:844},deviceScaleFactor:2,hasTouch:true})).newPage()
 const limpar=async()=>{for(const t of ['AGORA NÃO','CONTINUAR EXPLORANDO','Aceitar']){const b=await pg.$(`button:has-text("${t}")`);if(b){await b.click();await pg.waitForTimeout(400)}}}
 pg.on('dialog',d=>d.accept())
-await pg.goto(`${SITE}/${PROJ}/cadastrar`,{waitUntil:'domcontentloaded'});await pg.waitForTimeout(2500);await limpar()
-await pg.fill('input[type=email]',EMAIL);await pg.fill('input[name=displayName], input[type=text]',`Pf ${marca}`)
-await pg.fill('input[type=password]',SENHA);await pg.click('button[type=submit]');await pg.waitForTimeout(4500)
+await criarConta(pg,{site:SITE,projeto:PROJ,email:EMAIL,senha:SENHA,nome:`Pf ${marca}`,limpar})
 
 try {
 await pg.goto(`${SITE}/${PROJ}/perfil/editar`,{waitUntil:'domcontentloaded'});await pg.waitForTimeout(3500);await limpar()

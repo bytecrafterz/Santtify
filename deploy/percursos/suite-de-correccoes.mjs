@@ -3,6 +3,7 @@
 // corridas. O defeito da barra inferior e intermitente, e um defeito
 // intermitente so se apanha repetindo.
 import { chromium } from 'playwright'
+import { criarConta } from './criar-conta.mjs'
 const SITE='https://santtify.com', PROJ='jesus-alfabeto-saudavel'
 const CORRIDA = process.argv[2] || '1'
 const r = []
@@ -71,9 +72,7 @@ ok('PV sem o quadro explicativo', !/Tem uma empresa|novidades, as demonstra/i.te
 ok('PV com o botao do grupo', pv.b)
 
 // ── E. PERFIL: criar, editar, voltar, apagar ─────────────────────────
-await pg.goto(`${SITE}/${PROJ}/cadastrar`,{waitUntil:'domcontentloaded'});await pg.waitForTimeout(2500);await limpar()
-await pg.fill('input[type=email]',EMAIL);await pg.fill('input[name=displayName], input[type=text]',`Suite ${marca}`)
-await pg.fill('input[type=password]',SENHA);await pg.click('button[type=submit]');await pg.waitForTimeout(4500)
+await criarConta(pg,{site:SITE,projeto:PROJ,email:EMAIL,senha:SENHA,nome:`Suite ${marca}`,limpar})
 await pg.goto(`${SITE}/${PROJ}`,{waitUntil:'domcontentloaded'});await pg.waitForTimeout(3500);await limpar()
 const partida=pg.url()
 await pg.goto(`${SITE}/${PROJ}/perfil/editar`,{waitUntil:'domcontentloaded'});await pg.waitForTimeout(3000);await limpar()
