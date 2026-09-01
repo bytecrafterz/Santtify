@@ -174,14 +174,37 @@ export function FormularioDeAuth({
       )}
       {cadastro && (
         <>
-          <p className="aviso-social regra-do-cadastro">
-            Para a segurança da comunidade, todo perfil precisa de nome, um
-            identificador próprio e uma fotografia.
-          </p>
+          {/*
+            A REGRA APARECE ANTES DE A CONTA EXISTIR, E É A ARTE DELE.
+
+            Pedido dele em 01/09: "quero aproveitar a mesma mensagem de
+            segurança que já usamos na arte do perfil sem foto; ela deve
+            aparecer também durante o cadastro". E disse porquê, que é o melhor
+            argumento: "quem estiver entrando apenas para criar perfil falso já
+            vê as regras antes mesmo de concluir o cadastro e pode nem
+            prosseguir".
+
+            É A PRÓPRIA ARTE e não um texto meu a dizer o mesmo. Duas versões da
+            mesma regra divergem no dia em que ele mudar uma delas, e a que fica
+            desactualizada é sempre a que menos gente vê. Ele muda o ficheiro e
+            muda nos dois sítios.
+          */}
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img
+            className="arte-das-regras"
+            src="/perfil-sem-foto.png"
+            alt={
+              'Não é permitido perfil sem foto e sem nomes verdadeiros, para a segurança da ' +
+              'plataforma. É um ambiente cristão, familiar e infantil. Os perfis que não ' +
+              'tiverem foto nem nome verdadeiro serão deletados automaticamente.'
+            }
+            width={1000}
+            height={1000}
+          />
 
           <label>
             Nome
-            <input name="displayName" type="text" required minLength={2} maxLength={80}
+            <input name="displayName" type="text" required minLength={3} maxLength={80}
                    autoComplete="name" placeholder="Como você quer ser chamado"
                    onBlur={(e) => {
                      // Sugere um identificador a partir do nome, e só enquanto

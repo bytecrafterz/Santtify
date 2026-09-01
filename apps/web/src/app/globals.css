@@ -7414,3 +7414,15 @@ h2.funil {
   color: var(--cor-acao);
   text-decoration: underline;
 }
+
+/* A arte das regras no cadastro. É a mesma peça que ocupa o lugar da foto em
+   quem não tem, e aqui aparece antes de a conta existir: quem entra para criar
+   um perfil falso lê a regra antes de a poder quebrar. */
+.arte-das-regras {
+  display: block;
+  width: 100%;
+  height: auto;
+  max-width: 340px;
+  margin: 0 auto 0.4rem;
+  border-radius: 14px;
+}

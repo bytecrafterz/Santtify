@@ -2,6 +2,7 @@ import { BadRequestException, Injectable, NotFoundException } from '@nestjs/comm
 import { EventType, MediaKind } from '@pv/db'
 import { PrismaService } from '../prisma/prisma.service'
 import { normalizarNomeDeUtilizador, problemaNoNomeDeUtilizador } from './nome-de-utilizador'
+import { limparNomeDePerfil, problemaNoNomeDePerfil } from './nome-de-perfil'
 import { StorageService } from '../admin/storage.service'
 
 /**
@@ -52,7 +53,17 @@ export class ProfileService {
       avatarUrl?: string | null
     } = {}
 
-    if (dados.displayName !== undefined) dadosParaGravar.displayName = dados.displayName.trim()
+    /*
+      A MESMA RÉGUA DA EDIÇÃO E DO CADASTRO.
+
+      Medir só no cadastro não servia de nada: bastava criar a conta com um nome
+      bom e trocá-lo a seguir por "24055".
+    */
+    if (dados.displayName !== undefined) {
+      const problemaNoNome = problemaNoNomeDePerfil(dados.displayName)
+      if (problemaNoNome) throw new BadRequestException(problemaNoNome)
+      dadosParaGravar.displayName = limparNomeDePerfil(dados.displayName)
+    }
 
     /*
       O @identificador pode ser trocado, e é medido pela mesma régua do cadastro.

@@ -22,6 +22,7 @@ import {
   normalizarNomeDeUtilizador,
   problemaNoNomeDeUtilizador,
 } from './nome-de-utilizador'
+import { limparNomeDePerfil, problemaNoNomeDePerfil } from './nome-de-perfil'
 
 export interface ParDeTokens {
   accessToken: string
@@ -139,6 +140,10 @@ export class AuthService {
       throw new BadRequestException('A foto do perfil precisa ser uma imagem.')
     }
 
+    // O nome tem de ser um nome. Pedido dele em 01/09, depois de "Pf 005981".
+    const problemaNoNome = problemaNoNomeDePerfil(dados.displayName)
+    if (problemaNoNome) throw new BadRequestException(problemaNoNome)
+
     const username = normalizarNomeDeUtilizador(dados.username)
     const problema = problemaNoNomeDeUtilizador(username)
     if (problema) throw new BadRequestException(problema)
@@ -164,7 +169,7 @@ export class AuthService {
       data: {
         email,
         passwordHash: await argon2.hash(dados.password),
-        displayName: dados.displayName.trim(),
+        displayName: limparNomeDePerfil(dados.displayName),
         username,
         avatarUrl: retrato.url,
       },
