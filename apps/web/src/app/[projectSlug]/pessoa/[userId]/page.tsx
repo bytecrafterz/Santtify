@@ -102,37 +102,61 @@ export default async function PaginaDePessoa({
         um perfil que não leva a lado nenhum é uma saída sem porta. O que muda
         é que passa a estar assinada como outra coisa.
       */}
-      <p className="divisor-de-seccao">
-        <span>Conheça o {projeto.name}</span>
-      </p>
+      {/*
+        A PLATAFORMA FICA, FECHADA.
 
-      {/* E POR BAIXO, A PLATAFORMA — igual ao perfil dele e ao de quem entra.
-          Ele disse-o em 25/08 depois de abrir o perfil da Kadosh: "não pode
-          abrir numa página praticamente vazia mostrando apenas Publicações".
-          Tinha razão. Um perfil que não leva a lado nenhum é uma saída sem
-          porta: quem lá chega por um comentário fica preso, e o único caminho
-          de volta é o botão do navegador. */}
-      <IntroducaoRecolhivel nome={projeto.name}>
-        {introducao && (
-          <IntroducaoEmCartoes
-            contentId={introducao.content.id}
-            blocos={introducao.content.blocks}
-            projectId={projeto.id}
+        Duas coisas verdadeiras ao mesmo tempo, e demorei a perceber que não se
+        contradizem:
+
+        25/08, depois de ele abrir o perfil da Kadosh: "não pode abrir numa
+        página praticamente vazia mostrando apenas Publicações". Um perfil que
+        não leva a lado nenhum é uma saída sem porta — quem lá chega por um
+        comentário fica preso e volta pelo botão do navegador.
+
+        31/08: "ao clicar na foto ou no nome de QUALQUER usuário deve abrir
+        DIRETAMENTE o perfil novo, não pode existir uma página intermediária".
+
+        Eu tinha resolvido a primeira pondo a plataforma aberta por baixo, e
+        criei a segunda: no perfil dele há 357 pixéis dele antes da plataforma
+        começar, no perfil de outra pessoa havia 48, e por isso "Sobre o
+        Jesus", "letras liberadas" e "Escolha uma letra" caíam todos no
+        primeiro ecrã. Ele leu isso como uma página antiga pelo meio, e estava
+        a ler bem.
+
+        Fechada resolve as duas: a porta continua lá, a um toque, e o que abre
+        quando se toca no nome de alguém é essa pessoa.
+
+        `<details>` e não um estado meu: abre e fecha sem JavaScript, funciona
+        antes de a página hidratar, e o navegador já sabe anunciá-lo a quem usa
+        leitor de ecrã. Menos código meu para divergir.
+      */}
+      <details className="plataforma-no-perfil">
+        <summary>
+          <span>Conheça o {projeto.name}</span>
+        </summary>
+
+        <IntroducaoRecolhivel nome={projeto.name}>
+          {introducao && (
+            <IntroducaoEmCartoes
+              contentId={introducao.content.id}
+              blocos={introducao.content.blocks}
+              projectId={projeto.id}
+              projectSlug={projectSlug}
+              categorias={cats?.categorias ?? []}
+            />
+          )}
+        </IntroducaoRecolhivel>
+
+        {indice && indice.contents.length > 0 && (
+          <ExperienciaContinua
             projectSlug={projectSlug}
+            projectId={projeto.id}
+            contents={indice.contents}
+            progresso={indice.progresso}
             categorias={cats?.categorias ?? []}
           />
         )}
-      </IntroducaoRecolhivel>
-
-      {indice && indice.contents.length > 0 && (
-        <ExperienciaContinua
-          projectSlug={projectSlug}
-          projectId={projeto.id}
-          contents={indice.contents}
-          progresso={indice.progresso}
-          categorias={cats?.categorias ?? []}
-        />
-      )}
+      </details>
 
       <BarraInferior projectSlug={projectSlug} linkPdf={projeto.checkoutUrl ?? null} />
     </main>

@@ -7338,9 +7338,47 @@ h2.funil {
   margin: 0.35rem 0 0;
 }
 
-/* A fronteira entre a pessoa e a plataforma. Uma linha com um nome no meio:
-   sem ela, a plataforma logo a seguir às publicações de alguém lê-se como
-   sendo ainda o perfil dessa pessoa. */
+/* A plataforma no perfil de outra pessoa: fechada, e a fechar-se por uma linha
+   com nome. Aberta, era a primeira coisa que se via ao tocar no nome de
+   alguém. */
+.plataforma-no-perfil > summary {
+  display: flex;
+  align-items: center;
+  gap: 0.7rem;
+  margin: 2.4rem 0 1rem;
+  padding: 0.55rem 0.2rem;
+  cursor: pointer;
+  list-style: none;
+  font-size: 0.78rem;
+  font-weight: 800;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--cor-texto-suave);
+}
+
+/* O triângulo próprio do navegador sai: a linha já diz que abre, e o triângulo
+   encostado ao traço parecia sujidade. */
+.plataforma-no-perfil > summary::-webkit-details-marker {
+  display: none;
+}
+
+.plataforma-no-perfil > summary::before,
+.plataforma-no-perfil > summary::after {
+  content: '';
+  flex: 1 1 auto;
+  height: 1px;
+  background: var(--cor-borda);
+}
+
+.plataforma-no-perfil > summary span::after {
+  content: ' ▾';
+  font-size: 0.9em;
+}
+
+.plataforma-no-perfil[open] > summary span::after {
+  content: ' ▴';
+}
+
 .divisor-de-seccao {
   display: flex;
   align-items: center;
