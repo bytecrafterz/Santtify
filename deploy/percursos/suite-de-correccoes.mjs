@@ -9,6 +9,12 @@ const CORRIDA = process.argv[2] || '1'
 const r = []
 const ok=(n,v,e='')=>{r.push({n,v,e}); console.log(`  ${v?'✓':'✗'} ${n}${e?'   '+e:''}`)}
 const marca=`${Date.now()}`.slice(-6)
+// A marca em LETRAS e nao em digitos: desde 01/09 o nome do perfil recusa
+// numeros, a pedido dele. Um percurso que grava "Suite 054004" testa uma coisa
+// que a plataforma ja nao aceita, e falha a acusar a aplicacao de um defeito
+// que e do proprio percurso.
+const marcaEmLetras = marca.replace(/\d/g, (d) => 'abcdefghij'[Number(d)])
+
 const EMAIL=`teste.suite.${marca}@santtify.dev`, SENHA='Teste.Suite.3008'
 const nav=await chromium.launch()
 const ctx=await nav.newContext({viewport:{width:390,height:844},deviceScaleFactor:2,hasTouch:true,acceptDownloads:true})
@@ -79,12 +85,15 @@ await pg.goto(`${SITE}/${PROJ}/perfil/editar`,{waitUntil:'domcontentloaded'});aw
 ok('EDICAO abre em pagina propria', pg.url().endsWith('/perfil/editar'))
 ok('EDICAO tem SALVAR PERFIL', (await pg.textContent('.editar-perfil button[type=submit]'))?.includes('SALVAR'))
 ok('EDICAO tem excluir a conta', !!(await pg.$('button.apagar-conta')))
-const campo=await pg.$('.editar-perfil input[type=text]')
-if(campo) await campo.fill(`Suite ${marca} ok`)
+// Pelo id, e nao pelo primeiro input de texto que aparecer: desde que o campo
+// do @identificador entrou nesta pagina, "o primeiro" deixou de querer dizer
+// "o nome".
+const campo=await pg.$('#perfil-nome')
+if(campo) await campo.fill(`Suite ${marcaEmLetras} ok`)
 await pg.click('.editar-perfil button[type=submit]');await pg.waitForTimeout(6000)
 ok('SALVAR devolve a onde estava', pg.url()===partida, pg.url().replace(SITE,''))
 ok('e a tela antiga nao aparece', !/Sair da conta|Conteúdos que você abriu/i.test(await pg.textContent('body')))
-ok('DESCRICAO o nome novo aparece', (await pg.textContent('body')).includes(`Suite ${marca} ok`))
+ok('DESCRICAO o nome novo aparece', (await pg.textContent('body')).includes(`Suite ${marcaEmLetras} ok`))
 
 // ── F. CARTAO: as quatro saidas ──────────────────────────────────────
 await pg.goto(`${SITE}/${PROJ}`,{waitUntil:'domcontentloaded'});await pg.waitForTimeout(3500);await limpar()
@@ -103,8 +112,15 @@ finally {
   if(ap){await ap.scrollIntoViewIfNeeded();await ap.click();await pg.waitForTimeout(700)
     await pg.fill('.zona-de-risco input[type=password]',SENHA).catch(()=>{})
     await pg.click('.par-de-botoes button[type=submit]').catch(()=>{});await pg.waitForTimeout(4000)}
-  if (ap && !pg.url().includes('/perfil')) console.log('  (conta apagada)')
-else falhas.push(`A CONTA DE TESTE NAO FOI APAGADA: ${EMAIL}`)
+  /*
+    UMA LIMPEZA FALHADA E UMA FALHA, e regista-se onde este ficheiro regista as
+    outras. Escrevi `falhas.push` aqui de cabeca, e neste ficheiro a lista
+    chama-se `r`: a linha rebentava com "falhas is not defined" e levava a
+    corrida inteira atras dela. E a terceira vez que invento um nome em vez de
+    o ir ler.
+  */
+  const apagou = Boolean(ap) && !pg.url().includes('/perfil')
+  ok('LIMPEZA a conta de teste foi apagada', apagou, apagou ? '' : EMAIL)
   const maus=r.filter(x=>!x.v)
   console.log(`RESULTADO CORRIDA ${CORRIDA}: ${r.length-maus.length}/${r.length}` + (maus.length?`  FALHAS: ${maus.map(m=>m.n).join(' | ')}`:'  tudo passa'))
   await nav.close()

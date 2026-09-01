@@ -10,7 +10,12 @@ const SITE='https://santtify.com', PROJ='jesus-alfabeto-saudavel'
 const falhas=[]
 const p_=(n,v,e='')=>{console.log(`  ${v?'✓':'✗'} ${n}${e?'   '+e:''}`); if(!v) falhas.push(n)}
 const marca=String(Date.now()).slice(-6)
-const EMAIL=`teste.id.${marca}@santtify.dev`, SENHA='Teste.Id.0109.xyz', NOME=`Teste Id ${marca}`
+// O nome SEM DIGITOS: a regua de 01/09 recusa numeros no nome do perfil. Este
+// percurso batizava a conta com a marca de tempo e no dia seguinte deixou de
+// conseguir criar conta nenhuma — a acusar a aplicacao de um defeito que era
+// da propria verificacao.
+const marcaEmLetras = marca.replace(/\d/g, (d) => 'abcdefghij'[Number(d)])
+const EMAIL=`teste.id.${marca}@santtify.dev`, SENHA='Teste.Id.0109.xyz', NOME=`Teste Id ${marcaEmLetras}`
 const FOTO='/tmp/foto-teste.png'
 // Um PNG de 8x8, escrito aqui: o percurso nao pode depender de um ficheiro que
 // por acaso exista na maquina de quem o corre.
@@ -43,7 +48,10 @@ p_('um cadastro sem fotografia e recusado pelo servidor', semFoto.estado>=400, `
 
 // ── O formulario ───────────────────────────────────────────────────
 console.log('\nO FORMULARIO')
-p_('a regra da comunidade aparece antes dos campos', await pg.isVisible('.regra-do-cadastro'))
+// A regra passou a ser a ARTE dele e nao um paragrafo meu, em 01/09, a pedido
+// dele. A verificacao ficou a procurar o paragrafo que eu proprio tinha
+// substituido.
+p_('a arte das regras aparece antes dos campos', await pg.isVisible('.arte-das-regras'))
 p_('existe campo de identificador', await pg.isVisible('.campo-identificador input'))
 
 await pg.fill('input[name=displayName]', NOME)

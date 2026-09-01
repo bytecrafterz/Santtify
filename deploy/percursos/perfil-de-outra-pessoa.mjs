@@ -52,13 +52,24 @@ p_('e ao tocar nela a plataforma abre', await pintado('.grade-letras'))
 // A grelha das letras e desenhada no navegador e chega depois do primeiro
 // pintar. Esperar 4s dava `null` e eu quase dei por partido um ecra que estava
 // inteiro. Espera-se por ela, e nao por um relogio.
+//
+// ESTA PARTE MUDOU EM 01/09 E EU DEIXEI A VERIFICACAO PARA TRAS.
+//
+// Quando escrevi isto, a plataforma estava fechada no perfil dos outros e
+// aberta no dele, e era isso que eu media aqui. Ele respondeu no dia seguinte:
+// "no meu perfil ainda aparece aquela estrutura antiga e no dos outros o
+// alfabeto desapareceu, deixe consistente". Fechei nos dois e nao voltei aqui.
+//
+// A verificacao passou a acusar uma correccao que estava certa. Uma
+// verificacao desactualizada e pior do que nenhuma: ensina a ignorar as falhas,
+// e a proxima que falhar a serio passa despercebida no meio delas.
 await pg.goto(`${SITE}/${PROJ}/perfil`,{waitUntil:'domcontentloaded'})
-await pg.waitForSelector('.grade-letras',{timeout:20000}).catch(()=>{})
-await pg.waitForTimeout(1500);await limpar()
-const meu = await pg.evaluate(()=>{const g=document.querySelector('.grade-letras')
-  return g? Math.round(g.getBoundingClientRect().top+scrollY):null})
-p_('o perfil do proprio continua com o alfabeto aberto', await pintado('.grade-letras'))
-p_('e continua a comecar abaixo do primeiro ecra', meu!==null && meu>844, `${meu}px`)
+await pg.waitForTimeout(4000);await limpar()
+p_('no perfil do proprio a plataforma tambem esta fechada', !(await pintado('.grade-letras')))
+p_('e a porta esta la, igual a dos outros', await pintado('.plataforma-no-perfil > summary'))
+// Abre nos dois, que e o pedido de 25/08: um perfil nao pode ser um beco.
+await pg.click('.plataforma-no-perfil > summary'); await pg.waitForTimeout(1200)
+p_('e abre com um toque, tambem aqui', await pintado('.grade-letras'))
 }catch(e){falhas.push(`excepcao: ${e.message}`);console.log(`  ✗ excepcao: ${e.message}`)}
 await nav.close()
 console.log(falhas.length?`\nFALHOU: ${falhas.length}\n  - ${falhas.join('\n  - ')}`:'\nTUDO CERTO')

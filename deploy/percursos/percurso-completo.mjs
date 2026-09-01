@@ -43,11 +43,14 @@ const abrirEditar = await pg.$('a[href$="/perfil/editar"]')
 p_('4. EDITAR: o atalho para a pagina de edicao existe', !!abrirEditar)
 if(abrirEditar){await abrirEditar.scrollIntoViewIfNeeded();await abrirEditar.click();await pg.waitForTimeout(3500);await limpar()}
 p_('4. EDITAR: abre em pagina propria', pg.url().endsWith('/perfil/editar'), pg.url().replace(SITE,''))
-const campoNome = await pg.$('.editar-perfil input[name=displayName], .editar-perfil input[type=text]')
+// Pelo id: desde que o campo do @identificador entrou nesta pagina, "o
+// primeiro input de texto" deixou de querer dizer "o nome".
+const campoNome = await pg.$('#perfil-nome')
 p_('4. EDITAR: o formulario abre', !!campoNome)
 if(campoNome){
   await campoNome.scrollIntoViewIfNeeded();await pg.waitForTimeout(300)
-  await campoNome.fill(`${NOME} editado`)
+  // Sem digitos: o nome do perfil recusa numeros desde 01/09.
+  await campoNome.fill(`${NOME.replace(/\d/g, (d) => 'abcdefghij'[Number(d)])} editado`)
   const gravar = await pg.$('.editar-perfil button[type=submit]')
   const visivel = gravar ? await gravar.isVisible() : false
   p_('5. SALVAR esta a vista sem procurar', visivel)
@@ -62,7 +65,7 @@ if(campoNome){
 // Gravar devolve ao perfil, por isso volta-se a entrar na edicao para a porta
 // do cancelar.
 await pg.goto(`${SITE}/${PROJ}/perfil/editar`,{waitUntil:'domcontentloaded'});await pg.waitForTimeout(3500);await limpar()
-const campo2 = await pg.$('.editar-perfil input[name=displayName], .editar-perfil input[type=text]')
+const campo2 = await pg.$('#perfil-nome')
 if(campo2){
   await campo2.scrollIntoViewIfNeeded()
   await campo2.fill('NOME QUE NAO DEVE FICAR')

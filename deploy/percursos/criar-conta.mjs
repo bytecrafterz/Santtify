@@ -34,7 +34,30 @@ export async function criarConta(pg, { site, projeto, email, senha, nome, limpar
   await pg.waitForTimeout(2800)
   if (limpar) await limpar()
 
-  await pg.fill('input[name=displayName]', nome)
+  /*
+    O NOME DE TESTE NAO PODE TER DIGITOS.
+
+    Em 01/09 pus a regua que recusa numeros no nome do perfil, a pedido dele, e
+    nao vim aqui. Todos os percursos batizavam a conta com a marca de tempo —
+    "Suite 054004", "Pf 054004" — e no dia seguinte os quatro pararam no
+    cadastro, sem conta criada e com a limpeza a queixar-se de nao encontrar o
+    que apagar. Mudar uma regra obriga a seguir todos os caminhos que passam
+    por ela, e os percursos guardados sao um deles.
+
+    Os digitos viram letras em vez de desaparecerem: o nome continua a ser
+    diferente em cada corrida, o que ajuda a reconhecer qual delas o criou.
+    E se sobrarem menos de tres letras, entra "Teste" a frente, porque a regua
+    exige tres.
+  */
+  const nomeValido = (() => {
+    const letras = 'abcdefghij'
+    const trocado = nome.replace(/\d/g, (d) => letras[Number(d)])
+    return trocado.replace(/[^\p{L}\s]/gu, '').replace(/\s+/g, ' ').trim().replace(/[^\p{L}]/gu, '')
+      .length >= 3
+      ? trocado
+      : `Teste ${trocado}`
+  })()
+  await pg.fill('input[name=displayName]', nomeValido)
   await pg.fill('input[name=email]', email)
   await pg.fill('input[name=password]', senha)
 
