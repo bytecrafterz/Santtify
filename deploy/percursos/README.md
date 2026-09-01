@@ -118,3 +118,22 @@ node deploy/percursos/compartilhar-uma-publicacao.mjs
 A primeira versão desta construía o endereço ela própria e dava-o por bom. Isso
 prova que a página SABE abrir aquele endereço, e não que o botão o produz — que
 era a metade que ele estava a pedir.
+
+## `cadastro-com-identificacao.mjs`
+
+O cadastro que ele pediu em 31/08: nome, **@identificador único** e fotografia,
+antes de a conta existir.
+
+```bash
+node deploy/percursos/cadastro-com-identificacao.mjs
+```
+
+Confere a regra nos dois lados: que o formulário não deixa avançar, e que o
+**servidor recusa** um cadastro sem fotografia feito por fora dele. Uma exigência
+que só existe no navegador não é uma exigência.
+
+Cria uma conta e apaga-a pelo botão de apagar conta, e confirma a limpeza da
+única maneira que não mente: tentando entrar outra vez com ela. A primeira versão
+procurou o botão em `/perfil`, que é a página errada, não o encontrou, e deixou a
+conta de teste na base dele — que é exactamente o defeito que este percurso
+existe para impedir. **Quando a limpeza falha, o percurso falha.**

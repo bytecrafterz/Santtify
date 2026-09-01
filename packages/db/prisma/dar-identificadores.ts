@@ -48,12 +48,38 @@ async function livre(nome: string): Promise<boolean> {
   return !existe
 }
 
-/** O nome dela, e se estiver tomado o mesmo com um número pequeno atrás. */
+/**
+ * O identificador que esta pessoa receberia.
+ *
+ * A ORDEM DOS CANDIDATOS É POLÍTICA DESTE SCRIPT, e o que é VÁLIDO continua a
+ * ser decidido por `nome-de-utilizador.ts`. São perguntas diferentes: uma é
+ * "isto pode existir", a outra é "qual é o mais bonito dos que podem".
+ *
+ * Primeiro o primeiro nome, e só depois nomes maiores. O ensaio mostrou porquê:
+ * "roselcy Maria Balbino Caxito Costo" dava `@roselcymariabalbinoc`, cortado a
+ * meio de uma palavra aos vinte caracteres. `@roselcy` diz-se ao telefone.
+ *
+ * Devolve `null` quando o nome não tem letras nenhumas — o responsável tem o
+ * nome ".." e daí não sai identificador nenhum. Nesse caso é melhor ficar sem
+ * do que receber `@pessoa2`: um identificador feio fica no perfil dele à vista
+ * de toda a gente, e ele escolhe melhor do que este script.
+ */
 async function escolher(displayName: string, tomados: Set<string>): Promise<string | null> {
-  const base = sugerirNomeDeUtilizador(displayName)
-  const candidatos = [base]
-  const raiz = base.slice(0, MAX - 3)
+  const partes = displayName
+    .split(/\s+/)
+    .map((p) => sugerirNomeDeUtilizador(p))
+    .filter((p) => p && !p.startsWith('pessoa'))
+
+  const inteiro = sugerirNomeDeUtilizador(displayName)
+  if (!partes.length && inteiro.startsWith('pessoa')) return null
+
+  const candidatos: string[] = []
+  if (partes[0]) candidatos.push(partes[0])
+  if (partes[1]) candidatos.push(`${partes[0]}${partes[1]}`.slice(0, MAX))
+  candidatos.push(inteiro)
+  const raiz = (partes[0] ?? inteiro).slice(0, MAX - 3)
   for (let i = 2; i <= 60; i++) candidatos.push(`${raiz}${i}`)
+
   for (const c of candidatos) {
     if (tomados.has(c)) continue
     if (problemaNoNomeDeUtilizador(c)) continue
@@ -63,8 +89,16 @@ async function escolher(displayName: string, tomados: Set<string>): Promise<stri
 }
 
 async function main() {
+  /*
+    SÓ CONTAS VIVAS.
+
+    O ensaio mostrou-o antes de gravar: sem esta condição, cinquenta contas
+    apagadas — as de teste, já anonimizadas para "Conta apagada" — levavam
+    @contaapagada2 até @contaapagada52 e tomavam esses nomes para sempre. Uma
+    conta apagada não é identificada por ninguém e não precisa de morada.
+  */
   const sem = await prisma.user.findMany({
-    where: { username: null },
+    where: { username: null, status: 'ACTIVE' },
     orderBy: { createdAt: 'asc' },
     select: { id: true, displayName: true, email: true, status: true },
   })
@@ -83,7 +117,9 @@ async function main() {
   for (const u of sem) {
     const nome = await escolher(u.displayName, tomados)
     if (!nome) {
-      console.log(`  ✗ ${u.displayName}: não encontrei identificador livre. Fica sem.`)
+      console.log(
+        `  ✗ "${u.displayName}": daqui não sai identificador. Fica sem, e escolhe o dela.`,
+      )
       continue
     }
     tomados.add(nome)
