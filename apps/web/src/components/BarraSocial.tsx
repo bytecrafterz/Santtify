@@ -19,11 +19,20 @@ export function BarraSocial({
   projectId,
   projectSlug,
   titulo,
+  soComentarios = false,
 }: {
   contentId: string
   projectId: string
   projectSlug: string
   titulo: string
+  /**
+   * Desenha só a secção de comentários, sem a fila de indicadores.
+   *
+   * Serve a página própria da letra, onde cada publicação já tem a sua fila.
+   * Duas filas na mesma página é a camada social repetida de que ele se
+   * queixou no Produto Vivo em 30/08, e teria razão outra vez.
+   */
+  soComentarios?: boolean
 }) {
   const { visitante } = useAuth()
   /**
@@ -138,7 +147,7 @@ export function BarraSocial({
 
   return (
     <>
-      <div className="barra-social">
+      <div className="barra-social" hidden={soComentarios}>
         {/* Visualizações primeiro, e sem botão: é o único indicador que a
             pessoa não aciona — ela produz só por estar ali a ler. */}
         <span className="acao contagem">

@@ -7398,3 +7398,15 @@ h2.funil {
   height: 1px;
   background: var(--cor-borda);
 }
+
+/* O convite para escolher o identificador ocupa o lugar exacto onde ele vai
+   ficar. Quem procura o seu @ olha para aqui, e não para dentro de um
+   formulário noutra página. */
+.escolher-identificador {
+  display: inline-block;
+  margin: 0.1rem 0 0.35rem;
+  font-size: 0.95rem;
+  font-weight: 800;
+  color: var(--cor-acao);
+  text-decoration: underline;
+}

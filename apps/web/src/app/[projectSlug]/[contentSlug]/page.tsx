@@ -2,7 +2,8 @@ import Link from 'next/link'
 import { notFound } from 'next/navigation'
 import type { Metadata } from 'next'
 import { api } from '@/lib/api'
-import { CartaoDeConteudo } from '@/components/CartaoDeConteudo'
+import { PublicacaoDaLetra } from '@/components/PublicacaoDaLetra'
+import { publicacoesDe } from '@/lib/publicacoes-da-letra'
 import { RastreadorDeVisita } from '@/components/RastreadorDeVisita'
 import { SeloProdutoVivo } from '@/components/SeloProdutoVivo'
 import { BannerDeConsentimento } from '@/components/BannerDeConsentimento'
@@ -104,17 +105,51 @@ export default async function PaginaDeConteudo({
         />
       )}
 
-      <CartaoDeConteudo
-        contentId={content.id}
-        projectId={project.id}
-        projectSlug={projectSlug}
-        titulo={content.title}
-        subtitulo={content.subtitle}
-        capa={content.coverUrl}
-        blocos={content.blocks}
-      />
+      {/*
+        A LETRA VÊ-SE IGUAL, VENHA-SE POR ONDE SE VIER.
 
+        Aqui desenhava-se uma capa e por baixo os sete tocadores empilhados,
+        sem a arte de cada um. É a página que TODOS os QR Codes impressos
+        abrem, e um QR Code impresso não se corrige depois.
+
+        Ele apanhou-o em 01/09, num Android acabado de estrear: "escaneamos o
+        QR Code e os áudios abriram sem as fotos correspondentes; depois de um
+        refresh as imagens apareceram". A primeira metade era literal — nesta
+        página as fotos não existiam de todo. A segunda foi ele a recarregar e
+        a cair, por dentro do site, na página inicial, onde elas existem.
+
+        Passa a desenhar as mesmas publicações da experiência contínua, pela
+        mesma função.
+      */}
+      {publicacoesDe(dados).map((pub) => (
+        <PublicacaoDaLetra
+          somFazParteDaEstrutura
+          key={pub.ancora}
+          etiqueta={pub.etiqueta}
+          imagem={pub.imagem}
+          bloco={pub.bloco}
+          titulo={pub.titulo}
+          texto={pub.texto}
+          alvo={pub.alvo}
+          projectId={project.id}
+          contentId={content.id}
+          projectSlug={projectSlug}
+          ligacao={`/${projectSlug}?letra=${content.slug}&pub=${pub.bloco.id}`}
+          ancora={pub.ancora}
+        />
+      ))}
+
+      {/*
+        SÓ OS COMENTÁRIOS, e não a fila social outra vez.
+
+        Cada publicação acima já tem os seus indicadores. Uma segunda fila aqui
+        seria a camada social repetida de que ele se queixou no Produto Vivo em
+        30/08, e teria razão outra vez. Mas os comentários têm de ficar: 21 dos
+        30 comentários da plataforma estão presos ao CONTEÚDO e não a uma
+        faixa, e são de pessoas reais. Tirar a secção apagava-os do ecrã.
+      */}
       <BarraSocial
+        soComentarios
         contentId={content.id}
         projectId={project.id}
         projectSlug={projectSlug}

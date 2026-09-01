@@ -63,28 +63,46 @@ export default async function PaginaDePerfil({
           noutro sítio: é a primeira coisa que quem acaba de se registar procura. */}
       <PainelDePerfil projectSlug={projectSlug} />
 
-      {/* E por baixo, a plataforma inteira — igual ao perfil do anfitrião. */}
-      <IntroducaoRecolhivel nome={project.name}>
-        {introducao && (
-          <IntroducaoEmCartoes
-            contentId={introducao.content.id}
-            blocos={introducao.content.blocks}
-            projectId={project.id}
+      {/*
+        A PLATAFORMA, FECHADA, IGUAL AO PERFIL DE QUALQUER PESSOA.
+
+        Em 01/09 fechei-a nos perfis dos outros e deixei-a aberta neste, e ele
+        respondeu com a única pergunta que interessa: "no meu perfil ainda
+        aparece aquela estrutura antiga e no dos outros o alfabeto desapareceu,
+        deixe consistente". Fiz duas coisas diferentes com a mesma coisa e
+        chamei a isso uma correcção.
+
+        Fechada nos dois. E ninguém fica sem alfabeto por causa disto: a barra
+        de baixo tem o botão Alfabeto em todas as páginas, que é o caminho que
+        ele próprio desenhou em 24/08 para isto mesmo.
+      */}
+      <details className="plataforma-no-perfil">
+        <summary>
+          <span>Conheça o {project.name}</span>
+        </summary>
+
+        <IntroducaoRecolhivel nome={project.name}>
+          {introducao && (
+            <IntroducaoEmCartoes
+              contentId={introducao.content.id}
+              blocos={introducao.content.blocks}
+              projectId={project.id}
+              projectSlug={projectSlug}
+              categorias={cats?.categorias ?? []}
+            />
+          )}
+        </IntroducaoRecolhivel>
+
+        {contents.length > 0 && (
+          <ExperienciaContinua
             projectSlug={projectSlug}
+            projectId={project.id}
+            contents={contents}
+            progresso={progresso}
             categorias={cats?.categorias ?? []}
           />
         )}
-      </IntroducaoRecolhivel>
-
-      {contents.length > 0 && (
-        <ExperienciaContinua
-          projectSlug={projectSlug}
-          projectId={project.id}
-          contents={contents}
-          progresso={progresso}
-          categorias={cats?.categorias ?? []}
-        />
-      )}
+      </details>
 
       {/* Logo depois do cadastro: é aqui que quem se regista cai. */}
       <AvisoDeIdentidade projectSlug={projectSlug} />

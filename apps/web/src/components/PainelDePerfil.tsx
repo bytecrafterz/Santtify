@@ -56,6 +56,26 @@ export function PainelDePerfil({ projectSlug }: { projectSlug: string }) {
         )}
         <div>
           <h1>{perfil?.user.displayName ?? usuario.displayName}</h1>
+          {/*
+            O @IDENTIFICADOR, E ONDE MUDÁ-LO, NO PRÓPRIO PERFIL.
+
+            Em 01/09 pus o identificador no perfil de toda a gente e disse-lhe
+            para escolher o dele em Editar Perfil. Ele respondeu: "no print
+            aparece @kadosh, mas preciso entender onde isso fica no meu perfil
+            e como eu configuro o meu, porque ainda não encontrei". Mandei-o
+            procurar um campo dentro de um formulário que abre noutra página, e
+            chamei a isso uma explicação.
+
+            Quem ainda não tem vê o convite no lugar exacto onde o identificador
+            vai ficar, e o convite é o link. É o sítio onde ele olhou.
+          */}
+          {perfil?.user.username ? (
+            <p className="identificador-perfil">@{perfil.user.username}</p>
+          ) : (
+            <Link className="escolher-identificador" href={`/${projectSlug}/perfil/editar`}>
+              @ escolher o meu identificador
+            </Link>
+          )}
           {/* O responsável fica colado ao nome, e não no fim da página: numa
               plataforma usada por crianças, quem acompanha o perfil é a
               primeira coisa que outro pai quer saber. */}

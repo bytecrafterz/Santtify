@@ -5,6 +5,7 @@ import type { ItemIndice, PaginaConteudo, ProgressoDasLetras } from '@/lib/api'
 import { PublicacaoDaLetra } from './PublicacaoDaLetra'
 import { CartaoDeImpressao } from './CartaoDeImpressao'
 import { rastrear } from '@/lib/track'
+import { publicacoesDe } from '@/lib/publicacoes-da-letra'
 
 /**
  * O alfabeto e a letra aberta, tudo na mesma tela.
@@ -334,46 +335,6 @@ export function ExperienciaContinua({
   )
 }
 
-/**
- * Parte uma letra nas suas publicações.
- *
- * A PRIMEIRA é o conteúdo em si: a capa da letra, o primeiro áudio, o título e
- * o texto educativo. As seguintes são um áudio cada, com a arte própria da
- * faixa. Se a faixa ainda não tiver arte, usa a capa da letra — é melhor ver a
- * letra outra vez do que ver um buraco branco onde devia estar uma imagem.
- *
- * O texto dos blocos de texto que existam vai todo para a primeira publicação,
- * porque é lá que ele o escreveu enquanto a letra era um cartão só. Cada faixa
- * tem o seu próprio texto assim que ele o preencher no painel.
- */
-function publicacoesDe(pagina: PaginaConteudo) {
-  const c = pagina.content
-
-  // Só cartões, e cada cartão é uma peça inteira: o servidor já não devolve
-  // nenhum incompleto. Aqui não há nada a montar nem a juntar — foi essa
-  // montagem, feita de pedaços que por acaso estavam próximos, que durante
-  // quatro dias deixou a fotografia aparecer sozinha noutro sítio da página.
-  return (
-    c.blocks
-      // Basta ter áudio OU imagem. Um cartão a que falte a foto continua a ser
-      // um cartão, com o lugar da foto lá dentro — que é o oposto de uma
-      // fotografia solta noutro sítio da página.
-      .filter((b) => b.type === 'AUDIO' && b.papel === 'CARTAO' && (b.asset?.url || b.arte))
-      .map((b) => ({
-        ancora: `cartao-${b.id}`,
-        // SEM ETIQUETA. Os nomes das casas — explicação, música, oração — servem
-        // para ele se orientar no painel, e ele foi explícito: não aparecem na
-        // página, nem como faixa branca no topo.
-        etiqueta: null as string | null,
-        imagem: b.arte,
-        bloco: b,
-        titulo: b.titulo ?? '',
-        texto: b.text?.trim() ?? null,
-        linkUpgrade: b.linkUpgrade,
-        alvo: { tipo: 'faixa' as const, blockId: b.id },
-      }))
-  )
-}
 
 /**
  * A letra a seguir a esta no alfabeto.
