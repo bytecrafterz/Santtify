@@ -8,7 +8,7 @@ import {
 } from '@nestjs/common'
 import { ConfigService } from '@nestjs/config'
 import { JwtService, JwtSignOptions } from '@nestjs/jwt'
-import { EventType, User } from '@pv/db'
+import { EventType, MediaKind, User } from '@pv/db'
 import * as argon2 from 'argon2'
 import { createHash, randomBytes } from 'node:crypto'
 import { PrismaService } from '../prisma/prisma.service'
@@ -16,6 +16,12 @@ import { AttributionService } from '../tracking/attribution.service'
 import { EventsService } from '../tracking/events.service'
 import { MailService } from '../common/mail/mail.service'
 import { VisitContext } from '../tracking/attribution.types'
+import { StorageService } from '../admin/storage.service'
+import {
+  MAX as MAX_UTILIZADOR,
+  normalizarNomeDeUtilizador,
+  problemaNoNomeDeUtilizador,
+} from './nome-de-utilizador'
 
 export interface ParDeTokens {
   accessToken: string
@@ -26,6 +32,8 @@ export interface UsuarioPublico {
   id: string
   email: string
   displayName: string
+  /** O @identificador. Nulo nas contas criadas antes de 01/09. */
+  username: string | null
   avatarUrl: string | null
   /**
    * A descrição pessoal e o responsável VIAJAM COM A SESSÃO.
@@ -63,26 +71,102 @@ export class AuthService {
     private readonly attribution: AttributionService,
     private readonly events: EventsService,
     private readonly mail: MailService,
+    private readonly storage: StorageService,
   ) {}
 
+  /**
+   * O identificador está livre? E, se não estiver, qual seria.
+   *
+   * Responde sempre, mesmo a um identificador mal formado: quem está a
+   * escrever no telemóvel quer saber já que "joão silva" não serve, e não
+   * depois de submeter.
+   */
+  async identificadorLivre(
+    bruto: string,
+  ): Promise<{ nome: string; livre: boolean; problema: string | null; sugestao: string | null }> {
+    const nome = normalizarNomeDeUtilizador(bruto)
+    const problema = problemaNoNomeDeUtilizador(nome)
+    if (problema) return { nome, livre: false, problema, sugestao: null }
+    const tomado = await this.prisma.user.findUnique({
+      where: { username: nome },
+      select: { id: true },
+    })
+    if (!tomado) return { nome, livre: true, problema: null, sugestao: null }
+    return {
+      nome,
+      livre: false,
+      problema: 'Este identificador já está em uso.',
+      sugestao: await this.identificadorLivrePerto(nome),
+    }
+  }
+
+  /**
+   * O primeiro identificador livre a partir de um que está tomado.
+   *
+   * Tenta o nome com um número atrás, e o número não é aleatório de propósito:
+   * `@joaosilva2` diz-se ao telefone, `@joaosilva8842` não. Ao fim de algumas
+   * tentativas desiste e devolve `null`, porque uma sugestão feia é pior do
+   * que nenhuma.
+   */
+  private async identificadorLivrePerto(base: string): Promise<string | null> {
+    const raiz = base.slice(0, MAX_UTILIZADOR - 3)
+    for (let i = 2; i <= 40; i++) {
+      const tentativa = `${raiz}${i}`
+      const existe = await this.prisma.user.findUnique({
+        where: { username: tentativa },
+        select: { id: true },
+      })
+      if (!existe) return tentativa
+    }
+    return null
+  }
+
   async registrar(
-    dados: { email: string; password: string; displayName: string },
+    dados: { email: string; password: string; displayName: string; username: string },
     ctx: VisitContext,
+    foto?: Express.Multer.File,
   ): Promise<{ user: UsuarioPublico; tokens: ParDeTokens; anonId: string | null }> {
     const email = dados.email.trim().toLowerCase()
+
+    /*
+      A FOTOGRAFIA É EXIGIDA AQUI, e não só no formulário.
+      Uma exigência que só existe no navegador não é uma exigência: é uma
+      sugestão que qualquer pedido feito por fora ignora, e foi um perfil sem
+      foto nem nome que o levou a escrever este requisito.
+    */
+    if (!foto) throw new BadRequestException('Escolha uma fotografia de perfil para continuar.')
+    if (this.storage.tipoDe(foto.mimetype) !== MediaKind.IMAGE) {
+      throw new BadRequestException('A foto do perfil precisa ser uma imagem.')
+    }
+
+    const username = normalizarNomeDeUtilizador(dados.username)
+    const problema = problemaNoNomeDeUtilizador(username)
+    if (problema) throw new BadRequestException(problema)
 
     const existente = await this.prisma.user.findUnique({ where: { email }, select: { id: true } })
     if (existente) throw new ConflictException('Este e-mail já está cadastrado')
 
+    const tomado = await this.prisma.user.findUnique({
+      where: { username },
+      select: { id: true },
+    })
+    if (tomado) throw new ConflictException(`O identificador @${username} já está em uso.`)
+
     // A atribuição é resolvida ANTES de criar o usuário: é o estado do
     // visitante no momento exato do cadastro que queremos congelar no evento.
     const visita = await this.attribution.resolveVisit(ctx)
+
+    // A foto sobe antes de a conta existir: se o envio falhar, não fica uma
+    // conta meia feita à espera de uma fotografia que nunca chegou.
+    const retrato = await this.storage.salvar(foto)
 
     const user = await this.prisma.user.create({
       data: {
         email,
         passwordHash: await argon2.hash(dados.password),
         displayName: dados.displayName.trim(),
+        username,
+        avatarUrl: retrato.url,
       },
     })
 
@@ -578,6 +662,7 @@ export class AuthService {
       id: user.id,
       email: user.email,
       displayName: user.displayName,
+      username: user.username,
       avatarUrl: user.avatarUrl,
       bio: user.bio,
       guardianName: user.guardianName,

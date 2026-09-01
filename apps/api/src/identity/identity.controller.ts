@@ -5,6 +5,7 @@ import {
   HttpCode,
   Patch,
   Post,
+  Query,
   Req,
   Res,
   UnauthorizedException,
@@ -38,6 +39,9 @@ class RegistrarDto {
    *  comprimento, que protege mais e é mais fácil para um pai cadastrar. */
   @IsString() @MinLength(10) @MaxLength(200) password!: string
   @IsString() @MinLength(2) @MaxLength(80) displayName!: string
+  /* O @identificador. A forma é medida em `nome-de-utilizador.ts`, que é quem
+     manda; aqui só se exige que venha. */
+  @IsString() @MaxLength(40) username!: string
   @IsOptional() @IsString() linkCode?: string
   @IsOptional() @IsString() utmSource?: string
   @IsOptional() @IsString() utmMedium?: string
@@ -57,6 +61,7 @@ class RenovarDto {
 
 class EditarPerfilDto {
   @IsOptional() @IsString() @MinLength(2) @MaxLength(80) displayName?: string
+  @IsOptional() @IsString() @MaxLength(40) username?: string
   /** Mil caracteres: ele quis contar a história do projeto aqui, e trezentos
    *  não chegavam para uma frase inteira sobre o filho. */
   @IsOptional() @IsString() @MaxLength(1000) bio?: string
@@ -116,11 +121,41 @@ export class IdentityController {
     private readonly profile: ProfileService,
   ) {}
 
+  /**
+   * O cadastro passa a levar a fotografia DENTRO do mesmo pedido.
+   *
+   * Ele pediu em 31/08: "antes de concluir o cadastro, a pessoa precisa ter
+   * nome do perfil, um @identificador único e foto de perfil". Pensei em criar
+   * a conta primeiro e pedir a foto num passo a seguir, e é a solução errada
+   * para o que ele descreveu: quem desistisse no segundo passo ficava com
+   * exactamente o perfil sem foto e sem nome de que ele se queixou. Ou entra
+   * tudo, ou não entra conta nenhuma.
+   */
   @Post('auth/register')
-  async registrar(@Body() dto: RegistrarDto, @Req() req: Request, @Res() res: Response) {
-    const resultado = await this.auth.registrar(dto, this.contexto(dto, req))
+  @UseInterceptors(FileInterceptor('foto', { limits: { fileSize: TAMANHO_MAXIMO_IMAGEM } }))
+  async registrar(
+    @Body() dto: RegistrarDto,
+    @Req() req: Request,
+    @Res() res: Response,
+    @UploadedFile() foto?: Express.Multer.File,
+  ) {
+    const resultado = await this.auth.registrar(dto, this.contexto(dto, req), foto)
     if (resultado.anonId) res.cookie(ANON_COOKIE, resultado.anonId, cookieOptions())
     return res.status(201).json({ user: resultado.user, ...resultado.tokens })
+  }
+
+  /**
+   * O identificador está livre?
+   *
+   * Existe para o campo poder responder enquanto a pessoa escreve. Sem isto, a
+   * única maneira de descobrir que `@joaosilva123` já existe é preencher o
+   * formulário todo, escolher a fotografia, enviar, e levar com um erro que
+   * obriga a repetir a escolha da fotografia. Devolve também uma sugestão
+   * livre, para não deixar a pessoa a inventar sozinha.
+   */
+  @Get('auth/username-disponivel')
+  identificadorLivre(@Query('u') u: string) {
+    return this.auth.identificadorLivre(u ?? '')
   }
 
   @Post('auth/login')

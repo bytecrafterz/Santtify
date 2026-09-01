@@ -674,6 +674,12 @@ model User {
   email        String   @unique
   passwordHash String
   displayName  String
+  /// O @identificador, único e sempre em minúsculas.
+  ///
+  /// Opcional na base e obrigatório no cadastro, e a diferença é deliberada:
+  /// as contas criadas antes desta regra não podem ser trancadas fora por
+  /// causa dela. Ver a migração 20260901090000.
+  username     String?  @unique @db.VarChar(20)
   avatarUrl    String?
   bio          String?
   /// Quem acompanha um perfil infantil, mostrado junto ao nome.

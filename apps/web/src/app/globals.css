@@ -7221,3 +7221,92 @@ h2.funil {
     box-shadow: var(--sombra);
   }
 }
+
+/* ── O @identificador (01/09) ──────────────────────────────────────── */
+
+/* Debaixo do nome, mais pequeno e mais claro: o nome é a pessoa, o
+   identificador é a morada dela. Ler-se ao contrário faria o endereço competir
+   com quem ele identifica. */
+.identificador-perfil {
+  margin: 0.1rem 0 0.35rem;
+  font-size: 0.95rem;
+  font-weight: 700;
+  color: var(--cor-texto-suave);
+  letter-spacing: 0.01em;
+}
+
+/* O @ vive fora do campo, e não dentro do que se escreve: dentro, a pessoa
+   apaga-o sem querer e depois escreve outro, e nasce um @@joao. */
+.campo-identificador {
+  display: flex;
+  align-items: center;
+  gap: 0.35rem;
+  border: 1px solid var(--cor-borda);
+  border-radius: 10px;
+  padding-left: 0.7rem;
+  background: var(--cor-superficie);
+}
+
+.campo-identificador > span {
+  font-weight: 800;
+  color: var(--cor-texto-suave);
+}
+
+.campo-identificador input {
+  border: 0;
+  background: transparent;
+  padding-left: 0;
+  flex: 1 1 auto;
+  min-width: 0;
+}
+
+.campo-identificador input:focus {
+  outline: none;
+}
+
+.campo-identificador:focus-within {
+  border-color: var(--cor-acao);
+}
+
+.recado-identificador {
+  display: block;
+  margin-top: 0.3rem;
+  font-size: 0.82rem;
+  line-height: 1.35;
+  color: var(--cor-texto-suave);
+}
+
+.recado-identificador.livre {
+  color: #15803d;
+  font-weight: 700;
+}
+
+.recado-identificador.ocupado {
+  color: #b91c1c;
+  font-weight: 700;
+}
+
+.usar-sugestao {
+  border: 0;
+  background: none;
+  padding: 0;
+  font: inherit;
+  font-weight: 800;
+  color: var(--cor-acao);
+  text-decoration: underline;
+  cursor: pointer;
+}
+
+/* A regra da comunidade fica ANTES dos campos, e não depois do botão: quem a
+   lê no fim já preencheu tudo a pensar noutra coisa. */
+.regra-do-cadastro {
+  margin-bottom: 0.2rem;
+}
+
+.campo-foto-cadastro .previa-avatar {
+  width: 96px;
+  height: 96px;
+  border-radius: 12px;
+  object-fit: cover;
+  margin-top: 0.5rem;
+}

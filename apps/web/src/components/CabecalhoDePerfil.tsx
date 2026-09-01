@@ -95,6 +95,7 @@ export function CabecalhoDePerfil({
       ? {
           id: usuario.id,
           displayName: usuario.displayName,
+          username: usuario.username,
           avatarUrl: usuario.avatarUrl,
           // Estes dois estavam escritos `null` à mão, e era esse o defeito que
           // ele relatou em 28/08: a descrição ficava gravada, aparecia na
@@ -403,6 +404,11 @@ export function CabecalhoDePerfil({
 
           <div className="conteudo-painel" aria-hidden={!aberto}>
             <h2>{nome}</h2>
+            {/* O @identificador debaixo do nome, que é onde ele serve: dois
+                perfis podem chamar-se "João Silva" e este distingue-os. Só
+                aparece quando existe — as contas anteriores a 01/09 ainda não
+                têm, e um "@" sozinho não diz nada a ninguém. */}
+            {dono?.username && <p className="identificador-perfil">@{dono.username}</p>}
             {dono?.guardianName && <p className="responsavel-perfil">{dono.guardianName}</p>}
             <p className="bio-perfil">{descricao}</p>
             {dono?.createdAt && (

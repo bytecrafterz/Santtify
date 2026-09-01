@@ -39,6 +39,10 @@ export function EditarPerfil({
   const { usuario, definirUsuario } = useAuth()
   const [aberto, definirAberto] = useState(sempreAberto)
   const [nome, definirNome] = useState(perfil.user.displayName)
+  /* O @identificador pode ser trocado. Ver a nota em `atualizarPerfil`, do lado
+     do servidor: quem se cadastrou às pressas com um identificador que revela o
+     nome da criança tem de o poder corrigir. */
+  const [identificador, definirIdentificador] = useState(perfil.user.username ?? '')
   const [descricao, definirDescricao] = useState(perfil.user.bio ?? '')
   const [responsavel, definirResponsavel] = useState(perfil.user.guardianName ?? '')
   const [foto, definirFoto] = useState<File | null>(null)
@@ -99,6 +103,7 @@ export function EditarPerfil({
     try {
       const novo = await auth.atualizarPerfil({
         displayName: nome,
+        username: identificador.trim() || undefined,
         bio: descricao,
         guardianName: responsavel,
         foto,
@@ -124,6 +129,7 @@ export function EditarPerfil({
         definirUsuario({
           ...usuario,
           displayName: novo.user.displayName,
+          username: novo.user.username ?? null,
           avatarUrl: novo.user.avatarUrl,
           bio: novo.user.bio,
           guardianName: novo.user.guardianName,
@@ -334,6 +340,25 @@ export function EditarPerfil({
         required
       />
       <span className="contador-campo">{nome.length}/80</span>
+
+      <label htmlFor="perfil-identificador">Identificador</label>
+      <span className="campo-identificador">
+        <span aria-hidden>@</span>
+        <input
+          id="perfil-identificador"
+          type="text"
+          maxLength={20}
+          autoCapitalize="none"
+          autoCorrect="off"
+          spellCheck={false}
+          placeholder="joaosilva123"
+          value={identificador}
+          onChange={(e) => definirIdentificador(e.target.value)}
+        />
+      </span>
+      <small className="recado-identificador">
+        Só seu. Duas pessoas podem ter o mesmo nome, mas não o mesmo identificador.
+      </small>
 
       {erro && <p className="erro">{erro}</p>}
 

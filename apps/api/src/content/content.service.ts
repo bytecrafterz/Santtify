@@ -508,7 +508,7 @@ export class ContentService {
     return this.prisma.user.findMany({
       where: { id: { in: ids }, status: 'ACTIVE' },
       orderBy: { createdAt: 'asc' },
-      select: { id: true, displayName: true, avatarUrl: true, createdAt: true },
+      select: { id: true, displayName: true, username: true, avatarUrl: true, createdAt: true },
     })
   }
 

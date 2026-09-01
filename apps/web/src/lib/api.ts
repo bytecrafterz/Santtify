@@ -95,6 +95,8 @@ export interface ItemIndice {
 export interface PerfilAnfitriao {
   id: string
   displayName: string
+  /** O @identificador. Nulo nas contas criadas antes de 01/09. */
+  username?: string | null
   avatarUrl: string | null
   bio: string | null
   guardianName: string | null

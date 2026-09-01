@@ -1,6 +1,7 @@
 import { BadRequestException, Injectable, NotFoundException } from '@nestjs/common'
 import { EventType, MediaKind } from '@pv/db'
 import { PrismaService } from '../prisma/prisma.service'
+import { normalizarNomeDeUtilizador, problemaNoNomeDeUtilizador } from './nome-de-utilizador'
 import { StorageService } from '../admin/storage.service'
 
 /**
@@ -34,17 +35,52 @@ export class ProfileService {
    */
   async atualizarPerfil(
     userId: string,
-    dados: { displayName?: string; bio?: string; guardianName?: string; removerFoto?: string },
+    dados: {
+      displayName?: string
+      username?: string
+      bio?: string
+      guardianName?: string
+      removerFoto?: string
+    },
     foto?: Express.Multer.File,
   ) {
     const dadosParaGravar: {
       displayName?: string
+      username?: string
       bio?: string | null
       guardianName?: string | null
       avatarUrl?: string | null
     } = {}
 
     if (dados.displayName !== undefined) dadosParaGravar.displayName = dados.displayName.trim()
+
+    /*
+      O @identificador pode ser trocado, e é medido pela mesma régua do cadastro.
+
+      Podia ser imutável, e pensei nisso: um identificador que nunca muda é mais
+      fácil de tratar. Mas quem se cadastrou às pressas com um identificador de
+      que não gosta ou que revela o nome da criança tem de o poder corrigir, e
+      numa plataforma usada por famílias essa segunda razão manda mais do que a
+      minha conveniência.
+
+      O identificador antigo fica livre para outra pessoa. É o mesmo que as
+      outras plataformas fazem, e a alternativa — reservá-lo para sempre — encheria
+      o espaço de nomes com nomes de ninguém.
+    */
+    if (dados.username !== undefined) {
+      const nome = normalizarNomeDeUtilizador(dados.username)
+      const problema = problemaNoNomeDeUtilizador(nome)
+      if (problema) throw new BadRequestException(problema)
+      const tomado = await this.prisma.user.findUnique({
+        where: { username: nome },
+        select: { id: true },
+      })
+      // Gravar o seu próprio identificador outra vez não é um conflito.
+      if (tomado && tomado.id !== userId) {
+        throw new BadRequestException(`O identificador @${nome} já está em uso.`)
+      }
+      dadosParaGravar.username = nome
+    }
     if (dados.bio !== undefined) dadosParaGravar.bio = dados.bio.trim() || null
     if (dados.guardianName !== undefined) {
       dadosParaGravar.guardianName = dados.guardianName.trim() || null
@@ -98,6 +134,7 @@ export class ProfileService {
       select: {
         id: true,
         displayName: true,
+        username: true,
         email: true,
         avatarUrl: true,
         bio: true,

@@ -20,6 +20,8 @@ export interface Usuario {
   id: string
   email: string
   displayName: string
+  /** O @identificador. Nulo nas contas criadas antes de 01/09. */
+  username: string | null
   avatarUrl: string | null
   /** Ver a nota em `UsuarioPublico`, do lado do servidor: o cabeçalho do
    *  perfil monta-se a partir daqui, e sem estes dois campos mostrava sempre o
@@ -164,19 +166,45 @@ async function renovarAgora(): Promise<boolean> {
 }
 
 export const auth = {
+  /**
+   * O cadastro leva a fotografia, e por isso vai em FormData e não em JSON.
+   *
+   * A fotografia é obrigatória desde 01/09 e viaja no mesmo pedido que o resto:
+   * ou a conta nasce inteira, ou não nasce. Criar a conta primeiro e pedir a
+   * foto a seguir deixaria, em cada desistência, exactamente o perfil sem foto
+   * e sem nome de que ele se queixou.
+   */
   async cadastrar(dados: {
     projectId: string
     email: string
     password: string
     displayName: string
+    username: string
+    foto: Blob
   }): Promise<Usuario> {
+    const corpo = new FormData()
+    for (const [chave, valor] of Object.entries(dados)) {
+      if (chave === 'foto') continue
+      corpo.append(chave, String(valor))
+    }
+    corpo.append('foto', dados.foto, 'perfil.jpg')
     const r = await chamar<{ user: Usuario; accessToken: string; refreshToken: string }>(
       '/auth/register',
-      { method: 'POST', body: JSON.stringify(dados) },
+      { method: 'POST', body: corpo },
     )
     tokens.access = r.accessToken
     tokens.refresh = r.refreshToken
     return r.user
+  },
+
+  /** O @identificador está livre? Responde enquanto a pessoa escreve. */
+  async identificadorLivre(u: string) {
+    return chamar<{
+      nome: string
+      livre: boolean
+      problema: string | null
+      sugestao: string | null
+    }>(`/auth/username-disponivel?u=${encodeURIComponent(u)}`)
   },
 
   async entrar(dados: { projectId: string; email: string; password: string }): Promise<Usuario> {
@@ -233,6 +261,7 @@ export const auth = {
   /** Edição do próprio perfil. Vai como formulário porque leva a fotografia. */
   async atualizarPerfil(dados: {
     displayName?: string
+    username?: string
     bio?: string
     guardianName?: string
     foto?: File | null
@@ -241,6 +270,7 @@ export const auth = {
   }): Promise<PerfilResposta> {
     const form = new FormData()
     if (dados.displayName !== undefined) form.append('displayName', dados.displayName)
+    if (dados.username !== undefined) form.append('username', dados.username)
     if (dados.bio !== undefined) form.append('bio', dados.bio)
     if (dados.guardianName !== undefined) form.append('guardianName', dados.guardianName)
     if (dados.foto) form.append('foto', dados.foto)
@@ -258,6 +288,8 @@ export interface PerfilResposta {
   user: {
     id: string
     displayName: string
+    /** O @identificador. Nulo nas contas criadas antes de 01/09. */
+    username: string | null
     email: string
     avatarUrl: string | null
     bio: string | null
