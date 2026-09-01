@@ -150,3 +150,22 @@ Cria uma conta e apaga-a pelo botão de apagar conta, e confirma a limpeza da
 procurou o botão em `/perfil`, que é a página errada, não o encontrou, e deixou a
 conta de teste na base dele — que é exactamente o defeito que este percurso
 existe para impedir. **Quando a limpeza falha, o percurso falha.**
+
+## `perfil-de-outra-pessoa.mjs`
+
+Tocar no nome de outra pessoa abre **o perfil dela**, e não a plataforma.
+
+```bash
+node deploy/percursos/perfil-de-outra-pessoa.mjs
+```
+
+Este é o percurso da correção em que eu estava errado. Ele relatou-o em 31/08 e
+eu respondi-lhe que as duas páginas eram iguais. São, **em estrutura**. Medido o
+ecrã, não eram: no perfil dele havia 357px dele antes de a plataforma começar, no
+de outra pessoa havia 48px. Comparei a árvore de componentes e declarei igual o
+que ele estava a ver diferente.
+
+Mede o que está **pintado**, com `checkVisibility()`. `getBoundingClientRect()`
+devolve caixa para elementos dentro de um `<details>` fechado, e foi assim que li
+822px onde estavam 2433 e quase desfiz uma correção que já estava boa. Duas vezes
+no mesmo dia a régua enganou-me antes de o código estar errado.
