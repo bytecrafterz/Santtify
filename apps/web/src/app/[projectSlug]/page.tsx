@@ -66,7 +66,17 @@ export async function generateMetadata({
     const pagina = await api.conteudo(projectSlug, letra).catch(() => null)
     const bloco = pagina?.content.blocks.find((b) => b.id === pub)
     if (bloco) {
-      const titulo = bloco.titulo?.trim() || pagina!.content.title
+      /*
+        O TÍTULO DIZ A FAIXA E DIZ A LETRA.
+
+        Só o título do cartão dava "Música", que é o nome da casa no painel dele
+        e não diz nada a quem recebe. Só o da letra dava "A de Amor e Abacate"
+        em todas as faixas dessa letra, e voltava a parecer genérico. Junta as
+        duas quando são diferentes: "Música · A de Amor e Abacate".
+      */
+      const daFaixa = bloco.titulo?.trim()
+      const daLetra = pagina!.content.title
+      const titulo = daFaixa && daFaixa !== daLetra ? `${daFaixa} · ${daLetra}` : daLetra
       const texto =
         bloco.text?.trim().replace(/\s+/g, ' ').slice(0, 200) ??
         pagina!.content.summary ??
