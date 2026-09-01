@@ -147,59 +147,65 @@ export function BarraSocial({
 
   return (
     <>
-      <div className="barra-social" hidden={soComentarios}>
-        {/* Visualizações primeiro, e sem botão: é o único indicador que a
-            pessoa não aciona — ela produz só por estar ali a ler. */}
-        <span className="acao contagem">
-          <span aria-hidden>👁</span>
-          {estado.visualizacoes}
-          <small>visualizações</small>
-        </span>
+      {/* NÃO SE DESENHA, em vez de se esconder. Pus `hidden` à primeira e a
+          barra continuou à vista: `hidden` é uma regra fraca do navegador e o
+          `display: flex` que esta classe já tinha ganha-lhe. Uma linha que
+          parece certa a ler e não faz nada, e que só a medição apanhou. */}
+      {!soComentarios && (
+        <div className="barra-social">
+          {/* Visualizações primeiro, e sem botão: é o único indicador que a
+              pessoa não aciona — ela produz só por estar ali a ler. */}
+          <span className="acao contagem">
+            <span aria-hidden>👁</span>
+            {estado.visualizacoes}
+            <small>visualizações</small>
+          </span>
 
-        <button
-          type="button"
-          onClick={curtir}
-          disabled={ocupado}
-          aria-pressed={estado.curtidoPorMim}
-          className={estado.curtidoPorMim ? 'acao curtido' : 'acao'}
-        >
-          <span aria-hidden>{estado.curtidoPorMim ? '♥' : '♡'}</span>
-          {estado.curtidas}
-          <small>curtidas</small>
-        </button>
+          <button
+            type="button"
+            onClick={curtir}
+            disabled={ocupado}
+            aria-pressed={estado.curtidoPorMim}
+            className={estado.curtidoPorMim ? 'acao curtido' : 'acao'}
+          >
+            <span aria-hidden>{estado.curtidoPorMim ? '♥' : '♡'}</span>
+            {estado.curtidas}
+            <small>curtidas</small>
+          </button>
 
-        <a href="#comentarios" className="acao">
-          <span aria-hidden>💬</span>
-          {estado.comentarios}
-          <small>comentários</small>
-        </a>
+          <a href="#comentarios" className="acao">
+            <span aria-hidden>💬</span>
+            {estado.comentarios}
+            <small>comentários</small>
+          </a>
 
-        <button
-          type="button"
-          onClick={abrirCaixaDeCompartilhar}
-          disabled={ocupado}
-          className="acao"
-        >
-          <span aria-hidden>↗</span>
-          {estado.compartilhamentos}
-          <small>compartilhar</small>
-        </button>
+          <button
+            type="button"
+            onClick={abrirCaixaDeCompartilhar}
+            disabled={ocupado}
+            className="acao"
+          >
+            <span aria-hidden>↗</span>
+            {estado.compartilhamentos}
+            <small>compartilhar</small>
+          </button>
 
-        {/* O selo PV no fim da fileira de indicadores, como o cliente pediu em
-            14/08. Não é mais uma função social da letra: leva à página que
-            explica o Produto Vivo e capta empresas interessadas.
+          {/* O selo PV no fim da fileira de indicadores, como o cliente pediu em
+              14/08. Não é mais uma função social da letra: leva à página que
+              explica o Produto Vivo e capta empresas interessadas.
 
-            O clique é contado em TODAS as letras somadas, e não por letra: o
-            Produto Vivo é um só, apresentado em vinte e seis lugares. */}
-        <Link
-          href={`/${projectSlug}/produto-vivo`}
-          className="acao acao-pv"
-          onClick={() => void rastrear({ projectId, contentId, type: 'PV_CLICK' })}
-        >
-          <span aria-hidden>PV</span>
-          <small>o que é isto</small>
-        </Link>
-      </div>
+              O clique é contado em TODAS as letras somadas, e não por letra: o
+              Produto Vivo é um só, apresentado em vinte e seis lugares. */}
+          <Link
+            href={`/${projectSlug}/produto-vivo`}
+            className="acao acao-pv"
+            onClick={() => void rastrear({ projectId, contentId, type: 'PV_CLICK' })}
+          >
+            <span aria-hidden>PV</span>
+            <small>o que é isto</small>
+          </Link>
+        </div>
+      )}
 
       {aviso === 'entrar' && (
         <p className="aviso-social">
