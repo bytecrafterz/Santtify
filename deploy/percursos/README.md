@@ -169,3 +169,20 @@ Mede o que está **pintado**, com `checkVisibility()`. `getBoundingClientRect()`
 devolve caixa para elementos dentro de um `<details>` fechado, e foi assim que li
 822px onde estavam 2433 e quase desfiz uma correção que já estava boa. Duas vezes
 no mesmo dia a régua enganou-me antes de o código estar errado.
+
+## `qr-code-e-perfis.mjs` e `regras-do-cadastro.mjs`
+
+A página que o QR Code abre, os dois perfis, e as regras do cadastro.
+
+```bash
+PV_ADMIN_EMAIL=... PV_ADMIN_SENHA=... node deploy/percursos/qr-code-e-perfis.mjs
+node deploy/percursos/regras-do-cadastro.mjs
+```
+
+O do cadastro **não cria conta nenhuma**: manda cada nome ao servidor sem
+fotografia, e o que verifica é *por que motivo* a recusa aconteceu. Um nome
+inválido é recusado pelo nome; um nome válido chega até à fotografia. Assim
+prova-se a régua nos dois sentidos sem deixar nada para trás na base dele.
+
+Verifica também o que a régua **aceita**, e essa metade importa tanto como a
+outra: uma regra que recusa "24055" e recusa "Ana" junto não serve a ninguém.
