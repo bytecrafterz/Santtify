@@ -443,6 +443,17 @@ export class ContentService {
             categoriaNome: b.category?.name ?? null,
             asset: b.asset,
             arte: b.imageAsset?.url ?? null,
+            /*
+              AS MEDIDAS DA ARTE VIAJAM COM ELA.
+
+              Estavam a ser lidas da base e deitadas fora aqui. Sem elas o
+              navegador não sabe que altura reservar, desenha o tocador
+              encostado ao que vem a seguir e só empurra tudo quando a imagem
+              chega. Numa rede de telemóvel isso são segundos a ver áudio sem
+              foto, que foi o que ele descreveu em 01/09.
+            */
+            arteLargura: b.imageAsset?.width ?? null,
+            arteAltura: b.imageAsset?.height ?? null,
             meta: b.meta,
           })),
         stats: await this.contagens.deConteudo(content.id),

@@ -4343,6 +4343,10 @@ button.letra-bloco {
   width: 100%;
   height: auto;
   vertical-align: bottom;
+  /* O mesmo cinzento do lugar sem foto, por trás. Com as medidas no `img`, o
+     espaço já está guardado; isto é o que se vê enquanto a arte não chega, em
+     vez de um buraco branco por cima do tocador. */
+  background: linear-gradient(135deg, var(--cor-fundo), var(--cor-borda));
 }
 
 .peca-visual .player-onda {

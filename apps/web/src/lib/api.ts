@@ -45,6 +45,9 @@ export interface Bloco {
   asset: Asset | null
   /** Arte própria desta faixa, quando o dono enviou uma. */
   arte: string | null
+  /** As medidas da arte, para reservar o espaço dela antes de chegar. */
+  arteLargura?: number | null
+  arteAltura?: number | null
   meta: Record<string, unknown>
 }
 

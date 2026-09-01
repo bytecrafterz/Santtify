@@ -74,8 +74,29 @@ export function PublicacaoDaLetra({
 
       <div className="peca-visual">
         {imagem ? (
+          /*
+            AS MEDIDAS VÃO NO `img`, e a moldura fica cinzenta até a foto chegar.
+
+            Sem elas o navegador não sabe que altura guardar: desenha o tocador
+            logo a seguir ao título e só empurra a página quando a imagem
+            aparece. Numa rede de telemóvel são segundos a ver o áudio sem a
+            foto, e foi assim que ele o descreveu em 01/09: "os áudios abriram
+            sem as fotos correspondentes".
+
+            Ele próprio disse qual era a solução certa: "se a imagem ainda
+            estiver carregando, é melhor mostrar um loading do que exibir o
+            áudio sozinho". O lugar fica guardado com a forma exacta da arte, e
+            o que se vê enquanto ela não chega é o mesmo cinzento que já existe
+            para os cartões sem foto.
+          */
           // eslint-disable-next-line @next/next/no-img-element
-          <img className="foto-publicacao" src={imagem} alt={titulo} />
+          <img
+            className="foto-publicacao"
+            src={imagem}
+            alt={titulo}
+            width={bloco?.arteLargura ?? undefined}
+            height={bloco?.arteAltura ?? undefined}
+          />
         ) : (
           /* O LUGAR DA FOTO FICA, mesmo sem foto. Palavras dele, 23/08: "se eu
              colocar somente o áudio, o espaço da imagem continuará visível".
