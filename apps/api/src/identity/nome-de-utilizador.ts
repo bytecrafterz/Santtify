@@ -83,7 +83,28 @@ export function normalizarNomeDeUtilizador(bruto: string): string {
  * qual das cinco regras é que se partiu, e quem está a criar uma conta no
  * telemóvel desiste antes de adivinhar.
  */
-export function problemaNoNomeDeUtilizador(nome: string): string | null {
+/**
+ * Palavras que ninguém pode usar NEM SEQUER LÁ DENTRO.
+ *
+ * A lista de reservados acima é de correspondência exacta, e isso deixa uma
+ * porta aberta que só vi quando ele escolheu o identificador dele: `@santtify`
+ * está travado, mas `@santtifyoficial`, `@santtify_oficial` ou `@santtify2`
+ * não estavam. Numa plataforma para crianças, um perfil que parece ser a
+ * plataforma a falar é a ferramenta mais útil que se pode dar a quem entra de
+ * má intenção, e foi exactamente isso que ele quis impedir em 31/08.
+ *
+ * Só a marca. Não tento adivinhar mais nada: uma lista grande de pedaços de
+ * palavra acabaria a recusar o nome de alguém, e recusar o nome de uma pessoa
+ * real é pior do que deixar passar um identificador feio.
+ */
+const MARCAS = ['santtify', 'produtovivo', 'jesusalfabeto']
+
+/** Tira o que se usa para disfarçar: pontos, traços baixos e dígitos. */
+function esqueleto(nome: string): string {
+  return nome.replace(/[._\d]/g, '')
+}
+
+export function problemaNoNomeDeUtilizador(nome: string, ehDaCasa = false): string | null {
   if (!nome) return 'Escolha um identificador.'
   if (nome.length < MIN) return `O identificador precisa de pelo menos ${MIN} caracteres.`
   if (nome.length > MAX) return `O identificador pode ter no máximo ${MAX} caracteres.`
@@ -91,6 +112,14 @@ export function problemaNoNomeDeUtilizador(nome: string): string | null {
   if (!/^[a-z0-9._]+$/.test(nome))
     return 'Use apenas letras, números, ponto e traço baixo, sem espaços nem acentos.'
   if (RESERVADOS.has(nome)) return 'Este identificador é reservado. Escolha outro.'
+  /*
+    Quem é da casa pode usar o nome da casa. O responsável do projeto é
+    `@santtifyoficial` e tem de continuar a poder sê-lo; o que isto impede é
+    que qualquer outra pessoa se ponha a parecer a plataforma.
+  */
+  if (!ehDaCasa && MARCAS.some((m) => esqueleto(nome).includes(m))) {
+    return 'Este identificador parece o nome da plataforma. Escolha outro.'
+  }
   return null
 }
 
