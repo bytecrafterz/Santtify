@@ -57,3 +57,24 @@ export function publicacoesDe(pagina: PaginaConteudo) {
       }))
   )
 }
+
+/*
+  O QUE FOI DAQUI PARA FORA, para quem vier a seguir.
+
+  `CartaoDeConteudo` desenhava a letra como um cartão só: uma capa em cima e os
+  sete tocadores empilhados por baixo, sem a arte de cada um. Foi substituído em
+  02/09 por esta função, ficou sem nenhuma página a usá-lo, e apaguei-o.
+
+  Apaguei-o em vez de o deixar quieto porque ele NÃO É código morto inofensivo:
+  é a "estrutura antiga" de que o cliente se queixou quatro vezes, e trazia
+  dentro a partilha por âncora (`#conteudo-id`) que fazia o link chegar genérico
+  ao WhatsApp — o defeito que levou três rondas a encontrar. Quem o reaproveitar
+  sem saber disto traz as duas coisas de volta.
+
+  Está no histórico do git se alguém precisar de o ler.
+
+  Não confundir com `NovaPublicacao` e `PublicarNoPerfil`, que também não têm
+  ecrã nenhum a apontar para eles e que FICAM: o My Post saiu da interface em
+  12/08 a pedido do cliente e já foi pedido e despedido mais de uma vez. Ver a
+  nota em `BarraSocial`.
+*/
