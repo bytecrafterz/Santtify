@@ -80,8 +80,24 @@ export class ProfileService {
     */
     if (dados.username !== undefined) {
       const nome = normalizarNomeDeUtilizador(dados.username)
-      const problema = problemaNoNomeDeUtilizador(nome)
-      if (problema) throw new BadRequestException(problema)
+      const eu = await this.prisma.user.findUnique({
+        where: { id: userId },
+        select: { username: true, role: true },
+      })
+      /*
+        GRAVAR O QUE JÁ LÁ ESTÁ NÃO É MUDAR NADA.
+
+        Sem isto, quem abrisse a edição do perfil e gravasse o nome ou a
+        descrição levava com as regras do identificador outra vez — incluindo
+        regras criadas DEPOIS de ele o ter escolhido. Era assim que se tirava a
+        alguém um identificador que a própria plataforma lhe tinha dado, e o
+        primeiro a apanhá-lo seria o responsável, que é `@santtifyoficial`.
+      */
+      if (nome !== (eu?.username ?? null)) {
+        // Quem é da casa pode usar o nome da casa.
+        const problema = problemaNoNomeDeUtilizador(nome, eu?.role === 'ADMIN')
+        if (problema) throw new BadRequestException(problema)
+      }
       const tomado = await this.prisma.user.findUnique({
         where: { username: nome },
         select: { id: true },
