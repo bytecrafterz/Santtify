@@ -3724,18 +3724,30 @@ button.letra-bloco {
   color: var(--cor-texto) !important;
 }
 
+/*
+  UM PASSO POR LINHA, DE FORA A FORA.
+
+  Eram dois por linha, e com os quatro passos antigos isso dava uma grelha
+  arrumada. Com os três de 02/09 deixou de dar: o primeiro passo tem uma frase
+  curta e ficava com metade do cartão vazio ao lado do segundo, que tem quatro
+  linhas de texto e duas bandeiras.
+
+  E é assim que está no desenho dele: um por baixo do outro, cada um com a
+  largura toda. Quem instala isto pela primeira vez lê de cima para baixo, uma
+  coisa de cada vez — foi a razão que ele deu para reduzir de quatro para três.
+*/
 .passos-instalar {
   list-style: none;
   margin: 0.2rem 0 0;
   padding: 0;
   width: 100%;
   display: grid;
-  grid-template-columns: repeat(2, 1fr);
+  grid-template-columns: 1fr;
   gap: 0.6rem;
 }
 
-/* Num ecrã estreito dois cartões lado a lado ficariam com quatro palavras
-   por linha. Aí passam a um por linha. */
+/* Já não é preciso: são sempre um por linha. Fica sem efeito de propósito, em
+   vez de eu apagar uma regra que outro passo possa estar a usar. */
 @media (max-width: 359px) {
   .passos-instalar {
     grid-template-columns: 1fr;
