@@ -22,28 +22,39 @@ await pg.click('button[type=submit]');await pg.waitForTimeout(4000)
 
 await pg.goto(`${SITE}/${PROJ}`,{waitUntil:'domcontentloaded'});await pg.waitForTimeout(3000);await limpar()
 // Instalar o espiao ANTES de tocar em nada.
-await pg.evaluate(()=>{ window.__partilhado=null
-  navigator.share = async (d)=>{ window.__partilhado=d; return }
-  navigator.clipboard = { writeText: async (t)=>{ window.__partilhado={url:t}; } } })
+
 // A Letra A e o primeiro botao da grade: a grade tem 26 casas pela ordem do
 // alfabeto e as trancadas sao <div>, nao <button>.
 await pg.click('.grade-letras button.letra-bloco >> nth=0')
 await pg.waitForTimeout(4000)
-const pubs = await pg.evaluate(()=>[...document.querySelectorAll('.publicacao')].map(a=>a.id))
+/*
+  SO AS PUBLICACOES DA LETRA ABERTA.
+
+  Contava `.publicacao` na pagina toda, e a pagina inicial tambem desenha as
+  publicacoes da INTRODUCAO. Dava dez em vez de oito, e a segunda que eu
+  apanhava era de outra seccao — com um botao de partilhar que responde de
+  outra maneira. O percurso acusava a aplicacao de nao fazer nada quando o que
+  estava errado era a minha conta.
+*/
+const pubs = await pg.evaluate(()=>[...document.querySelectorAll('.letra-aberta .publicacao')].map(a=>a.id))
 console.log(`   publicacoes na Letra A: ${pubs.length}`)
 p_('a letra abriu com publicacoes', pubs.length>0)
 
 // Carregar no compartilhar DA SEGUNDA publicacao, para o endereco ter de a
 // distinguir das outras.
 const alvo = pubs[1] ?? pubs[0]
-await pg.evaluate((id)=>{
+// O espiao e o toque no MESMO evaluate: instalar num e ler noutro punha o
+// percurso a depender de o contexto da pagina sobreviver entre os dois.
+const r = await pg.evaluate(async (id)=>{
+  window.__partilhado=null
+  navigator.share = async (d)=>{ window.__partilhado=d }
   const art=document.getElementById(id)
   const b=art.querySelector('button[aria-label="Partilhar"]')
   if(!b) throw new Error('sem botao de partilhar nesta publicacao')
   b.click()
+  await new Promise(r=>setTimeout(r,3000))
+  return window.__partilhado
 }, alvo)
-await pg.waitForTimeout(3000)
-const r = await pg.evaluate(()=>window.__partilhado)
 console.log(`   endereco entregue ao compartilhar: ${r?.url}`)
 const idAlvo = alvo.replace('cartao-','')
 p_('o botao entrega mesmo um endereco', Boolean(r?.url))
