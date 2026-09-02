@@ -221,3 +221,17 @@ demora o tempo real do conteúdo é uma verificação que ninguém corre.
 O dos **cartões** compara as quatro áreas entre si e exige que as quatro imagens
 sejam diferentes. Comparar cada uma com a capa do projeto não chegava: bastava
 eu enganar-me e mandar a mesma arte para duas áreas para tudo passar na mesma.
+
+## `identidade-da-plataforma.mjs`
+
+Ninguém se pode fazer passar pela plataforma.
+
+```bash
+node deploy/percursos/identidade-da-plataforma.mjs
+```
+
+A lista de identificadores reservados era de correspondência exacta, e só vi a
+porta aberta quando o responsável escolheu o dele: `@santtify` estava travado,
+`@santtifyoficial` e `@santtify_oficial` não. Este percurso confere os dois
+lados — recusa os disfarces e aceita nomes reais, incluindo `@satisfy`, que se
+parece e não é.
