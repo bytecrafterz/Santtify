@@ -98,6 +98,29 @@ export default async function PaginaProdutoVivo({
     <main className="envoltorio com-barra">
       {project && <RastreadorDeVisita projectId={project.id} type="PAGE_VIEW" />}
 
+      {/*
+        A VISITA TAMBÉM CONTA PARA A PUBLICAÇÃO, e não só para a página.
+
+        Ele apanhou-o em 02/09: seis partilhas contadas e zero visualizações.
+        As duas coisas vêm de sítios diferentes e só uma estava ligada aqui.
+
+        O contador de uma publicação conta eventos CONTENT_VIEW com o id do
+        conteúdo. Esta página emitia PAGE_VIEW sem id nenhum, e por isso o
+        número não podia ser outra coisa senão zero — não é que estivesse a
+        contar mal, é que nunca teve o que contar. São 1835 visitas registadas
+        assim desde que a página existe.
+
+        O PAGE_VIEW fica: é dele que vivem os números da página no painel, e
+        tirá-lo para acrescentar este trocaria um defeito por outro.
+      */}
+      {project && pv && (
+        <RastreadorDeVisita
+          projectId={project.id}
+          contentId={pv.content.id}
+          type="CONTENT_VIEW"
+        />
+      )}
+
       <div className="cabecalho">
         <Link href={`/${projectSlug}`}>← Voltar</Link>
       </div>
