@@ -7484,3 +7484,21 @@ h2.funil {
   display: flex;
   align-items: center;
 }
+
+/* A CATEGORIA QUE ESTÁ A TOCAR, AZUL DE FORA A FORA.
+
+   Palavras dele, 02/09: "quero que a categoria que estiver tocando fique
+   destacada com uma faixa azul de fora a fora, e não apenas com uma pequena
+   alteração no botão". O que havia era um peso de letra diferente, que não se
+   vê de relance — e de relance é exactamente como isto se lê, com o telemóvel
+   na mão e a música a tocar. */
+.menu-categorias button.a-tocar {
+  background: #2563eb;
+  color: #fff;
+  font-weight: 800;
+}
+
+.menu-categorias button.a-tocar::after {
+  content: ' ▶';
+  font-size: 0.8em;
+}

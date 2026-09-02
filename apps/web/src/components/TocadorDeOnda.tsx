@@ -5,6 +5,13 @@ import type { Bloco } from '@/lib/api'
 import { rastrear } from '@/lib/track'
 import { social } from '@/lib/social'
 import { tocarASeguinte } from '@/lib/tocar-em-sequencia'
+import { useSyncExternalStore } from 'react'
+import {
+  assinarCategoriaATocar,
+  definirCategoriaATocar,
+  lerCategoriaATocar,
+  lerCategoriaNoServidor,
+} from '@/lib/categoria-a-tocar'
 
 /**
  * O tocador escuro com a onda, colado à imagem de cima.
@@ -77,6 +84,12 @@ export function TocadorDeOnda({
   const audio = useRef<HTMLAudioElement>(null)
   const [tocando, definirTocando] = useState(false)
   const [menuAberto, definirMenuAberto] = useState(false)
+  /* Qual categoria está a tocar na página, seja em que tocador for. */
+  const aTocar = useSyncExternalStore(
+    assinarCategoriaATocar,
+    lerCategoriaATocar,
+    lerCategoriaNoServidor,
+  )
   /**
    * Quantas vezes esta faixa foi tocada.
    *
@@ -190,7 +203,21 @@ export function TocadorDeOnda({
               <button
                 key={c}
                 type="button"
-                className={categoria === c ? 'activa' : undefined}
+                /*
+                  DUAS COISAS DIFERENTES, E DUAS MARCAS DIFERENTES.
+                  `activa` é o filtro que a pessoa escolheu: o que ela VÊ.
+                  `a-tocar` é o que está a sair pelo altifalante agora. Com uma
+                  faixa a tocar, é essa que fica azul de fora a fora; sem nada a
+                  tocar, fica a escolha dela, que por omissão é TODOS.
+                */
+                className={
+                  [
+                    categoria === c ? 'activa' : '',
+                    (aTocar ? aTocar === c : categoria === c) ? 'a-tocar' : '',
+                  ]
+                    .filter(Boolean)
+                    .join(' ') || undefined
+                }
                 onClick={(ev) => {
                   ev.stopPropagation()
                   definirMenuAberto(false)
@@ -216,6 +243,9 @@ export function TocadorDeOnda({
           onTimeUpdate={(e) => definirAgora(e.currentTarget.currentTime)}
           onPlay={() => {
             definirTocando(true)
+            /* Diz à página inteira o que está a tocar. É o que faz a faixa azul
+               acompanhar quando o áudio avança sozinho para a faixa seguinte. */
+            definirCategoriaATocar(bloco.categoriaNome ?? categoria ?? null)
             void rastrear({
               projectId,
               contentId,
