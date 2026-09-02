@@ -113,7 +113,16 @@ export function CartaoDeImpressao({
         projectId={projectId}
         projectSlug={projectSlug}
         titulo={`Cartão da ${nome}`}
-        ligacao={`/${projectSlug}#impressao-${blockId}`}
+        /*
+          O CARTÃO PARTILHA A PÁGINA DO CARTÃO.
+
+          Apontava para uma âncora na página inicial, e uma âncora não chega ao
+          servidor: o cartão da mensagem saía com a capa do projeto. A página
+          própria do cartão já traz o `cartao.jpg` no cartão da mensagem desde
+          02/09, e é para lá que se manda quem recebe — que também é onde estão
+          os botões de baixar e imprimir.
+        */
+        ligacao={`/${projectSlug}/${contentSlug}/cartao`}
       />
 
       {aviso && <p className="nota-ok">{aviso}</p>}

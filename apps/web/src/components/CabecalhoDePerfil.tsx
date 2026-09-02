@@ -205,7 +205,20 @@ export function CabecalhoDePerfil({
 
   async function partilhar() {
     if (!dono) return
-    const url = window.location.origin + window.location.pathname
+    /*
+      O QUE SE PARTILHA É O PERFIL DAQUELA PESSOA, E NÃO O ENDEREÇO ONDE EU ESTOU.
+
+      Partilhava `window.location.pathname`. Do perfil próprio isso é
+      `/perfil`, que quer dizer "o perfil de quem estiver a ver" — quem recebia
+      o link abria o SEU próprio perfil, ou um pedido de entrada. O link não
+      levava a lado nenhum e o cartão da mensagem era o do projeto, porque
+      `/perfil` não sabe, ao desenhar, de quem é.
+
+      `/pessoa/<id>` é o endereço público daquela pessoa: é igual para toda a
+      gente e já traz a fotografia e o @ no cartão da mensagem. Ele apanhou as
+      duas metades disto em 02/09, e são a mesma linha.
+    */
+    const url = `${window.location.origin}/${projectSlug}/pessoa/${dono.id}`
 
     // Conta depois, e só se a partilha for concluída: cancelar não é partilhar.
     try {

@@ -2696,9 +2696,11 @@ img.avatar {
   overflow-y: auto;
   background: var(--cor-superficie);
   border-radius: 22px 22px 0 0;
-  padding: 1rem 1rem 1.25rem;
+  /* Sem espaço em baixo: os botões passam a ser colados ali e trazem o seu. */
+  padding: 1rem 1rem 0;
   box-shadow: 0 -10px 40px rgba(10, 12, 18, 0.3);
 }
+
 
 .folha-denuncia header {
   display: flex;
@@ -2777,10 +2779,31 @@ img.avatar {
   color: var(--cor-texto-suave);
 }
 
+/*
+  OS BOTÕES FICAM SEMPRE À VISTA, COLADOS AO FUNDO DA FOLHA.
+
+  Ele escreveu em 02/09: "seleciono qualquer uma delas e não existe uma ação
+  clara para enviar; a pessoa escolhe o motivo e fica naquela tela sem conseguir
+  concluir". O botão existia desde sempre, e estava a 803 pixéis de um ecrã de
+  844 — na última fatia, e a folha rola por dentro. Escolher um motivo faz
+  aparecer a caixa de bloquear e empurra-o para fora; num telemóvel a sério,
+  onde a barra do navegador come altura, ele nunca chega a ver-se.
+
+  "Existe mas não se vê" e "não existe" são a mesma coisa para quem está a usar.
+
+  E ESTA REGRA É UMA SÓ. Escrevi-a primeiro num bloco novo mais acima e deixei
+  a antiga onde estava: duas regras para a mesma classe no mesmo ficheiro, que
+  é o defeito de que ando a avisar o projeto inteiro desde 26/08.
+*/
 .acoes-denuncia {
   display: flex;
   gap: 0.6rem;
   margin-top: 0.5rem;
+  position: sticky;
+  bottom: 0;
+  background: var(--cor-superficie);
+  padding: 0.7rem 0 calc(0.9rem + env(safe-area-inset-bottom, 0px));
+  box-shadow: 0 -8px 12px -8px rgba(10, 12, 18, 0.25);
 }
 
 .acoes-denuncia button {
@@ -7425,4 +7448,39 @@ h2.funil {
   max-width: 340px;
   margin: 0 auto 0.4rem;
   border-radius: 14px;
+}
+
+/* ── O tutorial do iPhone, em 3 passos (02/09) ──────────────────────── */
+
+/* A barra DE BAIXO do Safari. O botão de partilhar mudou de cima para baixo, e
+   o desenho antigo mandava procurar onde já não há nada. */
+.figura.barra-safari-baixo {
+  display: flex;
+  align-items: center;
+  justify-content: space-around;
+  gap: 0.5rem;
+  padding: 0.6rem 0.9rem;
+  background: var(--cor-fundo);
+  border: 1px solid var(--cor-borda);
+  border-radius: 14px;
+}
+
+.figura.barra-safari-baixo .icone-safari {
+  font-size: 1.1rem;
+  color: var(--cor-texto-suave);
+}
+
+.figura.barra-safari-baixo .icone-safari.apagado {
+  opacity: 0.35;
+}
+
+/* A bandeira ao lado da linha: o telemóvel fala a língua de quem o comprou, e
+   quem está no Brasil não sabe o que é "ecrã". */
+.figura.menu-ios .linha .bandeira {
+  margin-right: 0.45rem;
+}
+
+.figura.menu-ios .linha.destacada {
+  display: flex;
+  align-items: center;
 }

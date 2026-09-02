@@ -1,8 +1,8 @@
 {
   "id": "/",
-  "name": "Jesus Alfabeto Saudável",
+  "name": "Santtify",
   "short_name": "Santtify",
-  "description": "Aprenda o alfabeto com música, áudio e conteúdo educativo.",
+  "description": "A Santtify no seu telefone: alfabeto, música e áudio para crianças.",
   "start_url": "/",
   "scope": "/",
   "display": "standalone",

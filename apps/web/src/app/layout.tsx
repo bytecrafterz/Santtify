@@ -19,7 +19,22 @@ export const metadata: Metadata = {
       apple: [{ url: '/apple-touch-icon.png', sizes: '180x180' }],
       shortcut: ['/favicon.ico'],
     },
+  /*
+    O NOME DO ATALHO É SEMPRE "Santtify", VENHA-SE DE QUALQUER PÁGINA.
+
+    Ele instalou a aplicação a partir da Letra A e o iPhone propôs chamar-lhe
+    "A de Amor e Abacate": o iOS usa o título da PÁGINA quando não encontra
+    nada melhor, e o que havia de melhor não estava a chegar. O manifesto dizia
+    `name: "Jesus Alfabeto Saudável"`, que também não é a marca, e o
+    `apple-mobile-web-app-capable` não estava a ser escrito de todo — o Next 15
+    escreve `mobile-web-app-capable` e o Safari continua a ler o antigo.
+
+    Agora as três fontes dizem o mesmo: o manifesto (`name` e `short_name`), o
+    título da aplicação e a marca de compatibilidade. Não há qual delas o iOS
+    escolha que dê outra coisa.
+  */
   appleWebApp: { capable: true, statusBarStyle: 'default', title: 'Santtify' },
+  other: { 'apple-mobile-web-app-capable': 'yes' },
 }
 
 export const viewport: Viewport = {

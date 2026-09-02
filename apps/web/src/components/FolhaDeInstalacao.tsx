@@ -174,7 +174,7 @@ export function FolhaDeInstalacao() {
                 <span className="realce">WEB APP</span>
               </h2>
               <p>É o site da Santtify instalado no seu telefone.</p>
-              <p className="folha-conta-passos">Siga estes {ehIphone ? '4' : '3'} passos:</p>
+              <p className="folha-conta-passos">Siga estes 3 passos:</p>
 
               {ehIphone ? (
                 <PassosDoIphone />
@@ -203,29 +203,48 @@ export function FolhaDeInstalacao() {
 }
 
 /**
- * Os quatro passos do iPhone, com um desenho de cada ecrã.
+ * Os TRÊS passos do iPhone, com um desenho de cada ecrã.
  *
- * Os desenhos são feitos aqui, com caixas e texto, e não são capturas. Uma
- * captura do iOS envelhece a cada versão e fica com o telemóvel dele dentro —
- * hora, bateria, operadora. Isto é a forma das coisas, que é o que a pessoa
- * precisa de reconhecer, e não muda quando a Apple muda o cinzento.
+ * Eram quatro até 02/09. Ele reduziu-os a três depois de instalar a aplicação
+ * no telemóvel de outra pessoa: "o modelo com 4 passos estava ficando confuso,
+ * principalmente para uma pessoa que está fazendo isso pela primeira vez".
+ * Tocar em "Ver mais" e escolher a linha lá dentro é uma sequência só, e
+ * separá-la em dois passos fazia parecer que eram dois ecrãs diferentes.
+ *
+ * E DUAS COISAS QUE ELE APANHOU A AJUDAR ALGUÉM DE VERDADE, no Brasil:
+ *
+ *   O Safari mudou de sítio. O botão de partilhar estava em cima e passou a
+ *   estar na barra DE BAIXO. O desenho antigo mandava procurar onde já não há
+ *   nada.
+ *
+ *   E o telemóvel fala a língua de quem o comprou. Em Portugal a linha diz
+ *   "Adicionar ao ecrã principal"; num iPhone brasileiro diz "Adicionar à Tela
+ *   principal". A pessoa que ele estava a ajudar não sabia o que era "ecrã", e
+ *   ele teve de ir ao telefone dela. Agora aparecem as duas, com a bandeira ao
+ *   lado, e ninguém tem de adivinhar qual é a sua.
+ *
+ * Os desenhos continuam a ser feitos aqui, com caixas e texto, e não capturas:
+ * uma captura do iOS envelhece a cada versão e leva o telemóvel dele dentro,
+ * com hora, bateria e operadora.
  */
 function PassosDoIphone() {
   return (
     <ol className="passos-instalar">
       <li>
         <span className="numero-passo">1</span>
-        <div className="figura barra-safari">
-          <span className="aa">AA</span>
-          <span className="cadeado" aria-hidden>
-            🔒
+        {/* A barra DE BAIXO do Safari, que é onde o botão está agora. */}
+        <div className="figura barra-safari-baixo">
+          <span className="icone-safari" aria-hidden>
+            ‹
           </span>
-          <span className="endereco">santtify.com</span>
+          <span className="icone-safari apagado" aria-hidden>
+            ›
+          </span>
           <span className="alvo-partilhar">
             <svg
               viewBox="0 0 24 24"
-              width="17"
-              height="17"
+              width="18"
+              height="18"
               fill="none"
               stroke="currentColor"
               strokeWidth="1.8"
@@ -237,50 +256,51 @@ function PassosDoIphone() {
               <path d="M6 12v8h12v-8" />
             </svg>
           </span>
+          <span className="icone-safari" aria-hidden>
+            📖
+          </span>
+          <span className="icone-safari" aria-hidden>
+            ⧉
+          </span>
         </div>
-        <p>Toque no símbolo Compartilhar.</p>
+        <p>
+          Toque no símbolo <strong>Compartilhar</strong>, na barra de baixo.
+        </p>
       </li>
 
       <li>
         <span className="numero-passo">2</span>
-        <div className="figura ver-mais">
-          <span className="pastilha" aria-hidden>
-            <svg
-              viewBox="0 0 24 24"
-              width="20"
-              height="20"
-              fill="none"
-              stroke="currentColor"
-              strokeWidth="2.4"
-              strokeLinecap="round"
-              strokeLinejoin="round"
-            >
-              <path d="m6 9 6 6 6-6" />
-            </svg>
+        <div className="figura menu-ios">
+          <span className="linha">Adicionar aos favoritos</span>
+          <span className="linha">Procurar na página</span>
+          <span className="linha destacada">
+            <span className="bandeira" aria-hidden>
+              🇵🇹
+            </span>
+            Adicionar ao ecrã principal
           </span>
-          <span className="rotulo">Ver mais</span>
+          <span className="linha destacada">
+            <span className="bandeira" aria-hidden>
+              🇧🇷
+            </span>
+            Adicionar à Tela principal
+          </span>
         </div>
-        <p>Toque em Ver mais.</p>
+        <p>
+          Toque em <strong>Ver mais</strong> e desça até encontrar a sua:{' '}
+          <strong>Adicionar ao ecrã principal</strong> em Portugal,{' '}
+          <strong>Adicionar à Tela principal</strong> no Brasil.
+        </p>
       </li>
 
       <li>
         <span className="numero-passo">3</span>
-        <div className="figura menu-ios">
-          <span className="linha">Imprimir</span>
-          <span className="linha destacada">Adicionar ao ecrã principal</span>
-          <span className="linha">Adicionar a uma nota rápida</span>
-        </div>
-        <p>Toque em Adicionar ao ecrã principal.</p>
-      </li>
-
-      <li>
-        <span className="numero-passo">4</span>
         <div className="figura caixa-adicionar">
           <span className="topo">
             <span className="x" aria-hidden>
-              ✕
+              Cancelar
             </span>
-            <span className="titulo">Adicionar a...</span>
+            <span className="titulo">Adicionar ao ecrã</span>
             <span className="botao">Adicionar</span>
           </span>
           <span className="linha-app">
@@ -289,7 +309,10 @@ function PassosDoIphone() {
             <span className="nome">Santtify</span>
           </span>
         </div>
-        <p>Confirme Santtify e toque em Adicionar.</p>
+        <p>
+          Confirme que aparece <strong>Santtify</strong> e toque em{' '}
+          <strong>Adicionar</strong>.
+        </p>
       </li>
     </ol>
   )
