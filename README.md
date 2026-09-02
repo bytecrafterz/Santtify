@@ -12,6 +12,7 @@ Cliente: Rossandro Caxito · Contratado via Workana · Fase 1 em desenvolvimento
 | Documento | O que é |
 |---|---|
 | [docs/PROGRESSO.md](docs/PROGRESSO.md) | **Comece por aqui.** Estado técnico, relação com o cliente, bloqueios e avisos |
+| [docs/ENTREGA.md](docs/ENTREGA.md) | **Para quem chega de fora.** Stack, como rodar, como publicar, e o que já existe de cartões e PDF |
 | [docs/ARQUITETURA.md](docs/ARQUITETURA.md) | Decisões técnicas, modelo de dados, fluxo de propagação |
 | [docs/contexto/04-escopo-acordado.md](docs/contexto/04-escopo-acordado.md) | **Fonte da verdade do escopo.** O que entra na Fase 1 e o que é Fase 2 |
 | [docs/contexto/01-requisitos-originais.md](docs/contexto/01-requisitos-originais.md) | Publicação original do projeto |
