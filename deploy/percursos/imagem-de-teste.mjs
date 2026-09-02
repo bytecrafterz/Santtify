@@ -84,3 +84,36 @@ export function arteDeitada() {
     }),
   }
 }
+
+/**
+ * Um som curto, feito aqui.
+ *
+ * `fluxo-real-do-produto-vivo.mjs` carregava `som-pv.mp3`, outro ficheiro que
+ * existia só na minha máquina. WAV e não MP3 porque um WAV são 44 bytes de
+ * cabeçalho e amostras a seguir, e o servidor aceita-o (`audio/wav` está na
+ * lista). Escrever um MP3 à mão exigiria um codificador inteiro para um
+ * segundo de som que ninguém vai ouvir.
+ */
+export function somDeTeste(segundos = 1) {
+  const taxa = 8000
+  const n = taxa * segundos
+  const dados = Buffer.alloc(n * 2)
+  for (let i = 0; i < n; i++) {
+    // Um lá de 440 Hz, baixinho. Serve para haver duração e forma de onda.
+    dados.writeInt16LE(Math.round(Math.sin((2 * Math.PI * 440 * i) / taxa) * 6000), i * 2)
+  }
+  const cab = Buffer.alloc(44)
+  cab.write('RIFF', 0)
+  cab.writeUInt32LE(36 + dados.length, 4)
+  cab.write('WAVEfmt ', 8)
+  cab.writeUInt32LE(16, 16)
+  cab.writeUInt16LE(1, 20) // PCM
+  cab.writeUInt16LE(1, 22) // mono
+  cab.writeUInt32LE(taxa, 24)
+  cab.writeUInt32LE(taxa * 2, 28)
+  cab.writeUInt16LE(2, 32)
+  cab.writeUInt16LE(16, 34)
+  cab.write('data', 36)
+  cab.writeUInt32LE(dados.length, 40)
+  return { name: 'som-de-teste.wav', mimeType: 'audio/wav', buffer: Buffer.concat([cab, dados]) }
+}
