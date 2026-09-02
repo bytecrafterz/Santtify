@@ -77,6 +77,11 @@ export default async function PaginaDeConteudo({
   const dados = await api.conteudo(projectSlug, contentSlug)
   if (!dados) notFound()
 
+  /* As categorias do projeto, para o menu do tocador. Sem elas o menu tinha
+     uma linha só, TODOS, e a faixa azul do que está a tocar não tinha onde
+     aparecer. */
+  const cats = await api.categorias(projectSlug).catch(() => null)
+
   const { project, content, navegacao } = dados
 
   return (
@@ -137,6 +142,7 @@ export default async function PaginaDeConteudo({
           projectSlug={projectSlug}
           ligacao={`/${projectSlug}?letra=${content.slug}&pub=${pub.bloco.id}`}
           ancora={pub.ancora}
+          categorias={cats?.categorias ?? []}
         />
       ))}
 

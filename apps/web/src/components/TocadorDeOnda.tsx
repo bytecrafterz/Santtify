@@ -212,8 +212,10 @@ export function TocadorDeOnda({
                 */
                 className={
                   [
-                    categoria === c ? 'activa' : '',
-                    (aTocar ? aTocar === c : categoria === c) ? 'a-tocar' : '',
+                    // Sem filtro escolhido, a escolha é TODOS: `categoria` vem
+                    // `null` e comparar `null === 'TODOS'` não marcava nada.
+                    (categoria ?? TODOS) === c ? 'activa' : '',
+                    (aTocar ? aTocar === c : (categoria ?? TODOS) === c) ? 'a-tocar' : '',
                   ]
                     .filter(Boolean)
                     .join(' ') || undefined
