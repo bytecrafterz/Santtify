@@ -224,6 +224,22 @@ export function TocadorDeOnda({
                   ev.stopPropagation()
                   definirMenuAberto(false)
                   aoEscolherCategoria?.(c === TODOS ? null : c)
+                  /*
+                    ESCOLHER TAMBÉM MOVE A FAIXA AZUL.
+
+                    Ele apanhou isto em 02/09: "agora EXPLICAÇÃO fica azul, mas
+                    não consigo mudar manualmente". Tinha razão. Assim que uma
+                    faixa começava a tocar, o azul passava a seguir só o que
+                    estava a sair pelo altifalante e ignorava o que ele
+                    escolhia. Tocar em MÚSICA não mexia em nada.
+
+                    O azul segue a ÚLTIMA COISA QUE ACONTECEU, seja ela o dedo
+                    dele ou a faixa seguinte a começar sozinha. É o que ele
+                    descreveu das duas vezes que falou disto, e as duas frases
+                    não se contradizem: uma diz quem manda quando ele escolhe, a
+                    outra quem manda quando ele não faz nada.
+                  */
+                  definirCategoriaATocar(c)
                 }}
               >
                 {c}
