@@ -1,6 +1,7 @@
 import { PaginaDeEdicaoDoPerfil } from '@/components/PaginaDeEdicaoDoPerfil'
 
-export const metadata = { title: 'Editar perfil' }
+// O `<title>` é o nome da aplicação: o iPhone usa-o ao instalar.
+export const metadata = { title: 'Santtify' }
 
 /**
  * A edição do perfil, numa página só dela.

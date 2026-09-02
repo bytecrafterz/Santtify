@@ -6,7 +6,8 @@ import { FormularioDeAuth } from '@/components/FormularioDeAuth'
 import { FolhaDeInstalacao } from '@/components/FolhaDeInstalacao'
 import { DecoracaoPastel } from '@/components/DecoracaoPastel'
 
-export const metadata = { title: 'Bem-vindo à Santtify' }
+// O `<title>` é o nome da aplicação: o iPhone usa-o ao instalar.
+export const metadata = { title: 'Santtify' }
 
 /**
  * A tela de entrada com a folha de instalação por cima — o desenho de 22/08.

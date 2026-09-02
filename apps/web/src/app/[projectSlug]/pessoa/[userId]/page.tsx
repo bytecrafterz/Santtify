@@ -43,7 +43,8 @@ export async function generateMetadata({
     (arroba ? `${arroba} no ${projeto?.name ?? 'Santtify'}` : undefined)
 
   return {
-    title: `${nome} — ${projeto?.name ?? 'Santtify'}`,
+    // Ver a nota em [projectSlug]/page.tsx: o `<title>` é o nome da aplicação.
+    title: 'Santtify',
     description: descricao,
     openGraph: {
       title: arroba ? `${nome} (${arroba})` : nome,

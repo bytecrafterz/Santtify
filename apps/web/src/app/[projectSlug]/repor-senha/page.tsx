@@ -4,7 +4,8 @@ import { notFound } from 'next/navigation'
 import { api } from '@/lib/api'
 import { ReporSenha } from '@/components/ReporSenha'
 
-export const metadata = { title: 'Escolher senha nova' }
+// O `<title>` é o nome da aplicação: o iPhone usa-o ao instalar.
+export const metadata = { title: 'Santtify' }
 
 export default async function PaginaDeReposicao({
   params,

@@ -3,7 +3,8 @@ import { notFound } from 'next/navigation'
 import { api } from '@/lib/api'
 import { PedirReposicao } from '@/components/PedirReposicao'
 
-export const metadata = { title: 'Esqueci minha senha' }
+// O `<title>` é o nome da aplicação: o iPhone usa-o ao instalar.
+export const metadata = { title: 'Santtify' }
 
 /**
  * Recuperação de senha — versão honesta enquanto o envio de e-mail não existe.

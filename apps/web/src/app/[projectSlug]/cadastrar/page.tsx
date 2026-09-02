@@ -4,7 +4,8 @@ import { notFound } from 'next/navigation'
 import { api } from '@/lib/api'
 import { FormularioDeAuth } from '@/components/FormularioDeAuth'
 
-export const metadata = { title: 'Criar conta' }
+// O `<title>` é o nome da aplicação: o iPhone usa-o ao instalar.
+export const metadata = { title: 'Santtify' }
 
 export default async function PaginaDeCadastro({
   params,

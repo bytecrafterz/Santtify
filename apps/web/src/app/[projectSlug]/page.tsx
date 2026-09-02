@@ -83,7 +83,19 @@ export async function generateMetadata({
         undefined
       const arte = bloco.arte ?? pagina!.content.coverUrl ?? undefined
       return {
-        title: `${titulo} — ${dados.project.name}`,
+    /*
+      O TÍTULO DA PÁGINA É "Santtify", E A RAZÃO É A INSTALAÇÃO.
+
+      O iPhone preenche o nome do atalho com o `<title>` do documento. Ele
+      instalou estando numa publicação partilhada e o iPhone propôs "Oração ·
+      Letra D — Jesus Alfabeto Saudável", que é exactamente o título que eu
+      compunha aqui. O `apple-mobile-web-app-title` e o manifesto já diziam
+      Santtify e o Safari passou à frente dos dois.
+
+      O título descritivo não se perde: vive no `openGraph`, que é o que o
+      WhatsApp mostra no cartão da mensagem. O `<title>` é o nome da aplicação.
+    */
+        title: 'Santtify',
         description: texto,
         openGraph: {
           title: titulo,
@@ -110,7 +122,7 @@ export async function generateMetadata({
   const descricao = dados.project.description ?? undefined
 
   return {
-    title: dados.project.name,
+    title: 'Santtify',
     description: descricao,
     openGraph: {
       title: dados.project.name,

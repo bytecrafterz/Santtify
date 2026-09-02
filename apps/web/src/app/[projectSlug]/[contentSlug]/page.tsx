@@ -48,7 +48,8 @@ export async function generateMetadata({
     dados.content.summary ?? textoProprio ?? dados.project.description ?? undefined
 
   return {
-    title: `${dados.content.title} — ${dados.project.name}`,
+    // Ver a nota em [projectSlug]/page.tsx: o `<title>` é o nome da aplicação.
+    title: 'Santtify',
     description: descricao,
     openGraph: {
       title: dados.content.title,

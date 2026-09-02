@@ -26,7 +26,8 @@ export async function generateMetadata({
   const imagem = `${process.env.NEXT_PUBLIC_API_URL ?? ''}/projects/${projectSlug}/contents/${contentSlug}/cartao.jpg`
 
   return {
-    title: titulo,
+    // Ver a nota em [projectSlug]/page.tsx: o `<title>` é o nome da aplicação.
+    title: 'Santtify',
     description: descricao,
     openGraph: {
       title: titulo,

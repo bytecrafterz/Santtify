@@ -247,7 +247,26 @@ export function TocadorDeOnda({
             definirTocando(true)
             /* Diz à página inteira o que está a tocar. É o que faz a faixa azul
                acompanhar quando o áudio avança sozinho para a faixa seguinte. */
-            definirCategoriaATocar(bloco.categoriaNome ?? categoria ?? null)
+            /*
+              A CATEGORIA, E SE NÃO HOUVER, O NOME DA CASA.
+
+              Ele testou e a faixa azul ficava sempre em TODOS. A razão está nos
+              dados dele: das 127 faixas, só 16 têm categoria escolhida no
+              painel. Sem categoria eu não tinha o que acender e caía em TODOS.
+
+              O nome da casa — Explicação, Música, Oração — é o que ele lê na
+              lista e é o mesmo nome das categorias que ele criou. Serve de
+              segunda fonte quando a primeira está vazia, e o resultado é o que
+              ele descreveu: toca a oração, ORAÇÃO fica azul.
+
+              Continua a valer a pena escolher a categoria no painel, e é o que
+              lhe vou dizer: aí a faixa acende mesmo quando o nome da casa e o
+              da categoria são diferentes, como em "Repetição do versículo", que
+              é da categoria Memorização.
+            */
+            definirCategoriaATocar(
+              bloco.categoriaNome ?? bloco.label ?? categoria ?? null,
+            )
             void rastrear({
               projectId,
               contentId,

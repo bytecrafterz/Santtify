@@ -5,7 +5,7 @@ import { ProvedorDeAuth } from '@/components/ProvedorDeAuth'
 import { UmSomDeCadaVez } from '@/components/UmSomDeCadaVez'
 
 export const metadata: Metadata = {
-  title: 'Jesus Alfabeto Saudável',
+  title: 'Santtify',
   description: 'Aprenda o alfabeto com música, áudio e conteúdo educativo.',
   manifest: '/manifest.json',
   // Sem esta declaração o navegador vai sozinho procurar /favicon.ico, não

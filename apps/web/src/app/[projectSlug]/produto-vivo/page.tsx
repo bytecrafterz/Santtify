@@ -50,12 +50,12 @@ export async function generateMetadata({
   const pv = await api.conteudo(projectSlug, 'produto-vivo').catch(() => null)
   const arte = pv?.content.blocks.find((b) => b.arte)?.arte ?? pv?.content.coverUrl ?? undefined
 
-  const titulo = 'Produto Vivo — a tecnologia por trás desta plataforma'
   const descricao =
     'O Produto Vivo transforma qualquer site ou aplicativo em uma mini rede social comercial.'
 
   return {
-    title: titulo,
+    // Ver a nota em [projectSlug]/page.tsx: o `<title>` é o nome da aplicação.
+    title: 'Santtify',
     description: descricao,
     openGraph: {
       title: 'Produto Vivo',

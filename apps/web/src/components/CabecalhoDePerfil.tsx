@@ -310,13 +310,24 @@ export function CabecalhoDePerfil({
                 edição em página própria: a separação estava certa e eu deixei o
                 caminho antigo a apontar para o meio dela.
 
-                "O meu perfil" continua a ir para `/perfil`, e deve: aí o que se
-                pede é o perfil, não a edição.
+                E "O MEU PERFIL" DEIXOU DE IR PARA `/perfil`, em 02/09.
+
+                Levava à área de conta, com os números, o Editar perfil e o Sair
+                da conta. Ele descreveu o caminho exacto: entrar no perfil de
+                outra pessoa e dali ir ao seu, e encontrar o desenho antigo.
+
+                Medi os dois caminhos e a página é a mesma — o que muda é o que
+                ele espera ver. A partir de DENTRO de um perfil, "o meu perfil"
+                quer dizer o meu perfil como os outros o veem, e não a minha
+                área de conta. Essa continua na barra de baixo, que é onde ele
+                a procura quando a quer.
               */}
               {souOAnfitriao ? (
                 <Link href={`/${projectSlug}/perfil/editar`}>✎ Editar perfil</Link>
               ) : temConta ? (
-                <Link href={`/${projectSlug}/perfil`}>👤 O meu perfil</Link>
+                <Link href={`/${projectSlug}/pessoa/${usuario?.id ?? ''}`}>
+                  👤 O meu perfil
+                </Link>
               ) : (
                 <Link href={`/${projectSlug}/instalar`}>👤 Criar o meu perfil</Link>
               )}

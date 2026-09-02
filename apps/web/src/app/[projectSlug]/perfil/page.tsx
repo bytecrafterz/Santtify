@@ -10,7 +10,8 @@ import { BarraInferior } from '@/components/BarraInferior'
 import { BannerDeConsentimento } from '@/components/BannerDeConsentimento'
 import { AvisoDeIdentidade } from '@/components/AvisoDeIdentidade'
 
-export const metadata = { title: 'Meu perfil' }
+// O `<title>` é o nome da aplicação: o iPhone usa-o ao instalar.
+export const metadata = { title: 'Santtify' }
 
 /**
  * O perfil de quem entrou — com a MESMA estrutura da página inicial.

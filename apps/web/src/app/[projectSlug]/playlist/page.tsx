@@ -6,7 +6,8 @@ import { RastreadorDeVisita } from '@/components/RastreadorDeVisita'
 import { BannerDeConsentimento } from '@/components/BannerDeConsentimento'
 import { BarraInferior } from '@/components/BarraInferior'
 
-export const metadata = { title: 'Minha Playlist' }
+// O `<title>` é o nome da aplicação: o iPhone usa-o ao instalar.
+export const metadata = { title: 'Santtify' }
 
 export default async function PaginaPlaylist({
   params,
