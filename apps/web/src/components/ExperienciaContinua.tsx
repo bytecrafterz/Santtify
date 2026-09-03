@@ -172,19 +172,42 @@ export function ExperienciaContinua({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [contents])
 
-  /* Quando a letra chega, toca a faixa que a sequência pediu. */
+  /*
+    QUANDO A LETRA CHEGA, TOCA A FAIXA QUE A SEQUÊNCIA PEDIU.
+
+    INSISTE ATÉ O ELEMENTO EXISTIR, em vez de tentar uma vez ao fim de 600ms.
+    Abrir uma letra é um pedido à rede mais o desenho da página, e 600ms era um
+    número que eu escolhi sem medir nada. Nas letras que já estavam em cache
+    chegava; na volta ao princípio, não — e a sequência morria calada no fim do
+    alfabeto, que foi o que ele viu como "no final não continuou".
+
+    Desiste ao fim de oito segundos. Se a letra não chegou até aí, insistir mais
+    é começar uma música muito depois de a anterior ter acabado, com a pessoa já
+    a olhar para outra coisa.
+  */
   useEffect(() => {
     const alvo = faixaPedida.current
     if (!aberta || !alvo) return
     faixaPedida.current = null
-    const t = setTimeout(() => {
+
+    let parado = false
+    let tentativas = 0
+    const tentar = () => {
+      if (parado) return
       const audio = document.querySelector<HTMLAudioElement>(`#cartao-${alvo} audio`)
-      if (!audio) return
-      const caixa = audio.closest('.publicacao') ?? audio
-      caixa.scrollIntoView({ behavior: 'smooth', block: 'center' })
-      void audio.play().catch(() => {})
-    }, 600)
-    return () => clearTimeout(t)
+      if (audio) {
+        const caixa = audio.closest('.publicacao') ?? audio
+        caixa.scrollIntoView({ behavior: 'smooth', block: 'center' })
+        void audio.play().catch(() => {})
+        return
+      }
+      if (++tentativas < 32) setTimeout(tentar, 250)
+    }
+    const inicio = setTimeout(tentar, 250)
+    return () => {
+      parado = true
+      clearTimeout(inicio)
+    }
   }, [aberta])
 
   /*
