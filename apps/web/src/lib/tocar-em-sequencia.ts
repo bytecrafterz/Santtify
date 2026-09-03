@@ -27,6 +27,8 @@ import { lerCategoriaEscolhida } from './categoria-a-tocar'
 interface Faixa {
   id: string
   slug: string
+  /** A letra do conteúdo. `null` na introdução e no Produto Vivo. */
+  letra: string | null
   categoriaNome: string | null
 }
 
@@ -48,11 +50,26 @@ async function filaDoProjeto(): Promise<Faixa[]> {
   aBuscar = fetch(`${base}/projects/${projeto}/playlist`)
     .then((r) => (r.ok ? r.json() : null))
     .then((d) => {
-      fila = (d?.faixas ?? []).map((f: Faixa) => ({
-        id: f.id,
-        slug: f.slug,
-        categoriaNome: f.categoriaNome ?? null,
-      }))
+      /*
+        POR ORDEM DE LETRA, e não pela ordem em que os conteúdos foram criados.
+
+        A lista chega ordenada por `position`. Durante muito tempo isso foi a
+        mesma coisa que o alfabeto, e deixou de ser quando a Letra B foi criada
+        depois das outras: ficou no fim da lista, e a sequência ia de A para C
+        sem passar por ela. Ele apanhou-o em 02/09.
+
+        E só letras: a introdução e o Produto Vivo não fazem parte do percurso
+        que ele descreveu, que é "percorrendo todas as letras disponíveis".
+      */
+      fila = (d?.faixas ?? [])
+        .filter((f: Faixa) => f.letra)
+        .map((f: Faixa) => ({
+          id: f.id,
+          slug: f.slug,
+          letra: f.letra,
+          categoriaNome: f.categoriaNome ?? null,
+        }))
+        .sort((a: Faixa, b: Faixa) => (a.letra! < b.letra! ? -1 : a.letra! > b.letra! ? 1 : 0))
       return fila!
     })
     .catch(() => [])
@@ -102,13 +119,24 @@ export async function tocarASeguinte(atual: HTMLAudioElement): Promise<boolean> 
   const ondeEstou = todas.findIndex((f) => f.id === daqui)
   if (ondeEstou < 0) return false
   const depoisDaqui = new Set(todas.slice(ondeEstou + 1).map((f) => f.id))
-  const proxima =
-    candidatas.find((f) => depoisDaqui.has(f.id)) ??
-    /* Chegou ao fim: não recomeça sozinha. Voltar ao A depois do Z deixaria
-       música a tocar sem ninguém ter pedido, que é a regra que já vale na
-       playlist. */
-    null
+
+  /*
+    AO CHEGAR AO FIM, VOLTA AO PRINCÍPIO na mesma categoria.
+
+    Pedido dele em 02/09: "ao chegar ao fim das letras disponíveis, ela deve
+    voltar para o início e continuar na mesma categoria". Antes parava, e era
+    isso que ele via como "no final da Letra B não continuou".
+  */
+  const proxima = candidatas.find((f) => depoisDaqui.has(f.id)) ?? candidatas[0] ?? null
   if (!proxima) return false
+
+  /*
+    SALVO SE FOR ELA PRÓPRIA. Há categorias com uma faixa só — hoje só existe
+    uma Oração em todo o projeto. Dar a volta traria a mesma faixa outra vez, e
+    repetir uma música de cinco minutos para sempre não é o que ele pediu; é o
+    que sai de aplicar a regra à letra num caso que ele não tinha em mente.
+  */
+  if (proxima.id === daqui) return false
 
   const aqui = audioDaFaixa(proxima.id)
   if (aqui) {

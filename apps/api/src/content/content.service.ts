@@ -215,6 +215,7 @@ export class ContentService {
       select: {
         id: true,
         slug: true,
+        letra: true,
         title: true,
         subtitle: true,
         coverUrl: true,
@@ -237,6 +238,21 @@ export class ContentService {
         id: b.id,
         contentId: c.id,
         slug: c.slug,
+        /*
+          A LETRA VIAJA COM A FAIXA.
+
+          A lista sai por `position`, que é a ordem em que os conteúdos foram
+          criados. Durante muito tempo isso coincidiu com o alfabeto e ninguém
+          reparou na diferença. Deixou de coincidir quando a Letra B foi criada
+          depois das outras: ficou com o slug `letra-b` e uma posição no fim, e
+          a sequência passava de A para C sem passar por ela. Ele apanhou-o em
+          02/09: "ela pulou direto para a Letra D, sem passar pela B".
+
+          Quem quiser a ordem do alfabeto ordena por isto. Não mudo o `orderBy`
+          da consulta porque a playlist já depende da ordem que ele arrumou com
+          as setas do painel dentro de cada letra.
+        */
+        letra: c.letra,
         title: c.title,
         subtitle: c.subtitle,
         // A arte da própria faixa quando existir; a capa da letra como
