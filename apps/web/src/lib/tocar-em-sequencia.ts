@@ -116,9 +116,23 @@ export async function tocarASeguinte(atual: HTMLAudioElement): Promise<boolean> 
      faixa que está a tocar pode não pertencer à categoria escolhida — é
      exactamente o caso que ele descreveu, "estou a ouvir Explicação e escolho
      Oração". Daí procura-se a primeira da categoria que venha depois desta. */
+  /*
+    QUEM ESTÁ A TOCAR PODE NÃO SER UMA LETRA.
+
+    A página inicial desenha as publicações da INTRODUÇÃO por cima das da letra
+    aberta, e o Produto Vivo tem a sua. Nenhuma delas está na fila das letras,
+    e eu fazia a sequência morrer aí em silêncio: acabava a introdução e não
+    acontecia nada.
+
+    Não estar na fila não é motivo para parar. É motivo para começar do
+    princípio da categoria escolhida, que é o que a pessoa está à espera quando
+    carrega no play a seguir a escolher uma categoria.
+  */
   const ondeEstou = todas.findIndex((f) => f.id === daqui)
-  if (ondeEstou < 0) return false
-  const depoisDaqui = new Set(todas.slice(ondeEstou + 1).map((f) => f.id))
+  const depoisDaqui =
+    ondeEstou < 0
+      ? new Set(todas.map((f) => f.id))
+      : new Set(todas.slice(ondeEstou + 1).map((f) => f.id))
 
   /*
     AO CHEGAR AO FIM, VOLTA AO PRINCÍPIO na mesma categoria.
