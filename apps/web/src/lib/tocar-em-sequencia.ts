@@ -22,7 +22,7 @@
  * numa plataforma para crianças não se pode deixar acontecer por distração.
  * Continua a tocar quando alguém carrega nela, que é o pedido dele.
  */
-import { lerCategoriaATocar } from './categoria-a-tocar'
+import { lerCategoriaEscolhida } from './categoria-a-tocar'
 
 interface Faixa {
   id: string
@@ -85,7 +85,9 @@ export async function tocarASeguinte(atual: HTMLAudioElement): Promise<boolean> 
   const todas = await filaDoProjeto()
   if (!todas.length) return false
 
-  const escolhida = lerCategoriaATocar()
+  /* A ESCOLHA dele, e não o que está a tocar: são valores diferentes desde
+     02/09, e a nota em `categoria-a-tocar.ts` diz porquê. */
+  const escolhida = lerCategoriaEscolhida()
   const semFiltro = !escolhida || escolhida === 'TODOS'
 
   /* Sem categoria fica sempre de fora, com filtro ou sem ele. */

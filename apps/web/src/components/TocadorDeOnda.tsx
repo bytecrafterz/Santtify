@@ -9,6 +9,7 @@ import { useSyncExternalStore } from 'react'
 import {
   assinarCategoriaATocar,
   definirCategoriaATocar,
+  definirCategoriaEscolhida,
   lerCategoriaATocar,
   lerCategoriaNoServidor,
 } from '@/lib/categoria-a-tocar'
@@ -240,6 +241,9 @@ export function TocadorDeOnda({
                     outra quem manda quando ele não faz nada.
                   */
                   definirCategoriaATocar(c)
+                  /* E a ESCOLHA, que é o que manda na sequência. Só muda aqui,
+                     no dedo dele, e não quando uma faixa começa. */
+                  definirCategoriaEscolhida(c === TODOS ? null : c)
                 }}
               >
                 {c}

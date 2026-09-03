@@ -24,6 +24,32 @@
 let aTocar: string | null = null
 const ouvintes = new Set<() => void>()
 
+/*
+  A ESCOLHA DELE E O QUE ESTÁ A TOCAR SÃO DUAS COISAS, e confundi-las custou-me
+  uma volta inteira.
+
+  Eu tinha um valor só. Ele escolhia ORAÇÃO no menu, carregava no play de uma
+  Explicação, e o `onPlay` escrevia por cima da escolha dele com a categoria da
+  faixa que acabara de começar. A sequência seguia depois a Explicação, e a
+  escolha dele desaparecia no instante em que ele carregava no play — que é o
+  gesto seguinte, sempre.
+
+  A FAIXA AZUL mostra o que aconteceu por último, seja o dedo dele ou a faixa
+  seguinte a começar: é o que ele aprovou e não muda.
+
+  A SEQUÊNCIA segue a ESCOLHA, que só muda quando ele toca no menu.
+*/
+let escolhida: string | null = null
+
+/** A categoria que ele escolheu no menu. `null` é TODOS. */
+export function definirCategoriaEscolhida(nome: string | null) {
+  escolhida = nome?.trim().toUpperCase() || null
+}
+
+export function lerCategoriaEscolhida() {
+  return escolhida
+}
+
 /** O nome da categoria que está a tocar, em maiúsculas, ou `null`. */
 export function definirCategoriaATocar(nome: string | null) {
   const novo = nome?.trim().toUpperCase() || null
