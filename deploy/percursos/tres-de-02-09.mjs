@@ -44,19 +44,36 @@ await pg.screenshot({path:'letra-fundo-com-barra.png'})
 
 console.log('\nTOCAR EM SEQUENCIA')
 await pg.evaluate(()=>scrollTo(0,0)); await pg.waitForTimeout(800)
+/*
+  A SEGUINTE E A SEGUINTE COM CATEGORIA, e nao o proximo elemento da pagina.
+
+  Esta verificacao exigia que o `<audio>` logo a seguir comecasse. Em 02/09 ele
+  mudou a regra: os audios sem categoria — avisos administrativos — nao podem
+  tocar sozinhos, nem em TODOS. Na Letra A o primeiro audio da pagina e um
+  desses, e o seguinte tambem: exigir que ele tocasse era exigir o defeito.
+
+  Mede agora o que ele pediu: alguma coisa comeca, e o que comeca tem
+  categoria.
+*/
+const d=await (await fetch(`${SITE}/api/projects/${PROJ}/playlist`)).json()
+const catDe=Object.fromEntries((d.faixas??[]).map(f=>[f.id, f.categoriaNome]))
 const seq=await pg.evaluate(async()=>{
   const audios=[...document.querySelectorAll('audio')]
   if(audios.length<2) return {erro:`so ${audios.length} audios`}
-  const a=audios[0], b=audios[1]
-  a.muted=true; b.muted=true
+  audios.forEach(x=>{x.muted=true})
+  const a=audios[0]
   await a.play().catch(()=>{})
   // Salta para o fim em vez de esperar cinco minutos.
   a.currentTime = Math.max(0,(a.duration||10)-0.2)
-  await new Promise(r=>setTimeout(r,4000))
-  return {primeiroAcabou:a.ended, segundoATocar:!b.paused, segundoTempo:Math.round(b.currentTime*10)/10}
+  await new Promise(r=>setTimeout(r,6000))
+  const id=(x)=>x.closest('[id^="cartao-"]')?.id?.replace('cartao-','')??null
+  const tocando=[...document.querySelectorAll('audio')].filter(x=>!x.paused)
+  return {primeiroAcabou:a.ended, comecou:tocando.map(id), quantos:tocando.length}
 })
-console.log(`   ${JSON.stringify(seq)}`)
-p_('a faixa seguinte comeca sozinha', seq.primeiroAcabou===true && seq.segundoATocar===true, JSON.stringify(seq))
+console.log(`   ${JSON.stringify(seq)}  -> ${(seq.comecou||[]).map(i=>catDe[i]??'SEM CATEGORIA').join(', ')}`)
+p_('a faixa seguinte comeca sozinha', seq.primeiroAcabou===true && seq.quantos===1, JSON.stringify(seq))
+p_('e a que comeca tem categoria', (seq.comecou||[]).every(i=>Boolean(catDe[i])),
+   (seq.comecou||[]).map(i=>catDe[i]??'SEM CATEGORIA').join(', '))
 }catch(e){falhas.push('excepcao: '+e.message);console.log('  ✗ '+e.message)}
 await nav.close()
 console.log(falhas.length?`\nFALHOU: ${falhas.length}\n  - ${falhas.join('\n  - ')}`:'\nTUDO CERTO')
