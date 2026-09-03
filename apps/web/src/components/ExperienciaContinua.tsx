@@ -146,6 +146,48 @@ export function ExperienciaContinua({
   }, [aberta])
 
   /*
+    A SEQUÊNCIA ATRAVESSA DE UMA LETRA PARA A OUTRA.
+
+    Pedido dele em 02/09: escolher Explicação e ouvir a Explicação da A, depois
+    a da B, depois a da C. Quando a faixa seguinte da categoria está noutra
+    letra, `tocar-em-sequencia` não a encontra no ecrã e pede-a por aqui.
+
+    ABRE A LETRA SEM SAIR DA PÁGINA, que é o que esta tela já sabe fazer desde
+    20/08 e a razão de ela existir: "a pessoa entra no perfil e não sai dele".
+    Levá-la a outro endereço para continuar a ouvir seria desfazer isso para
+    resolver outra coisa.
+  */
+  const faixaPedida = useRef<string | null>(null)
+  useEffect(() => {
+    const ouvir = (ev: Event) => {
+      const { slug, blockId } = (ev as CustomEvent).detail ?? {}
+      if (!slug || !blockId) return
+      const item = contents.find((c) => c.slug === slug)
+      if (!item?.publicado) return
+      faixaPedida.current = blockId
+      void escolher(item)
+    }
+    window.addEventListener('pv:tocar-faixa', ouvir)
+    return () => window.removeEventListener('pv:tocar-faixa', ouvir)
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [contents])
+
+  /* Quando a letra chega, toca a faixa que a sequência pediu. */
+  useEffect(() => {
+    const alvo = faixaPedida.current
+    if (!aberta || !alvo) return
+    faixaPedida.current = null
+    const t = setTimeout(() => {
+      const audio = document.querySelector<HTMLAudioElement>(`#cartao-${alvo} audio`)
+      if (!audio) return
+      const caixa = audio.closest('.publicacao') ?? audio
+      caixa.scrollIntoView({ behavior: 'smooth', block: 'center' })
+      void audio.play().catch(() => {})
+    }, 600)
+    return () => clearTimeout(t)
+  }, [aberta])
+
+  /*
     ABRIR A PUBLICAÇÃO QUE O ENDEREÇO PEDE.
 
     `?letra=e&pub=<id>` é o que sai do botão de compartilhar. Corre uma vez, na

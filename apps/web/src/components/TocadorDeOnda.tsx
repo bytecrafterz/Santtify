@@ -320,7 +320,7 @@ export function TocadorDeOnda({
               qualquer faixa, e não numa propriedade que quatro páginas teriam
               de passar: a que se esquecesse falhava calada.
             */
-            if (audio.current) tocarASeguinte(audio.current)
+            if (audio.current) void tocarASeguinte(audio.current)
           }}
         >
           <source src={bloco.asset?.url} type={bloco.asset?.mimeType ?? undefined} />
