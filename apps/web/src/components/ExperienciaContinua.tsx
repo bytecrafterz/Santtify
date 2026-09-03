@@ -42,6 +42,9 @@ export function ExperienciaContinua({
 }) {
   const [escolhida, definirEscolhida] = useState<string | null>(null)
   const [cache, definirCache] = useState<Record<string, PaginaConteudo>>({})
+  /* O espelho da cache, para quem lê de dentro de um ouvinte registado uma vez. */
+  const cacheRef = useRef<Record<string, PaginaConteudo>>({})
+  cacheRef.current = cache
   const [carregando, definirCarregando] = useState(false)
   const [erro, definirErro] = useState<string | null>(null)
   const destino = useRef<HTMLDivElement>(null)
@@ -80,7 +83,21 @@ export function ExperienciaContinua({
      * todo. Não dava erro nenhum — o ciclo simplesmente não corria, e o olho
      * ficava a zero por mais vezes que a letra fosse aberta.
      */
-    let pagina = cache[item.slug]
+    /*
+      A CACHE VEM DE UMA REFERÊNCIA, e não da variável desta renderização.
+
+      `escolher` é chamada também de dentro de um ouvinte de evento registado
+      uma vez. Esse ouvinte guarda a versão de `escolher` da PRIMEIRA
+      renderização, cuja `cache` está vazia para sempre — e por isso uma letra
+      já carregada era buscada outra vez ao servidor.
+
+      O efeito disso era invisível até a sequência dar a volta ao alfabeto: a
+      letra aparecia logo, vinda da cache, a faixa começava a tocar, e segundos
+      depois a resposta do servidor substituía o desenho inteiro. O elemento que
+      estava a tocar era destruído e o som parava sem nada a explicar. Era o que
+      ele via como "no final não continuou".
+    */
+    let pagina = cacheRef.current[item.slug]
     if (!pagina) {
       definirCarregando(true)
       try {
