@@ -48,5 +48,23 @@ export async function POST(pedido: Request) {
   }
 
   for (const c of caminhos) revalidatePath(c)
-  return NextResponse.json({ esquecidos: caminhos })
+
+  /*
+    E AS PÁGINAS DAS LETRAS, QUE FALTAVAM.
+
+    Ele publicou uma música com a imagem em 03/09 e ela só apareceu depois de
+    recarregar. A página de cada letra também é desenhada no servidor com 30
+    segundos de guarda, e esta rota nunca a esqueceu: em 29/08 eu tratei o
+    perfil, em 31/08 acrescentei o Produto Vivo, e as letras — que são o
+    conteúdo principal e o que os QR Codes impressos abrem — ficaram de fora
+    das duas vezes.
+
+    Esquecidas pelo padrão da rota e não uma a uma: um cartão pode mudar em
+    qualquer letra, e listar as 26 seria uma lista para desactualizar no dia em
+    que houver um projeto com outro número de blocos.
+  */
+  revalidatePath('/[projectSlug]/[contentSlug]', 'page')
+  revalidatePath('/[projectSlug]/[contentSlug]/cartao', 'page')
+
+  return NextResponse.json({ esquecidos: [...caminhos, 'as páginas das letras'] })
 }

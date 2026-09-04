@@ -128,14 +128,47 @@ async function chamar<T>(
   if (res.status === 401 && !tentouRenovar) {
     if (await renovarSessao()) return chamar<T>(caminho, init, true, semPrefixo)
   }
-  if (res.status === 204) return undefined as T
+  if (res.status === 204) {
+    esquecerPaginasGuardadas(init.method)
+    return undefined as T
+  }
 
   const corpo = await res.json().catch(() => ({}))
   if (!res.ok) {
     const msg = Array.isArray(corpo?.message) ? corpo.message[0] : corpo?.message
     throw new ErroDeApi(res.status, msg ?? 'Não foi possível concluir.')
   }
+  esquecerPaginasGuardadas(init.method)
   return corpo as T
+}
+
+/**
+ * Depois de mudar alguma coisa no painel, manda o site esquecer o que tem
+ * guardado.
+ *
+ * AQUI, E NÃO EM CADA ECRÃ. Isto estava escrito à mão em dois sítios — na
+ * edição do perfil e no editor do Produto Vivo — e por isso valia só para
+ * esses dois. Em 03/09 ele publicou uma música com imagem e ela só apareceu
+ * depois de recarregar: guardar um cartão de uma letra nunca avisou ninguém.
+ *
+ * Passar por aqui significa que qualquer coisa que o painel mude — gravar um
+ * cartão, pôr no ar, tirar do ar, trocar a foto, o áudio, duplicar, reordenar —
+ * apaga o que estava guardado, sem eu ter de me lembrar de cada botão.
+ *
+ * Só nas escritas: um GET não muda nada e não tem o que esquecer.
+ */
+function esquecerPaginasGuardadas(metodo?: string) {
+  if (!metodo || metodo.toUpperCase() === 'GET') return
+  if (typeof window === 'undefined') return
+  const projeto = window.location.pathname.split('/').filter(Boolean)[0]
+  if (!projeto) return
+  /* Não bloqueia nem estraga nada se falhar: o pior que acontece é a página
+     ficar guardada os 30 segundos que já ficava antes. */
+  void fetch('/revalidar', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ projectSlug: projeto }),
+  }).catch(() => {})
 }
 
 export interface DenunciaAdmin {
