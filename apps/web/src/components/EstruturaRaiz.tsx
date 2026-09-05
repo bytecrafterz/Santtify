@@ -63,6 +63,7 @@ export function EstruturaRaiz({ projectSlug }: { projectSlug: string }) {
             await recarregar()
             definirAEditar(null)
           }}
+          aoMudar={recarregar}
           aoCancelar={() => definirAEditar(null)}
         />
       </>

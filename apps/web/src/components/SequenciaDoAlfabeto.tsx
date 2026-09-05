@@ -161,6 +161,7 @@ export function SequenciaDoAlfabeto({ projectSlug }: { projectSlug: string }) {
               // não é sair do trabalho, é passar ao seguinte.
               definirOnde({ tela: 'quadrados', letra: vagao.letra })
             }}
+            aoMudar={recarregar}
             aoCancelar={() => definirOnde({ tela: 'quadrados', letra: vagao.letra })}
           />
         </>

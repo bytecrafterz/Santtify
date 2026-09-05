@@ -36,12 +36,21 @@ export function EditorDeCartao({
   cartao,
   projectSlug,
   aoGuardar,
+  aoMudar,
   aoCancelar,
   somOpcional = false,
 }: {
   cartao: CartaoAdmin
   projectSlug: string
   aoGuardar: () => Promise<void>
+  /**
+   * Actualiza a lista de trás SEM fechar o editor.
+   *
+   * `aoGuardar` fecha, e é o que se quer ao gravar. Apagar a foto é outra
+   * coisa: quem apaga a foto vai a seguir apagar o áudio, e fechar o editor
+   * no meio obrigava a reabrir o cartão para cada peça.
+   */
+  aoMudar?: () => Promise<void>
   aoCancelar: () => void
   /**
    * O áudio deixa de ser obrigatório para o cartão ficar inteiro.
@@ -144,6 +153,54 @@ export function EditorDeCartao({
     }
   }
 
+  /**
+   * APAGAR A FOTO OU O SOM, UM DE CADA VEZ.
+   *
+   * Pedido dele em 05/09, e o problema que descreve é real: "coloquei uma foto
+   * genérica, um áudio genérico e um texto qualquer; agora quero retirar esse
+   * conteúdo de teste, mas não consigo apagar individualmente a foto e o
+   * áudio". Trocar sempre foi possível; tirar não era. Quem punha uma foto por
+   * engano ficava com ela para sempre, ou apagava o cartão inteiro.
+   *
+   * APAGA JÁ, sem esperar pelo SALVAR. É uma remoção, e uma remoção que fica à
+   * espera de outro botão é a maneira mais fácil de alguém sair da página a
+   * pensar que apagou. É também o que faz o pedido dele seguinte acontecer:
+   * "depois de excluir, aquela foto também deve desaparecer imediatamente da
+   * página pública" — quem trata disso é o `chamar`, que manda o site esquecer
+   * o que tinha guardado a cada escrita do painel.
+   *
+   * SE O CARTÃO ESTIVER NO AR e ficar incompleto, o servidor devolve-o a
+   * rascunho — é a regra de 23/08, de que não há meio cartão na página. Aviso
+   * antes, porque a diferença entre "tirei a foto" e "tirei o cartão da página"
+   * é grande demais para ele a descobrir depois.
+   */
+  async function apagarPeca(qual: 'foto' | 'audio') {
+    const nome = qual === 'foto' ? 'a foto' : 'o áudio'
+    /* A foto é sempre exigida; o som só onde não é opcional. Tirar uma peça
+       exigida a um cartão que está no ar deixa-o incompleto. */
+    const saiDoAr = cartao.estado === 'PUBLICADO' && (qual === 'foto' || !somOpcional)
+    const aviso = saiDoAr
+      ? `Apagar ${nome}? O cartão sai da página até ficar completo outra vez.`
+      : `Apagar ${nome}?`
+    if (!window.confirm(aviso)) return
+
+    definirOcupado(qual)
+    definirErro(null)
+    try {
+      await admin.salvarCartao(
+        cartao.id,
+        qual === 'foto' ? { imageAssetId: null } : { assetId: null },
+      )
+      if (qual === 'foto') definirImagem(null)
+      else definirAudio(null)
+      await aoMudar?.()
+    } catch {
+      definirErro(`Não foi possível apagar ${nome}. Tente outra vez.`)
+    } finally {
+      definirOcupado(null)
+    }
+  }
+
   async function guardar() {
     definirOcupado('guardar')
     definirErro(null)
@@ -210,6 +267,33 @@ export function EditorDeCartao({
             }}
           />
         </label>
+
+        {/* FORA DAS ETIQUETAS. Um botão dentro do `<label>` da foto abre o
+            selector de ficheiros ao ser carregado, e apagar passaria a ser
+            trocar. Ficam numa fila própria, por baixo, e só aparecem quando há
+            alguma coisa para apagar. */}
+        {(imagem || audio) && (
+          <div className="remover-pecas">
+            {imagem && (
+              <button
+                type="button"
+                onClick={() => void apagarPeca('foto')}
+                disabled={ocupado !== null}
+              >
+                Excluir foto
+              </button>
+            )}
+            {audio && (
+              <button
+                type="button"
+                onClick={() => void apagarPeca('audio')}
+                disabled={ocupado !== null}
+              >
+                Excluir áudio
+              </button>
+            )}
+          </div>
+        )}
 
         <div className="indicadores-apagados" aria-hidden>
           <span>👁 0</span>

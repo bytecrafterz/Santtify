@@ -226,7 +226,7 @@ export class ContentService {
             id: true,
             label: true,
             category: { select: { slug: true, name: true, position: true } },
-            imageAsset: { select: { url: true } },
+            imageAsset: { select: { url: true, width: true, height: true } },
             asset: { select: { url: true, mimeType: true, durationMs: true } },
           },
         },
@@ -258,6 +258,21 @@ export class ContentService {
         // A arte da própria faixa quando existir; a capa da letra como
         // reserva, para o tocador nunca ficar sem imagem no meio da fila.
         coverUrl: b.imageAsset?.url ?? c.coverUrl,
+        /*
+          AS MEDIDAS DA ARTE VIAJAM COM A FAIXA.
+
+          O tocador desenhava a arte numa moldura de 3/4 fixa e cortava o que
+          sobrasse. Numa arte quadrada isso comia 18% das laterais, e ele
+          apanhou-o na Letra J: "a imagem está sendo cortada nas laterais
+          dentro do card". A moldura fixa existia por uma boa razão — guardar o
+          espaço para a página não saltar enquanto a imagem carrega. As medidas
+          reais fazem o mesmo trabalho sem cortar nada.
+
+          Vêm nulas quando a faixa não tem arte própria e herda a capa da letra:
+          aí não há medidas para dar, e a imagem entra sem espaço reservado.
+        */
+        arteLargura: b.imageAsset?.width ?? null,
+        arteAltura: b.imageAsset?.height ?? null,
         // O rótulo do bloco descreve a faixa ("Explicação e música"); a
         // categoria é o que agrupa as faixas entre letras diferentes.
         rotulo: b.label,

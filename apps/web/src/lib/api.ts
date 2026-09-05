@@ -119,6 +119,9 @@ export interface Faixa {
   title: string
   subtitle: string | null
   coverUrl: string | null
+  /** As medidas reais da arte, para o tocador guardar o espaço certo. */
+  arteLargura: number | null
+  arteAltura: number | null
   /** Como esta faixa se chama: "Explicação e música". */
   rotulo: string | null
   /** O que agrupa faixas entre letras: "musica", "explicacao". */

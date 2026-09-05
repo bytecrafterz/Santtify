@@ -136,8 +136,8 @@ export function Playlist({
     return (
       <div className="bloco">
         <p className="bloco-vazio">
-          As músicas ainda estão sendo preparadas. Assim que as letras forem publicadas com
-          áudio, elas aparecem aqui para tocar em sequência.
+          As músicas ainda estão sendo preparadas. Assim que as letras forem publicadas com áudio,
+          elas aparecem aqui para tocar em sequência.
         </p>
       </div>
     )
@@ -210,9 +210,18 @@ export function Playlist({
             cartão grande com "Tocando agora" saiu a pedido dele em 20/08: era
             uma moldura à volta do que interessa, e o que interessa é a
             imagem. */}
+        {/* As medidas reais guardam o espaço exacto da arte enquanto ela
+            carrega. Antes era uma moldura de 3/4 que cortava tudo o que não
+            fosse retrato. */}
         {!compacto && faixa.coverUrl && (
           // eslint-disable-next-line @next/next/no-img-element
-          <img className="capa-tocador sangria" src={faixa.coverUrl} alt={faixa.title} />
+          <img
+            className="capa-tocador sangria"
+            src={faixa.coverUrl}
+            alt={faixa.title}
+            width={faixa.arteLargura ?? undefined}
+            height={faixa.arteAltura ?? undefined}
+          />
         )}
         <div className="linha-faixa">
           <div>

@@ -102,14 +102,29 @@ export async function tocarASeguinte(atual: HTMLAudioElement): Promise<boolean> 
   const todas = await filaDoProjeto()
   if (!todas.length) return false
 
-  /* A ESCOLHA dele, e não o que está a tocar: são valores diferentes desde
-     02/09, e a nota em `categoria-a-tocar.ts` diz porquê. */
+  /*
+    A ESCOLHA dele quando existe; senão, a CATEGORIA DO QUE ESTÁ A TOCAR.
+
+    A escolha do menu e o que está a tocar são valores diferentes desde 02/09, e
+    a nota em `categoria-a-tocar.ts` diz porquê. O que faltava era o caso de não
+    haver escolha nenhuma: quem abre uma letra e carrega no play de uma
+    Explicação nunca passou pelo menu, e eu lia isso como "sem filtro" e tocava
+    a faixa seguinte fosse ela qual fosse. Ele apanhou-o em 05/09: "toquei a
+    Explicação da Letra A; quando ela terminasse deveria seguir para a
+    Explicação da Letra B, mas ele foi para a Memorização da Letra A".
+
+    Carregar no play de uma Explicação É escolher Explicação. A escolha
+    explícita do menu continua a mandar quando existe — incluindo TODOS, que é
+    a maneira dele de pedir tudo de propósito.
+  */
   const escolhida = lerCategoriaEscolhida()
-  const semFiltro = !escolhida || escolhida === 'TODOS'
+  const categoriaDaqui = todas.find((f) => f.id === daqui)?.categoriaNome?.toUpperCase() ?? null
+  const alvo = escolhida ? (escolhida === 'TODOS' ? null : escolhida) : categoriaDaqui
+  const semFiltro = !alvo
 
   /* Sem categoria fica sempre de fora, com filtro ou sem ele. */
   const candidatas = todas.filter(
-    (f) => f.categoriaNome && (semFiltro || f.categoriaNome.toUpperCase() === escolhida),
+    (f) => f.categoriaNome && (semFiltro || f.categoriaNome.toUpperCase() === alvo),
   )
 
   /* A posição de onde estamos mede-se na fila INTEIRA, e não na filtrada: a

@@ -2701,7 +2701,6 @@ img.avatar {
   box-shadow: 0 -10px 40px rgba(10, 12, 18, 0.3);
 }
 
-
 .folha-denuncia header {
   display: flex;
   align-items: center;
@@ -3360,11 +3359,30 @@ button.letra-bloco {
   margin-bottom: 1.25rem;
 }
 
+/*
+  A ARTE INTEIRA, NA PROPORÇÃO DELA.
+
+  Isto era `aspect-ratio: 3 / 4` com `object-fit: cover`. A moldura fixa
+  guardava o espaço para a página não saltar enquanto a imagem carregava, e o
+  preço era cortar tudo o que não fosse retrato: uma arte quadrada perdia 18%
+  das laterais. Ele apanhou-o na Letra J, e o diagnóstico dele estava certo ao
+  pormenor: "parece ser o enquadramento/container dessa página, e não o
+  arquivo da imagem".
+
+  As medidas reais da arte chegam agora em cada faixa e vão nos atributos
+  `width` e `height` da imagem. O navegador guarda o espaço exacto antes de
+  descarregar o ficheiro — a página continua sem saltar — e `height: auto`
+  desenha a proporção verdadeira. É a mesma solução que `.foto-publicacao` já
+  usava nas letras, que é onde ele diz que as imagens aparecem bem.
+
+  O `contain` é a rede: uma faixa sem arte própria herda a capa da letra e vem
+  sem medidas. Sem espaço reservado, mas nunca cortada.
+*/
 .capa-tocador {
   display: block;
   width: 100%;
-  aspect-ratio: 3 / 4;
-  object-fit: cover;
+  height: auto;
+  object-fit: contain;
   background: var(--cor-borda);
 }
 
@@ -5177,6 +5195,43 @@ button.letra-bloco {
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
+}
+
+/*
+  APAGAR A FOTO OU O ÁUDIO, UM DE CADA VEZ.
+
+  Pedido dele em 05/09: "preciso ter, no editor, uma função clara para excluir
+  foto e excluir áudio". Fica por baixo da barra do som e não dentro dela, por
+  duas razões: a foto e o som estão colados de propósito, para o editor mostrar
+  o que a criança vê, e um botão dentro da etiqueta da foto abriria o selector
+  de ficheiros em vez de apagar.
+
+  Discreto, e não vermelho a gritar. Apagar aqui não é destruir o cartão — é
+  tirar uma peça, e a peça volta a pôr-se carregando na mesma área.
+*/
+.remover-pecas {
+  display: flex;
+  gap: 0.5rem;
+  padding: 0.55rem 0.9rem;
+  background: var(--cor-fundo);
+  border-bottom: 1px solid var(--cor-borda);
+}
+
+.remover-pecas button {
+  border: 1px solid var(--cor-borda);
+  background: var(--cor-superficie);
+  color: var(--cor-texto-suave);
+  border-radius: 999px;
+  padding: 0.3rem 0.75rem;
+  font-family: inherit;
+  font-size: 0.8rem;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.remover-pecas button:disabled {
+  opacity: 0.5;
+  cursor: default;
 }
 
 .indicadores-apagados {
