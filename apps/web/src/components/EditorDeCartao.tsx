@@ -169,19 +169,26 @@ export function EditorDeCartao({
    * página pública" — quem trata disso é o `chamar`, que manda o site esquecer
    * o que tinha guardado a cada escrita do painel.
    *
-   * SE O CARTÃO ESTIVER NO AR e ficar incompleto, o servidor devolve-o a
-   * rascunho — é a regra de 23/08, de que não há meio cartão na página. Aviso
-   * antes, porque a diferença entre "tirei a foto" e "tirei o cartão da página"
-   * é grande demais para ele a descobrir depois.
+   * O CARTÃO NÃO SAI DA PÁGINA POR PERDER UMA PEÇA, e é isso que ele quer:
+   * "não quero ter que tirar o cartão inteiro do ar simplesmente porque preciso
+   * remover ou substituir uma foto". É também a regra dele de 23/08, escrita ao
+   * contrário do que eu li da primeira vez: "se eu colocar somente o áudio, o
+   * espaço da imagem continuará visível". O que fica indivisível é a estrutura,
+   * não o momento. No painel volta a rascunho e o PUBLICAR fica trancado até
+   * estar completo — na página, o lugar da foto fica vazio e o resto continua.
+   *
+   * SÓ SE FOR A ÚLTIMA PEÇA é que o cartão desaparece, porque deixa de haver o
+   * que mostrar. É o único caso que vale a pena avisar antes, e o aviso diz
+   * exactamente isso em vez de prometer o que não acontece.
    */
   async function apagarPeca(qual: 'foto' | 'audio') {
     const nome = qual === 'foto' ? 'a foto' : 'o áudio'
-    /* A foto é sempre exigida; o som só onde não é opcional. Tirar uma peça
-       exigida a um cartão que está no ar deixa-o incompleto. */
-    const saiDoAr = cartao.estado === 'PUBLICADO' && (qual === 'foto' || !somOpcional)
-    const aviso = saiDoAr
-      ? `Apagar ${nome}? O cartão sai da página até ficar completo outra vez.`
-      : `Apagar ${nome}?`
+    /* A mesma conta que o servidor faz para decidir se ainda há cartão para
+       desenhar: sobra alguma coisa, foto ou som? */
+    const ficaVazio = qual === 'foto' ? !audio : !imagem
+    const aviso = ficaVazio
+      ? `Apagar ${nome}? Sem foto nem áudio, o cartão deixa de aparecer na página.`
+      : `Apagar ${nome}? Some já da página; o resto do cartão fica.`
     if (!window.confirm(aviso)) return
 
     definirOcupado(qual)
