@@ -36,6 +36,8 @@ def fica_de_fora(f):
         return 'notas internas sobre a relação com o cliente'
     if f.startswith('docs/ESTADO-'):
         return 'notas internas de estado diário'
+    if f.startswith('docs/TERMO-DE-GARANTIA') or f.startswith('docs/Termo-de-Garantia'):
+        return 'termo de garantia; é entre mim e o cliente, não é código'
     if f == '.env.bak':
         return 'cópia de um .env; não pertence a um repositório'
     if f == 'deploy/montar-entrega.py':
