@@ -255,12 +255,29 @@ export function EditorDeCartao({
           </span>
         </label>
 
+        {/*
+          A BARRA DO SOM DIZ QUE SE PODE TOCAR NELA, como a foto sempre disse.
+
+          A foto tinha o rótulo "Tocar para trocar" no canto; a barra do som não
+          tinha nada. Com um ficheiro lá dentro, mostrava só o nome, e nada na
+          tela dizia que aquela barra se abria. Ele apanhou-o em 05/09, e a frase
+          é exacta: "consigo retirar o áudio que já estava publicado, mas depois
+          não consigo substituí-lo por outro".
+
+          Também sai o ▶ quando não há som. Ao lado de um botão de tocar, o
+          "Tocar para escolher o áudio" lê-se como REPRODUZIR e não como TOCAR
+          COM O DEDO, que é a palavra a fazer dois trabalhos na mesma frase. Sem
+          som, o sinal é um + e a acção está escrita por extenso.
+        */}
         <label className="area-audio">
           <span className="play" aria-hidden>
-            ▶
+            {audio ? '▶' : '+'}
           </span>
           <span className="faixa-audio">
-            {audio?.title ?? (ocupado === 'audio' ? 'A enviar...' : 'Tocar para escolher o áudio')}
+            {ocupado === 'audio' ? 'A enviar...' : (audio?.title ?? 'ADICIONAR ÁUDIO')}
+          </span>
+          <span className="acao-area acao-audio">
+            {audio ? 'Tocar para trocar' : 'Tocar para escolher'}
           </span>
           {/* Sem `accept` a filtrar tipos: o iPhone entrega ficheiros com o
               tipo em branco e a filtragem deixava o áudio a cinzento, sem

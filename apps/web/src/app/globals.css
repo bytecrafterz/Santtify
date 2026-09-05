@@ -5195,6 +5195,22 @@ button.letra-bloco {
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
+  /* Empurra o rótulo da acção para a direita, como na foto. */
+  flex: 1;
+}
+
+/*
+  O MESMO RÓTULO QUE A FOTO TEM, na barra do som.
+
+  `.acao-area` está desenhada para se colar ao canto de uma área com `position:
+  relative`. A barra do som é uma linha em flex, e aqui o rótulo é só mais um
+  item da linha: sem posição absoluta, senão sai da barra e vai parar ao canto
+  da fotografia, que é o primeiro pai posicionado acima dele.
+*/
+.area-audio .acao-audio {
+  position: static;
+  flex: none;
+  background: rgba(255, 255, 255, 0.16);
 }
 
 /*
