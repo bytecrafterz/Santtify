@@ -40,9 +40,24 @@ export async function POST(pedido: Request) {
     return NextResponse.json({ erro: 'projeto inválido' }, { status: 400 })
   }
 
-  // O Produto Vivo entra desde 31/08: uma publicação nova lá também ficava
-  // meio minuto sem aparecer, pela mesma razão.
-  const caminhos = [`/${slug}`, `/${slug}/perfil`, `/${slug}/produto-vivo`]
+  /*
+    O Produto Vivo entra desde 31/08: uma publicação nova lá também ficava meio
+    minuto sem aparecer, pela mesma razão.
+
+    A PLAYLIST ENTRA EM 05/09, e é a terceira vez que esta lista fica curta.
+
+    Ele trocou a foto e o áudio de um cartão e disse: "na primeira publicação
+    aparecem imediatamente; quando troco por uma nova foto e um novo áudio, a
+    atualização não aparece". Medido: a página da letra mudava no mesmo
+    segundo, e a `/playlist` continuava com a arte antiga passados 35 segundos.
+    Faltava aqui, e só aqui.
+
+    É a página onde ele estava a trabalhar — foi nela que encontrou a arte
+    cortada, no mesmo dia. Em 29/08 esta lista levou o perfil, em 31/08 o
+    Produto Vivo, em 03/09 as letras. O padrão é sempre o mesmo: acrescento o
+    ecrã de que ele se queixou e deixo de fora o do lado.
+  */
+  const caminhos = [`/${slug}`, `/${slug}/perfil`, `/${slug}/produto-vivo`, `/${slug}/playlist`]
   if (corpo.userId && /^[0-9a-f-]{36}$/.test(corpo.userId)) {
     caminhos.push(`/${slug}/pessoa/${corpo.userId}`)
   }
@@ -66,5 +81,18 @@ export async function POST(pedido: Request) {
   revalidatePath('/[projectSlug]/[contentSlug]', 'page')
   revalidatePath('/[projectSlug]/[contentSlug]/cartao', 'page')
 
-  return NextResponse.json({ esquecidos: [...caminhos, 'as páginas das letras'] })
+  /*
+    E O PERFIL DE QUALQUER PESSOA, e não só o de quem mandou esquecer.
+
+    O `userId` acima trata de quem acabou de mudar a sua própria página. Mas um
+    cartão que muda aparece nas publicações de toda a gente que o partilhou, e
+    essas páginas ficavam guardadas na mesma. Pelo padrão, como as letras: são
+    tantas quantas as contas, e listá-las uma a uma seria uma lista errada no
+    dia seguinte.
+  */
+  revalidatePath('/[projectSlug]/pessoa/[userId]', 'page')
+
+  return NextResponse.json({
+    esquecidos: [...caminhos, 'as páginas das letras', 'os perfis'],
+  })
 }
