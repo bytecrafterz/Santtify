@@ -38,6 +38,11 @@ def fica_de_fora(f):
         return 'notas internas de estado diário'
     if f.startswith('docs/TERMO-DE-GARANTIA') or f.startswith('docs/Termo-de-Garantia'):
         return 'termo de garantia; é entre mim e o cliente, não é código'
+    # Os áudios que ele me mandou durante o desenvolvimento, largados na raiz.
+    # São 25 MB de conteúdo DELE, que já está publicado no servidor dele, e
+    # nenhuma linha de código lhes toca. O que se entrega é o código.
+    if '/' not in f and f.lower().endswith(('.mp3', '.wav', '.m4a')):
+        return 'áudios do cliente na raiz; conteúdo dele, não código'
     if f == '.env.bak':
         return 'cópia de um .env; não pertence a um repositório'
     if f == 'deploy/montar-entrega.py':
