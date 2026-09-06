@@ -2251,12 +2251,35 @@ img.avatar {
   pela grelha nenhuma. As 26 ficam iguais, e artes de formatos diferentes
   deixam de dar resultados diferentes.
 */
+/*
+  O RECORTE DAS MINIATURAS AGARRA-SE AO TOPO, e não ao meio.
+
+  Duas coisas que ele pediu, e que parecem contradizer-se até se olhar para a
+  arte dele:
+
+    29/08 — "o A não preenche o quadrado como o B". Daí o `cover`: as 26 casas
+    ficam iguais, seja qual for o formato da arte. Isso mantém-se.
+
+    06/09 — "somente a arte da letra K está aparecendo cortada na parte de
+    cima". A arte da Letra K é 1024x1536, a mais alta de todas as dele: num
+    quadrado, o `cover` centrado come 33% da altura, 16% em cima e 16% em
+    baixo. As quadradas não perdem nada e as de 3/4 perdem 25%, e por isso só
+    a K lhe saltou à vista.
+
+  As duas vivem juntas mudando de onde se corta. Toda a arte dele tem a letra,
+  a palavra e o logótipo NO TOPO, e o que sobra em baixo é cenário. Cortar a
+  partir do meio tira metade do título; cortar a partir do topo tira chão.
+
+  Vale para as três miniaturas quadradas, a pública e as duas do painel: onde
+  a arte é reduzida a um quadrado pequeno, o que a identifica está em cima.
+*/
 .letra-bloco img {
   position: absolute;
   inset: 0;
   width: 100%;
   height: 100%;
   object-fit: cover;
+  object-position: top;
 }
 
 .letra-bloco .nome-curto {
@@ -4872,6 +4895,8 @@ button.letra-bloco {
   height: 30px;
   border-radius: 6px;
   object-fit: cover;
+  /* Pelo topo, como as letras. Ver a nota em `.letra-bloco img`. */
+  object-position: top;
 }
 
 .quadradinho .marca {
@@ -5004,6 +5029,8 @@ button.letra-bloco {
   height: 54px;
   border-radius: 10px;
   object-fit: cover;
+  /* Pelo topo, como as letras. Ver a nota em `.letra-bloco img`. */
+  object-position: top;
 }
 
 .corpo-quadrado .pilha {
