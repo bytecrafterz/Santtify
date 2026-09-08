@@ -6,6 +6,7 @@ import { EntrarNoGrupoPv } from '@/components/EntrarNoGrupoPv'
 import { ChegouAoFimDoPv } from '@/components/ChegouAoFimDoPv'
 import { IntroducaoEmCartoes } from '@/components/IntroducaoEmCartoes'
 import { BarraInferior } from '@/components/BarraInferior'
+import { VisualizacoesDasPublicacoes } from '@/components/VisualizacoesDasPublicacoes'
 
 /**
  * Página institucional do Produto Vivo.
@@ -114,11 +115,7 @@ export default async function PaginaProdutoVivo({
         tirá-lo para acrescentar este trocaria um defeito por outro.
       */}
       {project && pv && (
-        <RastreadorDeVisita
-          projectId={project.id}
-          contentId={pv.content.id}
-          type="CONTENT_VIEW"
-        />
+        <RastreadorDeVisita projectId={project.id} contentId={pv.content.id} type="CONTENT_VIEW" />
       )}
 
       <div className="cabecalho">
@@ -133,6 +130,17 @@ export default async function PaginaProdutoVivo({
           do Produto Vivo, com a mesma estrutura dos áudios — foto, som, título,
           texto e os quatro indicadores — que ele preenche e duplica no painel,
           sem depender de mim para trocar uma palavra. */}
+      {/* Uma visualização por publicação desenhada aqui. A de cima é da
+          PÁGINA; o olho de cada cartão conta eventos com o `blockId`, e esta
+          página nunca emitiu nenhum. Ver a nota no componente. */}
+      {project && pv && (
+        <VisualizacoesDasPublicacoes
+          projectId={project.id}
+          contentId={pv.content.id}
+          blocos={pv.content.blocks.filter((b) => b.type === 'AUDIO').map((b) => b.id)}
+        />
+      )}
+
       {pv && (
         <IntroducaoEmCartoes
           contentId={pv.content.id}

@@ -158,9 +158,51 @@ export class ContagensService {
   }
 
   /** Os quatro números de um conteúdo, contados agora. */
+  /**
+   * UMA VISITA AO CONTEÚDO É UM EVENTO SEM BLOCO.
+   *
+   * O olho de cada publicação conta eventos `CONTENT_VIEW` que trazem o
+   * `blockId`; o olho do CONTEÚDO conta as aberturas do conteúdo. São dois
+   * números diferentes e estavam a sair da mesma contagem: qualquer evento com
+   * `contentId` entrava aqui, incluindo um por cada cartão desenhado.
+   *
+   * Media-se na base dele: a Letra A dizia 3458 visualizações, que são 603
+   * aberturas mais 2855 eventos de cartão. O número não era grande por ser
+   * popular, era grande por ter sete cartões.
+   *
+   * Isto ficou à vista em 08/09, quando passei a emitir os eventos de cartão
+   * também no Produto Vivo e na Introdução: sem esta linha, o número do
+   * conteúdo deles quadruplicava de um dia para o outro sem ninguém ter
+   * chegado. Corrigir um contador não pode ser estragar o do lado.
+   */
+  private async viewsDoConteudo(contentId: string): Promise<number> {
+    const [linha] = await this.prisma.$queryRaw<Array<{ total: number }>>`
+      SELECT count(*)::int AS total
+      FROM events
+      WHERE "contentId" = ${contentId}::uuid
+        AND type = 'CONTENT_VIEW'
+        -- A chave ausente devolve NULL: é assim que se distingue a abertura do
+        -- conteúdo de uma visualização de cartão. Escrito em SQL e não pelo
+        -- filtro de JSON do Prisma porque ali a negação de um caminho ausente
+        -- não é fiável, e um contador que falha calado é o pior dos dois mundos.
+        AND (props -> 'blockId') IS NULL`
+    return linha?.total ?? 0
+  }
+
+  private async viewsDosConteudos(contentIds: string[]): Promise<Map<string, number>> {
+    const linhas = await this.prisma.$queryRaw<Array<{ contentId: string; total: number }>>`
+      SELECT "contentId", count(*)::int AS total
+      FROM events
+      WHERE "contentId" = ANY(${contentIds}::uuid[])
+        AND type = 'CONTENT_VIEW'
+        AND (props -> 'blockId') IS NULL
+      GROUP BY "contentId"`
+    return new Map(linhas.map((l) => [l.contentId, l.total]))
+  }
+
   async deConteudo(contentId: string, escondidos: string[] = []): Promise<Contagens> {
     const [views, likes, comments, shares] = await Promise.all([
-      this.prisma.event.count({ where: { contentId, type: EventType.CONTENT_VIEW } }),
+      this.viewsDoConteudo(contentId),
       this.prisma.reaction.count({ where: { contentId, type: ReactionType.LIKE } }),
       this.comentarios({ contentId }, escondidos),
       Promise.all([
@@ -199,11 +241,7 @@ export class ContagensService {
     }
 
     const [views, likes, topo, respostas, shares] = await Promise.all([
-      this.prisma.event.groupBy({
-        by: ['contentId'],
-        where: { contentId: { in: contentIds }, type: EventType.CONTENT_VIEW },
-        _count: { _all: true },
-      }),
+      this.viewsDosConteudos(contentIds),
       this.prisma.reaction.groupBy({
         by: ['contentId'],
         where: { contentId: { in: contentIds }, type: ReactionType.LIKE },
@@ -230,7 +268,7 @@ export class ContagensService {
       }),
     ])
 
-    for (const l of views) somar(l.contentId, 'views', l._count._all)
+    for (const [id, total] of views) somar(id, 'views', total)
     for (const l of likes) somar(l.contentId, 'likes', l._count._all)
     for (const l of topo) somar(l.contentId, 'comments', l._count._all)
     for (const l of respostas) somar(l.contentId, 'comments', l._count._all)

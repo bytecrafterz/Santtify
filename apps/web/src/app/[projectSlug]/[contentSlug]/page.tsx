@@ -5,6 +5,7 @@ import { api } from '@/lib/api'
 import { PublicacaoDaLetra } from '@/components/PublicacaoDaLetra'
 import { publicacoesDe } from '@/lib/publicacoes-da-letra'
 import { RastreadorDeVisita } from '@/components/RastreadorDeVisita'
+import { VisualizacoesDasPublicacoes } from '@/components/VisualizacoesDasPublicacoes'
 import { SeloProdutoVivo } from '@/components/SeloProdutoVivo'
 import { BannerDeConsentimento } from '@/components/BannerDeConsentimento'
 import { BarraSocial } from '@/components/BarraSocial'
@@ -44,8 +45,7 @@ export async function generateMetadata({
     .replace(/\s+/g, ' ')
     .slice(0, 200)
 
-  const descricao =
-    dados.content.summary ?? textoProprio ?? dados.project.description ?? undefined
+  const descricao = dados.content.summary ?? textoProprio ?? dados.project.description ?? undefined
 
   return {
     // Ver a nota em [projectSlug]/page.tsx: o `<title>` é o nome da aplicação.
@@ -88,6 +88,15 @@ export default async function PaginaDeConteudo({
   return (
     <main className="envoltorio com-barra">
       <RastreadorDeVisita projectId={project.id} contentId={content.id} type="CONTENT_VIEW" />
+
+      {/* E uma por cartão. Quem chega pelo QR Code impresso abre esta página e
+          não passa por `ExperienciaContinua`, que é quem emitia estes eventos:
+          sem isto, a leitura vinda do papel não conta para publicação nenhuma. */}
+      <VisualizacoesDasPublicacoes
+        projectId={project.id}
+        contentId={content.id}
+        blocos={content.blocks.filter((b) => b.type === 'AUDIO').map((b) => b.id)}
+      />
 
       <div className="cabecalho">
         <Link href={`/${projectSlug}`}>← {project.name}</Link>

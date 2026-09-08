@@ -1,6 +1,7 @@
 import { notFound } from 'next/navigation'
 import { api } from '@/lib/api'
 import { RastreadorDeVisita } from '@/components/RastreadorDeVisita'
+import { VisualizacoesDasPublicacoes } from '@/components/VisualizacoesDasPublicacoes'
 import { BannerDeConsentimento } from '@/components/BannerDeConsentimento'
 import { AvisosDeEntrada } from '@/components/AvisosDeEntrada'
 import { CabecalhoDePerfil } from '@/components/CabecalhoDePerfil'
@@ -83,7 +84,7 @@ export async function generateMetadata({
         undefined
       const arte = bloco.arte ?? pagina!.content.coverUrl ?? undefined
       return {
-    /*
+        /*
       O TÍTULO DA PÁGINA É "Santtify", E A RAZÃO É A INSTALAÇÃO.
 
       O iPhone preenche o nome do atalho com o `<title>` do documento. Ele
@@ -197,6 +198,16 @@ export default async function IndiceDoProjeto({
           depois o alfabeto. Quem já viu a introdução vê o alfabeto logo por
           baixo do perfil, sem texto de apresentação a ocupar o ecrã. */}
       <IntroducaoRecolhivel nome={project.name}>
+        {/* As publicações da Introdução também são publicações: o olho
+            delas contava zero desde sempre, por falta destes eventos. */}
+        {introducao && (
+          <VisualizacoesDasPublicacoes
+            projectId={project.id}
+            contentId={introducao.content.id}
+            blocos={introducao.content.blocks.filter((b) => b.type === 'AUDIO').map((b) => b.id)}
+          />
+        )}
+
         {introducao && (
           <IntroducaoEmCartoes
             contentId={introducao.content.id}

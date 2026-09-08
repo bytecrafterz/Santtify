@@ -148,8 +148,16 @@ export class AnalyticsService {
        * números que vai APRESENTAR A UMA EMPRESA. Visitantes responde quantas
        * pessoas entraram; visualizações responde quantas vezes o conteúdo foi
        * mesmo aberto, que é outra coisa e é a que interessa a quem compra.
+       *
+       * ABERTURAS, E NÃO CARTÕES. Um mesmo CONTENT_VIEW com `blockId` dentro de
+       * `props` é a visualização de UMA PUBLICAÇÃO, e entrava aqui como se
+       * fosse mais uma abertura do conteúdo: uma letra com sete cartões contava
+       * oito. Medido em 08/09: a Letra A dizia 3467 e as aberturas eram 604.
+       * A mesma linha existe em `contagens.service.ts`, e as duas TÊM de
+       * concordar — senão o painel e a página dizem números diferentes da mesma
+       * coisa, que é o defeito de sempre deste projecto.
        */
-      this.prisma.event.count({ where: { projectId, type: 'CONTENT_VIEW' } }),
+      this.aberturasDoProjecto(projectId),
       this.prisma.reaction.count({ where: { projectId, user: { is: { status: 'ACTIVE' } } } }),
       this.contagens.comentariosDoProjecto(projectId),
       this.contagens.partilhasDoProjecto(projectId),
@@ -414,6 +422,17 @@ export class AnalyticsService {
     }
   }
 
+  /** Aberturas de conteúdo do projecto: os eventos SEM `blockId`. */
+  private async aberturasDoProjecto(projectId: string): Promise<number> {
+    const [linha] = await this.prisma.$queryRaw<Array<{ total: number }>>`
+      SELECT count(*)::int AS total
+      FROM events
+      WHERE "projectId" = ${projectId}::uuid
+        AND type = 'CONTENT_VIEW'
+        AND (props -> 'blockId') IS NULL`
+    return linha?.total ?? 0
+  }
+
   private async conteudosMaisAcessados(projectId: string) {
     return this.prisma.$queryRaw<
       Array<{ titulo: string; slug: string; visualizacoes: number; visitantes: number }>
@@ -425,6 +444,8 @@ export class AnalyticsService {
       FROM events e
       JOIN contents c ON c.id = e."contentId"
       WHERE e."projectId" = ${projectId}::uuid AND e.type = 'CONTENT_VIEW'
+        -- Só aberturas: ver a nota nas visualizações do projecto.
+        AND (e.props -> 'blockId') IS NULL
       GROUP BY c.title, c.slug
       ORDER BY 3 DESC
       LIMIT 10`
