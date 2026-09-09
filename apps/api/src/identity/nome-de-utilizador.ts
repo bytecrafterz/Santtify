@@ -104,6 +104,29 @@ function esqueleto(nome: string): string {
   return nome.replace(/[._\d]/g, '')
 }
 
+/**
+ * SE ISTO SE PARECE COM A PLATAFORMA A FALAR.
+ *
+ * Vive aqui e é usada nos DOIS campos que uma pessoa escolhe: o identificador e
+ * o nome do perfil. Estava só no identificador, e em 09/09 medi o buraco: o
+ * servidor recusava `@santtifyoficial` e aceitava, sem uma palavra, o nome de
+ * perfil "Santtify Oficial" — que é justamente o que aparece no perfil, nos
+ * comentários e nas publicações. A porta estava trancada e a janela aberta.
+ *
+ * Normaliza mais do que o `esqueleto` porque um nome de perfil tem espaços e
+ * acentos: "Santtify Oficial", "sânttify" e "S a n t t i f y" reduzem-se todos
+ * à mesma coisa. Para um identificador o resultado é o mesmo que o `esqueleto`
+ * já dava, porque ali só entram letras, dígitos, ponto e traço baixo.
+ */
+export function pareceNomeDaPlataforma(texto: string): boolean {
+  const so = texto
+    .toLowerCase()
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '')
+    .replace(/[^a-z]/g, '')
+  return MARCAS.some((m) => so.includes(m))
+}
+
 export function problemaNoNomeDeUtilizador(nome: string, ehDaCasa = false): string | null {
   if (!nome) return 'Escolha um identificador.'
   if (nome.length < MIN) return `O identificador precisa de pelo menos ${MIN} caracteres.`
@@ -117,7 +140,7 @@ export function problemaNoNomeDeUtilizador(nome: string, ehDaCasa = false): stri
     `@santtifyoficial` e tem de continuar a poder sê-lo; o que isto impede é
     que qualquer outra pessoa se ponha a parecer a plataforma.
   */
-  if (!ehDaCasa && MARCAS.some((m) => esqueleto(nome).includes(m))) {
+  if (!ehDaCasa && pareceNomeDaPlataforma(esqueleto(nome))) {
     return 'Este identificador parece o nome da plataforma. Escolha outro.'
   }
   return null

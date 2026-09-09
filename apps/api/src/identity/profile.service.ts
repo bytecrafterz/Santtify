@@ -54,13 +54,27 @@ export class ProfileService {
     } = {}
 
     /*
+      QUEM ESTÁ A GRAVAR, LIDO UMA VEZ SÓ.
+
+      O papel decide se esta pessoa pode usar o nome da casa, e isso vale para o
+      nome do perfil tanto como para o identificador. Estava lido dentro do ramo
+      do identificador e por isso não existia no do nome.
+    */
+    const eu = await this.prisma.user.findUnique({
+      where: { id: userId },
+      select: { username: true, role: true },
+    })
+
+    /*
       A MESMA RÉGUA DA EDIÇÃO E DO CADASTRO.
 
       Medir só no cadastro não servia de nada: bastava criar a conta com um nome
-      bom e trocá-lo a seguir por "24055".
+      bom e trocá-lo a seguir por "24055". Por isso o nome é medido SEMPRE que
+      vem, e não só quando muda — ao contrário do identificador aqui em baixo,
+      que tem a razão dele escrita ao lado.
     */
     if (dados.displayName !== undefined) {
-      const problemaNoNome = problemaNoNomeDePerfil(dados.displayName)
+      const problemaNoNome = problemaNoNomeDePerfil(dados.displayName, eu?.role === 'ADMIN')
       if (problemaNoNome) throw new BadRequestException(problemaNoNome)
       dadosParaGravar.displayName = limparNomeDePerfil(dados.displayName)
     }
@@ -80,10 +94,6 @@ export class ProfileService {
     */
     if (dados.username !== undefined) {
       const nome = normalizarNomeDeUtilizador(dados.username)
-      const eu = await this.prisma.user.findUnique({
-        where: { id: userId },
-        select: { username: true, role: true },
-      })
       /*
         GRAVAR O QUE JÁ LÁ ESTÁ NÃO É MUDAR NADA.
 

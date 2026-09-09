@@ -24,6 +24,8 @@
  * o resto.
  */
 
+import { pareceNomeDaPlataforma } from './nome-de-utilizador'
+
 /** As vogais, com acentos, porque "Ângela" tem de passar. */
 const VOGAIS = /[aeiouáàâãéêíóôõúü]/i
 
@@ -41,7 +43,7 @@ export function limparNomeDePerfil(bruto: string): string {
  * A frase é a que a pessoa lê enquanto se cadastra, e por isso diz o que fazer
  * em vez de dizer que ela falhou.
  */
-export function problemaNoNomeDePerfil(bruto: string): string | null {
+export function problemaNoNomeDePerfil(bruto: string, ehDaCasa = false): string | null {
   const nome = limparNomeDePerfil(bruto)
   if (!nome) return 'Escreva o nome do perfil.'
   if (/\d/.test(nome)) return 'O nome não pode ter números. Escreva o nome da pessoa.'
@@ -55,5 +57,21 @@ export function problemaNoNomeDePerfil(bruto: string): string | null {
     return 'Isto não parece um nome. Escreva o nome da pessoa.'
   }
   if (nome.length > 80) return 'O nome pode ter no máximo 80 caracteres.'
+  /*
+    E NÃO PODE PARECER A PLATAFORMA A FALAR.
+
+    A mesma regra do identificador, no campo que as pessoas realmente leem. Um
+    perfil chamado "Santtify Oficial" a comentar numa publicação infantil é a
+    ferramenta mais útil que se pode dar a quem entra de má intenção, e era
+    exactamente isso que ele quis impedir em 31/08 quando pediu a tranca do
+    identificador.
+
+    `ehDaCasa` existe pela mesma razão que existe lá: o responsável do projeto
+    chama-se "Santtify" e tem de continuar a poder chamar-se. Verifiquei na base
+    antes de escrever isto — é a única conta afectada, e é a dele.
+  */
+  if (!ehDaCasa && pareceNomeDaPlataforma(nome)) {
+    return 'Este nome parece o nome da plataforma. Escolha outro.'
+  }
   return null
 }
