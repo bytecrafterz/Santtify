@@ -21,6 +21,24 @@ const nav=await chromium.launch()
 const pg=await (await nav.newContext({viewport:{width:390,height:844},deviceScaleFactor:2})).newPage()
 pg.on('dialog',d=>d.accept())
 const limpar=async()=>{for(const t of ['AGORA NÃO','CONTINUAR EXPLORANDO','Aceitar']){const b=await pg.$(`button:has-text("${t}")`);if(b){await b.click();await pg.waitForTimeout(400)}}}
+/*
+  ESPERAR PELA PÁGINA E NÃO PELO RELÓGIO.
+
+  Isto era `waitForTimeout(4000)`. Sozinho passava sempre; dentro da suite, com
+  o servidor a responder a mais coisas ao mesmo tempo, falhou em 09/09 a dizer
+  que a porta da plataforma não estava lá. A porta estava: era o cabeçalho do
+  perfil que ainda não tinha sido desenhado.
+
+  Uma verificação intermitente faz o mesmo estrago que uma muda: ensina-me a
+  descontar as falhas, e a próxima a sério passa no meio delas. Espera-se por
+  uma âncora que NÃO é o que está a ser medido — o cabeçalho do perfil — e só
+  depois se mede.
+*/
+const perfilPronto=async()=>{
+  try{ await pg.waitForSelector('.perfil-capa',{state:'attached',timeout:25000}) }
+  catch{ /* se nunca aparecer, a medição a seguir acusa, que é o que deve fazer */ }
+  await pg.waitForTimeout(600)
+}
 const pintado=(s)=>pg.evaluate((sel)=>{const e=document.querySelector(sel)
   return e ? e.checkVisibility({checkVisibilityCSS:true, contentVisibilityAuto:true}) : false}, s)
 try{
@@ -35,7 +53,7 @@ const alguem = await pg.evaluate(async()=>{
   return l.find(p=>!/desenvolvedor/i.test(p.displayName||''))?.id ?? null
 }) ?? 'b34ff502-a4d9-4cb7-b2a2-e5e9b302a005'
 
-await pg.goto(`${SITE}/${PROJ}/pessoa/${alguem}`,{waitUntil:'domcontentloaded'});await pg.waitForTimeout(4500);await limpar()
+await pg.goto(`${SITE}/${PROJ}/pessoa/${alguem}`,{waitUntil:'domcontentloaded'});await perfilPronto();await limpar();await perfilPronto()
 
 p_('quem e a pessoa esta na pagina, e nao so na gaveta', await pintado('.identidade-da-pessoa'))
 p_('o @identificador aparece', await pg.evaluate(()=>/^@\w/.test(
@@ -64,7 +82,7 @@ p_('e ao tocar nela a plataforma abre', await pintado('.grade-letras'))
 // verificacao desactualizada e pior do que nenhuma: ensina a ignorar as falhas,
 // e a proxima que falhar a serio passa despercebida no meio delas.
 await pg.goto(`${SITE}/${PROJ}/perfil`,{waitUntil:'domcontentloaded'})
-await pg.waitForTimeout(4000);await limpar()
+await perfilPronto();await limpar();await perfilPronto()
 p_('no perfil do proprio a plataforma tambem esta fechada', !(await pintado('.grade-letras')))
 p_('e a porta esta la, igual a dos outros', await pintado('.plataforma-no-perfil > summary'))
 // Abre nos dois, que e o pedido de 25/08: um perfil nao pode ser um beco.
