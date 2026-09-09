@@ -147,3 +147,9 @@ console.log(falhas.length? `\n${falhas.length} FALHA(S): ${falhas.join(' | ')}` 
 await nav.close()
 
 }
+
+/* O CODIGO DE SAIDA DIZ O MESMO QUE O ECRA.
+   Sem isto o percurso imprimia "FALHOU" e saia com 0, e quem corre a suite
+   pelo codigo de saida via "ok". Foi assim que uma conta de teste ficou viva
+   no site dele em 08/09: a limpeza falhou, o percurso disse-o, e ninguem ouviu. */
+process.exit(falhas.length ? 1 : 0)

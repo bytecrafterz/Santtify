@@ -30,6 +30,18 @@ outra coisa. Uma senha de administrador de um site que está no ar, escrita num 
 do repositório, é uma senha publicada: fica no histórico para sempre e vai com o
 repositório para todas as mãos que o receberem.
 
+## O código de saída diz o mesmo que o ecrã
+
+Treze destes percursos imprimiam as falhas e saíam com **0**. Quem os corre em
+série pelo código de saída lia "ok" em cima de uma falha escrita no ecrã.
+
+Não é teórico: em 08/09 a limpeza de `edicao-do-perfil.mjs` falhou, o percurso
+escreveu `A CONTA DE TESTE NAO FOI APAGADA`, a suite disse `ok`, e a conta de
+teste ficou viva no site do cliente até ele a encontrar e reportar.
+
+Todos terminam agora em `process.exit(falhas.length ? 1 : 0)`. **Um percurso
+novo tem de acabar assim**, senão nasce mudo.
+
 ## Porquê aqui e não testes normais
 
 Os testes normais já passavam em todos os defeitos que ele encontrou. O build

@@ -77,3 +77,9 @@ p_('e a que comeca tem categoria', (seq.comecou||[]).every(i=>Boolean(catDe[i]))
 }catch(e){falhas.push('excepcao: '+e.message);console.log('  ✗ '+e.message)}
 await nav.close()
 console.log(falhas.length?`\nFALHOU: ${falhas.length}\n  - ${falhas.join('\n  - ')}`:'\nTUDO CERTO')
+
+/* O CODIGO DE SAIDA DIZ O MESMO QUE O ECRA.
+   Sem isto o percurso imprimia as falhas e saia com 0, e quem corre a suite
+   pelo codigo de saida lia "ok". Foi assim que uma conta de teste ficou viva
+   no site dele em 08/09: a limpeza falhou, o percurso disse-o, e ninguem ouviu. */
+process.exit(falhas.length ? 1 : 0)

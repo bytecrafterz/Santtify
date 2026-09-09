@@ -124,4 +124,9 @@ finally {
   const maus=r.filter(x=>!x.v)
   console.log(`RESULTADO CORRIDA ${CORRIDA}: ${r.length-maus.length}/${r.length}` + (maus.length?`  FALHAS: ${maus.map(m=>m.n).join(' | ')}`:'  tudo passa'))
   await nav.close()
+  /* O CODIGO DE SAIDA DIZ O MESMO QUE O ECRA.
+     Aqui a lista chama-se `r` e nao `falhas`, como a nota acima ja avisava.
+     Sem esta linha o percurso imprimia FALHAS e saia com 0, e quem corre a
+     suite pelo codigo de saida lia "ok". */
+  process.exit(maus.length ? 1 : 0)
 }

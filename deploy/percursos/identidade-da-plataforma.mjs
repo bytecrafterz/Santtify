@@ -24,3 +24,9 @@ p_('o dono continua com o dele na base', true, `a consulta publica diz: ${dono.p
 }catch(e){falhas.push('excepcao: '+e.message);console.log('  ✗ '+e.message)}
 await nav.close()
 console.log(falhas.length?`\nFALHOU: ${falhas.length}\n  - ${falhas.join('\n  - ')}`:'\nTUDO CERTO')
+
+/* O CODIGO DE SAIDA DIZ O MESMO QUE O ECRA.
+   Sem isto o percurso imprimia "FALHOU" e saia com 0, e quem corre a suite
+   pelo codigo de saida via "ok". Foi assim que uma conta de teste ficou viva
+   no site dele em 08/09: a limpeza falhou, o percurso disse-o, e ninguem ouviu. */
+process.exit(falhas.length ? 1 : 0)
