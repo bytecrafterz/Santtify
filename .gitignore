@@ -40,3 +40,6 @@ ABBC*.png
 chatting_history.txt
 *chatting_history*
 conversa-*.txt
+
+# Fotos de crianças e PDFs em trânsito. Nunca versionar.
+cartoes-temporarios/

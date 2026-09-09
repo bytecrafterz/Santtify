@@ -43,6 +43,24 @@ model Project {
   /// ele errar e depois manter.
   checkoutUrl String?
 
+  /// A capa do projeto no carrossel do perfil.
+  coverUrl String?
+
+  /// A frase curta debaixo do nome, no cartão do carrossel.
+  tagline String?
+
+  /// Qual das duas casas de destaque este projeto ocupa, ou nenhuma.
+  ///
+  /// `@unique` num campo opcional faz exactamente o que o cliente pediu no
+  /// ponto 1: o Postgres deixa passar tantos nulos quantos quiser, mas só um
+  /// ESQUERDA e um DIREITA. Pôr um projeto em destaque tira de lá o que
+  /// estava, e o que sai continua no carrossel — não é preciso código nenhum
+  /// a vigiar isso, a base não deixa haver dois.
+  destaque DestaqueDoCarrossel? @unique
+
+  /// A ordem no carrossel, depois dos dois destaques.
+  ordemNoCarrossel Int @default(0)
+
   /// Foto publicada por usuário espera aprovação antes de ficar visível.
   ///
   /// É uma chave, e não uma decisão gravada no código, porque o dono da
@@ -79,6 +97,10 @@ model Project {
   hostUserId     String?         @db.Uuid
   host           User?           @relation("PerfilAnfitriao", fields: [hostUserId], references: [id], onDelete: SetNull)
   passwordResets PasswordReset[]
+
+  modelosDeCartao  ModeloDeCartao[]
+  precoDeCartoes   PrecoDeCartoes?
+  pedidosDeCartoes PedidoDeCartoes[]
 
   @@map("projects")
 }
@@ -652,6 +674,11 @@ model Visitor {
 
   @@index([projectId, firstSeenAt])
   @@index([projectId, ignoradoNasMetricas])
+  /// Serve a análise por país e região do painel: filtra por `countryCode` e
+  /// agrupa por `regionName` dentro de um projeto. Existia na base desde a
+  /// migração 20260828100000 e faltava aqui — declarado agora para o índice
+  /// não se perder na primeira migração que alguém gerar.
+  @@index([projectId, countryCode, regionName])
   @@index([projectId, chainDepth])
   @@index([referredByUserId])
   @@index([rootVisitorId])
@@ -722,6 +749,7 @@ model User {
   curtidasNoPerfil      ProfileReaction[] @relation("CurtidasNoPerfil")
   curtidasQueFiz        ProfileReaction[] @relation("CurtidasQueFiz")
   curtidasEmComentarios CommentReaction[] @relation("CurtidasEmComentarios")
+  pedidosDeCartoes      PedidoDeCartoes[]
 
   @@map("users")
 }
@@ -1392,4 +1420,228 @@ model AdminAuditLog {
   @@index([projectId, createdAt])
   @@index([userId, createdAt])
   @@map("admin_audit_logs")
+}
+
+// ═══════════════════════════════════════════════════════════════════
+// CARTÕES PERSONALIZADOS
+// ═══════════════════════════════════════════════════════════════════
+
+/// Qual das duas casas de destaque do carrossel.
+enum DestaqueDoCarrossel {
+  ESQUERDA
+  DIREITA
+}
+
+/// O recorte da moldura da fotografia no cartão.
+enum FormatoDaMoldura {
+  CIRCULO
+  ELIPSE
+  RETANGULO
+}
+
+/// Um dos modelos de cartão — DADO, nunca código.
+///
+/// O cliente escreveu duas vezes que quer poder acrescentar modelos sem pedir
+/// programação nova, e é isto que o cumpre: um modelo é uma linha desta tabela.
+/// A arte, as medidas da moldura da foto e as medidas da caixa do nome vivem
+/// todas aqui, em MILÍMETROS sobre a folha A4.
+///
+/// MILÍMETROS E NÃO PIXÉIS, de propósito. A folha é medida em milímetros na
+/// gráfica e a arte pode chegar com 2480px hoje e 4960px amanhã. Guardar
+/// "a moldura começa aos 62 mm" continua verdade nas duas; guardar "aos 732
+/// pixéis" deixa de ser verdade assim que o designer reexporta com outra régua.
+model ModeloDeCartao {
+  id        String  @id @default(uuid()) @db.Uuid
+  projectId String  @db.Uuid
+  project   Project @relation(fields: [projectId], references: [id], onDelete: Cascade)
+
+  slug String
+  /// O número que aparece na etiqueta: DIA 1, DIA 2...
+  dia  Int
+  nome String
+
+  ativo Boolean @default(true)
+  ordem Int     @default(0)
+
+  /// A arte para o ecrã, leve, e a arte para papel, com 2480px ou mais.
+  ///
+  /// Duas cópias pelo mesmo motivo que já existia nas letras: a de ecrã a
+  /// 300 dpi seria um desperdício de dados móveis, e a de papel a 1200px sai
+  /// da gráfica com cerca de 124 dpi e nota-se.
+  arteUrl          String?
+  arteImpressaoUrl String?
+
+  /// A moldura da fotografia, em mm sobre A4 (210 x 297).
+  fotoX       Float
+  fotoY       Float
+  fotoLargura Float
+  fotoAltura  Float
+  fotoFormato FormatoDaMoldura @default(ELIPSE)
+
+  /// A caixa do nome, em mm sobre A4.
+  nomeX           Float
+  nomeY           Float
+  nomeLargura     Float
+  nomeAltura      Float
+  nomeCorHex      String  @default("#12356B")
+  nomeCorpoMinimo Float   @default(8)
+  nomeCorpoMaximo Float   @default(20)
+  nomeMaiusculas  Boolean @default(true)
+
+  criadoEm     DateTime @default(now())
+  atualizadoEm DateTime @updatedAt
+
+  @@unique([projectId, slug])
+  @@index([projectId, ativo, ordem])
+  @@map("modelos_de_cartao")
+}
+
+/// O preço e o desconto, nas mãos do administrador.
+///
+/// O cliente foi explícito: "não ficarem presos no código". Uma linha por
+/// projeto, editável no painel. Os valores por omissão são os que ele escreveu
+/// — R$ 30,00 por conjunto e 30% acima de um conjunto.
+model PrecoDeCartoes {
+  projectId String  @id @db.Uuid
+  project   Project @relation(fields: [projectId], references: [id], onDelete: Cascade)
+
+  precoUnitarioCent   Int    @default(3000)
+  moeda               String @default("BRL")
+  descontoPercentagem Int    @default(30)
+  /// A partir de quantos conjuntos o desconto entra.
+  descontoAPartirDe   Int    @default(2)
+
+  atualizadoEm DateTime @updatedAt
+
+  @@map("precos_de_cartoes")
+}
+
+/// Por onde o pedido passa, do rascunho ao expurgo.
+enum EstadoDoPedido {
+  RASCUNHO
+  AGUARDANDO_PAGAMENTO
+  PAGO
+  PRONTO
+  EXPIRADO
+}
+
+enum MeioDePagamento {
+  PIX
+  CARTAO
+}
+
+/// Uma compra de conjuntos de cartões.
+///
+/// `expiraEm` NUNCA É NULO, e é a razão de ser desta linha. O cliente pediu
+/// que fotos e PDFs não ficassem guardados para sempre, e são fotografias de
+/// crianças, com utilizadores em Portugal — RGPD, não só LGPD. Uma data de
+/// validade que só existe se alguém se lembrar de a pôr acaba por não existir:
+/// aqui ela nasce com o pedido e o expurgo varre por ela.
+model PedidoDeCartoes {
+  id        String  @id @default(uuid()) @db.Uuid
+  projectId String  @db.Uuid
+  project   Project @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  userId    String? @db.Uuid
+  user      User?   @relation(fields: [userId], references: [id], onDelete: SetNull)
+
+  estado EstadoDoPedido @default(RASCUNHO)
+
+  /// O preço fica COPIADO no pedido, não lido da tabela na hora de mostrar.
+  /// Se o administrador mudar o preço a meio, quem já estava a comprar paga o
+  /// que viu — e o histórico continua a fazer sentido daqui a um ano.
+  precoUnitarioCent   Int
+  descontoPercentagem Int
+  subtotalCent        Int    @default(0)
+  descontoCent        Int    @default(0)
+  totalCent           Int    @default(0)
+  moeda               String @default("BRL")
+
+  meio              MeioDePagamento?
+  /// O id que o provedor de pagamento deu a esta cobrança.
+  referenciaExterna String?          @unique
+  pixCopiaECola     String?
+  pixQrSvg          String?
+
+  criadoEm     DateTime  @default(now())
+  atualizadoEm DateTime  @updatedAt
+  pagoEm       DateTime?
+  prontoEm     DateTime?
+  /// Quando a foto e o PDF são apagados do disco.
+  expiraEm     DateTime
+
+  criancas           CriancaDoPedido[]
+  eventosDePagamento EventoDePagamento[]
+
+  @@index([projectId, estado])
+  @@index([expiraEm])
+  @@map("pedidos_de_cartoes")
+}
+
+/// Uma criança dentro do pedido: uma foto, um nome, um enquadramento.
+///
+/// O enquadramento é guardado em PROPORÇÃO e não em pixéis — ver
+/// `packages/cartoes`. É o que permite que a prévia de 360px no telemóvel e a
+/// folha de 2480px na gráfica mostrem exactamente o mesmo recorte.
+///
+/// Uma linha por criança, e os 7 cartões saem dela. O cliente foi claro: o
+/// nome escreve-se uma vez, o enquadramento faz-se uma vez, e aplicam-se aos
+/// sete. Guardar sete linhas iguais seria sete sítios para ficarem diferentes.
+model CriancaDoPedido {
+  id       String          @id @default(uuid()) @db.Uuid
+  pedidoId String          @db.Uuid
+  pedido   PedidoDeCartoes @relation(fields: [pedidoId], references: [id], onDelete: Cascade)
+
+  ordem Int    @default(0)
+  nome  String @default("")
+
+  /// O caminho do ficheiro temporário da foto. Apagado pelo expurgo.
+  fotoPath    String?
+  fotoLargura Int?
+  fotoAltura  Int?
+
+  /// O enquadramento, em proporções. 1 é a foto a cobrir a moldura sem zoom.
+  escala        Float @default(1)
+  deslocX       Float @default(0)
+  deslocY       Float @default(0)
+  tamanhoDoNome Float @default(0.6)
+
+  /// O veredicto da última avaliação, para o ecrã não ter de recalcular.
+  dpi   Int?
+  nivel String?
+
+  /// Aprovada pela análise; escolhida pela mãe; confirmada no fim da edição.
+  aprovada    Boolean @default(false)
+  selecionada Boolean @default(false)
+  confirmada  Boolean @default(false)
+
+  /// O PDF dos 7 cartões desta criança. Nasce depois do pagamento, morre no
+  /// expurgo.
+  pdfPath String?
+
+  criadoEm     DateTime @default(now())
+  atualizadoEm DateTime @updatedAt
+
+  @@index([pedidoId, ordem])
+  @@map("criancas_do_pedido")
+}
+
+/// Cada aviso que o provedor de pagamento manda.
+///
+/// `idExterno` é único, e é isso que torna o webhook idempotente. Os provedores
+/// reenviam o mesmo aviso quando não recebem resposta a tempo, e um pedido que
+/// muda de estado duas vezes por causa do mesmo pagamento é a avaria que só
+/// aparece no extrato do cliente.
+model EventoDePagamento {
+  id       String          @id @default(uuid()) @db.Uuid
+  pedidoId String          @db.Uuid
+  pedido   PedidoDeCartoes @relation(fields: [pedidoId], references: [id], onDelete: Cascade)
+
+  idExterno String @unique
+  tipo      String
+  bruto     Json   @default("{}")
+
+  recebidoEm DateTime @default(now())
+
+  @@index([pedidoId])
+  @@map("eventos_de_pagamento")
 }

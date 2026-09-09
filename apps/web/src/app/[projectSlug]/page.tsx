@@ -9,6 +9,7 @@ import { IntroducaoEmCartoes } from '@/components/IntroducaoEmCartoes'
 import { ExperienciaContinua } from '@/components/ExperienciaContinua'
 import { IntroducaoRecolhivel } from '@/components/IntroducaoRecolhivel'
 import { BarraInferior } from '@/components/BarraInferior'
+import { CarrosselDeProjetos } from '@/components/CarrosselDeProjetos'
 
 /**
  * A experiência inteira numa página só.
@@ -192,6 +193,18 @@ export default async function IndiceDoProjeto({
         perfisCriados={comunidade.perfis}
         anfitriao={anfitriao}
       />
+
+      {/* O CARROSSEL DE PROJETOS, imediatamente debaixo do perfil.
+
+          É a posição exacta do mockup dele, e o perfil acima não foi tocado:
+          entra a seguir ao `CabecalhoDePerfil` e antes da introdução, sem
+          alterar uma linha de nenhum dos dois.
+
+          Os projetos vêm de uma consulta, por isso um projeto novo cadastrado
+          no painel aparece aqui sozinho — que foi o pedido dele: "não quero
+          que cada novo projeto exija reconstruir ou programar novamente o
+          carrossel". */}
+      <CarrosselDeProjetos />
 
       {/* 2, 3 e 4. A INTRODUÇÃO DO PROJETO, e ela recolhe-se depois da
           primeira visita. Ordem dele, 23/08: capa do perfil, introdução, e

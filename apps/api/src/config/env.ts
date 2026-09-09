@@ -26,6 +26,36 @@ const schema = z.object({
   UPLOAD_DIR: z.string().optional(),
 
   /**
+   * Onde ficam as fotografias das crianças e os PDFs enquanto duram.
+   *
+   * PASTA PRÓPRIA, FORA DE `UPLOAD_DIR`, e isto não é arrumação. `UPLOAD_DIR` é
+   * servida como ficheiro estático em `/uploads`, ou seja, quem souber o
+   * endereço abre o ficheiro sem ter sessão nenhuma. Serve para a música e para
+   * a arte das letras, que são públicas. Uma fotografia de uma criança não pode
+   * viver nessa pasta nem por engano — sai por uma rota que verifica de quem é
+   * o pedido, e mais nenhuma.
+   */
+  CARTOES_DIR: z.string().optional(),
+
+  /**
+   * Quantos dias o ficheiro fica disponível depois de pago, antes do expurgo.
+   *
+   * O cliente pediu que nada ficasse guardado para sempre. Sete dias é o que
+   * lhe propus por escrito: dá tempo de a mãe descarregar, reenviar por
+   * WhatsApp ou levar à gráfica, e não transforma a plataforma num arquivo de
+   * fotografias de crianças. Configurável porque a decisão é dele, não minha.
+   */
+  CARTOES_DIAS_ATE_EXPURGO: z.coerce.number().int().positive().default(7),
+
+  /**
+   * Quantas horas um pedido por pagar sobrevive.
+   *
+   * Curto de propósito: se ela desistiu no meio, a fotografia que enviou não
+   * tem razão nenhuma para continuar em disco.
+   */
+  CARTOES_HORAS_ATE_ABANDONO: z.coerce.number().int().positive().default(48),
+
+  /**
    * Envio de e-mail. OPCIONAL de propósito.
    *
    * O sistema tem de subir sem isto: em desenvolvimento ninguém quer mandar

@@ -247,3 +247,13 @@ porta aberta quando o responsável escolheu o dele: `@santtify` estava travado,
 `@santtifyoficial` e `@santtify_oficial` não. Este percurso confere os dois
 lados — recusa os disfarces e aceita nomes reais, incluindo `@satisfy`, que se
 parece e não é.
+
+## `cartoes-personalizados.mjs`
+
+A promessa central: o que a mãe aprova no ecrã é o que sai na gráfica. Anda pelo
+percurso inteiro — duas crianças, uma foto boa e uma pequena, seleção, Pix — e
+confirma o que só se vê andando: a recusa de uma foto não trava as outras, o PDF
+está trancado antes do pagamento, fechar o separador não perde o pedido, e o nome
+não parte em duas linhas (enquanto partia, a prévia mentia sobre o papel).
+
+As imagens são feitas em código, como manda o resto deste directório.

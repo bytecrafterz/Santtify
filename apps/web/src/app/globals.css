@@ -7658,3 +7658,662 @@ h2.funil {
   content: ' ▶';
   font-size: 0.8em;
 }
+
+/* ═══════════════════════════════════════════════════════════════════
+   CARROSSEL DE PROJETOS E CARTÕES PERSONALIZADOS
+   ═══════════════════════════════════════════════════════════════════
+
+   As cores vêm todas das variáveis do topo. O verde é "faça isto" e é por isso
+   que o botão de baixar/imprimir é verde e não roxo como no mockup: a regra
+   escrita lá em cima diz "criar perfil, IMPRIMIR, entrar no grupo", e uma cor
+   que muda de significado entre ecrãs é pior do que um ecrã que não copia o
+   mockup ao pixel. O roxo continua a querer dizer "toque para ouvir".
+   ─────────────────────────────────────────────────────────────────── */
+
+/* Texto só para quem usa leitor de ecrã. */
+.apenas-leitor-de-ecra {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
+}
+
+/* ── Carrossel ──────────────────────────────────────────────────── */
+
+.carrossel-de-projetos {
+  margin: 20px 0 8px;
+}
+
+.carrossel-cabecalho {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 0 16px 10px;
+}
+
+.carrossel-cabecalho h2 {
+  margin: 0;
+  font-size: 0.85rem;
+  font-weight: 800;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--cor-texto-suave);
+}
+
+.carrossel-ver-todos {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 0.9rem;
+  font-weight: 600;
+  color: var(--cor-primaria);
+  text-decoration: none;
+}
+
+/*
+  Deslizar com scroll-snap do navegador, sem biblioteca nenhuma.
+
+  Dois cartões por ecrã é o que o mockup pede — um à esquerda, outro à direita —
+  e é o que `minmax` garante em qualquer largura de telemóvel sem media query.
+*/
+.carrossel-trilho {
+  display: grid;
+  grid-auto-flow: column;
+  grid-auto-columns: minmax(46%, 1fr);
+  gap: 12px;
+  margin: 0;
+  padding: 4px 16px 12px;
+  list-style: none;
+  overflow-x: auto;
+  scroll-snap-type: x mandatory;
+  -webkit-overflow-scrolling: touch;
+  scrollbar-width: none;
+}
+
+.carrossel-trilho::-webkit-scrollbar {
+  display: none;
+}
+
+.carrossel-item {
+  scroll-snap-align: start;
+}
+
+.cartao-de-projeto {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  overflow: hidden;
+  color: inherit;
+  text-decoration: none;
+  background: var(--cor-superficie);
+  border: 1px solid var(--cor-borda);
+  border-radius: var(--raio);
+  box-shadow: var(--sombra);
+}
+
+.cartao-numero {
+  position: absolute;
+  top: 8px;
+  left: 8px;
+  z-index: 2;
+  display: grid;
+  width: 26px;
+  height: 26px;
+  font-size: 0.85rem;
+  font-weight: 700;
+  color: #fff;
+  background: rgba(23, 26, 34, 0.55);
+  border-radius: 50%;
+  place-items: center;
+  backdrop-filter: blur(4px);
+}
+
+.cartao-capa {
+  display: block;
+  aspect-ratio: 1 / 1;
+  overflow: hidden;
+  background: var(--cor-primaria-suave);
+}
+
+.cartao-capa img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.cartao-sem-capa {
+  display: grid;
+  width: 100%;
+  height: 100%;
+  font-size: 2rem;
+  font-weight: 800;
+  color: var(--cor-primaria);
+  place-items: center;
+}
+
+.cartao-corpo {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  gap: 2px;
+  padding: 10px 12px 6px;
+}
+
+.cartao-nome {
+  font-size: 0.95rem;
+  line-height: 1.25;
+}
+
+.cartao-tagline {
+  font-size: 0.8rem;
+  line-height: 1.35;
+  color: var(--cor-texto-suave);
+}
+
+.cartao-numeros {
+  display: flex;
+  justify-content: space-between;
+  padding: 8px 12px 12px;
+  font-size: 0.78rem;
+  color: var(--cor-texto-suave);
+  border-top: 1px solid var(--cor-borda);
+  font-variant-numeric: tabular-nums;
+}
+
+.cartao-numero-item {
+  display: inline-flex;
+  gap: 3px;
+  align-items: center;
+}
+
+/* ── Cartões personalizados ─────────────────────────────────────── */
+
+.editor-cartoes {
+  max-width: var(--largura);
+  padding: 16px 16px 96px;
+  margin: 0 auto;
+}
+
+.cartoes-cabecalho {
+  margin-bottom: 18px;
+  text-align: center;
+}
+
+.cartoes-cabecalho h1 {
+  margin: 0 0 6px;
+  font-size: 1.5rem;
+  line-height: 1.2;
+}
+
+.cartoes-cabecalho p {
+  margin: 0;
+  font-size: 0.92rem;
+  color: var(--cor-texto-suave);
+}
+
+.cartoes-passo {
+  padding: 16px;
+  margin-bottom: 16px;
+  background: var(--cor-superficie);
+  border: 1px solid var(--cor-borda);
+  border-radius: var(--raio);
+}
+
+.cartoes-passo h2 {
+  margin: 0 0 10px;
+  font-size: 1.05rem;
+}
+
+.cartoes-ajuda {
+  margin: 6px 0;
+  font-size: 0.85rem;
+  line-height: 1.5;
+  color: var(--cor-texto-suave);
+}
+
+.cartoes-erro {
+  padding: 10px 12px;
+  margin: 10px 0;
+  font-size: 0.88rem;
+  color: var(--cor-alerta);
+  background: rgba(220, 38, 38, 0.08);
+  border-radius: 10px;
+}
+
+/* Alvos de toque grandes: o público é criança e mãe, no telemóvel. */
+.cartoes-accao,
+.cartoes-accao-secundaria {
+  display: block;
+  width: 100%;
+  min-height: 48px;
+  padding: 12px 16px;
+  margin-top: 12px;
+  font: inherit;
+  font-weight: 700;
+  text-align: center;
+  text-decoration: none;
+  cursor: pointer;
+  border: 0;
+  border-radius: 12px;
+}
+
+.cartoes-accao {
+  color: #fff;
+  background: var(--cor-acao);
+}
+
+.cartoes-accao:hover:not(:disabled) {
+  background: var(--cor-acao-escura);
+}
+
+.cartoes-accao-secundaria {
+  color: var(--cor-texto);
+  background: var(--cor-primaria-suave);
+}
+
+.cartoes-accao:disabled,
+.cartoes-accao-secundaria:disabled {
+  cursor: not-allowed;
+  opacity: 0.5;
+}
+
+.cartoes-ligacao {
+  display: block;
+  width: 100%;
+  padding: 10px;
+  margin-top: 8px;
+  font: inherit;
+  font-size: 0.88rem;
+  color: var(--cor-primaria);
+  cursor: pointer;
+  background: none;
+  border: 0;
+}
+
+.cartoes-contador {
+  display: flex;
+  gap: 18px;
+  align-items: center;
+  justify-content: center;
+  margin: 18px 0;
+}
+
+.cartoes-contador button {
+  width: 48px;
+  height: 48px;
+  font-size: 1.4rem;
+  cursor: pointer;
+  background: var(--cor-primaria-suave);
+  border: 0;
+  border-radius: 50%;
+  color: var(--cor-texto);
+}
+
+.cartoes-contador strong {
+  min-width: 2ch;
+  font-size: 2rem;
+  text-align: center;
+  font-variant-numeric: tabular-nums;
+}
+
+/* ── As caixas das crianças, com o semáforo ─────────────────────── */
+
+.cartoes-lista-de-criancas {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+  gap: 12px;
+  padding: 0;
+  margin: 12px 0;
+  list-style: none;
+}
+
+.cartoes-crianca {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  align-items: center;
+  padding: 12px;
+  text-align: center;
+  border: 2px solid var(--cor-borda);
+  border-radius: var(--raio);
+}
+
+.cartoes-crianca-boa {
+  border-color: var(--cor-acao);
+  background: rgba(22, 163, 74, 0.05);
+}
+
+.cartoes-crianca-aceitavel {
+  border-color: var(--cor-destaque);
+  background: rgba(245, 158, 11, 0.07);
+}
+
+.cartoes-crianca-titulo {
+  font-size: 0.85rem;
+  font-weight: 700;
+}
+
+.cartoes-miniatura-foto {
+  width: 84px;
+  height: 84px;
+  object-fit: cover;
+  border-radius: 50%;
+}
+
+.cartoes-sem-foto {
+  display: grid;
+  width: 84px;
+  height: 84px;
+  font-size: 1.8rem;
+  color: var(--cor-texto-suave);
+  background: var(--cor-fundo);
+  border-radius: 50%;
+  place-items: center;
+}
+
+.cartoes-veredicto {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  margin: 4px 0 0;
+  font-size: 0.8rem;
+  line-height: 1.4;
+}
+
+.cartoes-veredicto-boa { color: var(--cor-acao-escura); }
+.cartoes-veredicto-media { color: #92400e; }
+.cartoes-veredicto-ma { color: var(--cor-alerta); }
+
+.cartoes-selecao {
+  padding: 0;
+  margin: 12px 0;
+  list-style: none;
+}
+
+.cartoes-escolha {
+  display: flex;
+  gap: 12px;
+  align-items: center;
+  padding: 10px;
+  cursor: pointer;
+  border-bottom: 1px solid var(--cor-borda);
+}
+
+.cartoes-escolha .cartoes-miniatura-foto {
+  width: 48px;
+  height: 48px;
+}
+
+.cartoes-resumo {
+  padding: 12px;
+  margin: 14px 0 0;
+  background: var(--cor-fundo);
+  border-radius: 12px;
+}
+
+.cartoes-resumo > div {
+  display: flex;
+  justify-content: space-between;
+  padding: 4px 0;
+  font-size: 0.9rem;
+}
+
+.cartoes-resumo dt,
+.cartoes-resumo dd {
+  margin: 0;
+}
+
+.cartoes-resumo dd { font-variant-numeric: tabular-nums; }
+.cartoes-resumo-desconto { color: var(--cor-acao-escura); }
+
+.cartoes-resumo-total {
+  padding-top: 8px !important;
+  margin-top: 4px;
+  font-size: 1.05rem !important;
+  font-weight: 800;
+  border-top: 1px solid var(--cor-borda);
+}
+
+.cartoes-pix {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  align-items: center;
+  margin: 14px 0;
+}
+
+.cartoes-pix-qr svg {
+  width: 200px;
+  height: 200px;
+}
+
+.cartoes-estado-pago {
+  font-weight: 700;
+  color: var(--cor-acao-escura);
+}
+
+.cartoes-estado-espera {
+  font-size: 0.88rem;
+  color: var(--cor-texto-suave);
+}
+
+/* ── O editor ───────────────────────────────────────────────────── */
+
+.cartoes-modelos {
+  display: flex;
+  gap: 10px;
+  padding: 4px 0 10px;
+  margin: 0;
+  overflow-x: auto;
+  list-style: none;
+  scroll-snap-type: x mandatory;
+}
+
+.cartoes-modelo {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  width: 110px;
+  padding: 10px 8px;
+  font: inherit;
+  color: inherit;
+  text-align: left;
+  cursor: pointer;
+  background: var(--cor-fundo);
+  border: 2px solid transparent;
+  border-radius: 12px;
+  scroll-snap-align: start;
+}
+
+.cartoes-modelo.activo {
+  border-color: var(--cor-primaria);
+  background: var(--cor-primaria-suave);
+}
+
+.cartoes-modelo-dia {
+  font-size: 0.7rem;
+  font-weight: 800;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--cor-primaria);
+}
+
+.cartoes-modelo-nome {
+  font-size: 0.82rem;
+  line-height: 1.25;
+}
+
+.cartoes-editor-grelha {
+  display: grid;
+  gap: 16px;
+}
+
+@media (min-width: 720px) {
+  .cartoes-editor-grelha {
+    grid-template-columns: 280px 1fr;
+    align-items: start;
+  }
+}
+
+.cartoes-campo {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  margin-bottom: 14px;
+  font-size: 0.85rem;
+  font-weight: 600;
+}
+
+.cartoes-campo input[type='text'] {
+  padding: 12px;
+  font: inherit;
+  font-weight: 400;
+  color: var(--cor-texto);
+  background: var(--cor-fundo);
+  border: 1px solid var(--cor-borda);
+  border-radius: 10px;
+}
+
+.cartoes-setas,
+.cartoes-zoom {
+  display: flex;
+  gap: 6px;
+  align-items: center;
+  margin-top: 4px;
+}
+
+.cartoes-setas button,
+.cartoes-zoom button {
+  width: 44px;
+  height: 44px;
+  font-size: 1.1rem;
+  cursor: pointer;
+  background: var(--cor-primaria-suave);
+  border: 0;
+  border-radius: 10px;
+  color: var(--cor-texto);
+}
+
+.cartoes-zoom input[type='range'] { flex: 1; }
+
+/*
+  A FOLHA. A proporção é A4 e a altura vem do componente, calculada a partir da
+  largura medida — é a mesma régua com que o servidor compõe a 300 dpi.
+*/
+.cartoes-folha {
+  position: relative;
+  width: 100%;
+  overflow: hidden;
+  background: var(--cor-fundo);
+  border: 1px solid var(--cor-borda);
+  border-radius: 8px;
+  touch-action: none;
+  user-select: none;
+}
+
+.cartoes-folha-arte {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.cartoes-folha-sem-arte {
+  position: absolute;
+  inset: 0;
+  display: grid;
+  padding: 20px;
+  font-size: 0.8rem;
+  color: var(--cor-texto-suave);
+  text-align: center;
+  place-items: center;
+}
+
+.cartoes-moldura {
+  position: absolute;
+  overflow: hidden;
+  border-radius: 50%;
+}
+
+.cartoes-moldura-recta { border-radius: 4px; }
+
+.cartoes-moldura img {
+  position: absolute;
+  max-width: none;
+}
+
+.cartoes-folha-nome {
+  position: absolute;
+  display: grid;
+  font-weight: 800;
+  line-height: 1;
+  text-align: center;
+  place-items: center;
+  /*
+    UMA LINHA, SEMPRE. O PDF escreve o nome numa só linha — o pdf-lib não tem
+    quebra automática — por isso a prévia também não pode ter. Enquanto teve,
+    "ANA BEATRIZ" partia-se em duas no ecrã e saía numa só no papel, que é
+    precisamente a divergência que este editor existe para não deixar existir.
+  */
+  white-space: nowrap;
+  /*
+    Arial/Helvetica de propósito: o PDF escreve o nome em Helvetica-Bold, e
+    estas duas são metricamente compatíveis com ela. Uma fonte bonita aqui
+    faria a prévia mentir sobre a largura do nome na folha.
+  */
+  font-family: Arial, Helvetica, sans-serif;
+}
+
+.cartoes-folha-grande { max-width: 100%; }
+
+.cartoes-miniaturas {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(88px, 1fr));
+  gap: 10px;
+  padding: 0;
+  margin: 12px 0;
+  list-style: none;
+}
+
+.cartoes-miniatura {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  width: 100%;
+  padding: 0;
+  font: inherit;
+  font-size: 0.7rem;
+  color: var(--cor-texto-suave);
+  cursor: pointer;
+  background: none;
+  border: 0;
+}
+
+.cartoes-folha-miniatura { pointer-events: none; }
+
+.cartoes-prontos {
+  padding: 0;
+  margin: 12px 0;
+  list-style: none;
+}
+
+.cartoes-prontos li {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  padding: 14px 0;
+  border-bottom: 1px solid var(--cor-borda);
+}
+
+.cartoes-meios {
+  display: grid;
+  gap: 8px;
+}

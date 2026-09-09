@@ -157,6 +157,103 @@ export class ContagensService {
     return linhas + eventos
   }
 
+  /**
+   * Os quatro números de PROJETOS inteiros, para o carrossel do perfil.
+   *
+   * O cliente descreveu-o no ponto 1: o cartão do projeto mostra o total
+   * acumulado de tudo o que está lá dentro — se as letras todas somarem 100.000
+   * visualizações, é 100.000 que aparece no cartão do Jesus Alfabeto Saudável.
+   *
+   * ESTÁ AQUI, E NÃO NO SERVIÇO DO CARROSSEL, pelo motivo que está escrito no
+   * topo desta classe: a conta de "quantas partilhas tem isto" já esteve em
+   * dois sítios e as duas cópias divergiram. O carrossel é mais um ecrã a
+   * mostrar estes números, por isso pergunta a quem já sabe contá-los.
+   *
+   * Em consultas agrupadas e não uma por projeto: o carrossel desenha todos de
+   * uma vez, e perguntar um a um é o atalho que leva a guardar contadores.
+   */
+  async deProjectos(projectIds: string[]): Promise<Map<string, Contagens>> {
+    const mapa = new Map<string, Contagens>()
+    if (!projectIds.length) return mapa
+    for (const id of projectIds) mapa.set(id, { ...ZERO })
+
+    const somar = (id: string | null, campo: keyof Contagens, quanto: number) => {
+      if (!id) return
+      const actual = mapa.get(id)
+      if (actual) actual[campo] += quanto
+    }
+
+    const [views, likes, topo, respostas, partilhasEmLinha, partilhasEmEvento] = await Promise.all([
+      this.prisma.event.groupBy({
+        by: ['projectId'],
+        where: { projectId: { in: projectIds }, type: EventType.CONTENT_VIEW },
+        _count: { _all: true },
+      }),
+      this.prisma.reaction.groupBy({
+        by: ['projectId'],
+        where: { projectId: { in: projectIds }, type: ReactionType.LIKE },
+        _count: { _all: true },
+      }),
+      this.prisma.comment.groupBy({
+        by: ['projectId'],
+        where: {
+          projectId: { in: projectIds },
+          status: 'PUBLISHED',
+          parentId: null,
+          user: { is: { status: 'ACTIVE' } },
+        },
+        _count: { _all: true },
+      }),
+      this.prisma.comment.groupBy({
+        by: ['projectId'],
+        where: {
+          projectId: { in: projectIds },
+          status: 'PUBLISHED',
+          parent: { is: { status: 'PUBLISHED' } },
+          user: { is: { status: 'ACTIVE' } },
+        },
+        _count: { _all: true },
+      }),
+      this.prisma.share.groupBy({
+        by: ['shortLinkId'],
+        where: { shortLink: { is: { projectId: { in: projectIds } } } },
+        _count: { _all: true },
+      }),
+      this.prisma.event.groupBy({
+        by: ['projectId'],
+        where: {
+          projectId: { in: projectIds },
+          type: EventType.CUSTOM,
+          OR: this.accoesDePartilha.map((acao) => ({
+            props: { path: ['acao'], equals: acao },
+          })),
+        },
+        _count: { _all: true },
+      }),
+    ])
+
+    for (const l of views) somar(l.projectId, 'views', l._count._all)
+    for (const l of likes) somar(l.projectId, 'likes', l._count._all)
+    for (const l of topo) somar(l.projectId, 'comments', l._count._all)
+    for (const l of respostas) somar(l.projectId, 'comments', l._count._all)
+    for (const l of partilhasEmEvento) somar(l.projectId, 'shares', l._count._all)
+
+    // As partilhas antigas penduram-se no link curto. Mesma tradução que em
+    // `deConteudos`, e pelo mesmo motivo: uma consulta em vez de uma por link.
+    if (partilhasEmLinha.length) {
+      const links = await this.prisma.shortLink.findMany({
+        where: { id: { in: partilhasEmLinha.map((s) => s.shortLinkId) } },
+        select: { id: true, projectId: true },
+      })
+      const deQuem = new Map(links.map((l) => [l.id, l.projectId]))
+      for (const s of partilhasEmLinha) {
+        somar(deQuem.get(s.shortLinkId) ?? null, 'shares', s._count._all)
+      }
+    }
+
+    return mapa
+  }
+
   /** Os quatro números de um conteúdo, contados agora. */
   /**
    * UMA VISITA AO CONTEÚDO É UM EVENTO SEM BLOCO.

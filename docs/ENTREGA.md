@@ -84,6 +84,127 @@ O PDF sai em A4 correto. A resolução depende da arte de origem: uma arte de
 1000 px dá cerca de 124 DPI no A4. Para 300 DPI é preciso arte com **2480 px de
 largura**.
 
+## Cartões personalizados e carrossel de projetos
+
+Acrescentado em 09/09. `apps/api/src/cartoes/`, `packages/cartoes/`,
+`EditorDeCartoes.tsx` e `CarrosselDeProjetos.tsx`.
+
+### A regra que sustenta tudo: uma conta só
+
+`packages/cartoes/index.js` é JavaScript simples, sem dependências, importado
+**tal e qual** pelo navegador e pelo servidor. Lá dentro vivem `enquadrar`,
+`avaliarFoto` e `corpoDoNome`.
+
+O cliente pediu por escrito, duas vezes, que o PDF não fosse uma fotografia do
+ecrã. A prévia é leve para o telemóvel e o PDF sai a 300 dpi — se as duas contas
+estivessem escritas em sítios diferentes, divergiriam, **e a divergência não
+aparece no ecrã de ninguém: aparece na gráfica, depois de a mãe ter pago**.
+
+O que fica guardado é PROPORÇÃO, nunca pixéis: `escala`, `deslocX`, `deslocY`.
+Ela ajusta num ecrã de 360px e a folha sai com 2480px; "moveu 40 pixéis" não
+sobrevive a essa mudança de régua, "moveu 11% da moldura" sobrevive a qualquer.
+
+`corpoDoNome` leva um **medidor** — `widthOfTextAtSize` do pdf-lib no servidor,
+`measureText` do canvas no navegador. Enquanto estimava, "ANA BEATRIZ" partia-se
+em duas linhas no ecrã e saía numa só no papel.
+
+### Os modelos são DADOS
+
+Um modelo de cartão é uma linha em `modelos_de_cartao`, com a arte e as medidas
+da moldura e do nome **em milímetros** sobre A4. Milímetros e não pixéis: a folha
+mede-se em mm na gráfica e a arte pode ser reexportada com outra resolução.
+
+Um oitavo modelo entra pelo painel. Não precisa de código nenhum.
+
+### A validação corre duas vezes, e cada uma tem o seu papel
+
+| Quando | O quê |
+|---|---|
+| No envio | Peneira grossa, sem zoom: recusa já o que nunca serviria |
+| A cada ajuste | Peneira fina, sobre o recorte real — o que o cliente pediu em 08/09 |
+
+```
+dpi = min(px_larg × 25,4 / mm_larg, px_alt × 25,4 / mm_alt) ÷ escala
+```
+
+**Três faixas, não duas.** ≥300 verde, 200–299 amarelo, <200 vermelho. O amarelo
+não estava no pedido dele: a foto que vem do WhatsApp cai muitas vezes ali, e as
+duas respostas possíveis eram más — recusar faz a mãe desistir com uma foto que
+ainda dava; aceitar calado faz a gráfica devolver um cartão borrado.
+
+### O nome vai em VECTOR, e a arte em pixéis
+
+`sharp` compõe a arte com a foto; `pdf-lib` escreve o nome por cima como texto.
+Esta máquina **não tem fontconfig nem tipos de letra**: desenhar texto com o
+sharp passaria pelo SVG e sairia vazio, sem erro nenhum. Helvetica-Bold é
+obrigatória em qualquer leitor de PDF e a codificação WinAnsi cobre `ã ç é õ` —
+um cartão com "JOAO" em vez de "JOÃO" é um cartão estragado.
+
+### Privacidade: `CARTOES_DIR` NÃO é servida estaticamente
+
+`UPLOAD_DIR` é servida em `/uploads` — quem souber o endereço abre o ficheiro
+sem sessão. Serve para a música e para a arte, que são públicas. **A fotografia
+de uma criança não pode viver nessa pasta nem por engano**: sai por rota que
+confere o pedido, com `Cache-Control: no-store`.
+
+`expiraEm` nunca é nulo e o `ExpurgoDeCartoesService` varre de hora a hora. Um
+prazo de sete dias varrido uma vez por dia é, na prática, um prazo entre sete e
+oito. O registo da venda fica; a foto e o PDF saem.
+
+Utilizadores em Portugal: **RGPD**, não só LGPD.
+
+### Pagamento: falta a conta, não falta o código
+
+O percurso está inteiro — cobrança, espera sem prender a mãe ao ecrã, e
+destrancar só na confirmação real. O que falta é o adaptador do provedor, e esse
+**não se escreve sem um CNPJ brasileiro** para liquidar o Pix.
+
+Até lá atende o `ProvedorManual`: a cobrança nasce e a confirmação entra pela
+MESMA porta, carregada à mão no painel. Ligar um provedor a sério é escrever uma
+classe com dois métodos e trocar o `useClass` em `cartoes.module.ts`.
+
+`idExterno` é único na base — é isso que torna o webhook idempotente. Os
+provedores reenviam quando não recebem resposta a tempo.
+
+### Coisas que já morderam aqui
+
+- **`PRONTO` também é pago.** Aceitar só `PAGO` partia o "VOLTAR PARA CORRIGIR"
+  do ponto 7: ela aprovava, corrigia, e a nova geração era recusada com "só
+  depois do pagamento" — a quem tinha pago minutos antes.
+- **O aviso da arte mede o ORIGINAL.** `ArquivoSalvo.largura` é a cópia de ecrã,
+  limitada a 1200px: uma arte perfeita de 2480px voltava de lá como 1200 e o
+  aviso disparava sempre. Um aviso que grita em todas cala-se na que interessa.
+- **O `ScheduleModule` nunca tinha sido ligado.** Estava nas dependências e não
+  no `app.module`. Um `@Cron` sem ele não dá erro: simplesmente nunca acontece.
+- **`localStorage` guarda o pedido.** O Pix confirma-se por fora e ela VAI sair
+  da página. Sem isto, fechar o separador depois de pagar apagava o caminho de
+  volta aos ficheiros.
+- **Acentos no nome do ficheiro.** `NFD` separa a letra do acento; sem apagar os
+  acentos soltos, "João" saía como "joa-o".
+
+### O que falta, e não é código
+
+As medidas da moldura em milímetros, do designer. Os valores em
+`modelos-de-cartao.ts` foram tirados a olho das artes e servem para o editor
+abrir a funcionar — não são a régua. **E a arte tem de ter 2480px de largura**,
+senão sai a ~124 dpi em A4.
+
+### Carrossel
+
+`GET /api/carrossel/projetos`. Ordem: destaque ESQUERDA, destaque DIREITA, e o
+resto por `ordemNoCarrossel`. `Project.destaque` tem `@unique` num campo
+opcional — o Postgres deixa passar tantos nulos quantos quiser e só um de cada
+lado, por isso não há código nenhum a vigiar isso.
+
+Os totais vêm de `ContagensService.deProjectos`, que conta na leitura. **Não se
+guardam contadores aqui** — ver a nota no topo dessa classe sobre os menos três
+comentários.
+
+`abreviarKM` dá "1,5K" e "20K", que foi o que ele escreveu no ponto 1. É
+diferente de `abreviar` em `lib/numeros`, que dá "1,5 mil" — as duas estão certas
+e servem ecrãs diferentes, ambas escritas por ele. `Intl.NumberFormat` em
+português nunca dá "K".
+
 ## Regras que não se partem
 
 **`events` é append-only**, por gatilho na base. `UPDATE` e `DELETE` levantam
