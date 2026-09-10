@@ -131,11 +131,49 @@ async function fotoNaMoldura(
 }
 
 /**
- * A folha inteira, à resolução pedida.
+ * A fotografia recortada à moldura, sozinha, com fundo transparente.
  *
- * `dpi` 300 dá 2480x3508 — a folha A4 que a gráfica quer. O mesmo código com
- * `dpi` 96 dá uma prévia leve, e é de propósito que seja o mesmo: uma prévia
- * gerada por outro caminho é uma prévia que pode mentir.
+ * É ESTA que entra no PDF de impressão, e não a folha inteira composta. A arte
+ * do designer vem em PDF VECTORIAL, e o cliente pediu que se mantivesse 100%
+ * da qualidade — rasterizar a folha toda para lhe colar a fotografia por cima
+ * destruiria exactamente o que ele pediu para preservar. No PDF final a arte
+ * entra como vector, o nome entra como texto, e só a fotografia é feita de
+ * pixéis, porque só ela nasceu de pixéis.
+ *
+ * `dpi` 300 dá à moldura o tamanho certo para impressão sem gastar resolução
+ * no resto da folha, que não precisa dela.
+ */
+export async function recortarFoto(opcoes: {
+  foto: Buffer
+  fotoLargura: number
+  fotoAltura: number
+  moldura: MolduraDoModelo
+  ajuste: Ajuste
+  dpi: number
+}): Promise<Buffer> {
+  const largura = Math.max(1, Math.round(mmParaPx(opcoes.moldura.fotoLargura, opcoes.dpi)))
+  const altura = Math.max(1, Math.round(mmParaPx(opcoes.moldura.fotoAltura, opcoes.dpi)))
+
+  return fotoNaMoldura(
+    opcoes.foto,
+    opcoes.fotoLargura,
+    opcoes.fotoAltura,
+    largura,
+    altura,
+    opcoes.moldura.fotoFormato,
+    opcoes.ajuste,
+  )
+}
+
+/**
+ * A folha inteira composta numa imagem. SÓ PARA CONFERÊNCIA.
+ *
+ * O ficheiro que vai para a gráfica já não passa por aqui — ver `recortarFoto`
+ * e `pdf-dos-cartoes.ts`. Isto continua a existir para a prévia do painel, onde
+ * interessa ver a folha montada numa imagem só, e onde 96 dpi chegam.
+ *
+ * Não serve para arte em PDF: o sharp não lê PDF. Quem chamar com uma arte
+ * dessas recebe um erro, e é melhor assim do que devolver uma folha vazia.
  */
 export async function comporCartao(opcoes: {
   arte: Buffer

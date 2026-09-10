@@ -3,7 +3,8 @@ import { FormatoDaMoldura } from '@pv/db'
 import { A4_MM, DPI_BOM, mmParaPx } from '@pv/cartoes'
 import { PrismaService } from '../prisma/prisma.service'
 import { CartoesService } from './cartoes.service'
-import type { ArquivoSalvo } from '../admin/storage.service'
+import { StorageService, type ArquivoSalvo } from '../admin/storage.service'
+import { conferirPdf, rasterizarPrimeiraPagina } from './arte-em-pdf'
 
 /**
  * Os campos que o painel pode mexer num modelo.
@@ -49,6 +50,7 @@ export class AdminCartoesService {
   constructor(
     private readonly prisma: PrismaService,
     private readonly cartoes: CartoesService,
+    private readonly storage: StorageService,
   ) {}
 
   async listarModelos(projectSlug: string) {
@@ -163,6 +165,66 @@ export class AdminCartoesService {
       largura: larguraOriginal,
       altura: salvo.altura,
       aviso: this.avisoDaLargura(larguraOriginal),
+    }
+  }
+
+  /**
+   * A arte em PDF vectorial — o formato que o designer entrega.
+   *
+   * O PDF fica como está e é ele que entra no ficheiro de impressão. A cópia de
+   * ecrã é rasterizada a partir dele, e serve só para o editor desenhar a folha
+   * enquanto a mãe enquadra a fotografia.
+   *
+   * A conferência das medidas é feita ANTES de guardar. Uma arte que não é A4
+   * não dá erro nenhum ao ser embutida: sai esticada ou cortada, e isso só
+   * aparece no papel, depois de impresso.
+   */
+  async definirArteEmPdf(id: string, ficheiro: Express.Multer.File) {
+    const modelo = await this.prisma.modeloDeCartao.findUnique({ where: { id } })
+    if (!modelo) throw new NotFoundException('Modelo não encontrado.')
+
+    const conferido = await conferirPdf(ficheiro.buffer)
+    const previa = await rasterizarPrimeiraPagina(ficheiro.buffer)
+
+    const pdfSalvo = await this.storage.salvar(ficheiro)
+    const imagemSalva = await this.storage.salvar({
+      ...ficheiro,
+      originalname: ficheiro.originalname.replace(/\.pdf$/i, '') + '-ecra.jpg',
+      mimetype: 'image/jpeg',
+      buffer: previa,
+      size: previa.length,
+    } as Express.Multer.File)
+
+    const actualizado = await this.prisma.modeloDeCartao.update({
+      where: { id },
+      data: {
+        // De ecrã é a rasterizada; de impressão é o PDF original.
+        arteUrl: imagemSalva.url,
+        arteImpressaoUrl: pdfSalvo.url,
+      },
+    })
+
+    const avisos: string[] = []
+    if (!conferido.ehA4) {
+      avisos.push(
+        `Esta arte tem ${conferido.larguraMm} x ${conferido.alturaMm} mm e não é A4 ` +
+          `(${A4_MM.largura} x ${A4_MM.altura} mm). Ela vai ser esticada para caber. ` +
+          `Peça ao designer para exportar em A4.`,
+      )
+    }
+    if (conferido.paginas > 1) {
+      avisos.push(
+        `O arquivo tem ${conferido.paginas} páginas e só a primeira é usada. ` +
+          `Se cada modelo for uma página, envie um arquivo por modelo.`,
+      )
+    }
+
+    return {
+      ...actualizado,
+      vectorial: true,
+      larguraMm: conferido.larguraMm,
+      alturaMm: conferido.alturaMm,
+      aviso: avisos.length ? avisos.join(' ') : null,
     }
   }
 

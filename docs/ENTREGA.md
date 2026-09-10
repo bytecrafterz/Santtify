@@ -132,6 +132,44 @@ não estava no pedido dele: a foto que vem do WhatsApp cai muitas vezes ali, e a
 duas respostas possíveis eram más — recusar faz a mãe desistir com uma foto que
 ainda dava; aceitar calado faz a gráfica devolver um cartão borrado.
 
+### A arte fica VECTORIAL. Só a fotografia é feita de pixéis
+
+As artes do designer chegam em PDF vectorial, e o cliente pediu por escrito
+"mantenha 100% da qualidade". A primeira versão deste código compunha a folha
+inteira numa imagem com o sharp e embutia essa imagem — funcionava, e destruía
+a arte no processo. Uma arte vectorial rasterizada a 300 dpi não volta atrás, e
+nota-se nos contornos das letras grandes e dos ícones.
+
+Além disso **o sharp nem sequer lê PDF**. A versão antiga não perdia qualidade:
+rebentava.
+
+Agora o PDF final tem três camadas, cada uma na sua natureza:
+
+| Camada | Como entra |
+|---|---|
+| Arte do modelo | `embedPdf` — vector, intacta |
+| Fotografia | PNG a 300 dpi, já recortado à moldura, com o alfa a fazer o oval |
+| Nome | texto vectorial, Helvetica-Bold |
+
+Confirmado num ficheiro real: o `pdftotext` continua a extrair o texto da ARTE
+("DIA 1", "IDENTIDADE EM DEUS") do PDF gerado, e o `pdfimages` mostra uma única
+imagem na página — a fotografia, 874x1087 a 300 dpi. O ficheiro ficou 42% mais
+pequeno do que na versão que rasterizava tudo.
+
+**Duas cópias da arte, e desta vez ao contrário do costume.** Nas letras, a
+original é a de ecrã e a de papel é a derivada. Aqui a original é o PDF e a de
+ecrã é rasterizada a partir dele — porque o `<img>` do editor não desenha um
+PDF. `arteImpressaoUrl` é o PDF; `arteUrl` é o JPEG. Trocá-los imprime a prévia.
+
+A rasterização usa o `pdftoppm` do **poppler-utils**, que teve de ser
+acrescentado à imagem da API. É a única coisa no sistema que sabe converter um
+PDF em imagem.
+
+**`packages/cartoes` faltava nos dois Dockerfiles.** A API e o site importam-no,
+e sem ele o build nem compila. Foi apanhado antes da primeira publicação, mas é
+exactamente o género de falha que o README já avisa: não dá erro localmente,
+onde o workspace está ligado, e mata o deploy.
+
 ### O nome vai em VECTOR, e a arte em pixéis
 
 `sharp` compõe a arte com a foto; `pdf-lib` escreve o nome por cima como texto.

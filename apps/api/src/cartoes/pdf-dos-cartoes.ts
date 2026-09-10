@@ -4,17 +4,23 @@ import { A4_MM, A4_PT, corpoDoNome, mmParaPt } from '@pv/cartoes'
 /**
  * O PDF final: uma folha A4 por modelo, num único ficheiro.
  *
- * O cliente pediu, no ponto 8, "um único PDF contendo os 7 cartões
- * personalizados, preparado para impressão". É isso, por esta ordem: a arte
- * composta com a fotografia entra como imagem à resolução de impressão, e o
- * NOME é escrito por cima como TEXTO VECTORIAL.
+ * TRÊS CAMADAS, E CADA UMA NA SUA NATUREZA.
  *
- * O nome em vector e não em pixéis porque é a única parte da folha cuja
- * nitidez depende de nós. A arte chega com a resolução que o designer lhe deu e
- * a fotografia com a que a mãe tinha; o nome podemos entregá-lo perfeito em
- * qualquer ampliação, e uma letra desenhada em pixéis a 300 dpi mostra os
- * dentes ao lado de uma arte vectorial. Além disso poupa a dependência do
- * fontconfig, que esta máquina não tem — ver `desenho-do-cartao.ts`.
+ *   1. A arte do designer, embutida COMO VECTOR quando vem em PDF.
+ *   2. A fotografia da criança, em pixéis, porque foi assim que nasceu.
+ *   3. O nome, como texto vectorial.
+ *
+ * A primeira camada é a razão de este ficheiro ter sido reescrito. A versão
+ * anterior compunha a folha inteira numa imagem e embutia essa imagem — o que
+ * funcionava, e destruía a arte vectorial no processo. O cliente escreveu
+ * "mantenha 100% da qualidade" e tem toda a razão: uma arte vectorial
+ * rasterizada a 300 dpi já não volta atrás, e nota-se nos contornos das letras
+ * grandes e dos ícones. Agora só a fotografia é feita de pixéis.
+ *
+ * O nome em vector, e não em pixéis, pela mesma razão e mais uma: desenhar
+ * texto com o sharp passaria pelo SVG, que precisa do fontconfig e de tipos de
+ * letra instalados — e a imagem de produção não tem nenhum. Um tipo de letra em
+ * falta não dá erro: o texto sai vazio, e só se dá por isso no papel.
  */
 
 /** A caixa reservada ao nome no modelo, em mm sobre a folha. */
@@ -29,9 +35,25 @@ export interface CaixaDoNomeMm {
   nomeMaiusculas: boolean
 }
 
+/** Onde a fotografia entra na folha, em mm. */
+export interface MolduraMm {
+  fotoX: number
+  fotoY: number
+  fotoLargura: number
+  fotoAltura: number
+}
+
 export interface FolhaDoPdf {
-  /** A arte já composta com a fotografia, em JPEG. */
-  imagem: Buffer
+  /**
+   * A arte do modelo, tal como o designer a entregou.
+   *
+   * `pdf` mantém-se vectorial. `imagem` é o caminho para quem ainda entregar
+   * JPEG ou PNG — funciona, com a qualidade que a imagem tiver.
+   */
+  arte: { tipo: 'pdf' | 'imagem'; dados: Buffer }
+  /** A fotografia já recortada à moldura, em PNG com transparência. */
+  foto: Buffer | null
+  moldura: MolduraMm
   nome: string
   /** O que a mãe escolheu no cursor do tamanho, de 0 a 1. */
   tamanhoDoNome: number
@@ -118,15 +140,44 @@ export async function montarPdf(folhas: FolhaDoPdf[]): Promise<Buffer> {
 
   for (const folha of folhas) {
     const pagina = pdf.addPage([A4_PT.largura, A4_PT.altura])
-    const imagem = await pdf.embedJpg(folha.imagem)
 
-    // A imagem ocupa a folha inteira. Já foi composta em proporção A4.
-    pagina.drawImage(imagem, {
-      x: 0,
-      y: 0,
-      width: A4_PT.largura,
-      height: A4_PT.altura,
-    })
+    if (folha.arte.tipo === 'pdf') {
+      /**
+       * A arte entra como VECTOR.
+       *
+       * `embedPdf` traz a primeira página do ficheiro do designer como um
+       * objecto reutilizável, com os contornos e o texto dela intactos. É a
+       * diferença entre o cartão sair com a nitidez do ficheiro original e sair
+       * com a nitidez de uma fotocópia a 300 dpi.
+       */
+      const [embutida] = await pdf.embedPdf(folha.arte.dados, [0])
+      pagina.drawPage(embutida, {
+        x: 0,
+        y: 0,
+        width: A4_PT.largura,
+        height: A4_PT.altura,
+      })
+    } else {
+      const imagem = await pdf.embedJpg(folha.arte.dados)
+      pagina.drawImage(imagem, { x: 0, y: 0, width: A4_PT.largura, height: A4_PT.altura })
+    }
+
+    if (folha.foto) {
+      /**
+       * A fotografia, em PNG com transparência, já recortada ao formato da
+       * moldura. Vai por cima da arte, e o recorte oval é o alfa do próprio
+       * PNG — não é preciso mexer no estado gráfico do PDF para o obter.
+       */
+      const retrato = await pdf.embedPng(folha.foto)
+      const alturaMm = folha.moldura.fotoAltura
+      pagina.drawImage(retrato, {
+        x: mmParaPt(folha.moldura.fotoX),
+        // De cima para baixo nos modelos, de baixo para cima no PDF.
+        y: A4_PT.altura - mmParaPt(folha.moldura.fotoY) - mmParaPt(alturaMm),
+        width: mmParaPt(folha.moldura.fotoLargura),
+        height: mmParaPt(alturaMm),
+      })
+    }
 
     escreverNome(pagina, fonte, folha)
   }

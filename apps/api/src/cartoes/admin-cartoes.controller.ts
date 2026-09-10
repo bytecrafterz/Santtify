@@ -1,4 +1,5 @@
 import {
+  BadRequestException,
   Body,
   Controller,
   Delete,
@@ -135,6 +136,20 @@ export class AdminCartoesController {
   @Post('modelos-de-cartao/:id/arte')
   @UseInterceptors(FileInterceptor('file', { limits: { fileSize: TAMANHO_MAXIMO } }))
   async enviarArte(@Param('id') id: string, @UploadedFile() file: Express.Multer.File) {
+    if (!file?.buffer?.length) throw new BadRequestException('Nenhum arquivo recebido.')
+
+    /**
+     * DOIS CAMINHOS, e a diferença é a qualidade final.
+     *
+     * PDF é o que o designer entrega e o que vai para a gráfica: fica inteiro,
+     * vectorial, e a cópia de ecrã é derivada dele só para o editor mostrar.
+     * Imagem continua a funcionar para quem entregar JPEG ou PNG, com a
+     * qualidade que a imagem tiver.
+     */
+    if (file.mimetype === 'application/pdf') {
+      return this.admin.definirArteEmPdf(id, file)
+    }
+
     // Medido AQUI, no ficheiro como ele chegou. Depois de passar pelo
     // armazenamento já só há a cópia de ecrã para medir, e essa mente sobre a
     // qualidade de impressão. Ver a nota em `definirArte`.

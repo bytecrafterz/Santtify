@@ -17,7 +17,7 @@ import {
 import { PrismaService } from '../prisma/prisma.service'
 import { StorageService } from '../admin/storage.service'
 import { ArmazenamentoDeCartoesService } from './armazenamento-de-cartoes.service'
-import { comporCartao } from './desenho-do-cartao'
+import { comporCartao, recortarFoto } from './desenho-do-cartao'
 import { montarPdf, type FolhaDoPdf } from './pdf-dos-cartoes'
 import { ProvedorDePagamento, type AvisoDePagamento } from './pagamentos/provedor'
 import { criarFicha, lerFicha } from './ligacao-de-partilha'
@@ -583,30 +583,45 @@ export class CartoesService {
 
     const folhas: FolhaDoPdf[] = []
     for (const modelo of modelos) {
-      const arte = await this.storage.lerParaImpressao(modelo.arteImpressaoUrl ?? modelo.arteUrl)
+      /**
+       * A arte de IMPRESSÃO é a que o designer entregou, e nada mais.
+       *
+       * `arteImpressaoUrl` aponta para o PDF vectorial quando existe; a de ecrã
+       * é uma cópia rasterizada que só serve para o editor a mostrar. Trocar as
+       * duas aqui seria imprimir a prévia — exactamente o que o cliente pediu
+       * duas vezes para não acontecer.
+       */
+      const endereco = modelo.arteImpressaoUrl ?? modelo.arteUrl
+      const arte = await this.storage.lerParaImpressao(endereco)
       if (!arte) {
         this.logger.warn(`Modelo ${modelo.slug} sem arte carregada; folha ignorada.`)
         continue
       }
 
-      const imagem = await comporCartao({
-        arte,
+      const molduraDoModelo = {
+        fotoX: modelo.fotoX,
+        fotoY: modelo.fotoY,
+        fotoLargura: modelo.fotoLargura,
+        fotoAltura: modelo.fotoAltura,
+        fotoFormato: modelo.fotoFormato,
+      }
+
+      const retrato = await recortarFoto({
         foto,
         fotoLargura: crianca.fotoLargura,
         fotoAltura: crianca.fotoAltura,
-        moldura: {
-          fotoX: modelo.fotoX,
-          fotoY: modelo.fotoY,
-          fotoLargura: modelo.fotoLargura,
-          fotoAltura: modelo.fotoAltura,
-          fotoFormato: modelo.fotoFormato,
-        },
+        moldura: molduraDoModelo,
         ajuste,
         dpi: DPI_DE_IMPRESSAO,
       })
 
       folhas.push({
-        imagem,
+        arte: {
+          tipo: (endereco ?? '').toLowerCase().endsWith('.pdf') ? 'pdf' : 'imagem',
+          dados: arte,
+        },
+        foto: retrato,
+        moldura: molduraDoModelo,
         nome: crianca.nome,
         tamanhoDoNome: crianca.tamanhoDoNome,
         caixa: {

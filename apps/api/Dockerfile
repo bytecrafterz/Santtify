@@ -10,10 +10,11 @@ WORKDIR /app
 COPY package.json package-lock.json ./
 COPY apps/api/package.json apps/api/
 COPY packages/db/package.json packages/db/
+COPY packages/cartoes/package.json packages/cartoes/
 
 # argon2 é módulo nativo e precisa de toolchain para compilar no Alpine.
 RUN apk add --no-cache python3 make g++ \
- && npm ci --workspace @pv/api --workspace @pv/db --include-workspace-root
+ && npm ci --workspace @pv/api --workspace @pv/db --workspace @pv/cartoes --include-workspace-root
 
 # ── Estágio 2: build ───────────────────────────────────────────────
 FROM node:22-alpine AS build
@@ -22,6 +23,10 @@ COPY --from=deps /app/node_modules ./node_modules
 COPY --from=deps /app/apps/api/node_modules ./apps/api/node_modules
 COPY package.json package-lock.json ./
 COPY packages/db packages/db
+# A geometria dos cartões. É importada pela API e pelo site, e sem ela o
+# build nem compila — foi esquecida uma vez e é o género de falha que só
+# aparece na primeira publicação.
+COPY packages/cartoes packages/cartoes
 COPY apps/api apps/api
 
 # O commit de onde isto saiu, para a publicação poder conferir depois que o que
@@ -42,10 +47,17 @@ ENV NODE_ENV=production
 # o container inteiro.
 RUN addgroup -S pv && adduser -S pv -G pv
 
+# poppler-utils: transforma a PRIMEIRA página do PDF da arte numa imagem para o
+# ecrã. As artes do designer vêm em PDF vetorial, e o PDF entra no ficheiro de
+# impressão como vector — mas o editor precisa de as MOSTRAR, e um <img> não
+# desenha um PDF. Esta é a única coisa no sistema que sabe rasterizar um.
+RUN apk add --no-cache poppler-utils
+
 COPY --from=build /app/node_modules ./node_modules
 COPY --from=build /app/apps/api/node_modules ./apps/api/node_modules
 COPY --from=build /app/apps/api/dist ./apps/api/dist
 COPY --from=build /app/packages/db ./packages/db
+COPY --from=build /app/packages/cartoes ./packages/cartoes
 COPY --from=build /app/package.json ./package.json
 COPY --from=build /app/COMMIT ./COMMIT
 
@@ -57,6 +69,10 @@ RUN chmod +x /usr/local/bin/entrada.sh
 # Pasta de mídia. Precisa ser volume no compose — sem isso, recriar o
 # container apaga todas as músicas e áudios enviados pelo cliente.
 RUN mkdir -p /app/uploads && chown -R pv:pv /app/uploads
+
+# As fotos das crianças e os PDFs em trânsito. Volume à parte de /app/uploads
+# de propósito: aquela é servida estaticamente e esta NUNCA pode ser.
+RUN mkdir -p /app/cartoes-temporarios && chown -R pv:pv /app/cartoes-temporarios
 
 USER pv
 EXPOSE 3333

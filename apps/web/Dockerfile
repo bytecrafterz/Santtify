@@ -5,7 +5,8 @@ FROM node:22-alpine AS deps
 WORKDIR /app
 COPY package.json package-lock.json ./
 COPY apps/web/package.json apps/web/
-RUN npm ci --workspace @pv/web --include-workspace-root
+COPY packages/cartoes/package.json packages/cartoes/
+RUN npm ci --workspace @pv/web --workspace @pv/cartoes --include-workspace-root
 
 # ── Estágio 2: build ───────────────────────────────────────────────
 FROM node:22-alpine AS build
@@ -16,6 +17,9 @@ COPY --from=deps /app/node_modules ./node_modules
 # módulo nativo e fica no workspace; aqui não há nenhum, e a linha equivalente
 # quebrava o build inteiro com "not found".
 COPY package.json package-lock.json ./
+# A mesma geometria que a API usa. O `transpilePackages` do next.config só a
+# leva para o bundle se ela estiver aqui.
+COPY packages/cartoes packages/cartoes
 COPY apps/web apps/web
 
 # ATENÇÃO: variáveis NEXT_PUBLIC_* são gravadas DENTRO do JavaScript no
