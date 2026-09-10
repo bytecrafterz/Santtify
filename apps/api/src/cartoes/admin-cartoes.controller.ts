@@ -159,7 +159,8 @@ export class AdminCartoesController {
 
   @Get('carrossel')
   verCarrossel() {
-    return this.carrossel.listar()
+    // Com rascunhos: ver a nota em `listar`.
+    return this.carrossel.listar(true)
   }
 
   @Patch('projects/:projectSlug/destaque')

@@ -25,9 +25,20 @@ export class CarrosselService {
     private readonly contagens: ContagensService,
   ) {}
 
-  async listar() {
+  /**
+   * A lista do carrossel.
+   *
+   * `incluirRascunhos` separa dois públicos com a mesma consulta. Quem visita o
+   * site vê só o que está publicado — um projeto por acabar não pode aparecer
+   * no perfil. Mas o PAINEL tem de ver os rascunhos, senão ele cria um projeto
+   * novo, que nasce em rascunho, e ele não o vê em lado nenhum: parece que o
+   * botão não funcionou e a única saída seria voltar a criá-lo.
+   */
+  async listar(incluirRascunhos = false) {
     const projetos = await this.prisma.project.findMany({
-      where: { status: ProjectStatus.ACTIVE },
+      where: incluirRascunhos
+        ? { status: { in: [ProjectStatus.ACTIVE, ProjectStatus.DRAFT] } }
+        : { status: ProjectStatus.ACTIVE },
       orderBy: [{ ordemNoCarrossel: 'asc' }, { createdAt: 'asc' }],
       select: {
         id: true,
@@ -37,6 +48,7 @@ export class CarrosselService {
         coverUrl: true,
         destaque: true,
         ordemNoCarrossel: true,
+        status: true,
       },
     })
 
@@ -54,6 +66,7 @@ export class CarrosselService {
         tagline: p.tagline,
         capa: p.coverUrl,
         destaque: p.destaque,
+        publicado: p.status === ProjectStatus.ACTIVE,
         /**
          * Os números vão em bruto para o navegador, e é lá que viram 1,5K.
          *
@@ -87,7 +100,7 @@ export class CarrosselService {
       await tx.project.update({ where: { id: projeto.id }, data: { destaque } })
     })
 
-    return this.listar()
+    return this.listar(true)
   }
 
   async actualizarCartao(
@@ -108,7 +121,7 @@ export class CarrosselService {
       },
     })
 
-    return this.listar()
+    return this.listar(true)
   }
 
   /**

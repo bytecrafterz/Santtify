@@ -564,3 +564,155 @@ export const admin = {
   urlCartaoPdf: (projectSlug: string, contentSlug: string, baixar = false) =>
     `${API_URL}/projects/${projectSlug}/contents/${contentSlug}/cartao.pdf${baixar ? '?baixar=1' : ''}`,
 }
+
+// ─────────────────────────────────────────────────────────────────────
+// CARTÕES PERSONALIZADOS E CARROSSEL
+// ─────────────────────────────────────────────────────────────────────
+
+/**
+ * As rotas dos cartões escrevem o `/admin` por extenso.
+ *
+ * O `chamar` normal acrescenta-o sozinho, o que serve a maior parte deste
+ * ficheiro. As rotas daqui para baixo não vivem todas debaixo de um projeto —
+ * `/admin/carrossel` e `/admin/projetos` são globais — por isso é mais claro
+ * lê-las inteiras do que adivinhar onde o prefixo entra.
+ */
+const chamarAdmin = chamarRaiz
+
+export interface ModeloAdmin {
+  id: string
+  slug: string
+  dia: number
+  nome: string
+  ativo: boolean
+  ordem: number
+  arteUrl: string | null
+  arteImpressaoUrl: string | null
+  fotoX: number
+  fotoY: number
+  fotoLargura: number
+  fotoAltura: number
+  fotoFormato: 'CIRCULO' | 'ELIPSE' | 'RETANGULO'
+  nomeX: number
+  nomeY: number
+  nomeLargura: number
+  nomeAltura: number
+  nomeCorHex: string
+  nomeCorpoMinimo: number
+  nomeCorpoMaximo: number
+  nomeMaiusculas: boolean
+  /** O que falta neste modelo, em português. Nulo quando está pronto. */
+  aviso: string | null
+}
+
+export interface PrecoAdmin {
+  precoUnitarioCent: number
+  moeda: string
+  descontoPercentagem: number
+  descontoAPartirDe: number
+}
+
+export interface ProjetoNoPainel {
+  slug: string
+  nome: string
+  tagline: string | null
+  capa: string | null
+  destaque: 'ESQUERDA' | 'DIREITA' | null
+  /** Falso enquanto o projeto está em rascunho e ninguém de fora o vê. */
+  publicado: boolean
+  numeros: { views: number; likes: number; comments: number; shares: number }
+}
+
+export interface PedidoAdmin {
+  id: string
+  projeto: string
+  projectSlug: string
+  estado: string
+  meio: string | null
+  referenciaExterna: string | null
+  totalCent: number
+  moeda: string
+  criadoEm: string
+  pagoEm: string | null
+  expiraEm: string
+  conjuntos: number
+  criancas: Array<{ nome: string; confirmada: boolean }>
+}
+
+/**
+ * O painel dos cartões e do carrossel.
+ *
+ * Tudo o que o cliente pediu para ficar nas mãos dele passa por aqui: as
+ * medidas dos modelos, o preço, o desconto, os dois destaques e a criação de
+ * projetos novos. Nenhuma destas coisas precisa de programação outra vez.
+ */
+export const painelDeCartoes = {
+  modelos: (projeto: string) =>
+    chamarAdmin<ModeloAdmin[]>(`/admin/projects/${projeto}/modelos-de-cartao`),
+
+  criarModelo: (projeto: string, dados: Partial<ModeloAdmin>) =>
+    chamarAdmin<ModeloAdmin>(`/admin/projects/${projeto}/modelos-de-cartao`, {
+      method: 'POST',
+      body: JSON.stringify(dados),
+    }),
+
+  actualizarModelo: (id: string, dados: Partial<ModeloAdmin>) =>
+    chamarAdmin<ModeloAdmin>(`/admin/modelos-de-cartao/${id}`, {
+      method: 'PATCH',
+      body: JSON.stringify(dados),
+    }),
+
+  removerModelo: (id: string) =>
+    chamarAdmin<{ removido: boolean }>(`/admin/modelos-de-cartao/${id}`, { method: 'DELETE' }),
+
+  enviarArte: (id: string, ficheiro: File) => {
+    const corpo = new FormData()
+    corpo.append('file', ficheiro)
+    return chamarAdmin<ModeloAdmin & { largura: number; aviso: string | null }>(
+      `/admin/modelos-de-cartao/${id}/arte`,
+      { method: 'POST', body: corpo },
+    )
+  },
+
+  preco: (projeto: string) => chamarAdmin<PrecoAdmin>(`/admin/projects/${projeto}/preco-de-cartoes`),
+
+  guardarPreco: (projeto: string, dados: Partial<PrecoAdmin>) =>
+    chamarAdmin<PrecoAdmin>(`/admin/projects/${projeto}/preco-de-cartoes`, {
+      method: 'PATCH',
+      body: JSON.stringify(dados),
+    }),
+
+  carrossel: () => chamarAdmin<ProjetoNoPainel[]>('/admin/carrossel'),
+
+  destacar: (projeto: string, destaque: 'ESQUERDA' | 'DIREITA' | null) =>
+    chamarAdmin<ProjetoNoPainel[]>(`/admin/projects/${projeto}/destaque`, {
+      method: 'PATCH',
+      body: JSON.stringify({ destaque }),
+    }),
+
+  guardarCartaoDoCarrossel: (
+    projeto: string,
+    dados: { tagline?: string; coverUrl?: string; ordemNoCarrossel?: number },
+  ) =>
+    chamarAdmin<ProjetoNoPainel[]>(`/admin/projects/${projeto}/cartao-do-carrossel`, {
+      method: 'PATCH',
+      body: JSON.stringify(dados),
+    }),
+
+  criarProjeto: (dados: { slug: string; nome: string; blocos: number; tagline?: string }) =>
+    chamarAdmin<{ slug: string; nome: string; blocos: number }>('/admin/projetos', {
+      method: 'POST',
+      body: JSON.stringify(dados),
+    }),
+
+  pedidos: () => chamarAdmin<PedidoAdmin[]>('/admin/pedidos-de-cartoes'),
+
+  confirmarPagamento: (pedidoId: string, referencia: string) =>
+    chamarAdmin<{ pago?: boolean; repetido?: boolean }>(
+      `/admin/pedidos-de-cartoes/${pedidoId}/confirmar`,
+      { method: 'POST', body: JSON.stringify({ referencia }) },
+    ),
+
+  correrExpurgo: () =>
+    chamarAdmin<{ pedidos: number }>('/admin/cartoes/expurgo', { method: 'POST' }),
+}

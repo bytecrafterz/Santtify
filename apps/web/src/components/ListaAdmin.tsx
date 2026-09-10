@@ -97,6 +97,21 @@ export function ListaAdmin({ projectSlug }: { projectSlug: string }) {
         </small>
       </Link>
 
+      {/* As duas funções novas de 09/09. Ficam a seguir ao conteúdo e antes das
+          métricas porque é isso que são: sítios onde ele MEXE, e não sítios
+          onde ele olha. */}
+      <Link className="bloco linha atalho-alfabeto" href={`/${projectSlug}/admin/cartoes`}>
+        <span>Cartões personalizados</span>
+        <small>
+          os modelos, as medidas da moldura da foto, o preço e o desconto
+        </small>
+      </Link>
+
+      <Link className="bloco linha atalho-alfabeto" href={`/${projectSlug}/admin/carrossel`}>
+        <span>Carrossel de projetos</span>
+        <small>os dois destaques do perfil e a criação de projetos novos</small>
+      </Link>
+
       <Link className="bloco linha atalho-metricas" href={`/${projectSlug}/admin/metricas`}>
         <span>Ver métricas</span>
         <small>visitantes, origem, propagação e conteúdos mais acessados</small>

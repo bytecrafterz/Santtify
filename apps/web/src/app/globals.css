@@ -8317,3 +8317,295 @@ h2.funil {
   display: grid;
   gap: 8px;
 }
+
+/* ── Painel dos cartões e do carrossel ──────────────────────────── */
+
+.painel-cartoes { display: flex; flex-direction: column; gap: 16px; }
+
+.painel-bloco {
+  padding: 16px;
+  background: var(--cor-superficie);
+  border: 1px solid var(--cor-borda);
+  border-radius: var(--raio);
+}
+
+.painel-bloco h2 { margin: 0 0 4px; font-size: 1.05rem; }
+
+.painel-bloco-topo {
+  display: flex;
+  gap: 12px;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 10px;
+}
+
+.painel-botao-curto { width: auto !important; margin-top: 0 !important; }
+
+.painel-subtitulo {
+  margin: 16px 0 6px;
+  font-size: 0.8rem;
+  font-weight: 800;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--cor-texto-suave);
+}
+
+.painel-campos {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(130px, 1fr));
+  gap: 10px;
+}
+
+.painel-campos .cartoes-campo { margin-bottom: 0; }
+.cartoes-campo em { font-style: normal; color: var(--cor-texto-suave); font-weight: 400; }
+
+.cartoes-campo input[type='number'],
+.cartoes-campo select {
+  padding: 10px;
+  font: inherit;
+  color: var(--cor-texto);
+  background: var(--cor-fundo);
+  border: 1px solid var(--cor-borda);
+  border-radius: 10px;
+}
+
+.painel-exemplo {
+  padding: 8px 10px;
+  margin: 10px 0 0;
+  font-size: 0.82rem;
+  line-height: 1.45;
+  color: var(--cor-texto-suave);
+  background: var(--cor-fundo);
+  border-radius: 8px;
+}
+
+.painel-aviso {
+  padding: 10px 12px;
+  margin: 10px 0;
+  font-size: 0.85rem;
+  color: #92400e;
+  background: rgba(245, 158, 11, 0.12);
+  border-radius: 10px;
+}
+
+.painel-modelos { padding: 0; margin: 0; list-style: none; }
+
+.painel-modelo {
+  margin-bottom: 8px;
+  overflow: hidden;
+  border: 1px solid var(--cor-borda);
+  border-radius: 12px;
+}
+
+.painel-modelo.inactivo { opacity: 0.55; }
+
+.painel-modelo-topo {
+  display: flex;
+  gap: 10px;
+  align-items: center;
+  width: 100%;
+  padding: 12px;
+  font: inherit;
+  color: inherit;
+  text-align: left;
+  cursor: pointer;
+  background: none;
+  border: 0;
+}
+
+.painel-modelo-dia {
+  font-size: 0.7rem;
+  font-weight: 800;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--cor-primaria);
+}
+
+.painel-modelo-nome { flex: 1; font-weight: 600; }
+
+.painel-selo-pronto,
+.painel-selo-falta {
+  padding: 3px 8px;
+  font-size: 0.68rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  border-radius: 20px;
+}
+
+.painel-selo-pronto { color: var(--cor-acao-escura); background: rgba(22, 163, 74, 0.14); }
+.painel-selo-falta { color: #92400e; background: rgba(245, 158, 11, 0.16); }
+
+.painel-modelo-corpo { padding: 0 12px 14px; border-top: 1px solid var(--cor-borda); }
+
+.painel-modelo-grelha { display: grid; gap: 16px; padding-top: 12px; }
+
+@media (min-width: 760px) {
+  .painel-modelo-grelha { grid-template-columns: 1fr 240px; align-items: start; }
+}
+
+.painel-modelo-folha { display: flex; flex-direction: column; gap: 8px; }
+
+/* A folha de referência: A4 com as duas caixas onde os números as põem. */
+.painel-folha {
+  position: relative;
+  aspect-ratio: 210 / 297;
+  overflow: hidden;
+  background: var(--cor-fundo);
+  border: 1px solid var(--cor-borda);
+  border-radius: 6px;
+}
+
+.painel-folha img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; }
+
+.painel-marca-foto {
+  position: absolute;
+  background: rgba(37, 99, 235, 0.18);
+  border: 2px dashed var(--cor-primaria);
+  border-radius: 50%;
+}
+
+.painel-marca-foto.recta { border-radius: 4px; }
+
+.painel-marca-nome {
+  position: absolute;
+  display: grid;
+  font-size: 0.55rem;
+  font-weight: 800;
+  color: var(--cor-acao-escura);
+  background: rgba(22, 163, 74, 0.14);
+  border: 2px dashed var(--cor-acao);
+  border-radius: 3px;
+  place-items: center;
+}
+
+.painel-modelo-accoes {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+  align-items: center;
+  margin-top: 14px;
+}
+
+.painel-modelo-accoes .cartoes-accao { width: auto; margin-top: 0; }
+
+.painel-activo { display: flex; gap: 8px; align-items: center; font-size: 0.85rem; }
+
+.painel-confirmar {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+  font-size: 0.85rem;
+  color: var(--cor-alerta);
+}
+
+.painel-perigo {
+  padding: 8px 12px;
+  font: inherit;
+  font-weight: 700;
+  color: #fff;
+  cursor: pointer;
+  background: var(--cor-alerta);
+  border: 0;
+  border-radius: 10px;
+}
+
+/* ── Carrossel no painel ────────────────────────────────────────── */
+
+.painel-destaques { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-top: 10px; }
+
+.painel-destaque {
+  padding: 12px;
+  text-align: center;
+  background: var(--cor-primaria-suave);
+  border-radius: 12px;
+}
+
+.painel-destaque-rotulo {
+  display: block;
+  margin-bottom: 4px;
+  font-size: 0.68rem;
+  font-weight: 800;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--cor-texto-suave);
+}
+
+.painel-projetos { padding: 0; margin: 10px 0 0; list-style: none; }
+
+.painel-projeto {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  align-items: center;
+  justify-content: space-between;
+  padding: 12px 0;
+  border-bottom: 1px solid var(--cor-borda);
+}
+
+.painel-projeto-nome { display: flex; flex-direction: column; gap: 2px; }
+.painel-projeto-nome span { font-size: 0.8rem; color: var(--cor-texto-suave); }
+.painel-projeto-numeros { font-variant-numeric: tabular-nums; }
+
+.painel-projeto-accoes { display: flex; gap: 6px; }
+
+.painel-botao-destaque {
+  padding: 8px 10px;
+  font: inherit;
+  font-size: 0.8rem;
+  color: var(--cor-texto);
+  cursor: pointer;
+  background: var(--cor-fundo);
+  border: 1px solid var(--cor-borda);
+  border-radius: 10px;
+}
+
+.painel-botao-destaque.activo {
+  font-weight: 700;
+  color: #fff;
+  background: var(--cor-primaria);
+  border-color: var(--cor-primaria);
+}
+
+/* ── Lista pública de projetos ("Ver todos") ────────────────────── */
+
+.lista-de-projetos { padding: 0; margin: 12px 0; list-style: none; }
+
+.projeto-em-linha {
+  display: flex;
+  gap: 12px;
+  align-items: center;
+  padding: 12px;
+  margin-bottom: 8px;
+  color: inherit;
+  text-decoration: none;
+  background: var(--cor-superficie);
+  border: 1px solid var(--cor-borda);
+  border-radius: var(--raio);
+}
+
+.projeto-em-linha-capa {
+  display: grid;
+  flex: 0 0 auto;
+  width: 64px;
+  height: 64px;
+  overflow: hidden;
+  font-size: 1.1rem;
+  font-weight: 800;
+  color: var(--cor-primaria);
+  background: var(--cor-primaria-suave);
+  border-radius: 12px;
+  place-items: center;
+}
+
+.projeto-em-linha-capa img { width: 100%; height: 100%; object-fit: cover; }
+
+.projeto-em-linha-corpo { display: flex; flex: 1; flex-direction: column; gap: 2px; }
+.projeto-em-linha-corpo span { font-size: 0.82rem; color: var(--cor-texto-suave); }
+.projeto-em-linha-numeros { font-variant-numeric: tabular-nums; }
+
+/* O selo de rascunho vive dentro do <strong> do nome, por isso precisa do seu
+   próprio espaço — sem isto lia-se "Meu Projeto de Testerascunho". */
+.painel-projeto-nome strong .painel-selo-falta {
+  margin-left: 8px;
+  vertical-align: middle;
+}
