@@ -1460,6 +1460,19 @@ model ModeloDeCartao {
   dia  Int
   nome String
 
+  /// O idioma desta arte, em BCP 47: "pt-BR", "en", "es", "fr", "de", "it", "ja".
+  ///
+  /// O cliente escreveu que vai refazer as mesmas artes noutras línguas. Um
+  /// modelo por idioma é o que torna isso um cadastro em vez de um projeto
+  /// novo: o Dia 1 em português e o Dia 1 em inglês são duas linhas com o mesmo
+  /// `dia` e idiomas diferentes, cada uma com a sua arte.
+  ///
+  /// A geometria fica em cada linha de propósito. Parece repetição e não é: o
+  /// nome "GUILHERME" e o nome "JOHN" não ocupam o mesmo espaço, e a caixa do
+  /// nome numa arte alemã quase de certeza terá de ser mais larga. Partilhar as
+  /// medidas entre idiomas obrigaria a escolher a pior de todas.
+  idioma String @default("pt-BR")
+
   ativo Boolean @default(true)
   ordem Int     @default(0)
 
@@ -1493,6 +1506,7 @@ model ModeloDeCartao {
 
   @@unique([projectId, slug])
   @@index([projectId, ativo, ordem])
+  @@index([projectId, idioma, ativo])
   @@map("modelos_de_cartao")
 }
 

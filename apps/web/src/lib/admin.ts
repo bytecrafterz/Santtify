@@ -601,6 +601,7 @@ export interface ModeloAdmin {
   nomeCorpoMinimo: number
   nomeCorpoMaximo: number
   nomeMaiusculas: boolean
+  idioma: string
   /** O que falta neste modelo, em português. Nulo quando está pronto. */
   aviso: string | null
 }

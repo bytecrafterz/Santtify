@@ -209,6 +209,39 @@ a rota devolve a ligação ao ecrã em vez de fingir que enviou.
 O botão de imprimir abre o PDF numa aba. Um `window.print()` do lado do
 navegador imprimiria a PÁGINA — botões e tudo — e não os cartões.
 
+### Os QR Codes das artes têm códigos FIXOS
+
+`packages/db/prisma/qr-dos-cartoes.ts`. Sete códigos escritos à mão no ficheiro,
+e é deliberado.
+
+O endereço fica gravado dentro do QR e não se muda depois de impresso. O
+designer precisava dos QR antes de a plataforma estar publicada, e gerá-los com
+o endereço de desenvolvimento poria `localhost` em milhares de cartões. Fixar os
+códigos resolve as duas coisas: o designer recebe QR com o domínio de produção,
+e o script cria exactamente esses códigos em qualquer base onde correr.
+
+**O script RECUSA correr com `localhost` em `PUBLIC_SHORTLINK_BASE`.** É a única
+protecção possível contra um erro que só se descobre com a gráfica já paga.
+
+Não se reescreve nenhum dos sete depois de as artes irem para a gráfica.
+Acrescentar um oitavo dia é acrescentar uma linha.
+
+SVG e não PNG, correcção de erro `H` e margem de 4 módulos: vai para papel, que
+uma criança dobra e leva na mochila.
+
+### Um modelo por idioma
+
+`ModeloDeCartao.idioma`, em BCP 47. O Dia 1 em português e o Dia 1 em inglês são
+duas linhas com o mesmo `dia` e idiomas diferentes, cada uma com a sua arte e a
+sua geometria.
+
+A geometria repetida por idioma parece desperdício e não é: "GUILHERME" e "JOHN"
+não ocupam o mesmo espaço, e a caixa do nome numa arte alemã quase de certeza
+terá de ser mais larga. Partilhá-la obrigaria a escolher a pior medida de todas.
+
+O slug leva o idioma quando não é `pt-BR`, senão o segundo modelo do mesmo dia
+chocava contra `@@unique([projectId, slug])`.
+
 ### Privacidade: `CARTOES_DIR` NÃO é servida estaticamente
 
 `UPLOAD_DIR` é servida em `/uploads` — quem souber o endereço abre o ficheiro

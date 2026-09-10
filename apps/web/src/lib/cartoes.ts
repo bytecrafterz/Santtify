@@ -18,6 +18,7 @@ export interface ModeloDeCartao {
   slug: string
   dia: number
   nome: string
+  idioma: string
   arteUrl: string | null
   /** Tudo em milímetros sobre a folha A4, como no servidor. */
   moldura: {

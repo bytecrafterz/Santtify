@@ -48,10 +48,17 @@ export class CartoesService {
   // MODELOS E PREÇO
   // ─────────────────────────────────────────────────────────────────
 
-  async modelos(projectSlug: string) {
+  /**
+   * Os modelos activos de um idioma.
+   *
+   * `pt-BR` por omissão porque é a primeira versão. Quando as artes noutras
+   * línguas entrarem, é este parâmetro que escolhe o conjunto — sem tocar em
+   * mais nada.
+   */
+  async modelos(projectSlug: string, idioma = 'pt-BR') {
     const projeto = await this.projeto(projectSlug)
     const modelos = await this.prisma.modeloDeCartao.findMany({
-      where: { projectId: projeto.id, ativo: true },
+      where: { projectId: projeto.id, ativo: true, idioma },
       orderBy: [{ ordem: 'asc' }, { dia: 'asc' }],
     })
 
@@ -60,6 +67,7 @@ export class CartoesService {
       slug: m.slug,
       dia: m.dia,
       nome: m.nome,
+      idioma: m.idioma,
       arteUrl: m.arteUrl,
       /**
        * A geometria vai para o navegador de propósito.

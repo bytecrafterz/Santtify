@@ -33,6 +33,7 @@ export interface CamposDoModelo {
   nomeCorpoMinimo?: number
   nomeCorpoMaximo?: number
   nomeMaiusculas?: boolean
+  idioma?: string
 }
 
 /**
@@ -66,7 +67,20 @@ export class AdminCartoesService {
     const projeto = await this.projeto(projectSlug)
 
     const dia = dados.dia ?? (await this.proximoDia(projeto.id))
-    const slug = (dados.slug ?? `dia-${dia}`).trim().toLowerCase()
+    /**
+     * O slug leva o idioma quando não é o principal.
+     *
+     * `@@unique([projectId, slug])` não deixa dois modelos com o mesmo slug no
+     * mesmo projeto, e o Dia 1 em inglês é um modelo diferente do Dia 1 em
+     * português. Sem isto, cadastrar a versão inglesa rebentava contra o
+     * índice com um erro que não explicava nada.
+     */
+    const idioma = dados.idioma ?? 'pt-BR'
+    const slug = (
+      dados.slug ?? (idioma === 'pt-BR' ? `dia-${dia}` : `dia-${dia}-${idioma.toLowerCase()}`)
+    )
+      .trim()
+      .toLowerCase()
 
     /**
      * As medidas por omissão vêm das artes que ele mandou: a moldura oval no
@@ -94,6 +108,7 @@ export class AdminCartoesService {
         nomeCorpoMinimo: dados.nomeCorpoMinimo ?? 8,
         nomeCorpoMaximo: dados.nomeCorpoMaximo ?? 20,
         nomeMaiusculas: dados.nomeMaiusculas ?? true,
+        idioma,
       },
     })
   }
@@ -106,7 +121,7 @@ export class AdminCartoesService {
       'slug', 'dia', 'nome', 'ativo', 'ordem',
       'fotoX', 'fotoY', 'fotoLargura', 'fotoAltura', 'fotoFormato',
       'nomeX', 'nomeY', 'nomeLargura', 'nomeAltura', 'nomeCorHex',
-      'nomeCorpoMinimo', 'nomeCorpoMaximo', 'nomeMaiusculas',
+      'nomeCorpoMinimo', 'nomeCorpoMaximo', 'nomeMaiusculas', 'idioma',
     ]
     const alteracoes: Record<string, unknown> = {}
     const entrada = dados as Record<string, unknown>
