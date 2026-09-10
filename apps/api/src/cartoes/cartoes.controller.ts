@@ -25,6 +25,7 @@ import {
   MaxLength,
   Min,
   IsBoolean,
+  IsEmail,
 } from 'class-validator'
 import { CartoesService } from './cartoes.service'
 import { TAMANHO_MAXIMO_FOTO } from './armazenamento-de-cartoes.service'
@@ -46,6 +47,10 @@ class ActualizarCriancaDto {
 
 class PagarDto {
   @IsEnum(MeioDePagamento) meio!: MeioDePagamento
+}
+
+class EnviarPorEmailDto {
+  @IsEmail({}, { message: 'Escreva um e-mail válido.' }) email!: string
 }
 
 /**
@@ -158,6 +163,26 @@ export class CartoesController {
   @Post('pedidos/:pedidoId/pagamento')
   pagar(@Param('pedidoId') pedidoId: string, @Body() dto: PagarDto) {
     return this.cartoes.iniciarPagamento(pedidoId, dto.meio)
+  }
+
+  /**
+   * A ligação assinada, para o WhatsApp e para quem mais ela quiser.
+   *
+   * O ecrã não fabrica endereços: pede um. Assim o prazo e a assinatura ficam
+   * do lado de cá, onde não se contornam.
+   */
+  @Get('pedidos/:pedidoId/criancas/:criancaId/partilha')
+  partilha(@Param('pedidoId') pedidoId: string, @Param('criancaId') criancaId: string) {
+    return this.cartoes.ligacaoDePartilha(pedidoId, criancaId)
+  }
+
+  @Post('pedidos/:pedidoId/criancas/:criancaId/email')
+  enviarPorEmail(
+    @Param('pedidoId') pedidoId: string,
+    @Param('criancaId') criancaId: string,
+    @Body() dto: EnviarPorEmailDto,
+  ) {
+    return this.cartoes.enviarPorEmail(pedidoId, criancaId, dto.email)
   }
 
   /**

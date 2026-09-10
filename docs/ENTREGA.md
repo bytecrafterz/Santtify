@@ -140,6 +140,37 @@ sharp passaria pelo SVG e sairia vazio, sem erro nenhum. Helvetica-Bold é
 obrigatória em qualquer leitor de PDF e a codificação WinAnsi cobre `ã ç é õ` —
 um cartão com "JOAO" em vez de "JOÃO" é um cartão estragado.
 
+### Entrega: baixar, imprimir, WhatsApp, e-mail
+
+Ponto 8. Os dois primeiros saem do ficheiro; os dois últimos saem de uma
+LIGAÇÃO, e não do ficheiro — **nem o WhatsApp nem o e-mail aceitam um anexo
+vindo de uma página web**. Quem tentar mandar o PDF por `wa.me` perde uma tarde:
+abre com o texto e sem ficheiro.
+
+A ligação (`ligacao-de-partilha.ts`) é assinada e traz o prazo lá dentro:
+
+- **assinada**, logo ninguém a fabrica sem a chave;
+- **com prazo igual ao do expurgo**, logo nunca sobrevive ao ficheiro nem morre
+  antes dele. Uma ligação viva a apontar para um ficheiro apagado é uma promessa
+  partida ao sétimo dia;
+- **chave derivada** do `JWT_ACCESS_SECRET` com um domínio próprio: não há
+  variável nova para o deploy esquecer, e uma ficha de partilha nunca pode ser
+  usada como sessão;
+- a comparação é de **tempo constante** — um `===` desiste no primeiro byte
+  diferente e essa diferença mede-se.
+
+`GET /api/cartoes/partilha/:ficha` não tem guarda nenhuma **de propósito**: é
+para abrir na gráfica, no telemóvel do marido, no computador da escola. Quem
+manda é a assinatura.
+
+**O e-mail leva o link, nunca o anexo.** Um PDF de impressão passa do que muitos
+servidores aceitam, e um anexo é mais uma cópia da fotografia de uma criança —
+numa caixa de correio, fora do nosso expurgo, para sempre. Sem `BREVO_API_KEY`,
+a rota devolve a ligação ao ecrã em vez de fingir que enviou.
+
+O botão de imprimir abre o PDF numa aba. Um `window.print()` do lado do
+navegador imprimiria a PÁGINA — botões e tudo — e não os cartões.
+
 ### Privacidade: `CARTOES_DIR` NÃO é servida estaticamente
 
 `UPLOAD_DIR` é servida em `/uploads` — quem souber o endereço abre o ficheiro

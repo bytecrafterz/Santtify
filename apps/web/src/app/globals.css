@@ -8609,3 +8609,39 @@ h2.funil {
   margin-left: 8px;
   vertical-align: middle;
 }
+
+/* ── As quatro formas de receber os cartões (ponto 8) ───────────── */
+
+.entrega-dos-cartoes { display: flex; flex-direction: column; gap: 8px; }
+.entrega-dos-cartoes .cartoes-accao,
+.entrega-dos-cartoes .cartoes-accao-secundaria { margin-top: 0; }
+
+.entrega-email {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 12px;
+  background: var(--cor-fundo);
+  border-radius: 12px;
+}
+
+.entrega-email .cartoes-campo { margin-bottom: 0; }
+.entrega-email input[type='email'] {
+  padding: 12px;
+  font: inherit;
+  color: var(--cor-texto);
+  background: var(--cor-superficie);
+  border: 1px solid var(--cor-borda);
+  border-radius: 10px;
+}
+
+.entrega-aviso {
+  padding: 10px 12px;
+  margin: 0;
+  font-size: 0.85rem;
+  line-height: 1.5;
+  color: var(--cor-acao-escura);
+  word-break: break-all;
+  background: rgba(22, 163, 74, 0.09);
+  border-radius: 10px;
+}

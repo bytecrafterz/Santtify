@@ -189,4 +189,24 @@ export const cartoes = {
 
   urlDoPdf: (projeto: string, pedidoId: string, criancaId: string) =>
     `${API_URL}/projects/${projeto}/cartoes/pedidos/${pedidoId}/criancas/${criancaId}/cartoes.pdf`,
+
+  /**
+   * A ligação assinada vem do servidor; o ecrã não a fabrica.
+   *
+   * Se fosse montada aqui, o prazo e a assinatura estariam do lado que
+   * qualquer pessoa consegue abrir e mexer.
+   */
+  partilha: (projeto: string, pedidoId: string, criancaId: string) =>
+    chamarComRenovacao<{
+      url: string
+      expiraEm: string
+      nome: string
+      textoParaWhatsApp: string
+    }>(`/projects/${projeto}/cartoes/pedidos/${pedidoId}/criancas/${criancaId}/partilha`),
+
+  enviarPorEmail: (projeto: string, pedidoId: string, criancaId: string, email: string) =>
+    chamarComRenovacao<{ enviado: boolean; url: string; motivo?: string }>(
+      `/projects/${projeto}/cartoes/pedidos/${pedidoId}/criancas/${criancaId}/email`,
+      { method: 'POST', body: JSON.stringify({ email }) },
+    ),
 }

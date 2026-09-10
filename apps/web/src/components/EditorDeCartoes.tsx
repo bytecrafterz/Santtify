@@ -16,6 +16,7 @@ import {
   type Pedido,
 } from '@/lib/cartoes'
 import { ErroDeApi } from '@/lib/auth'
+import { EntregaDosCartoes } from './EntregaDosCartoes'
 
 /**
  * O editor dos cartões personalizados.
@@ -465,23 +466,16 @@ export function EditorDeCartoes({ projectSlug }: { projectSlug: string }) {
             .filter((c) => c.selecionada && c.confirmada)
             .map((c) => (
               <li key={c.id}>
-                <strong>{c.nome}</strong>
-                {pedido.estado === 'PAGO' || pedido.estado === 'PRONTO' ? (
-                  <a
-                    className="cartoes-accao"
-                    href={cartoes.urlDoPdf(projectSlug, pedido.id, c.id)}
-                    // `download` e não `target`: no telemóvel, abrir o PDF num
-                    // leitor embutido é o sítio de onde ela não o consegue
-                    // reenviar à gráfica.
-                    download
-                  >
-                    Baixar / imprimir os {modelos.length || 7} cartões em PDF
-                  </a>
-                ) : (
-                  <span className="cartoes-estado-espera">
-                    Liberado assim que o pagamento for confirmado.
-                  </span>
-                )}
+                <strong>
+                  {c.nome} — {modelos.length || 7} cartões
+                </strong>
+                <EntregaDosCartoes
+                  projectSlug={projectSlug}
+                  pedidoId={pedido.id}
+                  criancaId={c.id}
+                  nome={c.nome}
+                  liberado={pedido.estado === 'PAGO' || pedido.estado === 'PRONTO'}
+                />
               </li>
             ))}
         </ul>

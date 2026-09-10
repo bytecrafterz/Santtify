@@ -5,6 +5,7 @@ import { AdminCartoesService } from './admin-cartoes.service'
 import { AdminCartoesController } from './admin-cartoes.controller'
 import { CarrosselService } from './carrossel.service'
 import { CarrosselController } from './carrossel.controller'
+import { PartilhaDeCartoesController } from './partilha.controller'
 import { ArmazenamentoDeCartoesService } from './armazenamento-de-cartoes.service'
 import { ExpurgoDeCartoesService } from './expurgo.service'
 import { ProvedorDePagamento } from './pagamentos/provedor'
@@ -12,11 +13,18 @@ import { ProvedorManual } from './pagamentos/provedor-manual'
 import { StorageService } from '../admin/storage.service'
 import { ContagensService } from '../social/contagens.service'
 import { IdentityModule } from '../identity/identity.module'
+import { MailModule } from '../common/mail/mail.module'
 
 @Module({
   // O AuthGuard precisa do JwtService, que vive no IdentityModule.
-  imports: [IdentityModule],
-  controllers: [CartoesController, AdminCartoesController, CarrosselController],
+  // O MailModule é o que manda a ligação dos cartões por e-mail.
+  imports: [IdentityModule, MailModule],
+  controllers: [
+    CartoesController,
+    AdminCartoesController,
+    CarrosselController,
+    PartilhaDeCartoesController,
+  ],
   providers: [
     CartoesService,
     AdminCartoesService,

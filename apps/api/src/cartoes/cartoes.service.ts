@@ -20,6 +20,8 @@ import { ArmazenamentoDeCartoesService } from './armazenamento-de-cartoes.servic
 import { comporCartao } from './desenho-do-cartao'
 import { montarPdf, type FolhaDoPdf } from './pdf-dos-cartoes'
 import { ProvedorDePagamento, type AvisoDePagamento } from './pagamentos/provedor'
+import { criarFicha, lerFicha } from './ligacao-de-partilha'
+import { MailService } from '../common/mail/mail.service'
 
 /** O máximo de crianças num pedido. Acima disto é gráfica, não é família. */
 const MAXIMO_DE_CRIANCAS = 10
@@ -35,10 +37,11 @@ export class CartoesService {
     private readonly armazenamento: ArmazenamentoDeCartoesService,
     private readonly storage: StorageService,
     private readonly provedor: ProvedorDePagamento,
-    config: ConfigService,
+    private readonly mail: MailService,
+    private readonly config: ConfigService,
   ) {
-    this.diasAteExpurgo = config.get<number>('CARTOES_DIAS_ATE_EXPURGO') ?? 7
-    this.horasAteAbandono = config.get<number>('CARTOES_HORAS_ATE_ABANDONO') ?? 48
+    this.diasAteExpurgo = this.config.get<number>('CARTOES_DIAS_ATE_EXPURGO') ?? 7
+    this.horasAteAbandono = this.config.get<number>('CARTOES_HORAS_ATE_ABANDONO') ?? 48
   }
 
   // ─────────────────────────────────────────────────────────────────
@@ -755,6 +758,105 @@ export class CartoesService {
       ajuste: { escala: crianca.escala, deslocX: crianca.deslocX, deslocY: crianca.deslocY },
       dpi: 96,
     })
+  }
+
+  // ─────────────────────────────────────────────────────────────────
+  // PARTILHA: WHATSAPP, E-MAIL, IMPRESSÃO
+  // ─────────────────────────────────────────────────────────────────
+
+  /**
+   * O endereço que a mãe envia a quem quiser.
+   *
+   * O prazo é o do próprio pedido, e não um prazo à parte. Uma ligação que
+   * durasse mais do que o ficheiro abriria numa página de erro na gráfica; uma
+   * que durasse menos tirar-lhe-ia dias que lhe foram prometidos.
+   */
+  async ligacaoDePartilha(pedidoId: string, criancaId: string) {
+    const crianca = await this.prisma.criancaDoPedido.findFirst({
+      where: { id: criancaId, pedidoId },
+      include: { pedido: { include: { project: { select: { slug: true } } } } },
+    })
+    if (!crianca) throw new NotFoundException('Cartões não encontrados.')
+
+    const pago =
+      crianca.pedido.estado === EstadoDoPedido.PAGO ||
+      crianca.pedido.estado === EstadoDoPedido.PRONTO
+    if (!pago) {
+      throw new ForbiddenException('A partilha fica disponível depois do pagamento confirmado.')
+    }
+
+    const ficha = criarFicha(this.config.getOrThrow<string>('JWT_ACCESS_SECRET'), {
+      pedidoId,
+      criancaId,
+      expiraEm: Math.floor(crianca.pedido.expiraEm.getTime() / 1000),
+    })
+
+    const base = this.config.getOrThrow<string>('PUBLIC_API_URL').replace(/\/$/, '')
+    const url = `${base}/api/cartoes/partilha/${ficha}`
+
+    return {
+      url,
+      expiraEm: crianca.pedido.expiraEm,
+      nome: crianca.nome,
+      /**
+       * O texto do WhatsApp vai daqui e não do navegador.
+       *
+       * O ecrã só monta `wa.me/?text=`. Escrever a frase aqui é o que impede
+       * que o botão do WhatsApp e o corpo do e-mail digam coisas diferentes
+       * sobre o mesmo ficheiro — e que só um deles avise do prazo.
+       */
+      textoParaWhatsApp:
+        `Os cartões personalizados de ${crianca.nome || 'nossa criança'} estão prontos! ` +
+        `Baixe o PDF para imprimir: ${url}`,
+    }
+  }
+
+  /** Serve o PDF a quem tiver uma ficha válida. Sem sessão nenhuma. */
+  async pdfPorFicha(ficha: string) {
+    const conteudo = lerFicha(this.config.getOrThrow<string>('JWT_ACCESS_SECRET'), ficha)
+    if (!conteudo) {
+      throw new NotFoundException(
+        'Este link não é válido ou o prazo terminou. Peça um novo a quem o enviou.',
+      )
+    }
+    return this.pdfDaCrianca(conteudo.pedidoId, conteudo.criancaId)
+  }
+
+  /**
+   * Envia a ligação por e-mail.
+   *
+   * O ficheiro NÃO vai anexado, e é decisão e não limitação: um PDF de impressão
+   * passa facilmente do que muitos servidores aceitam, e um anexo é uma cópia a
+   * mais da fotografia de uma criança — numa caixa de correio, fora do nosso
+   * prazo de expurgo, para sempre. A ligação morre com o ficheiro; o anexo não
+   * morre nunca.
+   */
+  async enviarPorEmail(pedidoId: string, criancaId: string, para: string) {
+    const ligacao = await this.ligacaoDePartilha(pedidoId, criancaId)
+
+    if (!this.mail.activo) {
+      // Sem serviço de e-mail configurado, devolve-se a ligação para o ecrã a
+      // mostrar. Falhar em silêncio seria pior: ela ficaria à espera de um
+      // e-mail que nunca ia chegar.
+      this.logger.warn('Sem BREVO_API_KEY: a ligação foi devolvida ao ecrã em vez de enviada.')
+      return { enviado: false, url: ligacao.url, motivo: 'sem-servico-de-email' as const }
+    }
+
+    const quando = ligacao.expiraEm.toLocaleDateString('pt-BR')
+    await this.mail.enviar({
+      para,
+      assunto: `Os cartões de ${ligacao.nome || 'sua criança'} estão prontos`,
+      texto:
+        `Os cartões personalizados estão prontos para imprimir.\n\n${ligacao.url}\n\n` +
+        `O arquivo fica disponível até ${quando}. Depois disso é apagado dos nossos servidores.`,
+      html:
+        `<p>Os cartões personalizados de <strong>${ligacao.nome}</strong> estão prontos para imprimir.</p>` +
+        `<p><a href="${ligacao.url}">Baixar o PDF com os cartões</a></p>` +
+        `<p style="color:#666;font-size:14px">O arquivo fica disponível até ${quando}. ` +
+        `Depois disso é apagado dos nossos servidores.</p>`,
+    })
+
+    return { enviado: true, url: ligacao.url }
   }
 
   /** A fotografia que a mãe enviou, para o editor a desenhar. */
