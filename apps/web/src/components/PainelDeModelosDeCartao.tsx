@@ -2,7 +2,12 @@
 
 import { useCallback, useEffect, useRef, useState } from 'react'
 import { A4_MM } from '@pv/cartoes'
-import { painelDeCartoes, type ModeloAdmin, type PrecoAdmin } from '@/lib/admin'
+import {
+  painelDeCartoes,
+  type CategoriaAdmin,
+  type ModeloAdmin,
+  type PrecoAdmin,
+} from '@/lib/admin'
 import { ErroDeApi } from '@/lib/auth'
 
 /**
@@ -21,6 +26,7 @@ import { ErroDeApi } from '@/lib/auth'
  */
 export function PainelDeModelosDeCartao({ projectSlug }: { projectSlug: string }) {
   const [modelos, definirModelos] = useState<ModeloAdmin[]>([])
+  const [categorias, definirCategorias] = useState<CategoriaAdmin[]>([])
   const [preco, definirPreco] = useState<PrecoAdmin | null>(null)
   const [aCarregar, definirACarregar] = useState(true)
   const [erro, definirErro] = useState<string | null>(null)
@@ -29,12 +35,14 @@ export function PainelDeModelosDeCartao({ projectSlug }: { projectSlug: string }
 
   const carregar = useCallback(async () => {
     try {
-      const [m, p] = await Promise.all([
+      const [m, p, c] = await Promise.all([
         painelDeCartoes.modelos(projectSlug),
         painelDeCartoes.preco(projectSlug),
+        painelDeCartoes.categorias(projectSlug),
       ])
       definirModelos(m)
       definirPreco(p)
+      definirCategorias(c)
     } catch (e) {
       definirErro(e instanceof ErroDeApi ? e.message : 'Não foi possível carregar.')
     } finally {
@@ -60,8 +68,6 @@ export function PainelDeModelosDeCartao({ projectSlug }: { projectSlug: string }
 
   if (aCarregar) return <p className="subtitulo">A carregar…</p>
 
-  const semArte = modelos.filter((m) => m.aviso).length
-
   return (
     <div className="painel-cartoes">
       {erro && <p className="cartoes-erro">{erro}</p>}
@@ -78,80 +84,124 @@ export function PainelDeModelosDeCartao({ projectSlug }: { projectSlug: string }
         />
       )}
 
-      <section className="painel-bloco">
-        <header className="painel-bloco-topo">
-          <h2>Modelos de cartão ({modelos.length})</h2>
-          <button
-            type="button"
-            className="cartoes-accao-secundaria painel-botao-curto"
-            disabled={ocupado !== null}
-            onClick={() =>
-              comErro('novo', async () => {
-                await painelDeCartoes.criarModelo(projectSlug, {})
-                await carregar()
-              })
-            }
-          >
-            + Novo modelo
-          </button>
-        </header>
+      <GestaoDeCategorias
+        categorias={categorias}
+        ocupado={ocupado !== null}
+        aoCriar={(dados) =>
+          comErro('categoria', async () => {
+            await painelDeCartoes.criarCategoria(projectSlug, dados)
+            await carregar()
+          })
+        }
+        aoGuardar={(id, dados) =>
+          comErro(`cat-${id}`, async () => {
+            await painelDeCartoes.actualizarCategoria(id, dados)
+            await carregar()
+          })
+        }
+        aoRemover={(id) =>
+          comErro(`rmcat-${id}`, async () => {
+            await painelDeCartoes.removerCategoria(id)
+            await carregar()
+          })
+        }
+      />
 
-        {semArte > 0 && (
-          <p className="painel-aviso">
-            {semArte === 1
-              ? '1 modelo ainda não tem arte carregada.'
-              : `${semArte} modelos ainda não têm arte carregada.`}{' '}
-            Sem arte, o PDF desse modelo não é gerado.
-          </p>
-        )}
+      {categorias.length === 0 && (
+        <p className="painel-aviso">Crie uma categoria para começar a cadastrar cartões.</p>
+      )}
 
-        <ul className="painel-modelos">
-          {modelos.map((m) => (
-            <li key={m.id} className={m.ativo ? 'painel-modelo' : 'painel-modelo inactivo'}>
+      {/* Uma secção por categoria. O "+ Novo cartão" de cada uma cria o cartão
+          DENTRO dela — é assim que os Adultos começam no Dia 1 e não no Dia 8. */}
+      {categorias.map((categoria) => {
+        const daCategoria = modelos.filter((m) => m.categoriaId === categoria.id)
+        const semArte = daCategoria.filter((m) => m.aviso).length
+        return (
+          <section key={categoria.id} className="painel-bloco">
+            <header className="painel-bloco-topo">
+              <h2>
+                {categoria.nome} ({daCategoria.length})
+                {!categoria.ativo && <span className="painel-selo-falta">desativada</span>}
+              </h2>
               <button
                 type="button"
-                className="painel-modelo-topo"
-                onClick={() => definirAberto(aberto === m.id ? null : m.id)}
-                aria-expanded={aberto === m.id}
+                className="cartoes-accao-secundaria painel-botao-curto"
+                disabled={ocupado !== null}
+                onClick={() =>
+                  comErro('novo', async () => {
+                    await painelDeCartoes.criarModelo(projectSlug, { categoriaId: categoria.id })
+                    await carregar()
+                  })
+                }
               >
-                <span className="painel-modelo-dia">Dia {m.dia}</span>
-                <span className="painel-modelo-nome">{m.nome}</span>
-                <span className={m.aviso ? 'painel-selo-falta' : 'painel-selo-pronto'}>
-                  {m.aviso ? 'sem arte' : 'pronto'}
-                </span>
-                <span aria-hidden="true">{aberto === m.id ? '▾' : '▸'}</span>
+                + Novo cartão
               </button>
+            </header>
 
-              {aberto === m.id && (
-                <EditorDoModelo
-                  modelo={m}
-                  ocupado={ocupado}
-                  aoGuardar={(dados) =>
-                    comErro(`m-${m.id}`, async () => {
-                      await painelDeCartoes.actualizarModelo(m.id, dados)
-                      await carregar()
-                    })
-                  }
-                  aoEnviarArte={(f) =>
-                    comErro(`arte-${m.id}`, async () => {
-                      const r = await painelDeCartoes.enviarArte(m.id, f)
-                      if (r.aviso) definirErro(r.aviso)
-                      await carregar()
-                    })
-                  }
-                  aoRemover={() =>
-                    comErro(`rm-${m.id}`, async () => {
-                      await painelDeCartoes.removerModelo(m.id)
-                      definirAberto(null)
-                      await carregar()
-                    })
-                  }
-                />
-              )}
-            </li>
-          ))}
-        </ul>
-      </section>
+            {daCategoria.length === 0 && (
+              <p className="subtitulo">
+                Ainda sem cartões. Enquanto estiver vazia, esta categoria não aparece no site.
+              </p>
+            )}
+
+            {semArte > 0 && (
+              <p className="painel-aviso">
+                {semArte === 1
+                  ? '1 cartão ainda não tem arte carregada.'
+                  : `${semArte} cartões ainda não têm arte carregada.`}{' '}
+                Sem arte, o PDF desse cartão não é gerado.
+              </p>
+            )}
+
+            <ul className="painel-modelos">
+              {daCategoria.map((m) => (
+                <li key={m.id} className={m.ativo ? 'painel-modelo' : 'painel-modelo inactivo'}>
+                  <button
+                    type="button"
+                    className="painel-modelo-topo"
+                    onClick={() => definirAberto(aberto === m.id ? null : m.id)}
+                    aria-expanded={aberto === m.id}
+                  >
+                    <span className="painel-modelo-dia">Dia {m.dia}</span>
+                    <span className="painel-modelo-nome">{m.nome}</span>
+                    <span className={m.aviso ? 'painel-selo-falta' : 'painel-selo-pronto'}>
+                      {m.aviso ? 'sem arte' : 'pronto'}
+                    </span>
+                    <span aria-hidden="true">{aberto === m.id ? '▾' : '▸'}</span>
+                  </button>
+
+                  {aberto === m.id && (
+                    <EditorDoModelo
+                      modelo={m}
+                      ocupado={ocupado}
+                      aoGuardar={(dados) =>
+                        comErro(`m-${m.id}`, async () => {
+                          await painelDeCartoes.actualizarModelo(m.id, dados)
+                          await carregar()
+                        })
+                      }
+                      aoEnviarArte={(f) =>
+                        comErro(`arte-${m.id}`, async () => {
+                          const r = await painelDeCartoes.enviarArte(m.id, f)
+                          if (r.aviso) definirErro(r.aviso)
+                          await carregar()
+                        })
+                      }
+                      aoRemover={() =>
+                        comErro(`rm-${m.id}`, async () => {
+                          await painelDeCartoes.removerModelo(m.id)
+                          definirAberto(null)
+                          await carregar()
+                        })
+                      }
+                    />
+                  )}
+                </li>
+              ))}
+            </ul>
+          </section>
+        )
+      })}
     </div>
   )
 }
@@ -173,7 +223,7 @@ function TabelaDePreco({
     <section className="painel-bloco">
       <h2>Preço e desconto</h2>
       <p className="subtitulo">
-        Vale para todos os conjuntos deste projeto. Muda aqui, sem programação.
+        É o preço padrão. Uma categoria pode ter o seu próprio preço — veja em Categorias.
       </p>
 
       <div className="painel-campos">
@@ -449,5 +499,242 @@ function FolhaDeReferencia({ modelo }: { modelo: ModeloAdmin }) {
         NOME
       </span>
     </div>
+  )
+}
+
+/**
+ * As categorias: Crianças, Adultos, e as que ele criar.
+ *
+ * O cliente pediu em 11/09 para as poder criar sozinho, sem código. O que faz
+ * uma categoria funcionar no site são os dois rótulos — como chamar uma pessoa
+ * e várias —, e por isso o painel mostra a frase exacta que vai aparecer.
+ * Escrever "casal" e ver "Envie a foto de cada casal" é a forma mais rápida de
+ * perceber se ficou bem.
+ */
+function GestaoDeCategorias({
+  categorias,
+  ocupado,
+  aoCriar,
+  aoGuardar,
+  aoRemover,
+}: {
+  categorias: CategoriaAdmin[]
+  ocupado: boolean
+  aoCriar: (dados: Partial<CategoriaAdmin>) => void
+  aoGuardar: (id: string, dados: Partial<CategoriaAdmin>) => void
+  aoRemover: (id: string) => void
+}) {
+  const [nome, definirNome] = useState('')
+  const [singular, definirSingular] = useState('pessoa')
+  const [plural, definirPlural] = useState('pessoas')
+
+  return (
+    <section className="painel-bloco">
+      <h2>Categorias ({categorias.length})</h2>
+      <p className="subtitulo">
+        Cada categoria tem os seus próprios cartões. Uma categoria sem cartões
+        ativos fica escondida do site até o primeiro cartão entrar.
+      </p>
+
+      <ul className="painel-categorias">
+        {categorias.map((c) => (
+          <LinhaDeCategoria
+            key={c.id}
+            categoria={c}
+            ocupado={ocupado}
+            aoGuardar={(dados) => aoGuardar(c.id, dados)}
+            aoRemover={() => aoRemover(c.id)}
+          />
+        ))}
+      </ul>
+
+      <h3 className="painel-subtitulo">Nova categoria</h3>
+      <div className="painel-campos">
+        <label className="cartoes-campo">
+          <span>Nome</span>
+          <input
+            type="text"
+            value={nome}
+            placeholder="Adultos"
+            onChange={(e) => definirNome(e.target.value)}
+          />
+        </label>
+        <label className="cartoes-campo">
+          <span>Singular (ex.: pessoa)</span>
+          <input type="text" value={singular} onChange={(e) => definirSingular(e.target.value)} />
+        </label>
+        <label className="cartoes-campo">
+          <span>Plural (ex.: pessoas)</span>
+          <input type="text" value={plural} onChange={(e) => definirPlural(e.target.value)} />
+        </label>
+      </div>
+      <p className="painel-exemplo">
+        No site vai aparecer: “Envie a foto de cada {singular.trim() || 'pessoa'}” e
+        “{maiusculaDe(singular.trim() || 'pessoa')} 1, {maiusculaDe(singular.trim() || 'pessoa')} 2…”.
+      </p>
+      <button
+        type="button"
+        className="cartoes-accao"
+        disabled={ocupado || !nome.trim()}
+        onClick={() => {
+          aoCriar({
+            nome: nome.trim(),
+            rotuloSingular: singular.trim(),
+            rotuloPlural: plural.trim(),
+          })
+          definirNome('')
+        }}
+      >
+        Criar categoria
+      </button>
+    </section>
+  )
+}
+
+function maiusculaDe(texto: string): string {
+  return texto ? texto.charAt(0).toLocaleUpperCase('pt-BR') + texto.slice(1) : texto
+}
+
+function LinhaDeCategoria({
+  categoria,
+  ocupado,
+  aoGuardar,
+  aoRemover,
+}: {
+  categoria: CategoriaAdmin
+  ocupado: boolean
+  aoGuardar: (dados: Partial<CategoriaAdmin>) => void
+  aoRemover: () => void
+}) {
+  const [aberta, definirAberta] = useState(false)
+  const [nome, definirNome] = useState(categoria.nome)
+  const [singular, definirSingular] = useState(categoria.rotuloSingular)
+  const [plural, definirPlural] = useState(categoria.rotuloPlural)
+  const [reais, definirReais] = useState(
+    categoria.precoUnitarioCent == null ? '' : (categoria.precoUnitarioCent / 100).toFixed(2),
+  )
+  const [desconto, definirDesconto] = useState(
+    categoria.descontoPercentagem == null ? '' : String(categoria.descontoPercentagem),
+  )
+
+  useEffect(() => {
+    definirNome(categoria.nome)
+    definirSingular(categoria.rotuloSingular)
+    definirPlural(categoria.rotuloPlural)
+    definirReais(
+      categoria.precoUnitarioCent == null ? '' : (categoria.precoUnitarioCent / 100).toFixed(2),
+    )
+    definirDesconto(
+      categoria.descontoPercentagem == null ? '' : String(categoria.descontoPercentagem),
+    )
+  }, [categoria])
+
+  /** Em branco volta ao preço do projeto: por isso '' vira null, e nunca 0. */
+  const emCentimos = (texto: string): number | null => {
+    const t = texto.trim()
+    if (!t) return null
+    const n = Number(t.replace(',', '.'))
+    return Number.isFinite(n) ? Math.round(n * 100) : null
+  }
+
+  return (
+    <li className="painel-categoria">
+      <div className="painel-categoria-topo">
+        <strong>{categoria.nome}</strong>
+        <span>
+          {categoria.modelos === 1 ? '1 cartão' : `${categoria.modelos} cartões`} ·{' '}
+          {categoria.precoUnitarioCent == null
+            ? 'preço padrão'
+            : (categoria.precoUnitarioCent / 100).toLocaleString('pt-BR', {
+                style: 'currency',
+                currency: 'BRL',
+              })}
+        </span>
+        {!categoria.ativo && <span className="painel-selo-falta">desativada</span>}
+        <button type="button" className="cartoes-ligacao" onClick={() => definirAberta(!aberta)}>
+          {aberta ? 'Fechar' : 'Editar'}
+        </button>
+      </div>
+
+      {aberta && (
+        <div className="painel-categoria-corpo">
+          <div className="painel-campos">
+            <label className="cartoes-campo">
+              <span>Nome</span>
+              <input type="text" value={nome} onChange={(e) => definirNome(e.target.value)} />
+            </label>
+            <label className="cartoes-campo">
+              <span>Singular</span>
+              <input type="text" value={singular} onChange={(e) => definirSingular(e.target.value)} />
+            </label>
+            <label className="cartoes-campo">
+              <span>Plural</span>
+              <input type="text" value={plural} onChange={(e) => definirPlural(e.target.value)} />
+            </label>
+          </div>
+          <div className="painel-campos">
+            <label className="cartoes-campo">
+              <span>Preço próprio (R$)</span>
+              <input
+                type="text"
+                inputMode="decimal"
+                value={reais}
+                placeholder="padrão do projeto"
+                onChange={(e) => definirReais(e.target.value)}
+              />
+            </label>
+            <label className="cartoes-campo">
+              <span>Desconto próprio (%)</span>
+              <input
+                type="text"
+                inputMode="numeric"
+                value={desconto}
+                placeholder="padrão do projeto"
+                onChange={(e) => definirDesconto(e.target.value)}
+              />
+            </label>
+          </div>
+          <p className="painel-exemplo">
+            Deixe em branco para usar o preço e o desconto padrão do projeto.
+          </p>
+
+          <div className="painel-modelo-accoes">
+            <button
+              type="button"
+              className="cartoes-accao"
+              disabled={ocupado || !nome.trim()}
+              onClick={() =>
+                aoGuardar({
+                  nome: nome.trim(),
+                  rotuloSingular: singular.trim(),
+                  rotuloPlural: plural.trim(),
+                  precoUnitarioCent: emCentimos(reais),
+                  descontoPercentagem: desconto.trim() ? Number(desconto) : null,
+                })
+              }
+            >
+              Guardar
+            </button>
+            <label className="painel-activo">
+              <input
+                type="checkbox"
+                checked={categoria.ativo}
+                onChange={(e) => aoGuardar({ ativo: e.target.checked })}
+              />
+              <span>Ativa (aparece no site quando tiver cartões)</span>
+            </label>
+            {categoria.modelos === 0 ? (
+              <button type="button" className="painel-perigo" disabled={ocupado} onClick={aoRemover}>
+                Apagar categoria
+              </button>
+            ) : (
+              <span className="painel-exemplo">
+                Para apagar, remova os cartões primeiro — ou desative.
+              </span>
+            )}
+          </div>
+        </div>
+      )}
+    </li>
   )
 }

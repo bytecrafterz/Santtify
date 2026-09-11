@@ -49,7 +49,9 @@ try {
   await pg.goto(`${SITE}/${PROJ}/cartoes`, { waitUntil: 'networkidle' })
 
   // Duas criancas: uma com foto boa, outra com foto pequena.
-  await pg.getByRole('button', { name: 'Mais uma criança' }).click()
+  // "Mais uma foto" e não "Mais uma criança": desde as categorias (11/09) o
+  // editor serve também os Adultos, e o rótulo não pode dizer criança.
+  await pg.getByRole('button', { name: 'Mais uma foto' }).click()
   await pg.getByRole('button', { name: 'Continuar' }).click()
   await pg.locator('.cartoes-crianca').first().waitFor()
 

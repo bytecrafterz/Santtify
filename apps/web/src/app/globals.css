@@ -8645,3 +8645,78 @@ h2.funil {
   background: rgba(22, 163, 74, 0.09);
   border-radius: 10px;
 }
+
+/* ── Categorias de cartões (11/09) ───────────────────────────────── */
+
+.cartoes-categorias {
+  display: grid;
+  gap: 12px;
+  padding: 0;
+  margin: 12px 0 0;
+  list-style: none;
+}
+
+@media (min-width: 560px) {
+  .cartoes-categorias { grid-template-columns: 1fr 1fr; }
+}
+
+.cartoes-categoria {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  width: 100%;
+  height: 100%;
+  padding: 16px;
+  font: inherit;
+  color: inherit;
+  text-align: left;
+  cursor: pointer;
+  background: var(--cor-fundo);
+  border: 2px solid var(--cor-borda);
+  border-radius: var(--raio);
+}
+
+.cartoes-categoria:hover,
+.cartoes-categoria:focus-visible { border-color: var(--cor-primaria); }
+
+.cartoes-categoria img {
+  width: 100%;
+  margin-bottom: 6px;
+  aspect-ratio: 16 / 9;
+  object-fit: cover;
+  border-radius: 10px;
+}
+
+.cartoes-categoria strong { font-size: 1.1rem; }
+.cartoes-categoria span { font-size: 0.88rem; color: var(--cor-texto-suave); }
+.cartoes-categoria-preco { font-variant-numeric: tabular-nums; }
+
+.painel-categorias { padding: 0; margin: 10px 0; list-style: none; }
+.painel-categoria { padding: 10px 0; border-bottom: 1px solid var(--cor-borda); }
+
+.painel-categoria-topo {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  align-items: center;
+}
+
+.painel-categoria-topo strong { flex: 1; }
+.painel-categoria-topo span { font-size: 0.82rem; color: var(--cor-texto-suave); }
+
+/* O .cartoes-ligacao é um bloco de largura inteira; numa linha estica-se todo. */
+.painel-categoria-topo .cartoes-ligacao { width: auto; padding: 4px 8px; margin: 0; }
+
+.painel-categoria-corpo {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  padding: 10px 0 4px;
+}
+
+.painel-categoria-corpo .cartoes-campo { margin-bottom: 0; }
+
+.painel-bloco-topo h2 .painel-selo-falta {
+  margin-left: 8px;
+  vertical-align: middle;
+}

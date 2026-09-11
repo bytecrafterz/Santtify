@@ -64,14 +64,48 @@ async function main() {
     },
   })
 
+  /**
+   * As duas categorias que o cliente pediu em 11/09.
+   *
+   * Os Adultos nascem ACTIVOS e sem modelo nenhum, e isso é seguro: o editor só
+   * mostra as categorias que têm pelo menos um cartão activo. No dia em que o
+   * designer entregar as artes dos adultos, ele cadastra-as pelo painel e a
+   * categoria aparece sozinha.
+   */
+  const criancas = await prisma.categoriaDeCartoes.upsert({
+    where: { projectId_slug: { projectId: projeto.id, slug: 'criancas' } },
+    update: {},
+    create: {
+      projectId: projeto.id,
+      slug: 'criancas',
+      nome: 'Crianças',
+      rotuloSingular: 'criança',
+      rotuloPlural: 'crianças',
+      ordem: 1,
+    },
+  })
+  await prisma.categoriaDeCartoes.upsert({
+    where: { projectId_slug: { projectId: projeto.id, slug: 'adultos' } },
+    update: {},
+    create: {
+      projectId: projeto.id,
+      slug: 'adultos',
+      nome: 'Adultos',
+      rotuloSingular: 'pessoa',
+      rotuloPlural: 'pessoas',
+      ordem: 2,
+    },
+  })
+
   for (const modelo of MODELOS) {
     await prisma.modeloDeCartao.upsert({
       where: {
-        projectId_slug: { projectId: projeto.id, slug: `dia-${modelo.dia}` },
+        categoriaId_slug: { categoriaId: criancas.id, slug: `dia-${modelo.dia}` },
       },
       update: { nome: modelo.nome, ordem: modelo.dia },
       create: {
         projectId: projeto.id,
+        categoriaId: criancas.id,
         slug: `dia-${modelo.dia}`,
         dia: modelo.dia,
         nome: modelo.nome,
@@ -112,20 +146,34 @@ async function main() {
   const alfabeto = await prisma.project.findUnique({
     where: { slug: 'jesus-alfabeto-saudavel' },
   })
+  /**
+   * Os destaques só se preenchem se estiverem VAZIOS.
+   *
+   * Este seed pode voltar a correr — em produção, depois de o cliente já ter
+   * escolhido os destaques dele no painel. Pôr os valores iniciais por cima
+   * desfaria essa escolha sem aviso. E pô-los quando outro projeto ocupa a casa
+   * rebentava contra o `@unique` do campo.
+   */
+  const ocupado = async (lado: DestaqueDoCarrossel) =>
+    Boolean(await prisma.project.findFirst({ where: { destaque: lado } }))
+
   if (alfabeto) {
     await prisma.project.update({
       where: { id: alfabeto.id },
       data: {
-        destaque: DestaqueDoCarrossel.ESQUERDA,
-        ordemNoCarrossel: 0,
+        ...((await ocupado(DestaqueDoCarrossel.ESQUERDA))
+          ? {}
+          : { destaque: DestaqueDoCarrossel.ESQUERDA, ordemNoCarrossel: 0 }),
         tagline: alfabeto.tagline ?? 'Aprenda com fé, saúde, música e diversão',
       },
     })
   }
-  await prisma.project.update({
-    where: { id: projeto.id },
-    data: { destaque: DestaqueDoCarrossel.DIREITA, ordemNoCarrossel: 1 },
-  })
+  if (!(await ocupado(DestaqueDoCarrossel.DIREITA))) {
+    await prisma.project.update({
+      where: { id: projeto.id },
+      data: { destaque: DestaqueDoCarrossel.DIREITA, ordemNoCarrossel: 1 },
+    })
+  }
 
   console.log('✓ Cartões personalizados semeados:', {
     projeto: projeto.slug,

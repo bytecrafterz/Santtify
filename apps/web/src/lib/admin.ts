@@ -602,8 +602,28 @@ export interface ModeloAdmin {
   nomeCorpoMaximo: number
   nomeMaiusculas: boolean
   idioma: string
+  categoriaId: string
   /** O que falta neste modelo, em português. Nulo quando está pronto. */
   aviso: string | null
+}
+
+export interface CategoriaAdmin {
+  id: string
+  slug: string
+  nome: string
+  descricao: string | null
+  capaUrl: string | null
+  rotuloSingular: string
+  rotuloPlural: string
+  ativo: boolean
+  ordem: number
+  /** Nulos = usa o preço do projeto. */
+  precoUnitarioCent: number | null
+  descontoPercentagem: number | null
+  descontoAPartirDe: number | null
+  /** Quantos cartões e pedidos tem — o painel não deixa apagar uma cheia. */
+  modelos: number
+  pedidos: number
 }
 
 export interface PrecoAdmin {
@@ -674,6 +694,26 @@ export const painelDeCartoes = {
       { method: 'POST', body: corpo },
     )
   },
+
+  categorias: (projeto: string) =>
+    chamarAdmin<CategoriaAdmin[]>(`/admin/projects/${projeto}/categorias-de-cartoes`),
+
+  criarCategoria: (projeto: string, dados: Partial<CategoriaAdmin>) =>
+    chamarAdmin<CategoriaAdmin>(`/admin/projects/${projeto}/categorias-de-cartoes`, {
+      method: 'POST',
+      body: JSON.stringify(dados),
+    }),
+
+  actualizarCategoria: (id: string, dados: Partial<CategoriaAdmin>) =>
+    chamarAdmin<CategoriaAdmin>(`/admin/categorias-de-cartoes/${id}`, {
+      method: 'PATCH',
+      body: JSON.stringify(dados),
+    }),
+
+  removerCategoria: (id: string) =>
+    chamarAdmin<{ removida: boolean }>(`/admin/categorias-de-cartoes/${id}`, {
+      method: 'DELETE',
+    }),
 
   preco: (projeto: string) => chamarAdmin<PrecoAdmin>(`/admin/projects/${projeto}/preco-de-cartoes`),
 

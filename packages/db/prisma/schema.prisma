@@ -98,9 +98,10 @@ model Project {
   host           User?           @relation("PerfilAnfitriao", fields: [hostUserId], references: [id], onDelete: SetNull)
   passwordResets PasswordReset[]
 
-  modelosDeCartao  ModeloDeCartao[]
-  precoDeCartoes   PrecoDeCartoes?
-  pedidosDeCartoes PedidoDeCartoes[]
+  modelosDeCartao     ModeloDeCartao[]
+  categoriasDeCartoes CategoriaDeCartoes[]
+  precoDeCartoes      PrecoDeCartoes?
+  pedidosDeCartoes    PedidoDeCartoes[]
 
   @@map("projects")
 }
@@ -1439,6 +1440,56 @@ enum FormatoDaMoldura {
   RETANGULO
 }
 
+/// Uma categoria de cartões: Crianças, Adultos, e o que vier depois.
+///
+/// O cliente pediu em 11/09 que a plataforma trabalhasse com duas categorias e
+/// que ele próprio pudesse acrescentar outras, e cartões dentro de cada uma,
+/// sem mexer em código. É isto: uma categoria é uma linha, e os modelos
+/// pertencem a ela.
+///
+/// OS RÓTULOS SÃO O QUE FAZ UMA CATEGORIA FUNCIONAR, e são dados de propósito.
+/// O editor pergunta "quantas crianças?" e pede "a foto de cada criança". Num
+/// cartão para adultos isso é errado, e escrever `if (adulto)` no ecrã seria
+/// resolver este caso e falhar no próximo — "Casais", "Famílias", "Avós". Com
+/// o rótulo na categoria, cada uma fala como deve sem uma linha de código nova.
+///
+/// O preço é OPCIONAL: vazio, vale o do projeto. Os cartões de adultos podem
+/// custar o mesmo ou outra coisa, e a decisão é dele.
+model CategoriaDeCartoes {
+  id        String  @id @default(uuid()) @db.Uuid
+  projectId String  @db.Uuid
+  project   Project @relation(fields: [projectId], references: [id], onDelete: Cascade)
+
+  slug      String
+  nome      String
+  descricao String?
+  capaUrl   String?
+
+  /// Como o editor chama quem aparece no cartão: "criança"/"crianças",
+  /// "pessoa"/"pessoas". Singular e plural à parte porque o português não os
+  /// deriva por regra — "casal" e "casais".
+  rotuloSingular String @default("criança")
+  rotuloPlural   String @default("crianças")
+
+  ativo Boolean @default(true)
+  ordem Int     @default(0)
+
+  /// Nulos = usa o `PrecoDeCartoes` do projeto.
+  precoUnitarioCent   Int?
+  descontoPercentagem Int?
+  descontoAPartirDe   Int?
+
+  criadoEm     DateTime @default(now())
+  atualizadoEm DateTime @updatedAt
+
+  modelos ModeloDeCartao[]
+  pedidos PedidoDeCartoes[]
+
+  @@unique([projectId, slug])
+  @@index([projectId, ativo, ordem])
+  @@map("categorias_de_cartoes")
+}
+
 /// Um dos modelos de cartão — DADO, nunca código.
 ///
 /// O cliente escreveu duas vezes que quer poder acrescentar modelos sem pedir
@@ -1454,6 +1505,11 @@ model ModeloDeCartao {
   id        String  @id @default(uuid()) @db.Uuid
   projectId String  @db.Uuid
   project   Project @relation(fields: [projectId], references: [id], onDelete: Cascade)
+
+  /// A categoria a que este cartão pertence. O "Dia 1" das crianças e o "Dia 1"
+  /// dos adultos são modelos diferentes, com arte e medidas próprias.
+  categoriaId String             @db.Uuid
+  categoria   CategoriaDeCartoes @relation(fields: [categoriaId], references: [id], onDelete: Cascade)
 
   slug String
   /// O número que aparece na etiqueta: DIA 1, DIA 2...
@@ -1504,9 +1560,10 @@ model ModeloDeCartao {
   criadoEm     DateTime @default(now())
   atualizadoEm DateTime @updatedAt
 
-  @@unique([projectId, slug])
+  /// Único DENTRO da categoria: "dia-1" existe nas Crianças e nos Adultos.
+  @@unique([categoriaId, slug])
   @@index([projectId, ativo, ordem])
-  @@index([projectId, idioma, ativo])
+  @@index([categoriaId, idioma, ativo])
   @@map("modelos_de_cartao")
 }
 
@@ -1558,6 +1615,15 @@ model PedidoDeCartoes {
   userId    String? @db.Uuid
   user      User?   @relation(fields: [userId], references: [id], onDelete: SetNull)
 
+  /// A categoria comprada. Sem ela, o PDF de uma criança levaria também os
+  /// cartões dos adultos — é ela que filtra os modelos na geração.
+  categoriaId String?             @db.Uuid
+  categoria   CategoriaDeCartoes? @relation(fields: [categoriaId], references: [id], onDelete: SetNull)
+
+  /// O idioma dos cartões comprados. Sem ele, no dia em que existirem modelos
+  /// em inglês, o PDF de um pedido em português sairia com os dois idiomas.
+  idioma String @default("pt-BR")
+
   estado EstadoDoPedido @default(RASCUNHO)
 
   /// O preço fica COPIADO no pedido, não lido da tabela na hora de mostrar.
@@ -1565,6 +1631,10 @@ model PedidoDeCartoes {
   /// que viu — e o histórico continua a fazer sentido daqui a um ano.
   precoUnitarioCent   Int
   descontoPercentagem Int
+  /// Copiado da tabela no momento do pedido, como o resto do preço. Antes
+  /// estava escrito "2" na conta, e o valor que o administrador punha no
+  /// painel era ignorado em silêncio.
+  descontoAPartirDe   Int    @default(2)
   subtotalCent        Int    @default(0)
   descontoCent        Int    @default(0)
   totalCent           Int    @default(0)

@@ -57,9 +57,39 @@ export interface CriancaDoPedido {
   temPdf: boolean
 }
 
+/**
+ * Uma categoria de cartões: Crianças, Adultos, e as que o cliente criar.
+ *
+ * Os rótulos são o que o editor usa para falar: "quantas crianças?" numa,
+ * "quantas pessoas?" noutra. Vêm da base de dados e não de um `if` aqui,
+ * para uma categoria nova falar certo sem mexer neste ficheiro.
+ */
+export interface Categoria {
+  slug: string
+  nome: string
+  descricao: string | null
+  capaUrl: string | null
+  rotuloSingular: string
+  rotuloPlural: string
+  cartoes: number
+  preco: {
+    precoUnitarioCent: number
+    descontoPercentagem: number
+    descontoAPartirDe: number
+    moeda: string
+  }
+}
+
 export interface Pedido {
   id: string
   projectSlug: string
+  categoria: {
+    slug: string
+    nome: string
+    rotuloSingular: string
+    rotuloPlural: string
+  } | null
+  idioma: string
   estado: EstadoDoPedido
   moeda: string
   preco: {
@@ -129,16 +159,22 @@ async function chamarComRenovacao<T>(caminho: string, init: RequestInit = {}): P
 }
 
 export const cartoes = {
-  modelos: (projeto: string) =>
-    chamarComRenovacao<ModeloDeCartao[]>(`/projects/${projeto}/cartoes/modelos`),
+  categorias: (projeto: string) =>
+    chamarComRenovacao<Categoria[]>(`/projects/${projeto}/cartoes/categorias`),
+
+  modelos: (projeto: string, categoria?: string) =>
+    chamarComRenovacao<ModeloDeCartao[]>(
+      `/projects/${projeto}/cartoes/modelos` +
+        (categoria ? `?categoria=${encodeURIComponent(categoria)}` : ''),
+    ),
 
   preco: (projeto: string) =>
     chamarComRenovacao<TabelaDePrecos>(`/projects/${projeto}/cartoes/preco`),
 
-  criarPedido: (projeto: string, criancas: number) =>
+  criarPedido: (projeto: string, criancas: number, categoria?: string) =>
     chamarComRenovacao<Pedido>(`/projects/${projeto}/cartoes/pedidos`, {
       method: 'POST',
-      body: JSON.stringify({ criancas }),
+      body: JSON.stringify({ criancas, categoria }),
     }),
 
   verPedido: (projeto: string, pedidoId: string) =>

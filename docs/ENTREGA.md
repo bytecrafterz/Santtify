@@ -242,6 +242,64 @@ terá de ser mais larga. Partilhá-la obrigaria a escolher a pior medida de toda
 O slug leva o idioma quando não é `pt-BR`, senão o segundo modelo do mesmo dia
 chocava contra `@@unique([projectId, slug])`.
 
+### Categorias: Crianças, Adultos, e as que vierem
+
+Pedido do cliente em 11/09: sete cartões novos para adultos, com o mesmo
+funcionamento, e poder ele próprio criar categorias e cartões sem código.
+
+Uma categoria é uma linha de `categorias_de_cartoes`, e os modelos pertencem-lhe.
+Painel → Cartões personalizados → Categorias.
+
+**Os rótulos são o que faz uma categoria funcionar.** `rotuloSingular` e
+`rotuloPlural` ("criança"/"crianças", "pessoa"/"pessoas") são o que o editor usa
+para falar. Estão na base e não num `if (adulto)` no ecrã, porque um `if`
+resolvia este caso e falhava no próximo.
+
+**As frases do editor evitam o género, de propósito.** "Quantas crianças?"
+funciona para nomes femininos e parte-se no primeiro masculino — "Quantas
+casais?". Por isso o editor pergunta "Quantas fotos você vai enviar?" e diz "a
+foto de cada {rótulo}" e "{Rótulo} 1". Qualquer categoria nova lê-se bem.
+
+**Uma categoria sem cartões activos não aparece no site.** Os Adultos já existem,
+vazios, e ficam escondidos até o primeiro cartão entrar. Com uma só categoria
+visível, o ecrã de escolha nem aparece.
+
+**O slug de uma categoria não muda.** Vai no endereço do editor, e um endereço
+partilhado tem de continuar a abrir.
+
+**Apagar só quando está vazia.** Em cascata levaria cartões e artes num clique;
+desactivar esconde sem perder nada, e a mensagem di-lo.
+
+**Preço por categoria, campo a campo.** Vazio vale o do projeto. Pode ter outro
+preço e o mesmo desconto sem repetir o desconto.
+
+**A migração foi escrita à mão.** O `migrate diff` acrescentava
+`categoriaId NOT NULL` a uma tabela já com modelos — falha na hora, e falharia em
+produção. A ordem certa é criar a categoria, acrescentar a coluna vazia,
+preenchê-la, e só depois torná-la obrigatória. Confirmado contra o schema com
+`migrate diff` (vazio) antes de aplicar.
+
+**O pedido guarda categoria, idioma e o limiar do desconto.** Os dois últimos
+eram defeitos que ainda não se tinham visto: o limiar estava escrito "2" na
+conta e o valor do painel era ignorado; e a geração do PDF não filtrava o
+idioma, por isso no dia das artes em inglês um pedido em português sairia com as
+duas línguas. A categoria faz o mesmo papel: sem ela, o PDF de uma criança
+levaria também os cartões dos adultos.
+
+**O ValidationPipe corre com `whitelist: true`, que APAGA em silêncio** todo o
+campo que o DTO não declara. O `idioma` do modelo ficou fora do `ModeloDto` num
+commit anterior: o painel mandava-o sem erro, e ele nunca chegava ao serviço. Ao
+acrescentar um campo a um formulário do painel, declará-lo no DTO não é opcional.
+
+**QR dos adultos.** Sete códigos novos em `qr-dos-cartoes.ts`. Os das crianças
+ficaram byte a byte iguais aos enviados ao designer em 10/09 — conferido com
+`cmp` — e o script recusa reaproveitar um código que já pertença a outro
+conteúdo, porque em produção há 26 letras com QR impressos.
+
+**O seed já não mexe nos destaques escolhidos.** Só preenche um destaque se
+estiver vazio; antes, correr o seed outra vez desfazia a escolha do cliente no
+painel, ou rebentava contra o `@unique` do campo.
+
 ### Privacidade: `CARTOES_DIR` NÃO é servida estaticamente
 
 `UPLOAD_DIR` é servida em `/uploads` — quem souber o endereço abre o ficheiro

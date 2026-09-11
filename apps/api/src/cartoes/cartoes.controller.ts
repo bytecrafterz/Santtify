@@ -6,6 +6,7 @@ import {
   Param,
   Patch,
   Post,
+  Query,
   Req,
   Res,
   UploadedFile,
@@ -32,7 +33,15 @@ import { TAMANHO_MAXIMO_FOTO } from './armazenamento-de-cartoes.service'
 import { AuthGuard, AuthOpcional } from '../identity/auth.guard'
 
 class CriarPedidoDto {
+  /**
+   * Quantas pessoas vão ter cartões. Chama-se `criancas` porque foi o primeiro
+   * nome e mudá-lo partia quem já chama esta rota; com as categorias passou a
+   * valer para qualquer público.
+   */
   @IsInt() @Min(1) @Max(10) criancas!: number
+  /** O slug da categoria: "criancas", "adultos". Vazio = a primeira com cartões. */
+  @IsOptional() @IsString() @MaxLength(80) categoria?: string
+  @IsOptional() @IsString() @MaxLength(10) idioma?: string
 }
 
 class ActualizarCriancaDto {
@@ -68,10 +77,23 @@ class EnviarPorEmailDto {
 export class CartoesController {
   constructor(private readonly cartoes: CartoesService) {}
 
-  /** Os modelos activos, com a geometria que a prévia precisa. */
+  /**
+   * As categorias com cartões para comprar: Crianças, Adultos, e as que o
+   * cliente criar no painel. Uma categoria sem cartões não aparece.
+   */
+  @Get('categorias')
+  categorias(@Param('projectSlug') projectSlug: string, @Query('idioma') idioma?: string) {
+    return this.cartoes.categorias(projectSlug, idioma || 'pt-BR')
+  }
+
+  /** Os modelos activos de uma categoria, com a geometria que a prévia precisa. */
   @Get('modelos')
-  modelos(@Param('projectSlug') projectSlug: string) {
-    return this.cartoes.modelos(projectSlug)
+  modelos(
+    @Param('projectSlug') projectSlug: string,
+    @Query('categoria') categoria?: string,
+    @Query('idioma') idioma?: string,
+  ) {
+    return this.cartoes.modelos(projectSlug, idioma || 'pt-BR', categoria || undefined)
   }
 
   /** O preço e o desconto em vigor, como o administrador os deixou. */
@@ -86,7 +108,13 @@ export class CartoesController {
     @Body() dto: CriarPedidoDto,
     @Req() req: Request,
   ) {
-    return this.cartoes.criarPedido(projectSlug, dto.criancas, req.usuario?.id)
+    return this.cartoes.criarPedido(
+      projectSlug,
+      dto.criancas,
+      req.usuario?.id,
+      dto.categoria,
+      dto.idioma || 'pt-BR',
+    )
   }
 
   @Get('pedidos/:pedidoId')

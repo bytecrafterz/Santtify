@@ -25,6 +25,7 @@ import {
   Max,
   MaxLength,
   Min,
+  IsUUID,
 } from 'class-validator'
 import { AdminGuard, AuthGuard } from '../identity/auth.guard'
 import { StorageService, TAMANHO_MAXIMO } from '../admin/storage.service'
@@ -54,6 +55,30 @@ class ModeloDto {
   @IsOptional() @IsNumber() @Min(1) @Max(80) nomeCorpoMinimo?: number
   @IsOptional() @IsNumber() @Min(1) @Max(80) nomeCorpoMaximo?: number
   @IsOptional() @IsBoolean() nomeMaiusculas?: boolean
+
+  /**
+   * DECLARADOS, e não é formalidade. O ValidationPipe corre com
+   * `whitelist: true`, que APAGA em silêncio todo o campo que o DTO não
+   * declara. O `idioma` ficou fora daqui num commit anterior e o painel
+   * mandava-o sem erro nenhum — só nunca chegava ao serviço.
+   */
+  @IsOptional() @IsUUID() categoriaId?: string
+  @IsOptional() @IsString() @MaxLength(10) idioma?: string
+}
+
+class CategoriaDto {
+  @IsOptional() @IsString() @MaxLength(80) nome?: string
+  @IsOptional() @IsString() @MaxLength(80) slug?: string
+  @IsOptional() @IsString() @MaxLength(300) descricao?: string | null
+  @IsOptional() @IsString() capaUrl?: string | null
+  @IsOptional() @IsString() @MaxLength(40) rotuloSingular?: string
+  @IsOptional() @IsString() @MaxLength(40) rotuloPlural?: string
+  @IsOptional() @IsBoolean() ativo?: boolean
+  @IsOptional() @IsInt() @Min(0) ordem?: number
+  /** `null` volta a usar o preço do projeto. */
+  @IsOptional() @IsInt() @Min(0) precoUnitarioCent?: number | null
+  @IsOptional() @IsInt() @Min(0) @Max(100) descontoPercentagem?: number | null
+  @IsOptional() @IsInt() @Min(1) descontoAPartirDe?: number | null
 }
 
 class PrecoDto {
@@ -156,6 +181,28 @@ export class AdminCartoesController {
     const medidas = await sharp(file.buffer).metadata()
     const salvo = await this.storage.salvar(file)
     return this.admin.definirArte(id, salvo, medidas.width ?? 0)
+  }
+
+  // ── Categorias ────────────────────────────────────────────────────
+
+  @Get('projects/:projectSlug/categorias-de-cartoes')
+  categorias(@Param('projectSlug') projectSlug: string) {
+    return this.admin.listarCategorias(projectSlug)
+  }
+
+  @Post('projects/:projectSlug/categorias-de-cartoes')
+  criarCategoria(@Param('projectSlug') projectSlug: string, @Body() dto: CategoriaDto) {
+    return this.admin.criarCategoria(projectSlug, dto)
+  }
+
+  @Patch('categorias-de-cartoes/:id')
+  actualizarCategoria(@Param('id') id: string, @Body() dto: CategoriaDto) {
+    return this.admin.actualizarCategoria(id, dto)
+  }
+
+  @Delete('categorias-de-cartoes/:id')
+  removerCategoria(@Param('id') id: string) {
+    return this.admin.removerCategoria(id)
   }
 
   // ── Preço e desconto ──────────────────────────────────────────────

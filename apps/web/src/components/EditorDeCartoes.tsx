@@ -11,6 +11,7 @@ import {
 } from '@pv/cartoes'
 import {
   cartoes,
+  type Categoria,
   type CriancaDoPedido,
   type ModeloDeCartao,
   type Pedido,
@@ -39,7 +40,7 @@ import { EntregaDosCartoes } from './EntregaDosCartoes'
  * Foi o que prometi ao cliente por escrito, duas vezes.
  */
 
-type Passo = 'quantidade' | 'fotos' | 'selecao' | 'pagamento' | 'editor' | 'pronto'
+type Passo = 'categoria' | 'quantidade' | 'fotos' | 'selecao' | 'pagamento' | 'editor' | 'pronto'
 
 /** Quanto tempo se espera antes de mandar um ajuste ao servidor. */
 const ESPERA_ANTES_DE_GRAVAR = 400
@@ -80,20 +81,60 @@ function guardarPedido(projeto: string, id: string | null) {
   }
 }
 
+/** "criança" -> "Criança", para os títulos das caixas. */
+function maiuscula(texto: string): string {
+  return texto ? texto.charAt(0).toLocaleUpperCase('pt-BR') + texto.slice(1) : texto
+}
+
 export function EditorDeCartoes({ projectSlug }: { projectSlug: string }) {
   const [modelos, definirModelos] = useState<ModeloDeCartao[]>([])
   const [pedido, definirPedido] = useState<Pedido | null>(null)
-  const [passo, definirPasso] = useState<Passo>('quantidade')
+  const [passo, definirPasso] = useState<Passo>('categoria')
   const [quantidade, definirQuantidade] = useState(1)
   const [activa, definirActiva] = useState<string | null>(null)
   const [modeloActivo, definirModeloActivo] = useState(0)
   const [erro, definirErro] = useState<string | null>(null)
   const [ocupado, definirOcupado] = useState<string | null>(null)
   const [ampliado, definirAmpliado] = useState(false)
+  const [categorias, definirCategorias] = useState<Categoria[] | null>(null)
+  const [categoria, definirCategoria] = useState<string | null>(null)
 
+  /**
+   * As categorias: Crianças, Adultos, e as que o cliente criar no painel.
+   *
+   * Com UMA só, o ecrã de escolha nem aparece — a mãe que chega para os
+   * cartões das crianças não tem de responder a uma pergunta que não existe.
+   * As actualizações são funcionais de propósito: se o pedido guardado for
+   * retomado primeiro, é ele que manda, e esta resposta não o atropela.
+   */
   useEffect(() => {
-    cartoes.modelos(projectSlug).then(definirModelos).catch(() => definirModelos([]))
+    let vivo = true
+    cartoes
+      .categorias(projectSlug)
+      .then((lista) => {
+        if (!vivo) return
+        definirCategorias(lista)
+        if (lista.length === 1) {
+          definirCategoria((actual) => actual ?? lista[0].slug)
+          definirPasso((actual) => (actual === 'categoria' ? 'quantidade' : actual))
+        }
+      })
+      .catch(() => {
+        if (vivo) definirCategorias([])
+      })
+    return () => {
+      vivo = false
+    }
   }, [projectSlug])
+
+  /** Os cartões DA categoria escolhida — os dos adultos não entram no editor das crianças. */
+  useEffect(() => {
+    if (!categoria) return
+    cartoes
+      .modelos(projectSlug, categoria)
+      .then(definirModelos)
+      .catch(() => definirModelos([]))
+  }, [projectSlug, categoria])
 
   /**
    * Retomar o pedido de quem já cá esteve.
@@ -114,6 +155,7 @@ export function EditorDeCartoes({ projectSlug }: { projectSlug: string }) {
           return
         }
         definirPedido(p)
+        definirCategoria(p.categoria?.slug ?? null)
         const porConfirmar = p.criancas.find((c) => c.selecionada && !c.confirmada)
         if (p.estado === 'RASCUNHO') {
           definirPasso(p.criancas.some((c) => c.aprovada) ? 'selecao' : 'fotos')
@@ -135,6 +177,19 @@ export function EditorDeCartoes({ projectSlug }: { projectSlug: string }) {
     [pedido, activa],
   )
 
+  /**
+   * Como o editor chama quem aparece nos cartões: "criança", "pessoa"...
+   *
+   * Vem da categoria, e é por isso que as frases do ecrã evitam o artigo e o
+   * género: "Quantas fotos?", "a foto de cada pessoa", "Pessoa 1". Uma frase
+   * como "Quantas crianças?" parte-se na primeira categoria de nome masculino —
+   * "Quantas casais?" — e a correcção seria um `if` por categoria.
+   */
+  const rotulo = useMemo(() => {
+    const actual = pedido?.categoria ?? categorias?.find((c) => c.slug === categoria) ?? null
+    return { um: actual?.rotuloSingular ?? 'criança' }
+  }, [pedido, categorias, categoria])
+
   const comErro = useCallback(async (chave: string, accao: () => Promise<void>) => {
     definirErro(null)
     definirOcupado(chave)
@@ -147,6 +202,58 @@ export function EditorDeCartoes({ projectSlug }: { projectSlug: string }) {
     }
   }, [])
 
+  // ── Passo 0: para quem são os cartões ───────────────────────────
+
+  if (passo === 'categoria') {
+    return (
+      <div className="editor-cartoes">
+        <Cabecalho />
+        <section className="cartoes-passo">
+          {categorias === null ? (
+            <p className="cartoes-ajuda">A carregar…</p>
+          ) : categorias.length === 0 ? (
+            <p className="cartoes-ajuda">
+              Os cartões ainda estão sendo preparados. Volte em breve.
+            </p>
+          ) : (
+            <>
+              <h2>Para quem são os cartões?</h2>
+              <ul className="cartoes-categorias">
+                {categorias.map((c) => (
+                  <li key={c.slug}>
+                    <button
+                      type="button"
+                      className="cartoes-categoria"
+                      onClick={() => {
+                        definirCategoria(c.slug)
+                        definirPasso('quantidade')
+                      }}
+                    >
+                      {c.capaUrl && (
+                        // eslint-disable-next-line @next/next/no-img-element
+                        <img src={c.capaUrl} alt="" />
+                      )}
+                      <strong>{c.nome}</strong>
+                      {c.descricao && <span>{c.descricao}</span>}
+                      <span className="cartoes-categoria-preco">
+                        {c.cartoes === 1 ? '1 cartão' : `${c.cartoes} cartões`} ·{' '}
+                        {(c.preco.precoUnitarioCent / 100).toLocaleString('pt-BR', {
+                          style: 'currency',
+                          currency: c.preco.moeda,
+                        })}{' '}
+                        por conjunto
+                      </span>
+                    </button>
+                  </li>
+                ))}
+              </ul>
+            </>
+          )}
+        </section>
+      </div>
+    )
+  }
+
   // ── Passo 1: quantas crianças ────────────────────────────────────
 
   if (passo === 'quantidade') {
@@ -154,16 +261,16 @@ export function EditorDeCartoes({ projectSlug }: { projectSlug: string }) {
       <div className="editor-cartoes">
         <Cabecalho />
         <section className="cartoes-passo">
-          <h2>Quantas crianças você quer cadastrar?</h2>
+          <h2>Quantas fotos você vai enviar?</h2>
           <p className="cartoes-ajuda">
-            Você envia uma foto para cada criança. Depois escolhe quais quer
+            Uma foto de cada {rotulo.um}. Depois você escolhe quais quer
             produzir — não precisa comprar todas.
           </p>
           <div className="cartoes-contador">
             <button
               type="button"
               onClick={() => definirQuantidade((q) => Math.max(1, q - 1))}
-              aria-label="Menos uma criança"
+              aria-label="Menos uma foto"
             >
               −
             </button>
@@ -171,7 +278,7 @@ export function EditorDeCartoes({ projectSlug }: { projectSlug: string }) {
             <button
               type="button"
               onClick={() => definirQuantidade((q) => Math.min(10, q + 1))}
-              aria-label="Mais uma criança"
+              aria-label="Mais uma foto"
             >
               +
             </button>
@@ -183,7 +290,7 @@ export function EditorDeCartoes({ projectSlug }: { projectSlug: string }) {
             disabled={ocupado !== null}
             onClick={() =>
               comErro('criar', async () => {
-                const novo = await cartoes.criarPedido(projectSlug, quantidade)
+                const novo = await cartoes.criarPedido(projectSlug, quantidade, categoria ?? undefined)
                 definirPedido(novo)
                 guardarPedido(projectSlug, novo.id)
                 definirPasso('fotos')
@@ -192,6 +299,15 @@ export function EditorDeCartoes({ projectSlug }: { projectSlug: string }) {
           >
             {ocupado === 'criar' ? 'A preparar…' : 'Continuar'}
           </button>
+          {categorias && categorias.length > 1 && (
+            <button
+              type="button"
+              className="cartoes-ligacao"
+              onClick={() => definirPasso('categoria')}
+            >
+              ← Escolher outra categoria
+            </button>
+          )}
         </section>
       </div>
     )
@@ -206,7 +322,7 @@ export function EditorDeCartoes({ projectSlug }: { projectSlug: string }) {
       <div className="editor-cartoes">
         <Cabecalho />
         <section className="cartoes-passo">
-          <h2>Envie a foto de cada criança</h2>
+          <h2>Envie a foto de cada {rotulo.um}</h2>
           <p className="cartoes-ajuda">
             Assim que a foto chega, verificamos se ela tem qualidade para
             impressão em A4. Uma foto recusada não impede as outras.
@@ -217,6 +333,7 @@ export function EditorDeCartoes({ projectSlug }: { projectSlug: string }) {
               <CaixaDaCrianca
                 key={c.id}
                 crianca={c}
+                rotuloUm={rotulo.um}
                 projectSlug={projectSlug}
                 pedidoId={pedido.id}
                 modelos={modelos}
@@ -256,7 +373,7 @@ export function EditorDeCartoes({ projectSlug }: { projectSlug: string }) {
         <section className="cartoes-passo">
           <h2>Quais você quer produzir agora?</h2>
           <p className="cartoes-ajuda">
-            Cada conjunto tem os {modelos.length || 7} cartões da criança.
+            Cada conjunto tem os {modelos.length || 7} cartões personalizados.
           </p>
 
           <ul className="cartoes-selecao">
@@ -306,7 +423,7 @@ export function EditorDeCartoes({ projectSlug }: { projectSlug: string }) {
                     alt=""
                     className="cartoes-miniatura-foto"
                   />
-                  <span>Criança {c.ordem}</span>
+                  <span>{maiuscula(rotulo.um)} {c.ordem}</span>
                 </label>
               </li>
             ))}
@@ -483,6 +600,22 @@ export function EditorDeCartoes({ projectSlug }: { projectSlug: string }) {
           O arquivo fica disponível por tempo limitado. Depois disso, a foto e o
           PDF são apagados dos nossos servidores.
         </p>
+        {/* Sem isto, o pedido guardado prendia-a: voltar à página retomava sempre
+            o mesmo pedido já pronto, e não havia forma de começar outro. */}
+        <button
+          type="button"
+          className="cartoes-accao-secundaria"
+          onClick={() => {
+            guardarPedido(projectSlug, null)
+            definirPedido(null)
+            definirActiva(null)
+            definirModeloActivo(0)
+            definirQuantidade(1)
+            definirPasso(categorias && categorias.length > 1 ? 'categoria' : 'quantidade')
+          }}
+        >
+          Fazer outro pedido
+        </button>
       </section>
     </div>
   )
@@ -493,8 +626,8 @@ function Cabecalho() {
     <header className="cartoes-cabecalho">
       <h1>Crie seu cartão personalizado</h1>
       <p>
-        Escolha um modelo, personalize com o nome e a foto da criança e tenha seu
-        cartão exclusivo.
+        Personalize com o nome e a foto e receba seus cartões prontos para
+        imprimir.
       </p>
     </header>
   )
@@ -540,6 +673,7 @@ function Resumo({ pedido }: { pedido: Pedido }) {
  */
 function CaixaDaCrianca({
   crianca,
+  rotuloUm,
   projectSlug,
   pedidoId,
   modelos,
@@ -549,6 +683,7 @@ function CaixaDaCrianca({
   aoErrar,
 }: {
   crianca: CriancaDoPedido
+  rotuloUm: string
   projectSlug: string
   pedidoId: string
   modelos: ModeloDeCartao[]
@@ -588,7 +723,9 @@ function CaixaDaCrianca({
 
   return (
     <li className={`cartoes-crianca cartoes-crianca-${estado}`}>
-      <span className="cartoes-crianca-titulo">Criança {crianca.ordem}</span>
+      <span className="cartoes-crianca-titulo">
+        {maiuscula(rotuloUm)} {crianca.ordem}
+      </span>
 
       {crianca.temFoto ? (
         <img
@@ -790,7 +927,7 @@ function Editor({
           <h2>2. Personalize</h2>
 
           <label className="cartoes-campo">
-            <span>Nome da criança</span>
+            <span>Nome que vai no cartão</span>
             <input
               type="text"
               value={nome}
@@ -932,7 +1069,7 @@ function Editor({
             }
           }}
         >
-          {ocupado === 'confirmar' ? 'A guardar…' : 'Aprovar esta criança'}
+          {ocupado === 'confirmar' ? 'A guardar…' : 'Aprovar estes cartões'}
         </button>
       </section>
     </>

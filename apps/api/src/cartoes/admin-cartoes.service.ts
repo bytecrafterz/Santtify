@@ -34,6 +34,33 @@ export interface CamposDoModelo {
   nomeCorpoMaximo?: number
   nomeMaiusculas?: boolean
   idioma?: string
+  categoriaId?: string
+}
+
+/** Os campos que o painel pode mexer numa categoria. */
+export interface CamposDaCategoria {
+  nome?: string
+  slug?: string
+  descricao?: string | null
+  capaUrl?: string | null
+  rotuloSingular?: string
+  rotuloPlural?: string
+  ativo?: boolean
+  ordem?: number
+  precoUnitarioCent?: number | null
+  descontoPercentagem?: number | null
+  descontoAPartirDe?: number | null
+}
+
+/** "Crianças Pequenas" -> "criancas-pequenas". */
+function paraSlug(texto: string): string {
+  return texto
+    .trim()
+    .toLowerCase()
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '')
+    .replace(/[^a-z0-9]+/g, '-')
+    .replace(/^-+|-+$/g, '')
 }
 
 /**
@@ -54,6 +81,119 @@ export class AdminCartoesService {
     private readonly storage: StorageService,
   ) {}
 
+  // ── Categorias ────────────────────────────────────────────────────
+
+  async listarCategorias(projectSlug: string) {
+    const projeto = await this.projeto(projectSlug)
+    const categorias = await this.prisma.categoriaDeCartoes.findMany({
+      where: { projectId: projeto.id },
+      orderBy: [{ ordem: 'asc' }, { nome: 'asc' }],
+      include: { _count: { select: { modelos: true, pedidos: true } } },
+    })
+    return categorias.map(({ _count, ...c }) => ({
+      ...c,
+      modelos: _count.modelos,
+      pedidos: _count.pedidos,
+    }))
+  }
+
+  /**
+   * Uma categoria nova.
+   *
+   * Os rótulos por omissão são "pessoa" e "pessoas", e não "criança". Uma
+   * categoria nova é quase de certeza para outro público — os Adultos foram a
+   * primeira — e o rótulo neutro nunca soa errado, enquanto "Quantas crianças?"
+   * num cartão para casais soa.
+   */
+  async criarCategoria(projectSlug: string, dados: CamposDaCategoria) {
+    const projeto = await this.projeto(projectSlug)
+    const nome = dados.nome?.trim()
+    if (!nome) throw new BadRequestException('Dê um nome à categoria.')
+
+    const slug = paraSlug(dados.slug ?? nome)
+    if (!slug) throw new BadRequestException('O nome precisa de ter pelo menos uma letra.')
+
+    const existente = await this.prisma.categoriaDeCartoes.findUnique({
+      where: { projectId_slug: { projectId: projeto.id, slug } },
+    })
+    if (existente) {
+      throw new BadRequestException(`Já existe a categoria "${existente.nome}" neste projeto.`)
+    }
+
+    const ultima = await this.prisma.categoriaDeCartoes.findFirst({
+      where: { projectId: projeto.id },
+      orderBy: { ordem: 'desc' },
+      select: { ordem: true },
+    })
+
+    return this.prisma.categoriaDeCartoes.create({
+      data: {
+        projectId: projeto.id,
+        slug,
+        nome,
+        descricao: dados.descricao ?? null,
+        capaUrl: dados.capaUrl ?? null,
+        rotuloSingular: dados.rotuloSingular?.trim() || 'pessoa',
+        rotuloPlural: dados.rotuloPlural?.trim() || 'pessoas',
+        ativo: dados.ativo ?? true,
+        ordem: dados.ordem ?? (ultima?.ordem ?? 0) + 1,
+        precoUnitarioCent: dados.precoUnitarioCent ?? null,
+        descontoPercentagem: dados.descontoPercentagem ?? null,
+        descontoAPartirDe: dados.descontoAPartirDe ?? null,
+      },
+    })
+  }
+
+  /**
+   * Muda uma categoria. O slug NÃO muda, de propósito: vai no endereço do
+   * editor, e um endereço partilhado no WhatsApp tem de continuar a abrir.
+   *
+   * O preço aceita `null` para voltar a usar o do projeto.
+   */
+  async actualizarCategoria(id: string, dados: CamposDaCategoria) {
+    const categoria = await this.prisma.categoriaDeCartoes.findUnique({ where: { id } })
+    if (!categoria) throw new NotFoundException('Categoria não encontrada.')
+
+    const campos = [
+      'nome', 'descricao', 'capaUrl', 'rotuloSingular', 'rotuloPlural', 'ativo', 'ordem',
+      'precoUnitarioCent', 'descontoPercentagem', 'descontoAPartirDe',
+    ] as const
+    const alteracoes: Record<string, unknown> = {}
+    for (const campo of campos) {
+      if (dados[campo] !== undefined) alteracoes[campo] = dados[campo]
+    }
+    if (typeof alteracoes.nome === 'string' && !alteracoes.nome.trim()) {
+      throw new BadRequestException('O nome da categoria não pode ficar vazio.')
+    }
+
+    return this.prisma.categoriaDeCartoes.update({ where: { id }, data: alteracoes })
+  }
+
+  /**
+   * Apagar só quando está vazia.
+   *
+   * Apagar em cascata levaria os cartões e as artes todas de uma vez, com um
+   * clique. Desactivar esconde a categoria sem perder nada, e é quase sempre o
+   * que se quer — a mensagem di-lo.
+   */
+  async removerCategoria(id: string) {
+    const categoria = await this.prisma.categoriaDeCartoes.findUnique({
+      where: { id },
+      include: { _count: { select: { modelos: true } } },
+    })
+    if (!categoria) throw new NotFoundException('Categoria não encontrada.')
+    if (categoria._count.modelos > 0) {
+      throw new BadRequestException(
+        `A categoria "${categoria.nome}" ainda tem ${categoria._count.modelos} cartão(ões). ` +
+          `Apague-os primeiro, ou desative a categoria para escondê-la sem perder nada.`,
+      )
+    }
+    await this.prisma.categoriaDeCartoes.delete({ where: { id } })
+    return { removida: true }
+  }
+
+  // ── Modelos ───────────────────────────────────────────────────────
+
   async listarModelos(projectSlug: string) {
     const projeto = await this.projeto(projectSlug)
     const modelos = await this.prisma.modeloDeCartao.findMany({
@@ -65,8 +205,9 @@ export class AdminCartoesService {
 
   async criarModelo(projectSlug: string, dados: CamposDoModelo) {
     const projeto = await this.projeto(projectSlug)
+    const categoria = await this.categoriaDoModelo(projeto.id, dados.categoriaId)
 
-    const dia = dados.dia ?? (await this.proximoDia(projeto.id))
+    const dia = dados.dia ?? (await this.proximoDia(categoria.id))
     /**
      * O slug leva o idioma quando não é o principal.
      *
@@ -91,6 +232,7 @@ export class AdminCartoesService {
     return this.prisma.modeloDeCartao.create({
       data: {
         projectId: projeto.id,
+        categoriaId: categoria.id,
         slug,
         dia,
         nome: dados.nome ?? `Dia ${dia}`,
@@ -320,9 +462,31 @@ export class AdminCartoesService {
     return projeto
   }
 
-  private async proximoDia(projectId: string) {
-    const ultimo = await this.prisma.modeloDeCartao.findFirst({
+  /**
+   * A categoria de um cartão novo. Tem de ser do mesmo projeto — sem esta
+   * conferência, um identificador trocado no painel punha um cartão das
+   * Crianças dentro de uma categoria de outro projeto.
+   */
+  private async categoriaDoModelo(projectId: string, categoriaId?: string) {
+    if (categoriaId) {
+      const categoria = await this.prisma.categoriaDeCartoes.findFirst({
+        where: { id: categoriaId, projectId },
+      })
+      if (!categoria) throw new BadRequestException('Esta categoria não pertence a este projeto.')
+      return categoria
+    }
+    const primeira = await this.prisma.categoriaDeCartoes.findFirst({
       where: { projectId },
+      orderBy: { ordem: 'asc' },
+    })
+    if (!primeira) throw new BadRequestException('Crie uma categoria antes de cadastrar cartões.')
+    return primeira
+  }
+
+  /** O próximo "Dia N" DENTRO da categoria: os Adultos começam no Dia 1. */
+  private async proximoDia(categoriaId: string) {
+    const ultimo = await this.prisma.modeloDeCartao.findFirst({
+      where: { categoriaId },
       orderBy: { dia: 'desc' },
       select: { dia: true },
     })

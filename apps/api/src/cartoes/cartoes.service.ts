@@ -55,10 +55,14 @@ export class CartoesService {
    * línguas entrarem, é este parâmetro que escolhe o conjunto — sem tocar em
    * mais nada.
    */
-  async modelos(projectSlug: string, idioma = 'pt-BR') {
+  async modelos(projectSlug: string, idioma = 'pt-BR', categoriaSlug?: string) {
     const projeto = await this.projeto(projectSlug)
+    const categoria = await this.categoriaEscolhida(projeto.id, categoriaSlug, idioma).catch(
+      () => null,
+    )
+    if (!categoria) return []
     const modelos = await this.prisma.modeloDeCartao.findMany({
-      where: { projectId: projeto.id, ativo: true, idioma },
+      where: { projectId: projeto.id, categoriaId: categoria.id, ativo: true, idioma },
       orderBy: [{ ordem: 'asc' }, { dia: 'asc' }],
     })
 
@@ -101,6 +105,89 @@ export class CartoesService {
     return this.precoDoProjeto(projeto.id)
   }
 
+  /**
+   * As categorias que o editor oferece: Crianças, Adultos, e as que vierem.
+   *
+   * Só aparecem as activas QUE TÊM pelo menos um cartão activo no idioma. É
+   * isso que permite ao cliente criar a categoria "Adultos" hoje, sem artes
+   * ainda: ela fica escondida até o primeiro cartão entrar, e aparece sozinha
+   * nesse dia. Uma categoria vazia no ecrã seria uma porta para lado nenhum.
+   */
+  async categorias(projectSlug: string, idioma = 'pt-BR') {
+    const projeto = await this.projeto(projectSlug)
+    const precoDoProjeto = await this.precoDoProjeto(projeto.id)
+    const categorias = await this.prisma.categoriaDeCartoes.findMany({
+      where: { projectId: projeto.id, ativo: true },
+      orderBy: [{ ordem: 'asc' }, { nome: 'asc' }],
+      include: { _count: { select: { modelos: { where: { ativo: true, idioma } } } } },
+    })
+
+    return categorias
+      .filter((c) => c._count.modelos > 0)
+      .map((c) => ({
+        slug: c.slug,
+        nome: c.nome,
+        descricao: c.descricao,
+        capaUrl: c.capaUrl,
+        rotuloSingular: c.rotuloSingular,
+        rotuloPlural: c.rotuloPlural,
+        cartoes: c._count.modelos,
+        preco: this.precoEfetivo(c, precoDoProjeto),
+      }))
+  }
+
+  /**
+   * A categoria de um pedido novo.
+   *
+   * Sem slug, vale a primeira categoria com cartões — é o que mantém a
+   * funcionar tudo o que foi escrito antes de haver categorias, incluindo os
+   * percursos de verificação.
+   */
+  private async categoriaEscolhida(projectId: string, slug: string | undefined, idioma: string) {
+    const categorias = await this.prisma.categoriaDeCartoes.findMany({
+      where: { projectId, ativo: true, ...(slug ? { slug } : {}) },
+      orderBy: [{ ordem: 'asc' }, { nome: 'asc' }],
+      include: { _count: { select: { modelos: { where: { ativo: true, idioma } } } } },
+    })
+    const comCartoes = categorias.find((c) => c._count.modelos > 0)
+    if (!comCartoes) {
+      throw new BadRequestException(
+        slug
+          ? 'Esta categoria ainda não tem cartões disponíveis.'
+          : 'Este projeto ainda não tem cartões cadastrados no painel.',
+      )
+    }
+    return comCartoes
+  }
+
+  /**
+   * O preço de uma categoria: o dela, se o tiver, senão o do projeto.
+   *
+   * Campo a campo, e não tudo ou nada. Os cartões de adultos podem ter outro
+   * preço e o mesmo desconto, e obrigar a repetir o desconto só para mudar o
+   * preço seria mais um sítio para os dois ficarem diferentes sem querer.
+   */
+  private precoEfetivo(
+    categoria: {
+      precoUnitarioCent: number | null
+      descontoPercentagem: number | null
+      descontoAPartirDe: number | null
+    },
+    projeto: {
+      precoUnitarioCent: number
+      descontoPercentagem: number
+      descontoAPartirDe: number
+      moeda: string
+    },
+  ) {
+    return {
+      precoUnitarioCent: categoria.precoUnitarioCent ?? projeto.precoUnitarioCent,
+      descontoPercentagem: categoria.descontoPercentagem ?? projeto.descontoPercentagem,
+      descontoAPartirDe: categoria.descontoAPartirDe ?? projeto.descontoAPartirDe,
+      moeda: projeto.moeda,
+    }
+  }
+
   private async precoDoProjeto(projectId: string) {
     const existente = await this.prisma.precoDeCartoes.findUnique({ where: { projectId } })
     if (existente) return existente
@@ -113,33 +200,34 @@ export class CartoesService {
   // O PEDIDO
   // ─────────────────────────────────────────────────────────────────
 
-  async criarPedido(projectSlug: string, quantidadeDeCriancas: number, userId?: string) {
-    if (quantidadeDeCriancas < 1 || quantidadeDeCriancas > MAXIMO_DE_CRIANCAS) {
-      throw new BadRequestException(`Escolha entre 1 e ${MAXIMO_DE_CRIANCAS} crianças.`)
+  async criarPedido(
+    projectSlug: string,
+    quantidade: number,
+    userId?: string,
+    categoriaSlug?: string,
+    idioma = 'pt-BR',
+  ) {
+    if (quantidade < 1 || quantidade > MAXIMO_DE_CRIANCAS) {
+      throw new BadRequestException(`Escolha entre 1 e ${MAXIMO_DE_CRIANCAS}.`)
     }
 
     const projeto = await this.projeto(projectSlug)
-    const preco = await this.precoDoProjeto(projeto.id)
-
-    const modelos = await this.prisma.modeloDeCartao.count({
-      where: { projectId: projeto.id, ativo: true },
-    })
-    if (modelos === 0) {
-      throw new BadRequestException(
-        'Este projeto ainda não tem modelos de cartão cadastrados no painel.',
-      )
-    }
+    const categoria = await this.categoriaEscolhida(projeto.id, categoriaSlug, idioma)
+    const preco = this.precoEfetivo(categoria, await this.precoDoProjeto(projeto.id))
 
     const pedido = await this.prisma.pedidoDeCartoes.create({
       data: {
         projectId: projeto.id,
+        categoriaId: categoria.id,
+        idioma,
         userId: userId ?? null,
         precoUnitarioCent: preco.precoUnitarioCent,
         descontoPercentagem: preco.descontoPercentagem,
+        descontoAPartirDe: preco.descontoAPartirDe,
         moeda: preco.moeda,
         expiraEm: this.daquiAHoras(this.horasAteAbandono),
         criancas: {
-          create: Array.from({ length: quantidadeDeCriancas }, (_, i) => ({ ordem: i + 1 })),
+          create: Array.from({ length: quantidade }, (_, i) => ({ ordem: i + 1 })),
         },
       },
       include: { criancas: { orderBy: { ordem: 'asc' } } },
@@ -160,6 +248,9 @@ export class CartoesService {
       include: {
         criancas: { orderBy: { ordem: 'asc' } },
         project: { select: { slug: true } },
+        categoria: {
+          select: { slug: true, nome: true, rotuloSingular: true, rotuloPlural: true },
+        },
       },
     })
     if (!pedido) throw new NotFoundException('Pedido não encontrado.')
@@ -167,12 +258,14 @@ export class CartoesService {
     const preco = calcularPreco(pedido.criancas.filter((c) => c.selecionada).length, {
       precoUnitarioCent: pedido.precoUnitarioCent,
       descontoPercentagem: pedido.descontoPercentagem,
-      descontoAPartirDe: 2,
+      descontoAPartirDe: pedido.descontoAPartirDe,
     })
 
     return {
       id: pedido.id,
       projectSlug: pedido.project.slug,
+      categoria: pedido.categoria,
+      idioma: pedido.idioma,
       estado: pedido.estado,
       moeda: pedido.moeda,
       preco,
@@ -215,7 +308,7 @@ export class CartoesService {
   async enviarFoto(pedidoId: string, criancaId: string, ficheiro: Express.Multer.File) {
     const { pedido, crianca } = await this.criancaEditavel(pedidoId, criancaId)
 
-    const moldura = await this.molduraDeReferencia(pedido.projectId)
+    const moldura = await this.molduraDeReferencia(pedido.projectId, pedido.categoriaId, pedido.idioma)
     const guardada = await this.armazenamento.guardarFoto(pedidoId, criancaId, ficheiro)
 
     const veredicto = avaliarFoto(
@@ -352,7 +445,7 @@ export class CartoesService {
       dados.escala !== undefined || dados.deslocX !== undefined || dados.deslocY !== undefined
 
     if (mexeuNoEnquadramento && crianca.fotoLargura && crianca.fotoAltura) {
-      const moldura = await this.molduraDeReferencia(pedido.projectId)
+      const moldura = await this.molduraDeReferencia(pedido.projectId, pedido.categoriaId, pedido.idioma)
       const veredicto = avaliarFoto(
         { largura: moldura.fotoLargura, altura: moldura.fotoAltura },
         { largura: crianca.fotoLargura, altura: crianca.fotoAltura },
@@ -372,7 +465,7 @@ export class CartoesService {
           throw new BadRequestException('Não é possível aprovar sem uma foto aprovada.')
         }
         if (!nomeFinal.trim()) {
-          throw new BadRequestException('Escreva o nome da criança antes de aprovar.')
+          throw new BadRequestException('Escreva o nome antes de aprovar.')
         }
       }
       alteracoes.confirmada = dados.confirmada
@@ -409,7 +502,7 @@ export class CartoesService {
     const preco = calcularPreco(pedido.criancas.filter((c) => c.selecionada).length, {
       precoUnitarioCent: pedido.precoUnitarioCent,
       descontoPercentagem: pedido.descontoPercentagem,
-      descontoAPartirDe: 2,
+      descontoAPartirDe: pedido.descontoAPartirDe,
     })
 
     await this.prisma.pedidoDeCartoes.update({
@@ -438,7 +531,7 @@ export class CartoesService {
 
     const escolhidas = pedido.criancas.filter((c) => c.selecionada && c.aprovada)
     if (escolhidas.length === 0) {
-      throw new BadRequestException('Escolha pelo menos uma criança aprovada antes de pagar.')
+      throw new BadRequestException('Escolha pelo menos uma foto aprovada antes de pagar.')
     }
 
     await this.recalcularTotais(pedidoId)
@@ -572,14 +665,26 @@ export class CartoesService {
       throw new ForbiddenException('O ficheiro só é gerado depois do pagamento confirmado.')
     }
     if (!crianca.fotoPath || !crianca.fotoLargura || !crianca.fotoAltura) {
-      throw new BadRequestException('Esta criança ainda não tem foto.')
+      throw new BadRequestException('Ainda não há foto enviada.')
     }
 
     const foto = await this.armazenamento.ler(crianca.fotoPath)
     if (!foto) throw new NotFoundException('A foto já não está disponível.')
 
+    /**
+     * SÓ os cartões da categoria e do idioma que foram comprados.
+     *
+     * Sem este filtro, no dia em que existissem os cartões de adultos, o PDF de
+     * uma criança sairia com catorze folhas — as dela e as dos adultos. E no dia
+     * das artes em inglês, com as duas línguas misturadas.
+     */
     const modelos = await this.prisma.modeloDeCartao.findMany({
-      where: { projectId: crianca.pedido.projectId, ativo: true },
+      where: {
+        projectId: crianca.pedido.projectId,
+        ativo: true,
+        idioma: crianca.pedido.idioma,
+        ...(crianca.pedido.categoriaId ? { categoriaId: crianca.pedido.categoriaId } : {}),
+      },
       orderBy: [{ ordem: 'asc' }, { dia: 'asc' }],
     })
 
@@ -754,7 +859,7 @@ export class CartoesService {
       where: { id: criancaId, pedidoId },
     })
     if (!crianca?.fotoPath || !crianca.fotoLargura || !crianca.fotoAltura) {
-      throw new NotFoundException('Esta criança ainda não tem foto.')
+      throw new NotFoundException('Ainda não há foto enviada.')
     }
 
     const modelo = await this.prisma.modeloDeCartao.findUnique({ where: { id: modeloId } })
@@ -912,9 +1017,13 @@ export class CartoesService {
    * contra a MAIOR moldura activa — a mais exigente — e o veredicto vale para
    * todos.
    */
-  private async molduraDeReferencia(projectId: string) {
+  private async molduraDeReferencia(
+    projectId: string,
+    categoriaId: string | null,
+    idioma: string,
+  ) {
     const modelos = await this.prisma.modeloDeCartao.findMany({
-      where: { projectId, ativo: true },
+      where: { projectId, ativo: true, idioma, ...(categoriaId ? { categoriaId } : {}) },
       select: { fotoLargura: true, fotoAltura: true },
     })
     if (modelos.length === 0) {
