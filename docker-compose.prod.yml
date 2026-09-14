@@ -47,6 +47,14 @@ services:
       PUBLIC_API_URL: https://${DOMINIO}
       PUBLIC_SHORTLINK_BASE: https://${DOMINIO}/r
       UPLOAD_DIR: /app/uploads
+      # Fotos das crianças e PDFs dos cartões, enquanto duram. SEM ESTA LINHA a
+      # API cai no caminho por omissão, que dentro do contentor resolve para
+      # /cartoes-temporarios — uma pasta da raiz onde o utilizador `pv` não
+      # escreve —, e o primeiro envio de foto em produção falharia. A pasta
+      # certa é a que o Dockerfile cria e entrega ao `pv`.
+      CARTOES_DIR: /app/cartoes-temporarios
+      CARTOES_DIAS_ATE_EXPURGO: ${CARTOES_DIAS_ATE_EXPURGO:-7}
+      CARTOES_HORAS_ATE_ABANDONO: ${CARTOES_HORAS_ATE_ABANDONO:-48}
       GEOIP_PAIS_DB: /app/geo/dbip-country-lite.mmdb
       GEOIP_CIDADE_DB: /app/geo/dbip-city-lite.mmdb
       # Envio de e-mail. Estar no .env.production NÃO CHEGA: o `--env-file` só
@@ -60,6 +68,12 @@ services:
       # Volume nomeado: as músicas e áudios do cliente sobrevivem a
       # `docker compose down` e a qualquer rebuild da imagem.
       - uploads:/app/uploads
+      # Volume próprio para as fotos e PDFs dos cartões. Sem ele, cada
+      # publicação apagava os ficheiros dos pedidos já pagos e ainda por
+      # descarregar. Fica FORA do backup de propósito: são fotos de crianças
+      # com prazo de expurgo, e uma cópia de segurança guardava-as para além
+      # dele.
+      - cartoes_temporarios:/app/cartoes-temporarios
       # A base de países, só de leitura. Fica no servidor e não na imagem: é
       # mensal, e reconstruir a imagem a cada actualização seria absurdo.
       - ./geo:/app/geo:ro
@@ -123,6 +137,7 @@ services:
 volumes:
   pgdata:
   uploads:
+  cartoes_temporarios:
   backups:
   caddy_data:
   caddy_config:

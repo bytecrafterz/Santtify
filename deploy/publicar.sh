@@ -253,7 +253,7 @@ cat <<FIM
 
   Publicado em https://$DOMINIO
 
-  Se este for o PRIMEIRO deploy, faltam dois passos que não são automáticos
+  Se este for o PRIMEIRO deploy, faltam passos que não são automáticos
   de propósito:
 
     1. Criar o conteúdo inicial (projeto e as 26 letras):
@@ -261,6 +261,17 @@ cat <<FIM
 
     2. Criar o administrador do cliente:
          $COMPOSE exec api npx tsx packages/db/prisma/criar-admin.ts email@dele.com
+
+    3. Criar os cartões personalizados (projeto, categorias Crianças e
+       Adultos, os 7 modelos e o preço inicial). Não mexe nos destaques que
+       o cliente já tiver escolhido no painel:
+         $COMPOSE exec api npx tsx packages/db/prisma/modelos-de-cartao.ts
+
+    4. Reservar os códigos dos QR Codes que já estão nas artes. Sem isto, os
+       QR impressos abrem uma página de erro. Os SVG saem para uma pasta
+       temporária do contentor e copiam-se para o servidor:
+         $COMPOSE exec api npx tsx packages/db/prisma/qr-dos-cartoes.ts /tmp/qr-dos-cartoes
+         $COMPOSE cp api:/tmp/qr-dos-cartoes ./qr-dos-cartoes
 
   E ANTES de divulgar para o público, zere a operação para o Dia Zero começar
   limpo (preserva QR Codes, conteúdo e administradores):

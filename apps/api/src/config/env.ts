@@ -68,10 +68,28 @@ const schema = z.object({
   MAIL_REMETENTE_NOME: z.string().default('Santtify'),
 })
 
+/**
+ * Em produção a pasta das fotos dos cartões é OBRIGATÓRIA.
+ *
+ * Sem ela, a API cai no caminho por omissão, que dentro do contentor resolve
+ * para /cartoes-temporarios — uma pasta onde o utilizador da API não escreve.
+ * O processo subia normalmente e só rebentava no primeiro envio de foto de uma
+ * mãe. Falhar aqui, na subida, é o mesmo princípio do resto deste ficheiro.
+ */
+const schemaComRegras = schema.superRefine((env, ctx) => {
+  if (env.NODE_ENV === 'production' && !env.CARTOES_DIR) {
+    ctx.addIssue({
+      code: z.ZodIssueCode.custom,
+      path: ['CARTOES_DIR'],
+      message: 'obrigatória em produção (ver docker-compose.prod.yml)',
+    })
+  }
+})
+
 export type Env = z.infer<typeof schema>
 
 export function validateEnv(raw: Record<string, unknown>): Env {
-  const parsed = schema.safeParse(raw)
+  const parsed = schemaComRegras.safeParse(raw)
   if (!parsed.success) {
     const detalhes = parsed.error.issues
       .map((i) => `  ${i.path.join('.')}: ${i.message}`)
