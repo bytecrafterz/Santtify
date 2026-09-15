@@ -1607,15 +1607,34 @@ h3 {
   resize: vertical;
 }
 
-/* A arte da letra, no topo da página do conteúdo. */
+/*
+  A arte da letra, no topo da página do conteúdo.
+
+  O TETO DE ALTURA FICA, O `contain` SAI. A arte é retrato A4 e sem teto ocupava
+  a tela inteira do telemóvel, deixando o botão de tocar abaixo da dobra — e quem
+  chega pelo QR Code vem ouvir. Isso continua verdade.
+
+  O que estava errado era o `contain` por baixo do teto. A arte dele é 1200x1698:
+  numa coluna de 350px pede 495px de altura, o teto corta-a a 439px, e o
+  `contain` encolhia a imagem até caber pela ALTURA — 310px de largura dentro de
+  uma caixa de 350px. Sobravam 20px de fundo claro de cada lado.
+
+  Ele apanhou-o em 15/09, e a frase é exacta: "a imagem não está cobrindo
+  completamente a área branca como as outras". Só a Letra A tem capa própria
+  (`Content.coverUrl`); as outras 25 nem desenham este elemento, e por isso
+  ninguém tinha visto.
+
+  `cover` enche a caixa e `top` decide de onde se corta: a arte dele tem sempre a
+  letra, a palavra e o logótipo em cima e cenário em baixo, como já ficou
+  decidido nas miniaturas em 06/09. Corta-se chão, não o título.
+*/
 .capa-conteudo {
   display: block;
   width: 100%;
   height: auto;
-  /* A arte é retrato A4. Sem teto, ela ocuparia a tela inteira do celular e o
-     botão de tocar ficaria abaixo da dobra — e quem chega pelo QR vem ouvir. */
   max-height: 52vh;
-  object-fit: contain;
+  object-fit: cover;
+  object-position: top;
   border-radius: 12px;
   margin: 12px 0 4px;
   background: var(--cor-fundo);
