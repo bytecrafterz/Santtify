@@ -48,6 +48,10 @@
   --cor-acao: #16a34a;
   --cor-acao-escura: #15803d;
   --cor-tocar: #7c3aed;
+  /* O anel da letra escolhida. Separado de --cor-tocar de propósito: essa
+     clareia no modo escuro para o texto azul-lilás se ler, e num anel à volta
+     de uma arte essa mesma cor clara lê-se como moldura branca. */
+  --cor-escolhida: #7c3aed;
   --cor-alerta: #dc2626;
   --cor-pv: #16a34a;
 
@@ -70,6 +74,7 @@
     --cor-acao: #22c55e;
     --cor-acao-escura: #16a34a;
     --cor-tocar: #a78bfa;
+    --cor-escolhida: #8b5cf6;
   }
 }
 
@@ -2882,11 +2887,33 @@ button.escudo {
   flex: 0 0 auto;
 }
 
-/* A letra escolhida fica marcada na grade, senão depois de rolar a pessoa não
-   sabe qual delas abriu. */
+/*
+  A letra escolhida fica marcada na grade, senão depois de rolar a pessoa não
+  sabe qual delas abriu. Isso fica.
+
+  O QUE MUDA É ONDE O ANEL É DESENHADO, E DE QUE COR.
+
+  Era um anel de 3px desenhado POR DENTRO da casa (`outline-offset: -3px`), por
+  cima da borda da arte, na cor `--cor-tocar` — que no modo escuro passa a ser
+  um lilás claro (#a78bfa). Medido em 17/09 num ecrã escuro: a borda da casa
+  escolhida tinha luminosidade 185, e a de todas as outras 51. Numa página
+  escura isso é uma moldura quase branca, e a arte parece recuada lá dentro.
+
+  Ele descreveu-o três vezes, e eu li mal duas. Em 15/09 ("a letra A está
+  desalinhada, não está cobrindo a área branca como as outras") corrigi a capa
+  da PÁGINA da Letra A, que tinha de facto barras claras, mas não era isso. "Como
+  as outras" só se compara na GRADE, onde as letras estão lado a lado. Em 17/09
+  ("ainda está aparecendo a parte branca") a captura dele já estava em modo
+  escuro, e a Letra A era a escolhida.
+
+  Agora o anel fica POR FORA (a arte tem exactamente o mesmo enquadramento das
+  outras) e numa cor própria, `--cor-escolhida`, que no escuro continua a ser
+  roxo e não quase branco. Cabe no espaço entre as casas: a grelha tem 0,6rem de
+  intervalo e não corta nada.
+*/
 .letra-bloco.escolhida {
-  outline: 3px solid var(--cor-tocar);
-  outline-offset: -3px;
+  outline: 2px solid var(--cor-escolhida);
+  outline-offset: 2px;
 }
 
 /* O bloco da letra passou a ser botão nalguns sítios: sem isto herda o
