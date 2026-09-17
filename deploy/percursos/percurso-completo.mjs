@@ -28,20 +28,37 @@ try {
 p_('1. ENTRAR', !pg.url().includes('/cadastrar'))
 
 // 2. PERFIL
-await pg.goto(`${SITE}/${PROJ}/perfil`,{waitUntil:'domcontentloaded'});await pg.waitForTimeout(3500);await limpar()
-p_('2. PERFIL abre com a pessoa la dentro', (await pg.textContent('h1'))?.includes(NOME.split(' ')[0]) || !!(await pg.$('.voltar-do-perfil')))
+// Desde 17/09 "Meu Perfil" (/perfil) abre o proprio perfil visto de fora
+// (/pessoa/<id>). A pagina de definicoes antiga que aqui se media — o segundo
+// avatar, os quatro numeros, o "Editar perfil" no corpo — foi o que ele pediu
+// para tirar tres vezes, e saiu. Este percurso media essa pagina.
+await pg.goto(`${SITE}/${PROJ}/perfil`,{waitUntil:'domcontentloaded'})
+await pg.waitForURL(/\/pessoa\//,{timeout:20000}).catch(()=>{})
+await pg.waitForSelector('.perfil-capa',{timeout:20000}).catch(()=>{})
+await pg.waitForTimeout(1500);await limpar()
+p_('2. PERFIL abre o proprio perfil visto de fora', /\/pessoa\//.test(pg.url()), pg.url().replace(SITE,''))
+// O criarConta troca os digitos do nome por letras (a regua recusa numeros), e
+// por isso "Item8" fica gravado como "Itemi". Antes isto passava sempre por um
+// "||" que aceitava o link de voltar da pagina antiga, e nunca olhou para o nome.
+const primeiroNome = NOME.split(' ')[0].replace(/\d/g, (d) => 'abcdefghij'[Number(d)])
+p_('2. PERFIL tem a pessoa la dentro', ((await pg.textContent('.nome-no-retrato h1').catch(()=>''))??'').includes(primeiroNome), primeiroNome)
+p_('2. PERFIL sem a pagina de definicoes antiga', !/Conteúdos que você abriu|Vezes que você compartilhou/i.test(await pg.textContent('body')))
 
 // 3. VOLTAR
-await pg.click('.voltar-do-perfil');await pg.waitForTimeout(2500)
+await pg.click('.cabecalho a');await pg.waitForTimeout(2500)
 p_('3. VOLTAR sai do perfil', pg.url().endsWith(`/${PROJ}`), pg.url().replace(SITE,''))
 
 // 4. EDITAR -> SALVAR
-await pg.goto(`${SITE}/${PROJ}/perfil`,{waitUntil:'domcontentloaded'});await pg.waitForTimeout(3500);await limpar()
-// A edicao tem pagina propria desde 29/08: /perfil/editar. O atalho no perfil
-// e um link e nao um botao que abre um formulario ali mesmo.
-const abrirEditar = await pg.$('a[href$="/perfil/editar"]')
-p_('4. EDITAR: o atalho para a pagina de edicao existe', !!abrirEditar)
-if(abrirEditar){await abrirEditar.scrollIntoViewIfNeeded();await abrirEditar.click();await pg.waitForTimeout(3500);await limpar()}
+// Editar vive no menu ⋮ do proprio perfil, ao lado de Sair da conta.
+await pg.goto(`${SITE}/${PROJ}/perfil`,{waitUntil:'domcontentloaded'})
+await pg.waitForURL(/\/pessoa\//,{timeout:20000}).catch(()=>{})
+await pg.waitForSelector('button.tres-pontos-capa',{timeout:20000}).catch(()=>{})
+await pg.waitForTimeout(1200);await limpar()
+await pg.click('button.tres-pontos-capa').catch(()=>{});await pg.waitForTimeout(800)
+const abrirEditar = await pg.$('.menu-da-capa a[href$="/perfil/editar"]')
+p_('4. EDITAR: o atalho esta no menu do proprio perfil', !!abrirEditar)
+p_('4. SAIR: tambem esta no menu', !!(await pg.$('.menu-da-capa button:has-text("Sair da conta")')))
+if(abrirEditar){await abrirEditar.click();await pg.waitForTimeout(3500);await limpar()}
 p_('4. EDITAR: abre em pagina propria', pg.url().endsWith('/perfil/editar'), pg.url().replace(SITE,''))
 // Pelo id: desde que o campo do @identificador entrou nesta pagina, "o
 // primeiro input de texto" deixou de querer dizer "o nome".
@@ -55,8 +72,9 @@ if(campoNome){
   const visivel = gravar ? await gravar.isVisible() : false
   p_('5. SALVAR esta a vista sem procurar', visivel)
   await gravar.click();await pg.waitForTimeout(6000)
-  p_('5. SALVAR devolve ao perfil publico sozinho', pg.url().endsWith('/perfil'), pg.url().replace(SITE,''))
-  await pg.waitForTimeout(500);await limpar()
+  // Devolve a onde estava, e desde 17/09 isso e o proprio perfil visto de fora.
+  p_('5. SALVAR devolve ao perfil publico sozinho', /\/pessoa\//.test(pg.url()), pg.url().replace(SITE,''))
+  await pg.waitForTimeout(3000);await limpar()
   const guardou = (await pg.textContent('body'))?.includes('editado')
   p_('5. SALVAR guardou mesmo', !!guardou)
 }

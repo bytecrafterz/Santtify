@@ -143,15 +143,25 @@ export function EditarPerfil({
         e fica guardada 30 segundos. Era isso que o fazia dizer que "muitas
         vezes" continuava a ver a imagem antiga: dependia dos segundos.
 
-        Sem `await`: isto é limpeza, não faz parte de gravar. Se falhar, o
-        máximo que acontece é a página velha durar os tais 30 segundos, que é
-        exactamente o que acontecia antes.
+        Não faz parte de gravar: se falhar, o máximo que acontece é a página
+        velha durar os tais 30 segundos.
       */
-      void fetch('/revalidar', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ projectSlug, userId: novo.user.id }),
-      }).catch(() => {})
+      /*
+        ESPERA-SE, COM TECTO. Até 17/09 isto não era esperado, e não fazia
+        mal enquanto gravar devolvia a `/perfil`, que ia buscar o perfil ao
+        navegador. Desde que "Meu Perfil" é o perfil visto de fora, gravar
+        volta a uma página desenhada no servidor, e voltar antes de ela ser
+        esquecida mostrava o nome antigo. Dois segundos e meio chegam de sobra;
+        se passar disso, segue-se na mesma, que é o comportamento de antes.
+      */
+      await Promise.race([
+        fetch('/revalidar', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ projectSlug, userId: novo.user.id }),
+        }).catch(() => {}),
+        new Promise((r) => setTimeout(r, 2500)),
+      ])
 
       /*
         NUMA PÁGINA SÓ DE EDIÇÃO, QUEM SAI É O `aoGravar`, E SÓ ELE.
