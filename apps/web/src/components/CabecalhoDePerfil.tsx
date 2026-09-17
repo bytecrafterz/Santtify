@@ -10,6 +10,7 @@ import { PainelDePessoas } from './PainelDePessoas'
 import { ListaDePessoas } from './ListaDePessoas'
 import { rastrear } from '@/lib/track'
 import { useAuth } from './ProvedorDeAuth'
+import { useRouter } from 'next/navigation'
 import { abreviar } from '@/lib/numeros'
 import { BotaoDenunciar } from './BotaoDenunciar'
 import { OlhoGrande, CoracaoGrande, BalaoGrande, SetaGrande } from './IconesGrandes'
@@ -76,7 +77,8 @@ export function CabecalhoDePerfil({
    */
   pessoa?: PerfilAnfitriao | null
 }) {
-  const { usuario, visitante } = useAuth()
+  const { usuario, visitante, sair } = useAuth()
+  const router = useRouter()
 
   /**
    * DE QUEM É ESTE PERFIL.
@@ -323,11 +325,25 @@ export function CabecalhoDePerfil({
                 a procura quando a quer.
               */}
               {souOAnfitriao ? (
-                <Link href={`/${projectSlug}/perfil/editar`}>✎ Editar perfil</Link>
+                <>
+                  <Link href={`/${projectSlug}/perfil/editar`}>✎ Editar perfil</Link>
+                  {/* SAIR MORA AQUI desde 17/09, ao lado de Editar. Vivia num
+                      bloco empilhado por baixo do perfil, que era o que sobrava
+                      da página de definições antiga, e esse bloco saiu. */}
+                  <button
+                    type="button"
+                    className="linha-menu-capa"
+                    onClick={async () => {
+                      definirOpcoesAbertas(false)
+                      await sair()
+                      router.push(`/${projectSlug}`)
+                    }}
+                  >
+                    ↩ Sair da conta
+                  </button>
+                </>
               ) : temConta ? (
-                <Link href={`/${projectSlug}/pessoa/${usuario?.id ?? ''}`}>
-                  👤 O meu perfil
-                </Link>
+                <Link href={`/${projectSlug}/pessoa/${usuario?.id ?? ''}`}>👤 O meu perfil</Link>
               ) : (
                 <Link href={`/${projectSlug}/instalar`}>👤 Criar o meu perfil</Link>
               )}

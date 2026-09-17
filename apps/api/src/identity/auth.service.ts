@@ -213,11 +213,33 @@ export class AuthService {
 
     // Mesma mensagem para e-mail inexistente e senha errada: não entregamos
     // a quem tenta adivinhar a informação de que a conta existe.
+    /*
+      O MOTIVO FICA NO REGISTO DO SERVIDOR, e só lá.
+
+      A pessoa continua a ler a mesma frase para os dois casos. Mas em 17/09 ele
+      escreveu "a minha senha apareceu errada" e depois "o e-mail não é
+      reconhecido", e não havia nada no servidor que dissesse qual das duas
+      coisas aconteceu, nem com que endereço. Respondi-lhe com deduções.
+
+      O endereço vai mascarado (primeira letra e domínio): chega para
+      reconhecer um engano de digitação ou um endereço trocado, e não deixa o
+      endereço inteiro nos registos. A senha nunca é escrita, nem em parte.
+    */
+    const mascarado = email.replace(
+      /^(.)[^@]*(@.*)?$/,
+      (_m, a: string, d?: string) => `${a}***${d ?? ''}`,
+    )
     if (!user || user.status !== 'ACTIVE') {
+      this.logger.warn(
+        `Entrada recusada: ${mascarado} — ${user ? `conta ${user.status}` : 'não existe conta com este e-mail'}`,
+      )
       throw new UnauthorizedException('E-mail ou senha inválidos')
     }
     const senhaConfere = await argon2.verify(user.passwordHash, dados.password)
-    if (!senhaConfere) throw new UnauthorizedException('E-mail ou senha inválidos')
+    if (!senhaConfere) {
+      this.logger.warn(`Entrada recusada: ${mascarado} — senha não confere (conta ${user.id})`)
+      throw new UnauthorizedException('E-mail ou senha inválidos')
+    }
 
     const visita = await this.attribution.resolveVisit({ ...ctx, userId: user.id })
 

@@ -75,7 +75,7 @@ export function AvisoDeIdentidade({
           quem está a falar.
         </p>
 
-        <a className="botao-acao largo" href={`/${projectSlug}/perfil`} onClick={fechar}>
+        <a className="botao-acao largo" href={`/${projectSlug}/perfil/editar`} onClick={fechar}>
           COLOCAR A MINHA FOTOGRAFIA
         </a>
         <button type="button" className="folha-sair" onClick={fechar}>

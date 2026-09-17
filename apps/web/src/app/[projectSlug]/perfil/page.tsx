@@ -1,31 +1,18 @@
-import { notFound } from 'next/navigation'
-import { api } from '@/lib/api'
-import { CabecalhoDePerfil } from '@/components/CabecalhoDePerfil'
-import { VoltarParaOInicio } from '@/components/VoltarParaOInicio'
-import { PainelDePerfil } from '@/components/PainelDePerfil'
-import { IntroducaoEmCartoes } from '@/components/IntroducaoEmCartoes'
-import { ExperienciaContinua } from '@/components/ExperienciaContinua'
-import { IntroducaoRecolhivel } from '@/components/IntroducaoRecolhivel'
-import { BarraInferior } from '@/components/BarraInferior'
-import { BannerDeConsentimento } from '@/components/BannerDeConsentimento'
-import { AvisoDeIdentidade } from '@/components/AvisoDeIdentidade'
+import { IrParaOMeuPerfil } from '@/components/IrParaOMeuPerfil'
 
 // O `<title>` é o nome da aplicação: o iPhone usa-o ao instalar.
 export const metadata = { title: 'Santtify' }
 
 /**
- * O perfil de quem entrou — com a MESMA estrutura da página inicial.
+ * O perfil de quem entrou.
  *
- * O que aqui estava era uma página de definições: um avatar de letra, quatro
- * números e três botões. Uma pessoa registou-se a sério em 25/08, não encontrou
- * o próprio perfil, não encontrou como pôr a fotografia, e ele apanhou-o antes
- * de mim. A frase dele é a especificação inteira: "cadastrou, entrou, vê o
- * próprio perfil, consegue editar nome e foto, e abaixo encontra todo o
- * conteúdo da plataforma".
+ * É o mesmo ecrã que qualquer outra pessoa vê desse perfil, e não uma página à
+ * parte. Duas estruturas para a mesma coisa divergem sempre, e a que diverge é a
+ * que menos gente vê: foi assim que a página de definições antiga ficou
+ * empilhada aqui até 17/09. Ver `IrParaOMeuPerfil`.
  *
- * Por isso esta página é a inicial com outra pessoa no topo, e não uma página à
- * parte. Foi a página à parte que criou o problema: duas estruturas para a mesma
- * coisa divergem sempre, e a que diverge é a que menos gente vê.
+ * A sessão só existe no navegador, por isso a decisão é tomada lá: com sessão,
+ * vai para o próprio perfil; sem sessão, vai entrar e volta aqui.
  */
 export default async function PaginaDePerfil({
   params,
@@ -33,83 +20,9 @@ export default async function PaginaDePerfil({
   params: Promise<{ projectSlug: string }>
 }) {
   const { projectSlug } = await params
-  const dados = await api.indice(projectSlug)
-  if (!dados) notFound()
-
-  const { project, contents, progresso, comunidade } = dados
-
-  const semLetra = contents.find((c) => !c.letra && c.publicado)
-  const introducao = semLetra
-    ? await api.conteudo(projectSlug, semLetra.slug).catch(() => null)
-    : null
-
-  // As categorias que ele criou no painel, para o filtro do tocador.
-  const cats = await api.categorias(projectSlug).catch(() => null)
-
   return (
     <main className="envoltorio com-barra">
-      <VoltarParaOInicio projectSlug={projectSlug} />
-
-      {/* O topo é o perfil de quem entrou: foto, escudo, três pontos e os
-          quatro indicadores. Os três pontos levam a editar. */}
-      <CabecalhoDePerfil
-        projectSlug={projectSlug}
-        projectId={project.id}
-        perfisCriados={comunidade.perfis}
-        anfitriao={dados.anfitriao}
-        donoEhOUtilizador
-      />
-
-      {/* Editar nome, foto e senha. Fica logo por baixo do perfil, e não escondido
-          noutro sítio: é a primeira coisa que quem acaba de se registar procura. */}
-      <PainelDePerfil projectSlug={projectSlug} />
-
-      {/*
-        A PLATAFORMA, FECHADA, IGUAL AO PERFIL DE QUALQUER PESSOA.
-
-        Em 01/09 fechei-a nos perfis dos outros e deixei-a aberta neste, e ele
-        respondeu com a única pergunta que interessa: "no meu perfil ainda
-        aparece aquela estrutura antiga e no dos outros o alfabeto desapareceu,
-        deixe consistente". Fiz duas coisas diferentes com a mesma coisa e
-        chamei a isso uma correcção.
-
-        Fechada nos dois. E ninguém fica sem alfabeto por causa disto: a barra
-        de baixo tem o botão Alfabeto em todas as páginas, que é o caminho que
-        ele próprio desenhou em 24/08 para isto mesmo.
-      */}
-      <details className="plataforma-no-perfil">
-        <summary>
-          <span>Conheça o {project.name}</span>
-        </summary>
-
-        <IntroducaoRecolhivel nome={project.name}>
-          {introducao && (
-            <IntroducaoEmCartoes
-              contentId={introducao.content.id}
-            contentSlug={introducao.content.slug}
-              blocos={introducao.content.blocks}
-              projectId={project.id}
-              projectSlug={projectSlug}
-              categorias={cats?.categorias ?? []}
-            />
-          )}
-        </IntroducaoRecolhivel>
-
-        {contents.length > 0 && (
-          <ExperienciaContinua
-            projectSlug={projectSlug}
-            projectId={project.id}
-            contents={contents}
-            progresso={progresso}
-            categorias={cats?.categorias ?? []}
-          />
-        )}
-      </details>
-
-      {/* Logo depois do cadastro: é aqui que quem se regista cai. */}
-      <AvisoDeIdentidade projectSlug={projectSlug} />
-      <BannerDeConsentimento projectId={project.id} />
-      <BarraInferior projectSlug={projectSlug} linkPdf={project.checkoutUrl ?? null} />
+      <IrParaOMeuPerfil projectSlug={projectSlug} />
     </main>
   )
 }
