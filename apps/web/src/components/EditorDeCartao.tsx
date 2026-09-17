@@ -1,5 +1,6 @@
 'use client'
 
+import Link from 'next/link'
 import { useState } from 'react'
 import { useEffect } from 'react'
 import { admin, type CartaoAdmin, type CategoriaAdmin } from '@/lib/admin'
@@ -315,6 +316,13 @@ export function EditorDeCartao({
               >
                 Excluir áudio
               </button>
+            )}
+            {/* Na mesma fila das peças, e não dentro do cartão: o cartão do
+                painel é igual ao público e não ganha botões que lá não há. */}
+            {audio?.url && (
+              <Link className="atalho-karaoke" href={`/${projectSlug}/admin/karaoke/${cartao.id}`}>
+                🎤 Karaokê
+              </Link>
             )}
           </div>
         )}

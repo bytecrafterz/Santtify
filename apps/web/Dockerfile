@@ -6,7 +6,8 @@ WORKDIR /app
 COPY package.json package-lock.json ./
 COPY apps/web/package.json apps/web/
 COPY packages/cartoes/package.json packages/cartoes/
-RUN npm ci --workspace @pv/web --workspace @pv/cartoes --include-workspace-root
+COPY packages/karaoke/package.json packages/karaoke/
+RUN npm ci --workspace @pv/web --workspace @pv/cartoes --workspace @pv/karaoke --include-workspace-root
 
 # ── Estágio 2: build ───────────────────────────────────────────────
 FROM node:22-alpine AS build
@@ -20,6 +21,7 @@ COPY package.json package-lock.json ./
 # A mesma geometria que a API usa. O `transpilePackages` do next.config só a
 # leva para o bundle se ela estiver aqui.
 COPY packages/cartoes packages/cartoes
+COPY packages/karaoke packages/karaoke
 COPY apps/web apps/web
 
 # ATENÇÃO: variáveis NEXT_PUBLIC_* são gravadas DENTRO do JavaScript no

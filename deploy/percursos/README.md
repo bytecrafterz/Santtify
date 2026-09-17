@@ -257,3 +257,16 @@ está trancado antes do pagamento, fechar o separador não perde o pedido, e o n
 não parte em duas linhas (enquanto partia, a prévia mentia sobre o papel).
 
 As imagens são feitas em código, como manda o resto deste directório.
+
+## `modo-karaoke.mjs`
+
+O karaokê de ponta a ponta: colar a letra no painel, marcar as frases com o
+espaço, desfazer com Z, destacar uma palavra à mão, publicar; na página da letra,
+o tocador de sempre continua lá com o botão por baixo; no karaokê, a palavra
+acesa é a que se canta, sem barrinhas, e nada sai do ecrã a 390 e a 320 px; "só
+com conta" convida a entrar e "desligado" tira o botão.
+
+Precisa de uma faixa que já tenha áudio (`BLOCO=<id do cartão>`). **Repõe tudo
+no fim** — letra, marcas, estado publicado, acesso e palavras — mesmo que falhe,
+por isso pode correr contra produção sem estragar a sincronização dele.
+

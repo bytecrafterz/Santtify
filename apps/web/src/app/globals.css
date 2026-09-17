@@ -4057,6 +4057,38 @@ button.letra-bloco {
   margin-top: -4px; /* come a folga que o navegador deixa por baixo da imagem */
 }
 
+.entrar-no-karaoke {
+  display: flex;
+  justify-content: center;
+  /* A mesma faixa escura do tocador, colada a ele: é parte da peça. */
+  background: #17181c;
+  padding: 0 0.75rem 0.75rem;
+  text-decoration: none;
+}
+
+/* Roxo, porque na plataforma inteira roxo quer dizer "toque para ouvir". */
+.convite-karaoke {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.45rem;
+  padding: 0.45rem 1.1rem;
+  border-radius: 999px;
+  background: var(--cor-tocar);
+  color: #fff;
+  font-weight: 700;
+  font-size: 0.9rem;
+}
+
+.entrar-no-karaoke .convite-karaoke {
+  padding: 0.55rem 1.2rem;
+  line-height: 1.2;
+}
+
+.entrar-no-karaoke:hover .convite-karaoke,
+.entrar-no-karaoke:focus-visible .convite-karaoke {
+  filter: brightness(1.12);
+}
+
 .player-onda .botao-play {
   flex: 0 0 auto;
   width: 40px;
@@ -5316,6 +5348,17 @@ button.letra-bloco {
   font-size: 0.8rem;
   font-weight: 700;
   cursor: pointer;
+}
+
+.remover-pecas .atalho-karaoke {
+  margin-left: auto;
+  padding: 0.3rem 0.75rem;
+  font-size: 0.8rem;
+  font-weight: 700;
+  color: #fff;
+  text-decoration: none;
+  background: var(--cor-tocar);
+  border-radius: 999px;
 }
 
 .remover-pecas button:disabled {
@@ -8719,4 +8762,990 @@ h2.funil {
 .painel-bloco-topo h2 .painel-selo-falta {
   margin-left: 8px;
   vertical-align: middle;
+}
+
+/* ═══════════════════════════════════════════════════════════════════
+   MODO KARAOKÊ
+   ═══════════════════════════════════════════════════════════════════
+
+   O ecrã inteiro para cantar uma faixa. Tudo o que é da letra começa por
+   `k-` e vive dentro de `.k-palco`, que é o mesmo no ecrã público e na
+   pré-visualização do painel.
+
+   O ESTILO VEM DAS SEIS ARTES que ele mandou em 14/09: letra gorda e redonda,
+   contorno escuro, um halo creme à volta e relevo por baixo; a palavra que
+   importa enorme, em vermelho, verde ou amarelo; as pequenas às vezes numa
+   faixa roxa ou numa pílula verde de borda creme. Texto vivo, não imagem. */
+
+.karaoke {
+  position: relative;
+  /* Altura fixa e não mínima: o karaokê é um ecrã, não uma página. Nada nele
+     se desloca, e um toque na linha do tempo não pode arrastar a página. */
+  height: 100vh;
+  height: 100dvh;
+  display: flex;
+  flex-direction: column;
+  /* `clip` e não `hidden`: um elemento `hidden` ainda se deixa deslocar por
+     código, e o navegador deslocava-o ao dar foco ao botão de tocar — o
+     cabeçalho subia para fora do ecrã e não havia como o trazer de volta. */
+  overflow: hidden;
+  overflow: clip;
+  color: #3a2208;
+  background: #f6e3b4;
+  padding-bottom: env(safe-area-inset-bottom);
+}
+
+/* O fundo: a arte da faixa desfocada, debaixo de uma luz quente como a das
+   artes. Sem arte, fica só a luz. */
+.karaoke-fundo {
+  position: absolute;
+  inset: -40px;
+  z-index: 0;
+  background-color: #f1d493;
+  background-size: cover;
+  background-position: center;
+  filter: blur(22px) saturate(1.15);
+  transform: scale(1.1);
+}
+
+.karaoke-fundo::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background:
+    radial-gradient(ellipse at 50% 42%, rgba(255, 248, 225, 0.92) 0%, rgba(255, 238, 190, 0.78) 45%, rgba(214, 150, 60, 0.55) 100%);
+}
+
+.karaoke > :not(.karaoke-fundo) {
+  position: relative;
+  z-index: 1;
+}
+
+.karaoke-topo {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  padding: calc(env(safe-area-inset-top) + 0.75rem) 1rem 0;
+  max-width: 720px;
+  width: 100%;
+  margin: 0 auto;
+}
+
+.karaoke-topo > div {
+  min-width: 0;
+}
+
+.karaoke-sair {
+  flex: none;
+  display: inline-grid;
+  place-items: center;
+  width: 2.5rem;
+  height: 2.5rem;
+  border-radius: 999px;
+  background: rgba(58, 34, 8, 0.12);
+  color: #3a2208;
+  font-weight: 700;
+  text-decoration: none;
+}
+
+.karaoke-marca {
+  margin: 0;
+  font-family: var(--fonte-karaoke), system-ui, sans-serif;
+  font-size: 0.8rem;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: #6a2c91;
+}
+
+.karaoke-titulo {
+  margin: 0;
+  font-weight: 700;
+  font-size: 0.95rem;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.karaoke-a-carregar {
+  margin: auto;
+  font-weight: 700;
+}
+
+.karaoke-controlos {
+  display: flex;
+  align-items: center;
+  gap: 0.9rem;
+  padding: 0.5rem 1rem 1.25rem;
+  max-width: 720px;
+  width: 100%;
+  margin: 0 auto;
+}
+
+/* Roxo: na plataforma inteira, roxo quer dizer "toque para ouvir". */
+.karaoke-play {
+  flex: none;
+  width: 4rem;
+  height: 4rem;
+  border-radius: 999px;
+  border: 4px solid #fff4d6;
+  background: var(--cor-tocar, #7c3aed);
+  color: #fff;
+  font-size: 1.5rem;
+  cursor: pointer;
+  box-shadow: 0 5px 0 #3d0f6b, 0 10px 18px rgba(61, 15, 107, 0.35);
+}
+
+.karaoke-play:active {
+  transform: translateY(3px);
+  box-shadow: 0 2px 0 #3d0f6b, 0 5px 10px rgba(61, 15, 107, 0.3);
+}
+
+.karaoke-linha-do-tempo {
+  flex: 1;
+  min-width: 0;
+}
+
+.karaoke-linha-do-tempo input[type='range'] {
+  width: 100%;
+  height: 0.5rem;
+  margin: 0;
+  appearance: none;
+  -webkit-appearance: none;
+  border-radius: 999px;
+  background: linear-gradient(
+    to right,
+    #6a2c91 var(--k-progresso, 0%),
+    rgba(58, 34, 8, 0.18) var(--k-progresso, 0%)
+  );
+  cursor: pointer;
+}
+
+.karaoke-linha-do-tempo input[type='range']::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  width: 1.1rem;
+  height: 1.1rem;
+  border-radius: 999px;
+  background: #fff4d6;
+  border: 3px solid #6a2c91;
+}
+
+.karaoke-linha-do-tempo input[type='range']::-moz-range-thumb {
+  width: 1.1rem;
+  height: 1.1rem;
+  border-radius: 999px;
+  background: #fff4d6;
+  border: 3px solid #6a2c91;
+}
+
+.karaoke-tempos {
+  display: flex;
+  justify-content: space-between;
+  margin-top: 0.35rem;
+  font-size: 0.8rem;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+}
+
+.karaoke-aviso {
+  justify-content: center;
+}
+
+.karaoke-caixa {
+  margin: auto 1rem;
+  max-width: 380px;
+  padding: 1.5rem;
+  border-radius: var(--raio-grande);
+  background: rgba(255, 250, 235, 0.92);
+  text-align: center;
+  display: grid;
+  gap: 0.75rem;
+  justify-items: center;
+}
+
+.karaoke-caixa p {
+  margin: 0;
+}
+
+.karaoke-caixa-titulo {
+  font-family: var(--fonte-karaoke), system-ui, sans-serif;
+  font-size: 1.6rem;
+  color: #6a2c91;
+}
+
+.karaoke-caixa .karaoke-sair {
+  width: auto;
+  height: auto;
+  padding: 0.4rem 1rem;
+}
+
+/* ─── O PALCO ────────────────────────────────────────────────────── */
+
+.k-palco {
+  /* As medidas das letras são fracções da LARGURA do palco (cqi). Num
+     telemóvel e num computador a frase ocupa o mesmo desenho. */
+  container-type: inline-size;
+  flex: 1;
+  min-height: 0;
+  display: grid;
+  /* A coluna tem a largura do palco, e não a da linha mais comprida. Sem isto
+     a grelha alargava para caber a linha maior, nenhuma linha "transbordava"
+     para a medida, e a frase saía do ecrã em vez de encolher. */
+  grid-template-columns: minmax(0, 1fr);
+  align-items: center;
+  width: 100%;
+  max-width: 560px;
+  margin: 0 auto;
+  padding: 0.5rem 1rem;
+  font-family: var(--fonte-karaoke), 'Arial Rounded MT Bold', system-ui, sans-serif;
+  text-transform: uppercase;
+  text-align: center;
+  line-height: 0.98;
+
+  /* A paleta de cada frase. Principal: a palavra que importa. Secundária: as
+     outras. As versões escuras são o contorno e o relevo. */
+  --k-principal: #e0262b;
+  --k-principal-escura: #7d0f12;
+  --k-secundaria: #1f6b22;
+  --k-secundaria-escura: #0b3a0e;
+  --k-faixa: #6a2c91;
+  --k-faixa-escura: #3d0f6b;
+  --k-pilula: #2f6b2a;
+  --k-halo: #fff4d6;
+}
+
+.k-palco.compacto {
+  min-height: 320px;
+  border-radius: var(--raio);
+  background: radial-gradient(ellipse at 50% 42%, #fff8e1 0%, #ffeebe 50%, #e0b066 100%);
+}
+
+.k-paleta-vermelho-verde {
+  --k-principal: #e0262b;
+  --k-principal-escura: #7d0f12;
+  --k-secundaria: #1f6b22;
+  --k-secundaria-escura: #0b3a0e;
+  --k-faixa: #6a2c91;
+  --k-faixa-escura: #3d0f6b;
+}
+
+.k-paleta-amarelo-roxo {
+  --k-principal: #ffc21a;
+  --k-principal-escura: #b25200;
+  /* Nas artes as pequenas desta paleta são brancas, mas lá há uma ilustração
+     por trás. Sobre o fundo claro do karaokê o branco desaparecia no halo. */
+  --k-secundaria: #7b3fb0;
+  --k-secundaria-escura: #3d0f6b;
+  --k-faixa: #6a2c91;
+  --k-faixa-escura: #3d0f6b;
+}
+
+.k-paleta-verde-vermelho {
+  --k-principal: #3fae2a;
+  --k-principal-escura: #16520f;
+  --k-secundaria: #d62828;
+  --k-secundaria-escura: #6d0c0c;
+  --k-faixa: #7b3fb0;
+  --k-faixa-escura: #44196b;
+}
+
+.k-paleta-azul-amarelo {
+  --k-principal: #1e6ee8;
+  --k-principal-escura: #0b2f78;
+  --k-secundaria: #ffc21a;
+  --k-secundaria-escura: #9a4b00;
+  --k-faixa: #6a2c91;
+  --k-faixa-escura: #3d0f6b;
+}
+
+.k-paleta-roxo-laranja {
+  --k-principal: #8a2be2;
+  --k-principal-escura: #3d0f6b;
+  --k-secundaria: #ff8a00;
+  --k-secundaria-escura: #8a3b00;
+  --k-faixa: #1f6b22;
+  --k-faixa-escura: #0b3a0e;
+}
+
+.k-frase {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  min-width: 0;
+  justify-items: center;
+  gap: 0.15em;
+  animation: k-entrar 380ms cubic-bezier(0.2, 0.9, 0.3, 1.35) both;
+}
+
+@keyframes k-entrar {
+  from {
+    opacity: 0;
+    transform: scale(0.82) translateY(0.6em);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+.k-linha {
+  --k-encolher: 1;
+  margin: 0;
+  word-spacing: 0.06em;
+  max-width: 100%;
+  white-space: nowrap;
+  font-size: calc(var(--k-tamanho) * var(--k-encolher));
+  /* O halo e o relevo passam da caixa da linha. Sem esta folga o
+     `scrollWidth` mediria a linha sem eles e cortaria o halo. */
+  padding: 0.12em 0.1em 0.2em;
+}
+
+.k-nivel-0 {
+  --k-tamanho: 11cqi;
+}
+.k-nivel-1 {
+  --k-tamanho: 12cqi;
+}
+.k-nivel-2 {
+  --k-tamanho: 18cqi;
+}
+.k-nivel-3 {
+  --k-tamanho: 24cqi;
+}
+
+.k-palavra {
+  display: inline-block;
+  margin: 0 0.04em;
+  color: var(--k-secundaria);
+  -webkit-text-stroke: 0.1em var(--k-secundaria-escura);
+  paint-order: stroke fill;
+  /* O halo creme em oito direcções, e o relevo escuro por baixo. */
+  text-shadow:
+    0.07em 0 0 var(--k-halo),
+    -0.07em 0 0 var(--k-halo),
+    0 0.07em 0 var(--k-halo),
+    0 -0.07em 0 var(--k-halo),
+    0.05em 0.05em 0 var(--k-halo),
+    -0.05em 0.05em 0 var(--k-halo),
+    0.05em -0.05em 0 var(--k-halo),
+    -0.05em -0.05em 0 var(--k-halo),
+    0 0.13em 0 var(--k-secundaria-escura),
+    0 0.2em 0.14em rgba(60, 30, 0, 0.35);
+  transition:
+    opacity 180ms ease,
+    transform 180ms ease;
+  transform-origin: 50% 70%;
+}
+
+/* A palavra da lista ganha a cor principal e mais relevo. */
+.k-p1 {
+  color: var(--k-principal);
+  -webkit-text-stroke-color: var(--k-principal-escura);
+  text-shadow:
+    0.07em 0 0 var(--k-halo),
+    -0.07em 0 0 var(--k-halo),
+    0 0.07em 0 var(--k-halo),
+    0 -0.07em 0 var(--k-halo),
+    0.05em 0.05em 0 var(--k-halo),
+    -0.05em 0.05em 0 var(--k-halo),
+    0.05em -0.05em 0 var(--k-halo),
+    -0.05em -0.05em 0 var(--k-halo),
+    0 0.13em 0 var(--k-principal-escura),
+    0 0.2em 0.14em rgba(60, 30, 0, 0.35);
+}
+
+.k-p2,
+.k-p3 {
+  color: var(--k-principal);
+  -webkit-text-stroke: 0.08em var(--k-principal-escura);
+  text-shadow:
+    0.05em 0 0 var(--k-halo),
+    -0.05em 0 0 var(--k-halo),
+    0 0.05em 0 var(--k-halo),
+    0 -0.05em 0 var(--k-halo),
+    0.035em 0.035em 0 var(--k-halo),
+    -0.035em 0.035em 0 var(--k-halo),
+    0.035em -0.035em 0 var(--k-halo),
+    -0.035em -0.035em 0 var(--k-halo),
+    0 0.09em 0 var(--k-principal-escura),
+    0 0.14em 0.1em rgba(60, 30, 0, 0.4);
+}
+
+/* O DESTAQUE QUE ACOMPANHA O CANTO.
+   O que falta cantar fica esbatido; a palavra que se canta cresce; a que já foi
+   cantada fica acesa. A frase lê-se inteira desde o início e o olho sabe
+   sempre onde vai. */
+.k-palavra.por-cantar {
+  opacity: 0.5;
+}
+
+/* Sobe mais do que cresce. A crescer muito, a palavra tapava o espaço das
+   vizinhas e "ME ENSINA" lia-se "MEENSINA". */
+.k-palavra.a-cantar {
+  opacity: 1;
+  transform: translateY(-0.1em) scale(1.06);
+}
+
+.k-palavra.a-cantar.k-p2,
+.k-palavra.a-cantar.k-p3 {
+  animation: k-pulo 520ms cubic-bezier(0.3, 1.6, 0.5, 1) both;
+}
+
+@keyframes k-pulo {
+  0% {
+    transform: scale(0.9);
+  }
+  60% {
+    transform: translateY(-0.12em) scale(1.12) rotate(-2deg);
+  }
+  100% {
+    transform: translateY(-0.08em) scale(1.06);
+  }
+}
+
+.k-palavra.cantada {
+  opacity: 1;
+}
+
+/* Só durante a medida das linhas (ver `PalcoDoKaraoke`). */
+.k-palco.a-medir .k-palavra,
+.k-palco.a-medir .k-frase,
+.k-palco.a-medir .k-linha {
+  transform: none !important;
+  animation: none !important;
+  transition: none !important;
+}
+
+/* A palavra grande ainda por cantar apaga-se menos: é ela que dá a forma à
+   frase, e tem de se ler de longe antes de chegar a vez dela. */
+.k-p2.por-cantar,
+.k-p3.por-cantar {
+  opacity: 0.68;
+}
+
+/* Uma palavra pequena encostada à grande ("A LUZ", "DO ESPÍRITO SANTO"),
+   como nas artes: na mesma linha, a meia altura. */
+.k-nivel-2 .k-p0,
+.k-nivel-2 .k-p1,
+.k-nivel-3 .k-p0,
+.k-nivel-3 .k-p1 {
+  font-size: 0.5em;
+  vertical-align: 0.35em;
+}
+
+/* À espera da frase seguinte, num intervalo: tudo apagado de igual. */
+.k-frase.a-espera .k-palavra {
+  opacity: 0.55;
+}
+
+.k-abertura .k-palavra {
+  color: var(--k-principal);
+  -webkit-text-stroke-color: var(--k-principal-escura);
+  white-space: normal;
+}
+
+.k-abertura .k-linha {
+  white-space: normal;
+  font-size: 13cqi;
+}
+
+.k-aviso {
+  margin: 0.8em 0 0;
+  font-size: 5cqi;
+  color: #6a2c91;
+  text-transform: none;
+}
+
+.k-contagem {
+  display: flex;
+  gap: 0.6rem;
+  justify-content: center;
+  margin: 0.9rem 0 0;
+}
+
+.k-contagem span {
+  width: 0.9rem;
+  height: 0.9rem;
+  border-radius: 999px;
+  background: rgba(106, 44, 145, 0.2);
+  transition: background 200ms ease;
+}
+
+.k-contagem span.acesa {
+  background: #6a2c91;
+}
+
+/* ─── AS COMPOSIÇÕES ─────────────────────────────────────────────────
+   Uma por frase, a rodar num conjunto fixo (`composicaoDaFrase`). */
+
+/* Faixa: as palavras pequenas numa fita roxa, como "A DEUS" e "ME ENSINA". */
+.k-faixa .k-envolvida,
+.k-pilula .k-envolvida {
+  position: relative;
+  padding: 0.18em 0.55em 0.26em;
+  font-size: calc(9.5cqi * var(--k-encolher));
+}
+
+.k-faixa .k-envolvida {
+  background: var(--k-faixa);
+  border-radius: 0.12em;
+  box-shadow:
+    0 0.1em 0 var(--k-faixa-escura),
+    0 0 0 0.06em var(--k-halo);
+  transform: rotate(-2deg);
+  /* As pontas cortadas em V, como as fitas das artes. */
+  clip-path: polygon(0 0, 100% 0, 96% 50%, 100% 100%, 0 100%, 4% 50%);
+  padding-inline: 0.9em;
+}
+
+.k-faixa .k-envolvida .k-palavra,
+.k-pilula .k-envolvida .k-palavra {
+  color: #fff;
+  -webkit-text-stroke: 0.06em rgba(0, 0, 0, 0.35);
+  text-shadow: 0 0.06em 0 rgba(0, 0, 0, 0.3);
+}
+
+/* Pílula: verde de borda creme, como "GÁLATAS 2:20". */
+.k-pilula .k-envolvida {
+  background: var(--k-pilula);
+  border-radius: 999px;
+  box-shadow:
+    inset 0 0 0 0.07em rgba(255, 244, 214, 0.9),
+    0 0.08em 0 #173d13;
+  border: 0.08em solid #d9b76a;
+}
+
+/* Degrau: as linhas a alternar de lado, a frase a descer em escada. */
+.k-degrau .k-frase {
+  justify-items: stretch;
+}
+.k-degrau .k-linha {
+  text-align: left;
+  padding-left: 0.3em;
+}
+.k-degrau .k-linha.k-impar {
+  text-align: right;
+  padding-right: 0.3em;
+}
+.k-degrau .k-nivel-2,
+.k-degrau .k-nivel-3 {
+  text-align: center;
+}
+
+/* Pilha: tamanhos a alternar entre linhas, grande-pequeno-grande. */
+.k-pilha .k-nivel-0.k-impar,
+.k-pilha .k-nivel-1.k-impar {
+  --k-tamanho: 14cqi;
+}
+.k-pilha .k-nivel-0:not(.k-impar) {
+  --k-tamanho: 9cqi;
+}
+
+/* Inclinado: a frase toda de lado, e as palavras grandes ao contrário. */
+.k-inclinado .k-frase {
+  transform: rotate(-4deg);
+  animation-name: k-entrar-inclinado;
+}
+.k-inclinado .k-nivel-2,
+.k-inclinado .k-nivel-3 {
+  transform: rotate(5deg);
+}
+
+@keyframes k-entrar-inclinado {
+  from {
+    opacity: 0;
+    transform: rotate(-12deg) scale(0.8);
+  }
+  to {
+    opacity: 1;
+    transform: rotate(-4deg);
+  }
+}
+
+/* Cartaz: a composição de base, centrada. As palavras pequenas em cima e em
+   baixo da grande, como "NÃO MAIS EU, MAS / CRISTO / VIVE EM MIM". */
+.k-cartaz .k-nivel-0 {
+  --k-tamanho: 11.5cqi;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .k-frase,
+  .k-palavra.a-cantar.k-p2,
+  .k-palavra.a-cantar.k-p3 {
+    animation: none;
+  }
+  .k-palavra {
+    transition: opacity 120ms linear;
+  }
+  .k-palavra.a-cantar {
+    transform: none;
+  }
+}
+
+/* ─── O KARAOKÊ NO PAINEL ─────────────────────────────────────────── */
+
+.karaoke-acessos {
+  display: grid;
+  gap: 8px;
+  margin-top: 10px;
+}
+
+@media (min-width: 640px) {
+  .karaoke-acessos {
+    grid-template-columns: repeat(3, 1fr);
+  }
+}
+
+.karaoke-acessos button {
+  display: grid;
+  gap: 2px;
+  text-align: left;
+}
+
+.karaoke-acessos button span {
+  font-size: 0.75rem;
+  opacity: 0.8;
+}
+
+.karaoke-nova-palavra {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin: 12px 0;
+}
+
+.karaoke-nova-palavra input,
+.karaoke-filtro {
+  flex: 1;
+  min-width: 10rem;
+  padding: 10px 12px;
+  font: inherit;
+  color: var(--cor-texto);
+  background: var(--cor-fundo);
+  border: 1px solid var(--cor-borda);
+  border-radius: 10px;
+}
+
+.karaoke-filtro {
+  width: 100%;
+  margin-top: 8px;
+}
+
+.karaoke-nova-palavra select,
+.karaoke-palavra select {
+  padding: 8px;
+  font: inherit;
+  font-size: 0.85rem;
+  color: var(--cor-texto);
+  background: var(--cor-fundo);
+  border: 1px solid var(--cor-borda);
+  border-radius: 10px;
+}
+
+/* Na lista das músicas o selo fica ao meio da fila, e não esticado. */
+.painel-bloco .painel-projeto-accoes > .painel-selo-pronto,
+.painel-bloco .painel-projeto-accoes > .painel-selo-falta {
+  align-self: center;
+}
+
+.karaoke-palavras {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  padding: 0;
+  margin: 0;
+  list-style: none;
+}
+
+.karaoke-palavra {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 4px 4px 4px 12px;
+  background: var(--cor-fundo);
+  border: 1px solid var(--cor-borda);
+  border-radius: 999px;
+}
+
+.karaoke-palavra-texto {
+  font-weight: 700;
+  text-transform: uppercase;
+}
+
+.karaoke-palavra.nivel-3 .karaoke-palavra-texto {
+  color: #e0262b;
+  font-size: 1.05rem;
+}
+
+.karaoke-palavra.nivel-2 .karaoke-palavra-texto {
+  color: #1f6b22;
+}
+
+.karaoke-palavra.nivel-1 .karaoke-palavra-texto {
+  color: #6a2c91;
+  font-size: 0.9rem;
+}
+
+.karaoke-palavra button {
+  width: 30px;
+  height: 30px;
+  font: inherit;
+  color: var(--cor-texto-suave);
+  cursor: pointer;
+  background: none;
+  border: none;
+  border-radius: 999px;
+}
+
+/* A sincronização. */
+
+.sincronizador-aviso {
+  padding: 10px 12px;
+  margin: 0;
+  font-size: 0.88rem;
+  color: var(--cor-acao-escura);
+  background: rgba(22, 163, 74, 0.1);
+  border-radius: 10px;
+}
+
+.sincronizador .subtitulo .painel-selo-pronto {
+  margin-left: 8px;
+}
+
+.sincronizador-texto {
+  width: 100%;
+  margin: 10px 0;
+  padding: 12px;
+  font: inherit;
+  line-height: 1.5;
+  color: var(--cor-texto);
+  background: var(--cor-fundo);
+  border: 1px solid var(--cor-borda);
+  border-radius: 10px;
+  resize: vertical;
+}
+
+.sincronizador-controlo {
+  display: grid;
+  gap: 12px;
+}
+
+.sincronizador kbd {
+  padding: 1px 6px;
+  font: inherit;
+  font-size: 0.8em;
+  background: var(--cor-fundo);
+  border: 1px solid var(--cor-borda);
+  border-radius: 6px;
+}
+
+.sincronizador-leitor {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.sincronizador-leitor .karaoke-play {
+  width: 3.25rem;
+  height: 3.25rem;
+  font-size: 1.2rem;
+}
+
+.sincronizador-leitor .karaoke-tempos {
+  color: var(--cor-texto-suave);
+}
+
+.sincronizador-opcoes {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.sincronizador-modos {
+  display: inline-flex;
+  gap: 6px;
+}
+
+/* O botão grande. Alvo de toque generoso: é carregado centenas de vezes por
+   música, com os olhos na letra e não no ecrã. */
+.sincronizador-marcar {
+  display: grid;
+  gap: 4px;
+  width: 100%;
+  min-height: 96px;
+  padding: 14px;
+  font: inherit;
+  color: #fff;
+  cursor: pointer;
+  background: var(--cor-tocar);
+  border: none;
+  border-radius: var(--raio);
+  box-shadow: 0 5px 0 #3d0f6b;
+  touch-action: manipulation;
+  user-select: none;
+  -webkit-user-select: none;
+}
+
+.sincronizador-marcar span {
+  font-size: 1.5rem;
+  font-weight: 800;
+}
+
+.sincronizador-marcar small {
+  overflow: hidden;
+  font-size: 0.9rem;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+  opacity: 0.9;
+}
+
+.sincronizador-marcar:active {
+  transform: translateY(3px);
+  box-shadow: 0 2px 0 #3d0f6b;
+}
+
+.sincronizador-marcar:disabled {
+  cursor: default;
+  background: var(--cor-texto-suave);
+  box-shadow: none;
+}
+
+.sincronizador-colunas {
+  display: grid;
+  gap: 16px;
+}
+
+/* No computador, a pré-visualização fica à vista enquanto se percorre a lista. */
+@media (min-width: 900px) {
+  .sincronizador-colunas {
+    grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+    align-items: start;
+  }
+  .sincronizador-colunas > :first-child {
+    position: sticky;
+    top: 12px;
+  }
+}
+
+.sincronizador-frases {
+  display: grid;
+  gap: 8px;
+  padding: 0;
+  margin: 10px 0 0;
+  list-style: none;
+}
+
+.sincronizador-frase {
+  padding: 8px 10px;
+  border: 1px solid var(--cor-borda);
+  border-left: 4px solid var(--cor-acao);
+  border-radius: 10px;
+}
+
+.sincronizador-frase.por-marcar {
+  border-left-color: #f59e0b;
+}
+
+.sincronizador-frase.no-cursor {
+  background: var(--cor-primaria-suave);
+}
+
+.sincronizador-frase.a-tocar {
+  border-color: var(--cor-tocar);
+  border-left-color: var(--cor-tocar);
+}
+
+.sincronizador-frase-topo {
+  display: flex;
+  gap: 4px;
+  margin-bottom: 6px;
+}
+
+.sincronizador-frase-topo button {
+  padding: 4px 8px;
+  font: inherit;
+  font-size: 0.78rem;
+  font-variant-numeric: tabular-nums;
+  color: var(--cor-texto);
+  cursor: pointer;
+  background: var(--cor-fundo);
+  border: 1px solid var(--cor-borda);
+  border-radius: 8px;
+}
+
+.sincronizador-frase-topo button:disabled {
+  cursor: default;
+  opacity: 0.4;
+}
+
+.sincronizador-frase-topo .sincronizador-tempo {
+  margin-right: auto;
+  font-weight: 700;
+}
+
+.sincronizador-palavras {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+}
+
+.sincronizador-palavra {
+  position: relative;
+  padding: 3px 7px;
+  font: inherit;
+  font-size: 0.9rem;
+  color: var(--cor-texto);
+  cursor: pointer;
+  background: none;
+  border: 1px dashed transparent;
+  border-radius: 6px;
+}
+
+.sincronizador-palavra:hover {
+  border-color: var(--cor-borda);
+}
+
+.sincronizador-palavra.nivel-1 {
+  font-weight: 700;
+  color: #6a2c91;
+}
+
+.sincronizador-palavra.nivel-2 {
+  font-weight: 800;
+  color: #1f6b22;
+  text-transform: uppercase;
+}
+
+.sincronizador-palavra.nivel-3 {
+  font-weight: 800;
+  color: #e0262b;
+  text-transform: uppercase;
+}
+
+/* Ponto em cima: destaque escolhido à mão nesta música. */
+.sincronizador-palavra.manual::after {
+  content: '';
+  position: absolute;
+  top: 1px;
+  right: 1px;
+  width: 6px;
+  height: 6px;
+  background: var(--cor-tocar);
+  border-radius: 999px;
+}
+
+/* Sublinhado: o começo desta palavra foi marcado, não calculado. */
+.sincronizador-palavra.ancora {
+  text-decoration: underline;
+  text-decoration-color: var(--cor-acao);
+  text-underline-offset: 3px;
+}
+
+.sincronizador-palavra.a-cantar {
+  background: rgba(124, 58, 237, 0.14);
+}
+
+.sincronizador-botoes {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-top: 10px;
 }

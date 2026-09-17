@@ -33,6 +33,8 @@ export class ContentService {
         branding: true,
         status: true,
         checkoutUrl: true,
+        // O leitor precisa de saber se o karaokê pede conta antes de o abrir.
+        karaokeAcesso: true,
       },
     })
     if (!project || project.status === 'ARCHIVED') {
@@ -322,6 +324,7 @@ export class ContentService {
           orderBy: { position: 'asc' },
           include: {
             imageAsset: { select: { url: true, width: true, height: true } },
+            letraSincronizada: { select: { publicada: true } },
             // A CATEGORIA VIAJA COM O BLOCO.
             // Sem isto o filtro do tocador não tinha como saber a que grupo
             // cada faixa pertence, e por isso vivia de uma lista escrita à mão
@@ -486,6 +489,15 @@ export class ContentService {
             arteLargura: b.imageAsset?.width ?? null,
             arteAltura: b.imageAsset?.height ?? null,
             meta: b.meta,
+            /**
+             * O botão do karaokê aparece só com a letra publicada e o karaokê
+             * ligado no projeto. Com "só com conta" aparece na mesma: é o
+             * ecrã do karaokê que convida a entrar.
+             */
+            karaoke:
+              Boolean(b.letraSincronizada?.publicada) &&
+              Boolean(b.asset?.url) &&
+              project.karaokeAcesso !== 'DESLIGADO',
           })),
         stats: await this.contagens.deConteudo(content.id),
         qrCode: code,

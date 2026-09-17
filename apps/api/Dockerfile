@@ -11,10 +11,11 @@ COPY package.json package-lock.json ./
 COPY apps/api/package.json apps/api/
 COPY packages/db/package.json packages/db/
 COPY packages/cartoes/package.json packages/cartoes/
+COPY packages/karaoke/package.json packages/karaoke/
 
 # argon2 é módulo nativo e precisa de toolchain para compilar no Alpine.
 RUN apk add --no-cache python3 make g++ \
- && npm ci --workspace @pv/api --workspace @pv/db --workspace @pv/cartoes --include-workspace-root
+ && npm ci --workspace @pv/api --workspace @pv/db --workspace @pv/cartoes --workspace @pv/karaoke --include-workspace-root
 
 # ── Estágio 2: build ───────────────────────────────────────────────
 FROM node:22-alpine AS build
@@ -27,6 +28,8 @@ COPY packages/db packages/db
 # build nem compila — foi esquecida uma vez e é o género de falha que só
 # aparece na primeira publicação.
 COPY packages/cartoes packages/cartoes
+# As regras do Modo Karaokê, partilhadas com o site. Mesmo motivo da linha acima.
+COPY packages/karaoke packages/karaoke
 COPY apps/api apps/api
 
 # O commit de onde isto saiu, para a publicação poder conferir depois que o que
@@ -58,6 +61,7 @@ COPY --from=build /app/apps/api/node_modules ./apps/api/node_modules
 COPY --from=build /app/apps/api/dist ./apps/api/dist
 COPY --from=build /app/packages/db ./packages/db
 COPY --from=build /app/packages/cartoes ./packages/cartoes
+COPY --from=build /app/packages/karaoke ./packages/karaoke
 COPY --from=build /app/package.json ./package.json
 COPY --from=build /app/COMMIT ./COMMIT
 

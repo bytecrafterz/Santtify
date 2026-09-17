@@ -100,8 +100,12 @@ model Project {
 
   modelosDeCartao     ModeloDeCartao[]
   categoriasDeCartoes CategoriaDeCartoes[]
-  precoDeCartoes      PrecoDeCartoes?
-  pedidosDeCartoes    PedidoDeCartoes[]
+  palavrasDeDestaque  PalavraDeDestaque[]
+
+  /// Quem pode abrir o Modo Karaokê das faixas deste projeto.
+  karaokeAcesso    KaraokeAcesso     @default(TODOS)
+  precoDeCartoes   PrecoDeCartoes?
+  pedidosDeCartoes PedidoDeCartoes[]
 
   @@map("projects")
 }
@@ -276,6 +280,9 @@ model ContentBlock {
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
+
+  /// A letra sincronizada desta faixa, quando existe — o Modo Karaokê.
+  letraSincronizada LetraSincronizada?
 
   @@index([contentId, position])
   @@index([contentId, slot])
@@ -1728,4 +1735,74 @@ model EventoDePagamento {
 
   @@index([pedidoId])
   @@map("eventos_de_pagamento")
+}
+
+// ═══════════════════════════════════════════════════════════════════
+// MODO KARAOKÊ
+// ═══════════════════════════════════════════════════════════════════
+
+/// Quem pode abrir o Modo Karaokê de um projeto.
+enum KaraokeAcesso {
+  /// Qualquer pessoa, com ou sem conta.
+  TODOS
+  /// Só quem tem conta e entrou. É o degrau antes de o karaokê ser pago.
+  CONTA
+  /// Ninguém: o botão desaparece das faixas.
+  DESLIGADO
+}
+
+/// A letra de uma faixa com o tempo de cada palavra — o Modo Karaokê.
+///
+/// Uma por faixa, e a faixa é o CARTÃO (ContentBlock) que tem o áudio. O
+/// karaokê acrescenta-se à faixa sem lhe mexer: a experiência de sempre, com a
+/// imagem e o tocador, continua igual. Pedido do cliente em 14/09.
+///
+/// `frases` é JSON e não uma tabela por palavra, de propósito. A letra lê-se e
+/// grava-se sempre inteira — o painel sincroniza a música toda e o leitor
+/// desenha a música toda —, e uma música de seis minutos tem centenas de
+/// palavras. Centenas de linhas para ler de uma vez, sem nunca consultar uma
+/// sozinha, seria só custo. A forma do JSON está em `packages/karaoke`.
+model LetraSincronizada {
+  id      String       @id @default(uuid()) @db.Uuid
+  blocoId String       @unique @db.Uuid
+  bloco   ContentBlock @relation(fields: [blocoId], references: [id], onDelete: Cascade)
+
+  /// A letra como ele a colou: uma frase por linha, como aparece no ecrã.
+  texto  String @default("")
+  frases Json   @default("[]")
+
+  /// Só uma letra publicada põe o botão do karaokê na faixa. Uma sincronização
+  /// a meio não pode aparecer ao público.
+  publicada Boolean @default(false)
+
+  criadoEm     DateTime @default(now())
+  atualizadoEm DateTime @updatedAt
+
+  @@map("letras_sincronizadas")
+}
+
+/// As palavras que o karaokê destaca sozinho: JESUS, CRISTO, AMOR, FÉ, LUZ…
+///
+/// Ele deu estes exemplos e quer poder acrescentar outras. Uma lista por
+/// projeto, com o nível de cada uma. Na sincronização de cada música ainda dá
+/// para marcar outras palavras à mão: a lista é o ponto de partida.
+///
+/// `palavra` guarda-se NORMALIZADA (maiúsculas, sem acentos nem pontuação), porque
+/// "Fé," na letra e "fé" na lista têm de ser a mesma palavra. Pode ter duas
+/// palavras ("ESPIRITO SANTO").
+model PalavraDeDestaque {
+  id        String  @id @default(uuid()) @db.Uuid
+  projectId String  @db.Uuid
+  project   Project @relation(fields: [projectId], references: [id], onDelete: Cascade)
+
+  palavra  String
+  /// Como ele a escreveu, com acentos, para o painel mostrar.
+  exibicao String
+  /// 1 destaque, 2 forte, 3 máximo.
+  nivel    Int    @default(2)
+
+  criadoEm DateTime @default(now())
+
+  @@unique([projectId, palavra])
+  @@map("palavras_de_destaque")
 }

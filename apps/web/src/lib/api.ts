@@ -49,6 +49,8 @@ export interface Bloco {
   arteLargura?: number | null
   arteAltura?: number | null
   meta: Record<string, unknown>
+  /** Esta faixa tem o Modo Karaokê publicado. */
+  karaoke?: boolean
 }
 
 export interface Conteudo {

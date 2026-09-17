@@ -365,6 +365,85 @@ diferente de `abreviar` em `lib/numeros`, que dá "1,5 mil" — as duas estão c
 e servem ecrãs diferentes, ambas escritas por ele. `Intl.NumberFormat` em
 português nunca dá "K".
 
+## Modo Karaokê
+
+Pedido do cliente em 13/09, fechado em 14/09 com seis artes da Santtify como
+referência visual. Condição dele: **a experiência de sempre continua igual**. O
+karaokê é uma página a mais por faixa; o tocador não mudou uma linha.
+
+### Onde está cada coisa
+
+| O quê | Onde |
+| --- | --- |
+| Regras partilhadas (frases, tempos, destaques, composições) | `packages/karaoke` (`@pv/karaoke`) |
+| Tabelas | `LetraSincronizada` (uma por cartão com áudio), `PalavraDeDestaque` (por projeto), `Project.karaokeAcesso` |
+| API pública | `GET /api/projects/:slug/karaoke/:blocoId` |
+| API do painel | `GET/PATCH /api/admin/projects/:slug/karaoke`, `PUT .../karaoke/palavras`, `DELETE /api/admin/karaoke/palavras/:id`, `GET/PUT /api/admin/cards/:id/karaoke` |
+| Ecrã do karaokê | `/[projeto]/karaoke/[blocoId]` → `KaraokeDaFaixa` + `PalcoDoKaraoke` |
+| Painel | `/[projeto]/admin/karaoke` (acesso, palavras, músicas) e `/[projeto]/admin/karaoke/[blocoId]` (sincronizar) |
+| Entrada | botão roxo por baixo do tocador (`PublicacaoDaLetra`), só com letra publicada; atalho "🎤 Karaokê" no editor do cartão |
+
+`packages/karaoke` é JavaScript simples pelo mesmo motivo que `packages/cartoes`:
+o painel, o ecrã e a API têm de concordar sobre a mesma letra. Está nos dois
+Dockerfiles e em `transpilePackages`.
+
+### Como a letra é guardada
+
+`LetraSincronizada.frases` é JSON: `[{ texto, inicioMs, fimMs, palavras: [{ texto,
+inicioMs, fimMs, destaque?, marcada? }] }]`. Lê-se e grava-se sempre inteira,
+por isso não é uma tabela por palavra.
+
+- **Uma linha do texto é uma frase.** Ao gravar texto novo, as linhas iguais no
+  mesmo lugar guardam os tempos (`frasesDoTexto`): corrigir uma gralha não obriga
+  a sincronizar outra vez.
+- **Marcas → tempos** em `aplicarMarcas`. Ele marca o começo da frase (um toque),
+  ou o começo de palavras (modo palavra a palavra). Entre marcas, o tempo
+  espalha-se pelas palavras em proporção às vogais. `marcada: true` guarda quais
+  foram marcadas à mão, e `marcasDasFrases` faz o caminho inverso quando o painel
+  abre.
+- **O fim de uma frase não é o começo da seguinte**: num intervalo instrumental
+  o destaque ficaria parado na última palavra. Acaba no que a frase demora a
+  cantar, com folga (`fimDaFrase`).
+- Cada toque desconta **150 ms** (`ATRASO_DO_TOQUE_MS`), o tempo de reacção.
+- **Publicar exige a música toda sincronizada**, e qualquer gravação que a deixe
+  incompleta tira-a do ar. Gravar marcas de uma letra que entretanto mudou dá
+  409 (duas abas abertas).
+
+### O desenho
+
+- **Destaque de cada palavra** (`niveisDaFrase`): marca manual na música → lista
+  do projeto (normalizada sem acentos; expressões de duas palavras primeiro) → se a
+  frase ficar sem nenhum, a palavra de conteúdo mais comprida ganha nível 1.
+- **Linhas** (`linhasDaFrase` no palco): palavra de nível 2–3 numa linha só dela;
+  palavras curtas encostam-se à grande ("A LUZ"); o resto enche linhas de ~16
+  caracteres.
+- **Composições**: seis (`cartaz`, `faixa`, `degrau`, `pilula`, `pilha`,
+  `inclinado`) × cinco paletas, escolhidas pelo número da frase. Fixo e não
+  aleatório: a mesma música desenha-se sempre igual, e o que ele vê no painel é o
+  que a criança vê (o painel usa o mesmo `PalcoDoKaraoke`).
+- Letra **Lilita One** (OFL), no repositório em `app/fontes`, carregada só nas
+  páginas do karaokê. Contorno com `-webkit-text-stroke` + `paint-order`, halo
+  creme e relevo com `text-shadow`. Tamanhos em `cqi` (largura do palco).
+- **Nenhuma linha sai do ecrã**: mede-se cada linha e encolhe-se só a que não
+  cabe, com as animações desligadas durante a medida (`a-medir`) — no Chrome o
+  `scrollWidth` conta as transformações.
+- **Sem barrinhas** neste modo, a pedido dele. O relógio é `requestAnimationFrame`
+  sobre `audio.currentTime` (o `timeupdate` chega só ~4 vezes por segundo).
+- Tocar no karaokê conta como `MEDIA_PLAY`/`MEDIA_COMPLETE` da faixa, com
+  `props.modo = "karaoke"`.
+
+### Acesso
+
+`TODOS` (padrão), `CONTA` (sem sessão a API responde 403 `precisaDeConta` e o
+ecrã convida a entrar; o cliente tenta renovar a sessão antes) e `DESLIGADO` (o
+botão desaparece e a rota dá 404).
+
+### O que falta, e não é código
+
+As **duas músicas de exemplo** fazem-se no painel de produção, com os áudios e as
+letras reais dele: colar a letra, marcar, publicar. O ambiente de
+desenvolvimento não tem os áudios dele.
+
 ## Regras que não se partem
 
 **`events` é append-only**, por gatilho na base. `UPDATE` e `DELETE` levantam

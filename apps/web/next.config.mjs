@@ -10,7 +10,7 @@ const nextConfig = {
    * ENTREGA.md avisa sobre as NEXT_PUBLIC_: a falha não dá erro no build, dá
    * erro em produção.
    */
-  transpilePackages: ['@pv/cartoes'],
+  transpilePackages: ['@pv/cartoes', '@pv/karaoke'],
   // Gera um servidor mínimo com só as dependências usadas — a imagem de
   // produção fica na casa das dezenas de MB em vez de centenas.
   output: 'standalone',

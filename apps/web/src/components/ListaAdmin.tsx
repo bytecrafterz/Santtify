@@ -112,6 +112,11 @@ export function ListaAdmin({ projectSlug }: { projectSlug: string }) {
         <small>os dois destaques do perfil e a criação de projetos novos</small>
       </Link>
 
+      <Link className="bloco linha atalho-alfabeto" href={`/${projectSlug}/admin/karaoke`}>
+        <span>Modo Karaokê</span>
+        <small>palavras em destaque, quem pode cantar e a sincronização de cada música</small>
+      </Link>
+
       <Link className="bloco linha atalho-metricas" href={`/${projectSlug}/admin/metricas`}>
         <span>Ver métricas</span>
         <small>visitantes, origem, propagação e conteúdos mais acessados</small>

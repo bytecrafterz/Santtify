@@ -150,14 +150,31 @@ export function PublicacaoDaLetra({
           não deste componente.
         */}
         {bloco?.asset?.url ? (
-          <TocadorDeOnda
-            bloco={bloco}
-            projectId={projectId}
-            contentId={contentId}
-            rotulo={null}
-            categorias={categorias}
-            aoTerminar={aoTerminarAudio}
-          />
+          <>
+            <TocadorDeOnda
+              bloco={bloco}
+              projectId={projectId}
+              contentId={contentId}
+              rotulo={null}
+              categorias={categorias}
+              aoTerminar={aoTerminarAudio}
+            />
+            {/*
+              O MODO KARAOKÊ ACRESCENTA-SE AO TOCADOR, NÃO O SUBSTITUI.
+
+              Condição dele em 13/09: "continuaria existindo a experiência
+              atual normalmente". O tocador fica exactamente igual; por baixo,
+              na mesma faixa escura, aparece o convite — e só nas faixas em
+              que ele publicou a letra sincronizada.
+            */}
+            {bloco.karaoke && (
+              <Link className="entrar-no-karaoke" href={`/${projectSlug}/karaoke/${bloco.id}`}>
+                <span className="convite-karaoke">
+                  <span aria-hidden>🎤</span> Cantar no Modo Karaokê
+                </span>
+              </Link>
+            )}
+          </>
         ) : (
           somFazParteDaEstrutura && (
             <div className="lugar-do-som" role="note">
