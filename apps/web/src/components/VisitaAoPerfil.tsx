@@ -1,5 +1,6 @@
 'use client'
 
+import { useRef } from 'react'
 import { RastreadorDeVisita } from '@/components/RastreadorDeVisita'
 import { useAuth } from '@/components/ProvedorDeAuth'
 
@@ -14,10 +15,20 @@ import { useAuth } from '@/components/ProvedorDeAuth'
  *
  * Espera pela sessão antes de decidir: durante o primeiro instante `usuario`
  * ainda é nulo, e contar nesse instante contaria o dono como visitante.
+ *
+ * E DECIDE UMA VEZ SÓ. A primeira versão voltava a decidir a cada mudança de
+ * sessão, e medido em 17/09: ao carregar em "Sair da conta" no próprio perfil,
+ * a sessão desaparece enquanto a página ainda está à vista, a verificação passa
+ * a achar que é um visitante, e o dono contava uma visita a si próprio no
+ * instante em que saía. Quem estava a ver quando a página abriu é quem conta.
  */
 export function VisitaAoPerfil({ projectId, userId }: { projectId: string; userId: string }) {
   const { usuario, carregando } = useAuth()
-  if (carregando) return null
-  if (usuario?.id === userId) return null
+  const decisao = useRef<'contar' | 'ignorar' | null>(null)
+
+  if (decisao.current === null && !carregando) {
+    decisao.current = usuario?.id === userId ? 'ignorar' : 'contar'
+  }
+  if (decisao.current !== 'contar') return null
   return <RastreadorDeVisita projectId={projectId} type="PAGE_VIEW" props={{ perfilId: userId }} />
 }
