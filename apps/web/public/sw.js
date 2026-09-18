@@ -91,7 +91,37 @@ self.addEventListener('fetch', (evento) => {
         c.match(req).then((cacheado) => {
           const daRede = fetch(req)
             .then((res) => {
-              if (res.ok) c.put(req, res.clone())
+              /*
+                SÓ SE GUARDA O QUE CHEGOU INTEIRO.
+
+                Isto guardava qualquer resposta com `ok`, e a mídia é servida
+                primeiro do cache. Uma descarga cortada a meio numa rede fraca
+                ficava guardada como se fosse a imagem, e era essa que aparecia
+                das vezes seguintes: o topo da arte e o resto vazio.
+
+                Ele descreveu exactamente isso em 18/09 na "Carta de amor de
+                Deus para você": a caixa do tamanho certo, só a parte de cima
+                desenhada. O ficheiro no servidor estava inteiro e abria bem
+                num navegador limpo.
+
+                Agora compara-se o que chegou com o que o servidor anunciou
+                (`content-length`) e só se guarda se baterem. E só respostas
+                200: um 206 é um pedaço por definição.
+              */
+              if (res.ok && res.status === 200) {
+                const copia = res.clone()
+                copia
+                  .blob()
+                  .then((corpo) => {
+                    const anunciado = Number(copia.headers.get('content-length') || 0)
+                    if (anunciado && corpo.size !== anunciado) return
+                    return c.put(
+                      req,
+                      new Response(corpo, { status: 200, headers: copia.headers }),
+                    )
+                  })
+                  .catch(() => {})
+              }
               return res
             })
             .catch(() => cacheado)
