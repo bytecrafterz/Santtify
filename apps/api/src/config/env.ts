@@ -5,6 +5,12 @@ import { z } from 'zod'
  * é preferível falhar no start do que descobrir em produção que o salt de
  * privacidade estava vazio e os hashes saíram todos iguais.
  */
+/** Uma linha `CHAVE=` vazia no .env conta como ausente, e não como texto vazio. */
+const vazioComoAusente = z
+  .string()
+  .optional()
+  .transform((v) => (v && v.trim() ? v.trim() : undefined))
+
 const schema = z.object({
   NODE_ENV: z.enum(['development', 'test', 'production']).default('development'),
   API_PORT: z.coerce.number().int().positive().default(3333),
@@ -66,6 +72,30 @@ const schema = z.object({
   BREVO_API_KEY: z.string().optional(),
   MAIL_REMETENTE: z.string().email().optional(),
   MAIL_REMETENTE_NOME: z.string().default('Santtify'),
+
+  /**
+   * Quem processa os pagamentos dos cartões.
+   *
+   * `manual` por omissão: é o que deixa a plataforma inteira funcionar sem
+   * conta em provedor nenhum, com a confirmação feita no painel. Passa a
+   * `mercadopago` quando as chaves existirem.
+   */
+  PAGAMENTOS_PROVEDOR: z.enum(['manual', 'mercadopago']).default('manual'),
+
+  /** O Access Token da aplicação no Mercado Pago. É uma senha: só no servidor. */
+  MERCADOPAGO_ACCESS_TOKEN: vazioComoAusente,
+  /**
+   * A chave secreta das notificações, que o Mercado Pago gera DEPOIS de se
+   * configurar o endereço delas no painel dele.
+   *
+   * Opcional, e não por descuido. Sem ela a assinatura não se confere, mas o
+   * aviso também não é acreditado: o que diz se um pedido foi pago é a
+   * consulta que a API faz ao Mercado Pago com o nosso Access Token, nunca o
+   * corpo que chega. Um aviso forjado só consegue pedir-nos que perguntemos.
+   * A assinatura é a segunda porta, não a primeira — e exigi-la na subida
+   * impedia o primeiro deploy, que é o que cria o endereço de onde ela nasce.
+   */
+  MERCADOPAGO_WEBHOOK_SECRET: vazioComoAusente,
 })
 
 /**
@@ -77,6 +107,15 @@ const schema = z.object({
  * mãe. Falhar aqui, na subida, é o mesmo princípio do resto deste ficheiro.
  */
 const schemaComRegras = schema.superRefine((env, ctx) => {
+  // Ligar o Mercado Pago sem a chave deixava o site a mostrar "Pagar com Pix" e
+  // a rebentar no clique. Mais vale não subir.
+  if (env.PAGAMENTOS_PROVEDOR === 'mercadopago' && !env.MERCADOPAGO_ACCESS_TOKEN) {
+    ctx.addIssue({
+      code: z.ZodIssueCode.custom,
+      path: ['MERCADOPAGO_ACCESS_TOKEN'],
+      message: 'obrigatório com PAGAMENTOS_PROVEDOR=mercadopago',
+    })
+  }
   if (env.NODE_ENV === 'production' && !env.CARTOES_DIR) {
     ctx.addIssue({
       code: z.ZodIssueCode.custom,

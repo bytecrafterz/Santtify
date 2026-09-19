@@ -56,6 +56,8 @@ class ActualizarCriancaDto {
 
 class PagarDto {
   @IsEnum(MeioDePagamento) meio!: MeioDePagamento
+  /** Segue para o provedor, que o exige. O pedido não o guarda. */
+  @IsEmail({}, { message: 'Escreva um e-mail válido.' }) email!: string
 }
 
 class EnviarPorEmailDto {
@@ -190,7 +192,7 @@ export class CartoesController {
 
   @Post('pedidos/:pedidoId/pagamento')
   pagar(@Param('pedidoId') pedidoId: string, @Body() dto: PagarDto) {
-    return this.cartoes.iniciarPagamento(pedidoId, dto.meio)
+    return this.cartoes.iniciarPagamento(pedidoId, dto.meio, dto.email)
   }
 
   /**

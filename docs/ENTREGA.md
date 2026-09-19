@@ -365,6 +365,63 @@ diferente de `abreviar` em `lib/numeros`, que dá "1,5 mil" — as duas estão c
 e servem ecrãs diferentes, ambas escritas por ele. `Intl.NumberFormat` em
 português nunca dá "K".
 
+## Pagamentos: Mercado Pago
+
+A conta é a do cliente, no CPF dele, até ele abrir empresa. Mudar para a conta
+da empresa é trocar as chaves no servidor; o código não muda.
+
+### Como funciona
+
+- **Pix pela API de Orders** (`POST /v1/orders`). O código copia e cola vem na
+  resposta; o QR desenha-se a partir dele e aparece no nosso ecrã, com um botão
+  "Copiar código Pix" — no telemóvel é esse o caminho, não a câmara. A Orders é
+  a que o cliente escolheu ao criar a aplicação e a que o Mercado Pago mantém.
+- **Cartão pelo Checkout Pro** (`POST /checkout/preferences`). A pessoa paga na
+  página do Mercado Pago e volta para `/[projeto]/cartoes?pedido=<id>`. Os
+  dados do cartão nunca passam por nós.
+- **O e-mail de quem paga** é pedido no ecrã (o Mercado Pago exige-o), segue para
+  ele e não fica guardado no pedido.
+- **Avisos** em `POST /api/pagamentos/mercadopago/aviso`. **Nunca se acredita no
+  corpo**: a API pergunta ao Mercado Pago o estado da order ou do pagamento, com
+  o nosso token, e só essa resposta marca o pedido como pago
+  (`processed/accredited` numa order, `approved` num pagamento). A assinatura
+  `x-signature` confere-se quando existe `MERCADOPAGO_WEBHOOK_SECRET`
+  (`assinatura-mercadopago.ts`; template `id:<data.id em minúsculas>;request-id:<x-request-id>;ts:<ts>;`).
+  Idempotente por `mp:<tipo>:<id>:<estado>`.
+- O ecrã do pedido verifica o estado sozinho de 5 em 5 s enquanto espera o
+  pagamento, até 20 minutos.
+- **O provedor escolhe-se no ambiente** (`PAGAMENTOS_PROVEDOR=manual|mercadopago`).
+  Voltar ao manual no dia, se algo correr mal, é mudar uma linha e reiniciar a
+  API. A confirmação manual no painel continua a existir com os dois.
+
+### Pôr no ar (produção)
+
+1. No Mercado Pago, na aplicação "Santtify": **Credenciais de produção**, activar
+   e copiar o **Access Token**.
+2. No servidor, em `.env.production`:
+   `PAGAMENTOS_PROVEDOR=mercadopago` e `MERCADOPAGO_ACCESS_TOKEN=...`
+3. Reiniciar só a API, com o ambiente novo:
+   `docker compose -f docker-compose.prod.yml --env-file .env.production up -d api`
+4. No Mercado Pago: **Webhooks > Configurar notificações**, modo produtivo,
+   endereço `https://santtify.com/api/pagamentos/mercadopago/aviso`, eventos
+   **Order (Mercado Pago)** e **Pagamentos**. Salvar gera a chave secreta.
+5. `MERCADOPAGO_WEBHOOK_SECRET=<a chave>` no `.env.production`, e o passo 3 outra vez.
+6. Um Pix pequeno de verdade antes de anunciar.
+
+### O que foi verificado, e o que não
+
+Verificado contra a API de teste do Mercado Pago (credenciais de teste do
+cliente): o Pix devolve um código EMV verdadeiro (`000201…`), o cartão devolve a
+página de checkout, um aviso verdadeiro é consultado e registado sem marcar
+pago, o repetido é ignorado, uma order inventada é ignorada (404 no Mercado
+Pago), a assinatura certa passa e a errada dá 401.
+
+**Não verificado: um pagamento concluído de ponta a ponta.** Um Pix de teste não
+se paga, e o cartão de teste exige entrar com um comprador de teste na página do
+Mercado Pago. Faz-se no passo 6, com dinheiro de verdade e valor pequeno. Também
+por confirmar: se o Checkout Pro da conta brasileira aceita cartões emitidos
+fora do Brasil (compradores de Portugal).
+
 ## Modo Karaokê
 
 Pedido do cliente em 13/09, fechado em 14/09 com seis artes da Santtify como

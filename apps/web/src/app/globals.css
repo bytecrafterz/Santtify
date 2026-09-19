@@ -8361,6 +8361,37 @@ h2.funil {
   gap: 8px;
 }
 
+.cartoes-email-pagamento {
+  display: grid;
+  gap: 4px;
+  margin-bottom: 4px;
+  font-size: 0.9rem;
+}
+
+.cartoes-email-pagamento input {
+  padding: 12px;
+  font: inherit;
+  font-size: 1rem;
+  color: var(--cor-texto);
+  background: var(--cor-superficie);
+  border: 1px solid var(--cor-borda);
+  border-radius: 10px;
+}
+
+/* O código inteiro, à vista, para quem prefere seleccionar à mão. */
+.cartoes-pix-codigo {
+  width: 100%;
+  padding: 10px;
+  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+  font-size: 0.75rem;
+  color: var(--cor-texto-suave);
+  word-break: break-all;
+  resize: none;
+  background: var(--cor-fundo);
+  border: 1px solid var(--cor-borda);
+  border-radius: 10px;
+}
+
 /* ── Painel dos cartões e do carrossel ──────────────────────────── */
 
 .painel-cartoes { display: flex; flex-direction: column; gap: 16px; }

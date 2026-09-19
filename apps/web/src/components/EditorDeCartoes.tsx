@@ -17,6 +17,7 @@ import {
   type Pedido,
 } from '@/lib/cartoes'
 import { ErroDeApi } from '@/lib/auth'
+import { useAuth } from './ProvedorDeAuth'
 import { EntregaDosCartoes } from './EntregaDosCartoes'
 
 /**
@@ -86,6 +87,11 @@ function maiuscula(texto: string): string {
   return texto ? texto.charAt(0).toLocaleUpperCase('pt-BR') + texto.slice(1) : texto
 }
 
+/** Só o bastante para apanhar gralhas; quem decide se o e-mail serve é o servidor. */
+function emailValido(texto: string): boolean {
+  return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(texto.trim())
+}
+
 export function EditorDeCartoes({ projectSlug }: { projectSlug: string }) {
   const [modelos, definirModelos] = useState<ModeloDeCartao[]>([])
   const [pedido, definirPedido] = useState<Pedido | null>(null)
@@ -95,6 +101,9 @@ export function EditorDeCartoes({ projectSlug }: { projectSlug: string }) {
   const [modeloActivo, definirModeloActivo] = useState(0)
   const [erro, definirErro] = useState<string | null>(null)
   const [ocupado, definirOcupado] = useState<string | null>(null)
+  const { usuario } = useAuth()
+  const [email, definirEmail] = useState('')
+  const [pixCopiado, definirPixCopiado] = useState(false)
   const [ampliado, definirAmpliado] = useState(false)
   const [categorias, definirCategorias] = useState<Categoria[] | null>(null)
   const [categoria, definirCategoria] = useState<string | null>(null)
@@ -201,6 +210,40 @@ export function EditorDeCartoes({ projectSlug }: { projectSlug: string }) {
       definirOcupado(null)
     }
   }, [])
+
+  // Quem tem conta não escreve o e-mail outra vez.
+  useEffect(() => {
+    if (usuario?.email) definirEmail((actual) => actual || usuario.email)
+  }, [usuario?.email])
+
+  /*
+    O ESTADO DO PAGAMENTO ACTUALIZA-SE SOZINHO.
+
+    Com o Pix a sério, ela paga no aplicativo do banco e volta para aqui. Antes
+    tinha de adivinhar que havia um botão para verificar; agora o ecrã pergunta
+    de 5 em 5 segundos enquanto está à espera, e só com o separador à vista.
+
+    EM QUALQUER PASSO, e não só no do pagamento: ela pode ir personalizar
+    enquanto o Pix confirma, e quem volta da página do cartão retoma no editor.
+    Pára ao fim de 20 minutos: quem ainda não pagou nessa altura volta pelo
+    botão, e o servidor não fica a responder a um separador esquecido.
+  */
+  const aEsperarPagamento = pedido?.estado === 'AGUARDANDO_PAGAMENTO' ? pedido.id : null
+  useEffect(() => {
+    if (!aEsperarPagamento) return
+    const fim = Date.now() + 20 * 60_000
+    const temporizador = window.setInterval(() => {
+      if (Date.now() > fim) return window.clearInterval(temporizador)
+      if (document.visibilityState !== 'visible') return
+      cartoes
+        .verPedido(projectSlug, aEsperarPagamento)
+        .then((p) => {
+          if (p.estado !== 'AGUARDANDO_PAGAMENTO') definirPedido(p)
+        })
+        .catch(() => {})
+    }, 5_000)
+    return () => window.clearInterval(temporizador)
+  }, [aEsperarPagamento, projectSlug])
 
   // ── Passo 0: para quem são os cartões ───────────────────────────
 
@@ -458,13 +501,26 @@ export function EditorDeCartoes({ projectSlug }: { projectSlug: string }) {
 
           {!pedido.meio && (
             <div className="cartoes-meios">
+              {/* O processador de pagamentos exige um e-mail de quem paga. Vai
+                  para ele e não fica guardado no pedido. */}
+              <label className="cartoes-email-pagamento">
+                <span>Seu e-mail, para o comprovante</span>
+                <input
+                  type="email"
+                  inputMode="email"
+                  autoComplete="email"
+                  value={email}
+                  onChange={(e) => definirEmail(e.target.value)}
+                  placeholder="voce@exemplo.com"
+                />
+              </label>
               <button
                 type="button"
                 className="cartoes-accao"
-                disabled={ocupado !== null}
+                disabled={ocupado !== null || !emailValido(email)}
                 onClick={() =>
                   comErro('pix', async () => {
-                    definirPedido(await cartoes.pagar(projectSlug, pedido.id, 'PIX'))
+                    definirPedido(await cartoes.pagar(projectSlug, pedido.id, 'PIX', email.trim()))
                   })
                 }
               >
@@ -473,10 +529,17 @@ export function EditorDeCartoes({ projectSlug }: { projectSlug: string }) {
               <button
                 type="button"
                 className="cartoes-accao-secundaria"
-                disabled={ocupado !== null}
+                disabled={ocupado !== null || !emailValido(email)}
                 onClick={() =>
                   comErro('cartao', async () => {
-                    definirPedido(await cartoes.pagar(projectSlug, pedido.id, 'CARTAO'))
+                    const resposta = await cartoes.pagar(projectSlug, pedido.id, 'CARTAO', email.trim())
+                    definirPedido(resposta)
+                    // O cartão paga-se na página do Mercado Pago, e ela devolve
+                    // a pessoa aqui. O pedido fica guardado neste aparelho, por
+                    // isso o editor retoma onde estava.
+                    if (resposta.urlDeRedireccionamento) {
+                      window.location.assign(resposta.urlDeRedireccionamento)
+                    }
                   })
                 }
               >
@@ -494,6 +557,44 @@ export function EditorDeCartoes({ projectSlug }: { projectSlug: string }) {
                 // utilizador.
                 dangerouslySetInnerHTML={{ __html: pedido.pixQrSvg }}
               />
+              {/*
+                O "COPIA E COLA" É O QUE SE USA NO TELEMÓVEL.
+
+                Quem compra no telemóvel não consegue apontar a câmara ao próprio
+                ecrã. O caminho real é copiar o código e colá-lo no aplicativo
+                do banco, e por isso ele vem primeiro e num botão grande.
+              */}
+              {pedido.pixCopiaECola && (
+                <>
+                  <button
+                    type="button"
+                    className="cartoes-accao"
+                    onClick={() => {
+                      void navigator.clipboard
+                        ?.writeText(pedido.pixCopiaECola ?? '')
+                        .then(() => {
+                          definirPixCopiado(true)
+                          window.setTimeout(() => definirPixCopiado(false), 3000)
+                        })
+                        .catch(() => definirPixCopiado(false))
+                    }}
+                  >
+                    {pixCopiado ? '✓ Código copiado' : 'Copiar código Pix'}
+                  </button>
+                  <p className="cartoes-ajuda">
+                    Abra o aplicativo do seu banco, escolha Pix copia e cola e cole o
+                    código. Ou aponte a câmera para o QR Code acima.
+                  </p>
+                  <textarea
+                    className="cartoes-pix-codigo"
+                    readOnly
+                    value={pedido.pixCopiaECola}
+                    rows={3}
+                    aria-label="Código Pix copia e cola"
+                    onFocus={(e) => e.currentTarget.select()}
+                  />
+                </>
+              )}
               <p className="cartoes-ajuda">
                 Você pode continuar personalizando enquanto o pagamento é
                 confirmado. Os arquivos ficam liberados assim que a confirmação

@@ -214,10 +214,10 @@ export const cartoes = {
       { method: 'PATCH', body: JSON.stringify(dados) },
     ),
 
-  pagar: (projeto: string, pedidoId: string, meio: 'PIX' | 'CARTAO') =>
+  pagar: (projeto: string, pedidoId: string, meio: 'PIX' | 'CARTAO', email: string) =>
     chamarComRenovacao<Pedido & { urlDeRedireccionamento: string | null }>(
       `/projects/${projeto}/cartoes/pedidos/${pedidoId}/pagamento`,
-      { method: 'POST', body: JSON.stringify({ meio }) },
+      { method: 'POST', body: JSON.stringify({ meio, email }) },
     ),
 
   /** O endereço da foto. Rota, nunca ficheiro estático — é foto de criança. */

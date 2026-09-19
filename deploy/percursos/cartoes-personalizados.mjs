@@ -81,7 +81,9 @@ try {
   await pg.close()
   pg = await ctx.newPage()
   await pg.goto(`${SITE}/${PROJ}/cartoes`, { waitUntil: 'networkidle' })
-  await pg.waitForTimeout(2500)
+  // Esperar pelo que se quer ver, e não pelo relógio. Uma pausa fixa de 2,5 s
+  // falhava num servidor lento com o pedido retomado um instante depois.
+  await pg.locator('.cartoes-escolha').first().waitFor({ timeout: 30000 }).catch(() => {})
   p_(
     'fechar o separador nao perde o pedido',
     (await pg.locator('.cartoes-escolha').count()) > 0,
@@ -92,9 +94,21 @@ try {
   await pg.waitForTimeout(1500)
 
   await pg.getByRole('button', { name: /pagamento/i }).click()
+  // O processador exige o e-mail de quem paga. Sem ele os botões ficam parados.
+  p_('sem e-mail nao se paga', await pg.getByRole('button', { name: /Pagar com Pix/i }).isDisabled())
+  // O endereço de comprador de teste da documentação do Mercado Pago.
+  await pg.locator('.cartoes-email-pagamento input').fill(process.env.EMAIL_PAGADOR ?? 'test_user_br@testuser.com')
   await pg.getByRole('button', { name: /Pagar com Pix/i }).click()
   await pg.locator('.cartoes-pix-qr svg').waitFor({ timeout: 45000 })
   p_('o Pix mostra um QR', true)
+  // Com o Mercado Pago ligado o código é um Pix a sério (EMV, começa por 000201);
+  // com o provedor manual é o texto de aviso. Os dois têm de ter o botão de copiar.
+  const codigo = await pg.locator('.cartoes-pix-codigo').inputValue().catch(() => '')
+  p_('o Pix tem o codigo copia e cola', codigo.length > 20, codigo.slice(0, 24) + '…')
+  if (process.env.PROVEDOR === 'mercadopago') {
+    p_('e e um Pix de verdade', codigo.startsWith('000201'), codigo.slice(0, 6))
+  }
+  p_('com o botao de copiar', (await pg.getByRole('button', { name: /Copiar código Pix/i }).count()) === 1)
 
   // O ficheiro esta trancado enquanto o pagamento nao confirma. A verificacao
   // e no servidor: o botao a cinzento nao impede ninguem de escrever o endereco.

@@ -10,6 +10,9 @@ import { ArmazenamentoDeCartoesService } from './armazenamento-de-cartoes.servic
 import { ExpurgoDeCartoesService } from './expurgo.service'
 import { ProvedorDePagamento } from './pagamentos/provedor'
 import { ProvedorManual } from './pagamentos/provedor-manual'
+import { ProvedorMercadoPago } from './pagamentos/provedor-mercadopago'
+import { AvisosDePagamentoController } from './pagamentos/avisos.controller'
+import { ConfigService } from '@nestjs/config'
 import { StorageService } from '../admin/storage.service'
 import { ContagensService } from '../social/contagens.service'
 import { IdentityModule } from '../identity/identity.module'
@@ -24,6 +27,7 @@ import { MailModule } from '../common/mail/mail.module'
     AdminCartoesController,
     CarrosselController,
     PartilhaDeCartoesController,
+    AvisosDePagamentoController,
   ],
   providers: [
     CartoesService,
@@ -36,12 +40,20 @@ import { MailModule } from '../common/mail/mail.module'
     /**
      * O ponto de troca do provedor de pagamento.
      *
-     * Ligar um provedor a sério — Mercado Pago, Asaas, Efí para o Pix, Stripe
-     * para o cartão internacional — é escrever a classe e trocar o `useClass`
-     * desta linha. Nada mais no sistema sabe qual está a atender, e é para isso
-     * que a `ProvedorDePagamento` existe.
+     * Escolhido pelo `PAGAMENTOS_PROVEDOR` do ambiente, e não no código: passar
+     * do manual para o Mercado Pago — ou voltar atrás, se alguma coisa correr
+     * mal no dia — é mudar uma linha no servidor, sem publicar nada. Nada mais
+     * no sistema sabe qual está a atender, e é para isso que a
+     * `ProvedorDePagamento` existe.
      */
-    { provide: ProvedorDePagamento, useClass: ProvedorManual },
+    ProvedorManual,
+    ProvedorMercadoPago,
+    {
+      provide: ProvedorDePagamento,
+      useFactory: (config: ConfigService, manual: ProvedorManual, mercadoPago: ProvedorMercadoPago) =>
+        config.get('PAGAMENTOS_PROVEDOR') === 'mercadopago' ? mercadoPago : manual,
+      inject: [ConfigService, ProvedorManual, ProvedorMercadoPago],
+    },
   ],
   exports: [CartoesService, CarrosselService],
 })

@@ -519,10 +519,10 @@ export class CartoesService {
   // PAGAMENTO
   // ─────────────────────────────────────────────────────────────────
 
-  async iniciarPagamento(pedidoId: string, meio: MeioDePagamento) {
+  async iniciarPagamento(pedidoId: string, meio: MeioDePagamento, emailDoPagador: string) {
     const pedido = await this.prisma.pedidoDeCartoes.findUnique({
       where: { id: pedidoId },
-      include: { criancas: true },
+      include: { criancas: true, project: { select: { slug: true } } },
     })
     if (!pedido) throw new NotFoundException('Pedido não encontrado.')
     if (pedido.estado === EstadoDoPedido.PAGO || pedido.estado === EstadoDoPedido.PRONTO) {
@@ -539,12 +539,19 @@ export class CartoesService {
       where: { id: pedidoId },
     })
 
+    const site = (this.config.get<string>('PUBLIC_WEB_URL') ?? '').replace(/\/+$/, '')
     const cobranca = await this.provedor.criarCobranca({
       pedidoId,
       totalCent: actualizado.totalCent,
       moeda: actualizado.moeda,
       meio,
       descricao: `Cartões personalizados — ${escolhidas.length} conjunto(s)`,
+      emailDoPagador,
+      // De volta ao editor, que retoma o pedido sozinho e mostra o estado dele.
+      urlDeRegresso: `${site}/${pedido.project.slug}/cartoes?pedido=${pedidoId}`,
+      // A cobrança não sobrevive ao pedido: depois do prazo de abandono a foto
+      // já foi apagada, e um Pix pago a essa hora não teria o que entregar.
+      expiraEm: actualizado.expiraEm,
     })
 
     await this.prisma.pedidoDeCartoes.update({

@@ -64,6 +64,11 @@ services:
       BREVO_API_KEY: ${BREVO_API_KEY:-}
       MAIL_REMETENTE: ${MAIL_REMETENTE:-}
       MAIL_REMETENTE_NOME: ${MAIL_REMETENTE_NOME:-Santtify}
+      # Pagamentos dos cartões. Mesma regra da linha de cima: só chega ao
+      # contentor o que estiver escrito aqui.
+      PAGAMENTOS_PROVEDOR: ${PAGAMENTOS_PROVEDOR:-manual}
+      MERCADOPAGO_ACCESS_TOKEN: ${MERCADOPAGO_ACCESS_TOKEN:-}
+      MERCADOPAGO_WEBHOOK_SECRET: ${MERCADOPAGO_WEBHOOK_SECRET:-}
     volumes:
       # Volume nomeado: as músicas e áudios do cliente sobrevivem a
       # `docker compose down` e a qualquer rebuild da imagem.

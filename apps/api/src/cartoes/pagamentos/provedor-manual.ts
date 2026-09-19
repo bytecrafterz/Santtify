@@ -72,7 +72,7 @@ export class ProvedorManual extends ProvedorDePagamento {
    * `AvisoDePagamento` e o entrega ao mesmo método do serviço. O caminho da
    * confirmação é um só — o que muda é quem bate à porta.
    */
-  lerAviso(): AvisoDePagamento | null {
+  async lerAviso(): Promise<AvisoDePagamento | null> {
     return null
   }
 }

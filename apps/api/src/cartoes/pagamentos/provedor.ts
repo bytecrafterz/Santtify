@@ -26,6 +26,18 @@ export interface CobrancaPedida {
   moeda: string
   meio: MeioDePagamento
   descricao: string
+  /**
+   * O e-mail de quem paga, que os provedores exigem.
+   *
+   * Passa por aqui e segue para o provedor; o pedido não o guarda. Uma
+   * plataforma de crianças só guarda o que precisa, e para entregar os
+   * cartões o e-mail não é preciso.
+   */
+  emailDoPagador: string
+  /** Para onde o provedor devolve a pessoa depois de pagar com cartão. */
+  urlDeRegresso: string
+  /** Até quando a cobrança vale. Depois disso o pedido já foi abandonado. */
+  expiraEm: Date
 }
 
 export interface CobrancaCriada {
@@ -38,6 +50,16 @@ export interface CobrancaCriada {
   /** Para cartão: o endereço onde ela termina o pagamento. */
   urlDeRedireccionamento?: string
 }
+
+/** Um aviso tal como chegou: corpo, cabeçalhos e os parâmetros do endereço. */
+export interface AvisoRecebido {
+  corpo: unknown
+  cabecalhos: Record<string, string | string[] | undefined>
+  consulta: Record<string, unknown>
+}
+
+/** A assinatura do aviso não confere: quem o mandou não foi o provedor. */
+export class AvisoNaoAutenticado extends Error {}
 
 /** O que um aviso do provedor diz, depois de traduzido. */
 export interface AvisoDePagamento {
@@ -56,12 +78,17 @@ export abstract class ProvedorDePagamento {
   abstract criarCobranca(pedido: CobrancaPedida): Promise<CobrancaCriada>
 
   /**
-   * Traduz o corpo do webhook para o que o sistema entende.
+   * Traduz o webhook para o que o sistema entende.
    *
    * Devolve `null` quando o aviso não diz respeito a nada nosso — os provedores
    * mandam de tudo pelo mesmo endereço, e um aviso desconhecido é para ignorar
    * em silêncio, nunca para rebentar com um 500 que faz o provedor reenviar
    * o mesmo aviso durante horas.
+   *
+   * ASSÍNCRONO porque o aviso do Mercado Pago não diz se o pagamento entrou:
+   * diz só "a order X mudou". Saber o que mudou é perguntar-lhe, e a resposta
+   * dele é a única em que se acredita. Lança `AvisoNaoAutenticado` se a
+   * assinatura não conferir.
    */
-  abstract lerAviso(corpo: unknown, cabecalhos: Record<string, string>): AvisoDePagamento | null
+  abstract lerAviso(recebido: AvisoRecebido): Promise<AvisoDePagamento | null>
 }
