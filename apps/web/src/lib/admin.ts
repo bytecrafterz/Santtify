@@ -638,6 +638,9 @@ export interface ProjetoNoPainel {
   nome: string
   tagline: string | null
   capa: string | null
+  /** As medidas da imagem, para reservar a altura antes de ela chegar. */
+  capaLargura?: number | null
+  capaAltura?: number | null
   destaque: 'ESQUERDA' | 'DIREITA' | null
   /** Falso enquanto o projeto está em rascunho e ninguém de fora o vê. */
   publicado: boolean

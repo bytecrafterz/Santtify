@@ -70,8 +70,8 @@ export function PainelDoCarrossel() {
       definirProjetos(await painelDeCartoes.guardarCartaoDoCarrossel(slug, { coverUrl: asset.url }))
       if (asset.width && asset.height && asset.width < asset.height) {
         definirAviso(
-          'A imagem enviada está em pé. Na página ela é mostrada deitada (16:9), e ' +
-            'o que sobrar em cima e em baixo fica cortado.',
+          'A imagem enviada está em pé. Ela aparece inteira na largura da tela, e em ' +
+            'pé fica muito alta no telemóvel. Uma imagem deitada fica melhor.',
         )
       }
     })
@@ -91,8 +91,9 @@ export function PainelDoCarrossel() {
         </h2>
         <p className="subtitulo">
           Cada projeto aparece como uma imagem horizontal, com os números por baixo,
-          na ordem desta lista. Use uma imagem deitada, de preferência com 1600 × 900
-          pixels. Sem texto por baixo: a imagem é que mostra o que é o projeto.
+          na ordem desta lista. A imagem aparece inteira, sem cortes, na largura
+          da tela: use uma imagem deitada, com pelo menos 1200 pixels de largura.
+          Sem texto por baixo: a imagem é que mostra o que é o projeto.
         </p>
 
         <ul className="painel-projetos">

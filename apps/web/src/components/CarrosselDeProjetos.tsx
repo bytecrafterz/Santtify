@@ -17,6 +17,10 @@ import { BalaoGrande, CoracaoGrande, OlhoGrande, SetaGrande } from './IconesGran
  * imagem abre o projeto. Os números são os mesmos desenhos das publicações,
  * para a criança reconhecer o que já conhece.
  *
+ * A IMAGEM APARECE INTEIRA, na proporção em que foi feita. As dele não são
+ * todas iguais — uma faixa 3:1 e uma 16:9 — e são artes com texto e selos até
+ * à borda. Uma caixa de tamanho fixo cortava-os.
+ *
  * O PERFIL CONTINUA SEM SER TOCADO. Isto entra por baixo dele e mais nada.
  *
  * Componente de servidor: é uma lista que se lê e se desenha, sem estado, e
@@ -48,6 +52,10 @@ function Projeto({ projeto, primeiro }: { projeto: ProjetoNoCarrossel; primeiro:
           <img
             src={projeto.capa}
             alt=""
+            // Com as medidas, o espaço fica reservado na proporção certa antes
+            // de a imagem chegar. Ver a nota em `carrossel.service`.
+            width={projeto.capaLargura ?? undefined}
+            height={projeto.capaAltura ?? undefined}
             // O primeiro está à vista quando a página abre; os outros esperam.
             loading={primeiro ? 'eager' : 'lazy'}
             decoding="async"

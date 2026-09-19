@@ -54,6 +54,26 @@ export class CarrosselService {
 
     const contagens = await this.contagens.deProjectos(projetos.map((p) => p.id))
 
+    /*
+      AS MEDIDAS DA IMAGEM VIAJAM COM ELA.
+
+      Desde 19/09 a imagem de cada projeto aparece inteira, na proporção dela: a
+      do Jesus Alfabeto é uma faixa 3:1, a do Minha Identidade é 16:9, e são
+      artes com texto até à borda que não se podem cortar. Sem as medidas, o
+      navegador não sabe que altura guardar e a lista salta quando cada imagem
+      chega. O upload já as guarda no `MediaAsset`; lê-se de lá pelo endereço.
+    */
+    const enderecos = projetos.map((p) => p.coverUrl).filter((u): u is string => Boolean(u))
+    const medidas = new Map(
+      (enderecos.length
+        ? await this.prisma.mediaAsset.findMany({
+            where: { url: { in: enderecos } },
+            select: { url: true, width: true, height: true },
+          })
+        : []
+      ).map((m) => [m.url, m]),
+    )
+
     const posicao = (d: DestaqueDoCarrossel | null) =>
       d === DestaqueDoCarrossel.ESQUERDA ? 0 : d === DestaqueDoCarrossel.DIREITA ? 1 : 2
 
@@ -65,6 +85,8 @@ export class CarrosselService {
         nome: p.name,
         tagline: p.tagline,
         capa: p.coverUrl,
+        capaLargura: (p.coverUrl && medidas.get(p.coverUrl)?.width) || null,
+        capaAltura: (p.coverUrl && medidas.get(p.coverUrl)?.height) || null,
         destaque: p.destaque,
         publicado: p.status === ProjectStatus.ACTIVE,
         /**

@@ -7750,13 +7750,12 @@ h2.funil {
   box-shadow: var(--sombra);
 }
 
-/* 16:9, a proporção de um ecrã deitado. A imagem enche a caixa e corta o que
-   sobrar, em vez de deixar barras: a caixa tem sempre o mesmo tamanho, venha
-   a imagem que vier, e a página não salta quando ela chega. */
+/* A imagem inteira, na largura toda e na proporção dela, sem cortes: as artes
+   dele têm texto e selos até à borda. A altura reserva-se pelos atributos
+   width/height que vêm do servidor, e por isso a página não salta. */
 .projeto-imagem {
   position: relative;
   display: block;
-  aspect-ratio: 16 / 9;
   max-width: 100%;
   background: var(--cor-borda);
 }
@@ -7764,8 +7763,7 @@ h2.funil {
 .projeto-imagem img {
   display: block;
   width: 100%;
-  height: 100%;
-  object-fit: cover;
+  height: auto;
 }
 
 .projeto-imagem:active img {
@@ -7778,6 +7776,8 @@ h2.funil {
 }
 
 .projeto-sem-imagem {
+  /* Sem imagem ainda, um espaço deitado com as iniciais. */
+  aspect-ratio: 16 / 9;
   display: grid;
   place-items: center;
   width: 100%;
@@ -8521,11 +8521,11 @@ h2.funil {
 
 .painel-projeto-accoes { display: flex; flex-wrap: wrap; gap: 6px; }
 
-/* A miniatura na proporção em que o projeto aparece na página: 16:9. */
+/* A miniatura na proporção da própria imagem, como na página. */
 .painel-projeto-miniatura {
   flex: none;
   width: 128px;
-  aspect-ratio: 16 / 9;
+  min-height: 48px;
   overflow: hidden;
   display: grid;
   place-items: center;
@@ -8537,9 +8537,9 @@ h2.funil {
 }
 
 .painel-projeto-miniatura img {
+  display: block;
   width: 100%;
-  height: 100%;
-  object-fit: cover;
+  height: auto;
 }
 
 .painel-projeto-da-pagina .painel-projeto-nome {
