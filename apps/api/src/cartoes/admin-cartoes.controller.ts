@@ -15,6 +15,8 @@ import { FileInterceptor } from '@nestjs/platform-express'
 import sharp from 'sharp'
 import { DestaqueDoCarrossel, FormatoDaMoldura } from '@pv/db'
 import {
+  ArrayMaxSize,
+  IsArray,
   IsBoolean,
   IsEnum,
   IsHexColor,
@@ -96,6 +98,11 @@ class CartaoDoCarrosselDto {
   @IsOptional() @IsString() @MaxLength(120) tagline?: string
   @IsOptional() @IsString() coverUrl?: string
   @IsOptional() @IsInt() @Min(0) ordemNoCarrossel?: number
+  @IsOptional() @IsBoolean() publicado?: boolean
+}
+
+class OrdemDoCarrosselDto {
+  @IsArray() @ArrayMaxSize(200) @IsString({ each: true }) slugs!: string[]
 }
 
 class NovoProjetoDto {
@@ -236,6 +243,11 @@ export class AdminCartoesController {
     @Body() dto: CartaoDoCarrosselDto,
   ) {
     return this.carrossel.actualizarCartao(projectSlug, dto)
+  }
+
+  @Post('carrossel/ordem')
+  ordenarCarrossel(@Body() dto: OrdemDoCarrosselDto) {
+    return this.carrossel.ordenar(dto.slugs)
   }
 
   @Post('projetos')

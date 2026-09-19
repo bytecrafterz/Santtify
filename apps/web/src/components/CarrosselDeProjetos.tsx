@@ -1,40 +1,37 @@
 import Link from 'next/link'
 import { abreviarKM } from '@pv/cartoes'
 import { projetosDoCarrossel, type ProjetoNoCarrossel } from '@/lib/carrossel'
+import { BalaoGrande, CoracaoGrande, OlhoGrande, SetaGrande } from './IconesGrandes'
 
 /**
- * O carrossel de projetos, debaixo do perfil.
+ * Os projetos, debaixo do perfil: uma imagem por linha, e mais nada.
  *
- * O PERFIL NÃO É TOCADO. Isto entra por baixo dele e mais nada — o cliente
- * escreveu-o duas vezes e tem razão: o perfil já funciona e já foi pago.
+ * REFEITO EM 19/09, A PEDIDO DELE, depois de ver a primeira versão no ar. Os
+ * cartões lado a lado, com nome e frase, ficavam "acumulados e apertados" — e
+ * o público são crianças, muitas ainda sem saber ler. A regra dele agora é
+ * esta, e é toda a regra:
  *
- * Componente de servidor, sem `use client`. Não tem estado nenhum: é uma lista
- * que se lê e se desenha. Mandá-lo para o navegador só acrescentaria JavaScript
- * a uma coisa que o servidor já entrega pronta, e este ecrã abre-se quase
- * sempre num telemóvel com dados móveis.
+ *   imagem horizontal do projeto → os quatro números → o projeto seguinte.
  *
- * O deslizar é `scroll-snap` do próprio CSS. Uma biblioteca de carrossel aqui
- * seriam uns 30 kB para fazer o que o navegador já faz nativamente, e com pior
- * comportamento no toque.
+ * Sem título nem descrição: a imagem é que diz o que o projeto é. Tocar na
+ * imagem abre o projeto. Os números são os mesmos desenhos das publicações,
+ * para a criança reconhecer o que já conhece.
+ *
+ * O PERFIL CONTINUA SEM SER TOCADO. Isto entra por baixo dele e mais nada.
+ *
+ * Componente de servidor: é uma lista que se lê e se desenha, sem estado, e
+ * este ecrã abre-se quase sempre num telemóvel com dados móveis.
  */
 export async function CarrosselDeProjetos() {
   const projetos = await projetosDoCarrossel()
   if (projetos.length === 0) return null
 
   return (
-    <section className="carrossel-de-projetos" aria-labelledby="titulo-projetos">
-      <header className="carrossel-cabecalho">
-        <h2 id="titulo-projetos">Projetos</h2>
-        <Link href="/projetos" className="carrossel-ver-todos">
-          Ver todos
-          <span aria-hidden="true">›</span>
-        </Link>
-      </header>
-
-      <ul className="carrossel-trilho">
+    <section className="projetos-da-pagina" aria-label="Projetos">
+      <ul className="projetos-lista">
         {projetos.map((projeto, indice) => (
-          <li key={projeto.slug} className="carrossel-item">
-            <CartaoDeProjeto projeto={projeto} numero={indice + 1} />
+          <li key={projeto.slug}>
+            <Projeto projeto={projeto} primeiro={indice === 0} />
           </li>
         ))}
       </ul>
@@ -42,71 +39,62 @@ export async function CarrosselDeProjetos() {
   )
 }
 
-function CartaoDeProjeto({
-  projeto,
-  numero,
-}: {
-  projeto: ProjetoNoCarrossel
-  numero: number
-}) {
+function Projeto({ projeto, primeiro }: { projeto: ProjetoNoCarrossel; primeiro: boolean }) {
   return (
-    <Link href={`/${projeto.slug}`} className="cartao-de-projeto">
-      <span className="cartao-numero" aria-hidden="true">
-        {numero}
-      </span>
-
-      <span className="cartao-capa">
+    <article className="projeto-da-pagina">
+      <Link href={`/${projeto.slug}`} className="projeto-imagem" aria-label={projeto.nome}>
         {projeto.capa ? (
           // eslint-disable-next-line @next/next/no-img-element
-          <img src={projeto.capa} alt="" loading="lazy" />
+          <img
+            src={projeto.capa}
+            alt=""
+            // O primeiro está à vista quando a página abre; os outros esperam.
+            loading={primeiro ? 'eager' : 'lazy'}
+            decoding="async"
+          />
         ) : (
-          /**
-           * Sem capa carregada, as iniciais do projeto.
-           *
-           * Um espaço cinzento vazio parece avaria; as iniciais parecem um
-           * projeto a que ainda falta a capa — que é exactamente o que é.
-           */
-          <span className="cartao-sem-capa" aria-hidden="true">
+          /*
+            Sem imagem carregada, as iniciais do projeto.
+
+            Um retângulo vazio parece avaria; as iniciais parecem um projeto a
+            que ainda falta a imagem — que é exactamente o que é, e o painel diz
+            a ele qual falta.
+          */
+          <span className="projeto-sem-imagem" aria-hidden="true">
             {iniciais(projeto.nome)}
           </span>
         )}
-      </span>
+      </Link>
 
-      <span className="cartao-corpo">
-        <strong className="cartao-nome">{projeto.nome}</strong>
-        {projeto.tagline && <span className="cartao-tagline">{projeto.tagline}</span>}
-      </span>
-
-      <span className="cartao-numeros">
-        <Numero rotulo="visualizações" valor={projeto.numeros.views} simbolo="👁" />
-        <Numero rotulo="curtidas" valor={projeto.numeros.likes} simbolo="♡" />
-        <Numero rotulo="comentários" valor={projeto.numeros.comments} simbolo="💬" />
-        <Numero rotulo="compartilhamentos" valor={projeto.numeros.shares} simbolo="↗" />
-      </span>
-    </Link>
+      {/* Só números: nada aqui se toca. Curtir e comentar são das publicações,
+          lá dentro; aqui é o total do projeto inteiro, como ele pediu no ponto 1. */}
+      <div className="indicadores-publicacao projeto-numeros">
+        <Numero rotulo="visualizações" valor={projeto.numeros.views} icone={<OlhoGrande />} />
+        <Numero rotulo="curtidas" valor={projeto.numeros.likes} icone={<CoracaoGrande />} />
+        <Numero rotulo="comentários" valor={projeto.numeros.comments} icone={<BalaoGrande />} />
+        <Numero rotulo="compartilhamentos" valor={projeto.numeros.shares} icone={<SetaGrande />} />
+      </div>
+    </article>
   )
 }
 
 /**
- * Um indicador.
- *
- * O número abreviado é o que se vê; o número inteiro fica no `title` e no rótulo
- * para leitores de ecrã. "20K" chega para quem olha de passagem, e quem precisa
- * do exacto continua a poder tê-lo — sem obrigar o cartão a ficar largo.
+ * Um indicador. O número abreviado é o que se vê ("20K", como ele escreveu no
+ * ponto 1); o inteiro fica no `title` e para os leitores de ecrã.
  */
 function Numero({
   rotulo,
   valor,
-  simbolo,
+  icone,
 }: {
   rotulo: string
   valor: number
-  simbolo: string
+  icone: React.ReactNode
 }) {
   return (
-    <span className="cartao-numero-item" title={`${valor.toLocaleString('pt-BR')} ${rotulo}`}>
-      <span aria-hidden="true">{simbolo}</span>
-      <span aria-hidden="true">{abreviarKM(valor)}</span>
+    <span className="indicador-grande" title={`${valor.toLocaleString('pt-BR')} ${rotulo}`}>
+      <span className="simbolo">{icone}</span>
+      <strong aria-hidden="true">{abreviarKM(valor)}</strong>
       <span className="apenas-leitor-de-ecra">
         {valor.toLocaleString('pt-BR')} {rotulo}
       </span>

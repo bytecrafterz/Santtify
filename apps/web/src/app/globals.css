@@ -7726,154 +7726,72 @@ h2.funil {
   border: 0;
 }
 
-/* ── Carrossel ──────────────────────────────────────────────────── */
+/* ── Projetos da página inicial ───────────────────────────────────
+   Uma imagem horizontal por projeto, a largura toda, os quatro números por
+   baixo, e o projeto seguinte. Pedido dele em 19/09: sem título nem texto,
+   porque quem usa são crianças e muitas ainda não lêem. */
 
-.carrossel-de-projetos {
-  margin: 20px 0 8px;
+.projetos-da-pagina {
+  margin: 8px 0 24px;
 }
 
-.carrossel-cabecalho {
-  display: flex;
-  align-items: baseline;
-  justify-content: space-between;
-  gap: 12px;
-  padding: 0 16px 10px;
-}
-
-.carrossel-cabecalho h2 {
-  margin: 0;
-  font-size: 0.85rem;
-  font-weight: 800;
-  letter-spacing: 0.08em;
-  text-transform: uppercase;
-  color: var(--cor-texto-suave);
-}
-
-.carrossel-ver-todos {
-  display: inline-flex;
-  align-items: center;
-  gap: 4px;
-  font-size: 0.9rem;
-  font-weight: 600;
-  color: var(--cor-primaria);
-  text-decoration: none;
-}
-
-/*
-  Deslizar com scroll-snap do navegador, sem biblioteca nenhuma.
-
-  Dois cartões por ecrã é o que o mockup pede — um à esquerda, outro à direita —
-  e é o que `minmax` garante em qualquer largura de telemóvel sem media query.
-*/
-.carrossel-trilho {
+.projetos-lista {
   display: grid;
-  grid-auto-flow: column;
-  grid-auto-columns: minmax(46%, 1fr);
-  gap: 12px;
+  gap: 18px;
+  padding: 0;
   margin: 0;
-  padding: 4px 16px 12px;
   list-style: none;
-  overflow-x: auto;
-  scroll-snap-type: x mandatory;
-  -webkit-overflow-scrolling: touch;
-  scrollbar-width: none;
 }
 
-.carrossel-trilho::-webkit-scrollbar {
-  display: none;
-}
-
-.carrossel-item {
-  scroll-snap-align: start;
-}
-
-.cartao-de-projeto {
-  position: relative;
-  display: flex;
-  flex-direction: column;
-  height: 100%;
+.projeto-da-pagina {
   overflow: hidden;
-  color: inherit;
-  text-decoration: none;
   background: var(--cor-superficie);
-  border: 1px solid var(--cor-borda);
-  border-radius: var(--raio);
+  border-radius: var(--raio-grande);
   box-shadow: var(--sombra);
 }
 
-.cartao-numero {
-  position: absolute;
-  top: 8px;
-  left: 8px;
-  z-index: 2;
-  display: grid;
-  width: 26px;
-  height: 26px;
-  font-size: 0.85rem;
-  font-weight: 700;
-  color: #fff;
-  background: rgba(23, 26, 34, 0.55);
-  border-radius: 50%;
-  place-items: center;
-  backdrop-filter: blur(4px);
-}
-
-.cartao-capa {
+/* 16:9, a proporção de um ecrã deitado. A imagem enche a caixa e corta o que
+   sobrar, em vez de deixar barras: a caixa tem sempre o mesmo tamanho, venha
+   a imagem que vier, e a página não salta quando ela chega. */
+.projeto-imagem {
+  position: relative;
   display: block;
-  aspect-ratio: 1 / 1;
-  overflow: hidden;
-  background: var(--cor-primaria-suave);
+  aspect-ratio: 16 / 9;
+  max-width: 100%;
+  background: var(--cor-borda);
 }
 
-.cartao-capa img {
+.projeto-imagem img {
+  display: block;
   width: 100%;
   height: 100%;
   object-fit: cover;
 }
 
-.cartao-sem-capa {
+.projeto-imagem:active img {
+  filter: brightness(0.94);
+}
+
+.projeto-imagem:focus-visible {
+  outline: 3px solid var(--cor-primaria);
+  outline-offset: -3px;
+}
+
+.projeto-sem-imagem {
   display: grid;
+  place-items: center;
   width: 100%;
   height: 100%;
-  font-size: 2rem;
+  font-size: 3rem;
   font-weight: 800;
-  color: var(--cor-primaria);
-  place-items: center;
-}
-
-.cartao-corpo {
-  display: flex;
-  flex: 1;
-  flex-direction: column;
-  gap: 2px;
-  padding: 10px 12px 6px;
-}
-
-.cartao-nome {
-  font-size: 0.95rem;
-  line-height: 1.25;
-}
-
-.cartao-tagline {
-  font-size: 0.8rem;
-  line-height: 1.35;
   color: var(--cor-texto-suave);
+  letter-spacing: 0.05em;
 }
 
-.cartao-numeros {
-  display: flex;
-  justify-content: space-between;
-  padding: 8px 12px 12px;
-  font-size: 0.78rem;
-  color: var(--cor-texto-suave);
-  border-top: 1px solid var(--cor-borda);
-  font-variant-numeric: tabular-nums;
-}
-
-.cartao-numero-item {
-  display: inline-flex;
-  gap: 3px;
-  align-items: center;
+/* Os números usam as regras de `.indicadores-publicacao`, as das publicações.
+   Aqui nada se toca, por isso sem cursor de mão. */
+.projeto-numeros .indicador-grande {
+  cursor: default;
 }
 
 /* ── Cartões personalizados ─────────────────────────────────────── */
@@ -8583,26 +8501,7 @@ h2.funil {
   border-radius: 10px;
 }
 
-/* ── Carrossel no painel ────────────────────────────────────────── */
-
-.painel-destaques { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-top: 10px; }
-
-.painel-destaque {
-  padding: 12px;
-  text-align: center;
-  background: var(--cor-primaria-suave);
-  border-radius: 12px;
-}
-
-.painel-destaque-rotulo {
-  display: block;
-  margin-bottom: 4px;
-  font-size: 0.68rem;
-  font-weight: 800;
-  letter-spacing: 0.08em;
-  text-transform: uppercase;
-  color: var(--cor-texto-suave);
-}
+/* ── Projetos da página inicial, no painel ─────────────────────── */
 
 .painel-projetos { padding: 0; margin: 10px 0 0; list-style: none; }
 
@@ -8620,7 +8519,41 @@ h2.funil {
 .painel-projeto-nome span { font-size: 0.8rem; color: var(--cor-texto-suave); }
 .painel-projeto-numeros { font-variant-numeric: tabular-nums; }
 
-.painel-projeto-accoes { display: flex; gap: 6px; }
+.painel-projeto-accoes { display: flex; flex-wrap: wrap; gap: 6px; }
+
+/* A miniatura na proporção em que o projeto aparece na página: 16:9. */
+.painel-projeto-miniatura {
+  flex: none;
+  width: 128px;
+  aspect-ratio: 16 / 9;
+  overflow: hidden;
+  display: grid;
+  place-items: center;
+  font-size: 0.7rem;
+  color: var(--cor-texto-suave);
+  background: var(--cor-fundo);
+  border: 1px dashed var(--cor-borda);
+  border-radius: 8px;
+}
+
+.painel-projeto-miniatura img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.painel-projeto-da-pagina .painel-projeto-nome {
+  flex: 1;
+  min-width: 10rem;
+}
+
+.painel-projeto-nome strong .painel-selo-falta + .painel-selo-falta {
+  margin-left: 4px;
+}
+
+.painel-enviar-imagem {
+  cursor: pointer;
+}
 
 .painel-botao-destaque {
   padding: 8px 10px;

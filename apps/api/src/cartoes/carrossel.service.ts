@@ -103,12 +103,30 @@ export class CarrosselService {
     return this.listar(true)
   }
 
+  /**
+   * `publicado` põe o projeto no site ou tira-o de lá.
+   *
+   * Pedido dele em 19/09: o "31 Atributos de Deus" ainda não está feito e não
+   * deve aparecer. Tirado do site, o projeto sai da lista da página inicial,
+   * mas o endereço dele continua a abrir — os QR Codes que já existam não
+   * partem, e ele continua a trabalhar no projeto pelo painel.
+   *
+   * Arquivado é outra coisa e não passa por aqui: esse fecha a página toda.
+   */
   async actualizarCartao(
     projectSlug: string,
-    dados: { tagline?: string | null; coverUrl?: string | null; ordemNoCarrossel?: number },
+    dados: {
+      tagline?: string | null
+      coverUrl?: string | null
+      ordemNoCarrossel?: number
+      publicado?: boolean
+    },
   ) {
     const projeto = await this.prisma.project.findUnique({ where: { slug: projectSlug } })
     if (!projeto) throw new NotFoundException('Projeto não encontrado.')
+    if (dados.publicado !== undefined && projeto.status === ProjectStatus.ARCHIVED) {
+      throw new BadRequestException('Este projeto está arquivado.')
+    }
 
     await this.prisma.project.update({
       where: { id: projeto.id },
@@ -118,9 +136,44 @@ export class CarrosselService {
         ...(dados.ordemNoCarrossel !== undefined
           ? { ordemNoCarrossel: dados.ordemNoCarrossel }
           : {}),
+        ...(dados.publicado !== undefined
+          ? { status: dados.publicado ? ProjectStatus.ACTIVE : ProjectStatus.DRAFT }
+          : {}),
       },
     })
 
+    return this.listar(true)
+  }
+
+  /**
+   * A ordem inteira da lista, de uma vez.
+   *
+   * Os dois "destaques" nasceram para o carrossel lado a lado, com um projeto à
+   * esquerda e outro à direita. Em 19/09 ele passou a lista para um projeto
+   * por linha, e aí esquerda e direita deixam de querer dizer alguma coisa: o
+   * que existe é primeiro, segundo, terceiro. Ordenar limpa os destaques, e a
+   * partir daí manda só `ordemNoCarrossel`.
+   *
+   * Até ele reordenar pela primeira vez, a ordem continua a que já estava no ar
+   * (os destaques primeiro), e nada muda sozinho no dia da publicação.
+   */
+  async ordenar(slugs: string[]) {
+    const projetos = await this.prisma.project.findMany({
+      where: { slug: { in: slugs } },
+      select: { id: true, slug: true },
+    })
+    if (projetos.length !== slugs.length) {
+      throw new BadRequestException('A lista de projetos mudou. Recarregue a página.')
+    }
+    const porSlug = new Map(projetos.map((p) => [p.slug, p.id]))
+    await this.prisma.$transaction(
+      slugs.map((slug, i) =>
+        this.prisma.project.update({
+          where: { id: porSlug.get(slug)! },
+          data: { ordemNoCarrossel: i, destaque: null },
+        }),
+      ),
+    )
     return this.listar(true)
   }
 

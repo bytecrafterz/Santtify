@@ -733,11 +733,18 @@ export const painelDeCartoes = {
 
   guardarCartaoDoCarrossel: (
     projeto: string,
-    dados: { tagline?: string; coverUrl?: string; ordemNoCarrossel?: number },
+    dados: { tagline?: string; coverUrl?: string; ordemNoCarrossel?: number; publicado?: boolean },
   ) =>
     chamarAdmin<ProjetoNoPainel[]>(`/admin/projects/${projeto}/cartao-do-carrossel`, {
       method: 'PATCH',
       body: JSON.stringify(dados),
+    }),
+
+  /** A ordem inteira da lista da página inicial, de cima para baixo. */
+  ordenarCarrossel: (slugs: string[]) =>
+    chamarAdmin<ProjetoNoPainel[]>('/admin/carrossel/ordem', {
+      method: 'POST',
+      body: JSON.stringify({ slugs }),
     }),
 
   criarProjeto: (dados: { slug: string; nome: string; blocos: number; tagline?: string }) =>

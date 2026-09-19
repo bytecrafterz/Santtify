@@ -108,8 +108,8 @@ export function ListaAdmin({ projectSlug }: { projectSlug: string }) {
       </Link>
 
       <Link className="bloco linha atalho-alfabeto" href={`/${projectSlug}/admin/carrossel`}>
-        <span>Carrossel de projetos</span>
-        <small>os dois destaques do perfil e a criação de projetos novos</small>
+        <span>Projetos da página inicial</span>
+        <small>a imagem de cada projeto, a ordem, quais aparecem, e projetos novos</small>
       </Link>
 
       <Link className="bloco linha atalho-alfabeto" href={`/${projectSlug}/admin/karaoke`}>

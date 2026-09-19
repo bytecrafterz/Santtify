@@ -2,27 +2,31 @@
 
 import { useCallback, useEffect, useState } from 'react'
 import { abreviarKM } from '@pv/cartoes'
-import { painelDeCartoes, type ProjetoNoPainel } from '@/lib/admin'
+import { admin, painelDeCartoes, type ProjetoNoPainel } from '@/lib/admin'
 import { ErroDeApi } from '@/lib/auth'
 
 /**
- * O carrossel, no painel.
+ * Os projetos da página inicial, no painel.
  *
- * Duas coisas que o cliente pediu por escrito e que passam a ser dele:
+ * Desde 19/09 a página mostra um projeto por linha, só com a imagem e os
+ * números — pedido dele depois de ver a primeira versão no ar. O painel segue
+ * isso, e passa a tratar de quatro coisas:
  *
- * 1. ESCOLHER OS DOIS DESTAQUES. Ele disse-o assim: "sou eu quem controla pelo
- *    painel quais são os dois projetos em destaque e posso trocar essas posições
- *    quando quiser". O que sai de um destaque não desaparece — cai para o meio
- *    do carrossel, como ele descreveu.
- *
- * 2. CRIAR PROJETOS com a quantidade de blocos que quiser. Sete, vinte, vinte e
- *    seis. O projeto novo aparece no carrossel sozinho, porque a lista é uma
- *    consulta e não uma lista escrita à mão.
+ * 1. A IMAGEM HORIZONTAL de cada projeto. Agora é tudo o que a criança vê, por
+ *    isso cada linha diz se ela falta.
+ * 2. MOSTRAR OU ESCONDER cada projeto. O "31 Atributos de Deus" ainda não está
+ *    pronto e não deve aparecer; escondido, continua a abrir pelo endereço e
+ *    ele continua a trabalhar nele.
+ * 3. A ORDEM, de cima para baixo. Os antigos destaques da esquerda e da direita
+ *    deixaram de fazer sentido numa lista com um projeto por linha.
+ * 4. CRIAR PROJETOS com a quantidade de blocos que quiser. O projeto novo
+ *    entra na lista sozinho, escondido até ele o mostrar.
  */
 export function PainelDoCarrossel() {
   const [projetos, definirProjetos] = useState<ProjetoNoPainel[]>([])
   const [aCarregar, definirACarregar] = useState(true)
   const [erro, definirErro] = useState<string | null>(null)
+  const [aviso, definirAviso] = useState<string | null>(null)
   const [ocupado, definirOcupado] = useState<string | null>(null)
 
   const carregar = useCallback(async () => {
@@ -41,6 +45,7 @@ export function PainelDoCarrossel() {
 
   const comErro = async (chave: string, accao: () => Promise<void>) => {
     definirErro(null)
+    definirAviso(null)
     definirOcupado(chave)
     try {
       await accao()
@@ -51,44 +56,63 @@ export function PainelDoCarrossel() {
     }
   }
 
+  const mover = (indice: number, passo: -1 | 1) =>
+    comErro(`mover-${indice}`, async () => {
+      const ordem = projetos.map((p) => p.slug)
+      const destino = indice + passo
+      ;[ordem[indice], ordem[destino]] = [ordem[destino], ordem[indice]]
+      definirProjetos(await painelDeCartoes.ordenarCarrossel(ordem))
+    })
+
+  const enviarImagem = (slug: string, arquivo: File) =>
+    comErro(`imagem-${slug}`, async () => {
+      const asset = await admin.enviarArquivo(arquivo)
+      definirProjetos(await painelDeCartoes.guardarCartaoDoCarrossel(slug, { coverUrl: asset.url }))
+      if (asset.width && asset.height && asset.width < asset.height) {
+        definirAviso(
+          'A imagem enviada está em pé. Na página ela é mostrada deitada (16:9), e ' +
+            'o que sobrar em cima e em baixo fica cortado.',
+        )
+      }
+    })
+
   if (aCarregar) return <p className="subtitulo">A carregar…</p>
 
-  const esquerda = projetos.find((p) => p.destaque === 'ESQUERDA')
-  const direita = projetos.find((p) => p.destaque === 'DIREITA')
+  const visiveis = projetos.filter((p) => p.publicado).length
 
   return (
     <div className="painel-cartoes">
       {erro && <p className="cartoes-erro">{erro}</p>}
+      {aviso && <p className="sincronizador-aviso">{aviso}</p>}
 
       <section className="painel-bloco">
-        <h2>Os dois destaques</h2>
+        <h2>
+          Projetos na página inicial ({visiveis} à mostra de {projetos.length})
+        </h2>
         <p className="subtitulo">
-          São os dois primeiros do carrossel. O projeto que sai de uma posição
-          continua no carrossel, mais à frente.
+          Cada projeto aparece como uma imagem horizontal, com os números por baixo,
+          na ordem desta lista. Use uma imagem deitada, de preferência com 1600 × 900
+          pixels. Sem texto por baixo: a imagem é que mostra o que é o projeto.
         </p>
-        <div className="painel-destaques">
-          <div className="painel-destaque">
-            <span className="painel-destaque-rotulo">Esquerda</span>
-            <strong>{esquerda?.nome ?? '— vazio —'}</strong>
-          </div>
-          <div className="painel-destaque">
-            <span className="painel-destaque-rotulo">Direita</span>
-            <strong>{direita?.nome ?? '— vazio —'}</strong>
-          </div>
-        </div>
-      </section>
 
-      <section className="painel-bloco">
-        <h2>Projetos ({projetos.length})</h2>
         <ul className="painel-projetos">
-          {projetos.map((p) => (
-            <li key={p.slug} className="painel-projeto">
+          {projetos.map((p, i) => (
+            <li key={p.slug} className="painel-projeto painel-projeto-da-pagina">
+              <div className="painel-projeto-miniatura" aria-hidden="true">
+                {p.capa ? (
+                  // eslint-disable-next-line @next/next/no-img-element
+                  <img src={p.capa} alt="" />
+                ) : (
+                  <span>sem imagem</span>
+                )}
+              </div>
+
               <div className="painel-projeto-nome">
                 <strong>
-                  {p.nome}
-                  {!p.publicado && <span className="painel-selo-falta">rascunho</span>}
+                  {i + 1}. {p.nome}
+                  {!p.publicado && <span className="painel-selo-falta">escondido</span>}
+                  {!p.capa && <span className="painel-selo-falta">falta a imagem</span>}
                 </strong>
-                {p.tagline && <span>{p.tagline}</span>}
                 <span className="painel-projeto-numeros">
                   👁 {abreviarKM(p.numeros.views)} · ♡ {abreviarKM(p.numeros.likes)} · 💬{' '}
                   {abreviarKM(p.numeros.comments)} · ↗ {abreviarKM(p.numeros.shares)}
@@ -96,30 +120,55 @@ export function PainelDoCarrossel() {
               </div>
 
               <div className="painel-projeto-accoes">
-                {(['ESQUERDA', 'DIREITA'] as const).map((lado) => (
-                  <button
-                    key={lado}
-                    type="button"
-                    className={
-                      p.destaque === lado
-                        ? 'painel-botao-destaque activo'
-                        : 'painel-botao-destaque'
-                    }
+                <label className="painel-botao-destaque painel-enviar-imagem">
+                  {ocupado === `imagem-${p.slug}` ? 'A enviar…' : p.capa ? 'Trocar imagem' : 'Enviar imagem'}
+                  <input
+                    type="file"
+                    accept="image/*"
+                    hidden
                     disabled={ocupado !== null}
-                    onClick={() =>
-                      comErro(`d-${p.slug}`, async () => {
-                        definirProjetos(
-                          await painelDeCartoes.destacar(
-                            p.slug,
-                            p.destaque === lado ? null : lado,
-                          ),
-                        )
-                      })
-                    }
-                  >
-                    {lado === 'ESQUERDA' ? '◧ Esquerda' : '◨ Direita'}
-                  </button>
-                ))}
+                    onChange={(e) => {
+                      const arquivo = e.target.files?.[0]
+                      e.target.value = ''
+                      if (arquivo) void enviarImagem(p.slug, arquivo)
+                    }}
+                  />
+                </label>
+                <button
+                  type="button"
+                  className={p.publicado ? 'painel-botao-destaque activo' : 'painel-botao-destaque'}
+                  aria-pressed={p.publicado}
+                  disabled={ocupado !== null}
+                  onClick={() =>
+                    comErro(`ver-${p.slug}`, async () => {
+                      definirProjetos(
+                        await painelDeCartoes.guardarCartaoDoCarrossel(p.slug, {
+                          publicado: !p.publicado,
+                        }),
+                      )
+                    })
+                  }
+                >
+                  {p.publicado ? '✓ À mostra' : 'Mostrar'}
+                </button>
+                <button
+                  type="button"
+                  className="painel-botao-destaque"
+                  aria-label={`Subir ${p.nome}`}
+                  disabled={ocupado !== null || i === 0}
+                  onClick={() => void mover(i, -1)}
+                >
+                  ↑
+                </button>
+                <button
+                  type="button"
+                  className="painel-botao-destaque"
+                  aria-label={`Descer ${p.nome}`}
+                  disabled={ocupado !== null || i === projetos.length - 1}
+                  onClick={() => void mover(i, 1)}
+                >
+                  ↓
+                </button>
               </div>
             </li>
           ))}
@@ -132,8 +181,8 @@ export function PainelDoCarrossel() {
           comErro('novo', async () => {
             const feito = await painelDeCartoes.criarProjeto(dados)
             await carregar()
-            definirErro(
-              `✓ "${feito.nome}" criado com ${feito.blocos} blocos. Fica em rascunho até você publicar.`,
+            definirAviso(
+              `✓ "${feito.nome}" criado com ${feito.blocos} blocos. Fica escondido até você carregar em Mostrar.`,
             )
           })
         }
@@ -147,10 +196,9 @@ function NovoProjeto({
   aoCriar,
 }: {
   ocupado: boolean
-  aoCriar: (dados: { slug: string; nome: string; blocos: number; tagline?: string }) => void
+  aoCriar: (dados: { slug: string; nome: string; blocos: number }) => void
 }) {
   const [nome, definirNome] = useState('')
-  const [tagline, definirTagline] = useState('')
   const [blocos, definirBlocos] = useState(7)
 
   /**
@@ -171,8 +219,8 @@ function NovoProjeto({
     <section className="painel-bloco">
       <h2>Criar um projeto novo</h2>
       <p className="subtitulo">
-        Você informa o nome e quantos blocos quer. O sistema cria os blocos e o
-        projeto entra no carrossel sozinho.
+        Você informa o nome e quantos blocos quer. O sistema cria os blocos, e o
+        projeto entra na lista acima, escondido até você o mostrar.
       </p>
 
       <label className="cartoes-campo">
@@ -182,16 +230,6 @@ function NovoProjeto({
           value={nome}
           placeholder="31 Atributos de Deus"
           onChange={(e) => definirNome(e.target.value)}
-        />
-      </label>
-
-      <label className="cartoes-campo">
-        <span>Frase curta (aparece no cartão do carrossel)</span>
-        <input
-          type="text"
-          value={tagline}
-          placeholder="Conheça e viva os atributos do nosso Deus"
-          onChange={(e) => definirTagline(e.target.value)}
         />
       </label>
 
@@ -217,7 +255,7 @@ function NovoProjeto({
         type="button"
         className="cartoes-accao"
         disabled={ocupado || !slug || blocos < 1}
-        onClick={() => aoCriar({ slug, nome: nome.trim(), blocos, tagline: tagline.trim() })}
+        onClick={() => aoCriar({ slug, nome: nome.trim(), blocos })}
       >
         {ocupado ? 'A criar…' : `Criar projeto com ${blocos} bloco${blocos === 1 ? '' : 's'}`}
       </button>
