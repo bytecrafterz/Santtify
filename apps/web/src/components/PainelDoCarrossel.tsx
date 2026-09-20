@@ -121,6 +121,22 @@ export function PainelDoCarrossel() {
               </div>
 
               <div className="painel-projeto-accoes">
+                {/* Quantos blocos este projeto tem. O alfabeto não entra aqui:
+                    26 letras são 26 letras. */}
+                {p.sequencia !== 'LETRAS' && (
+                  <QuantidadeDeBlocos
+                    projeto={p}
+                    ocupado={ocupado !== null}
+                    aoDefinir={(quantidade) =>
+                      comErro(`blocos-${p.slug}`, async () => {
+                        definirProjetos(await painelDeCartoes.definirBlocos(p.slug, quantidade))
+                        definirAviso(
+                          `✓ "${p.nome}" ficou com ${quantidade} bloco${quantidade === 1 ? '' : 's'}.`,
+                        )
+                      })
+                    }
+                  />
+                )}
                 <label className="painel-botao-destaque painel-enviar-imagem">
                   {ocupado === `imagem-${p.slug}` ? 'A enviar…' : p.capa ? 'Trocar imagem' : 'Enviar imagem'}
                   <input
@@ -189,6 +205,54 @@ export function PainelDoCarrossel() {
         }
       />
     </div>
+  )
+}
+
+/**
+ * A quantidade de blocos de um projeto.
+ *
+ * Ele escreve o número e o sistema cria as casas que faltam — pedido dele em
+ * 19/09: "não quero que a quantidade fique fixa no código". Reduzir só apaga
+ * casas vazias; se alguma já tiver conteúdo, o servidor recusa e diz quais.
+ */
+function QuantidadeDeBlocos({
+  projeto,
+  ocupado,
+  aoDefinir,
+}: {
+  projeto: ProjetoNoPainel
+  ocupado: boolean
+  aoDefinir: (quantidade: number) => void
+}) {
+  const actual = projeto.blocos ?? 0
+  const [valor, definirValor] = useState(String(actual))
+  // Quando a lista volta do servidor, o campo acompanha o que ficou gravado.
+  useEffect(() => definirValor(String(actual)), [actual])
+  const numero = Number(valor)
+  const valido = Number.isInteger(numero) && numero >= 0 && numero <= 200
+  return (
+    <span className="painel-blocos">
+      <label>
+        <span>Blocos</span>
+        <input
+          type="number"
+          min={0}
+          max={200}
+          value={valor}
+          disabled={ocupado}
+          onChange={(e) => definirValor(e.target.value)}
+          aria-label={`Quantos blocos em ${projeto.nome}`}
+        />
+      </label>
+      <button
+        type="button"
+        className="painel-botao-destaque"
+        disabled={ocupado || !valido || numero === actual}
+        onClick={() => aoDefinir(numero)}
+      >
+        Guardar
+      </button>
+    </span>
   )
 }
 

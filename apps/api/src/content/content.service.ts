@@ -35,6 +35,15 @@ export class ContentService {
         checkoutUrl: true,
         // O leitor precisa de saber se o karaokê pede conta antes de o abrir.
         karaokeAcesso: true,
+        /**
+         * COMO ESTE PROJETO NUMERA OS BLOCOS, e quantos tem.
+         *
+         * A grade é desenhada com isto: 26 letras no alfabeto, ou 1..N nos
+         * outros. Sem estes dois campos, a página sabia desenhar um alfabeto e
+         * mais nada — e os projetos dele que não são alfabetos abriam vazios.
+         */
+        sequencia: true,
+        blocos: true,
       },
     })
     if (!project || project.status === 'ARCHIVED') {
@@ -76,6 +85,7 @@ export class ContentService {
         coverUrl: true,
         position: true,
         letra: true,
+        ordinal: true,
         status: true,
         /**
          * A ARTE DO PRIMEIRO CARTÃO, para servir de capa quando a letra não
@@ -114,6 +124,7 @@ export class ContentService {
         title: c.title,
         position: c.position,
         letra: c.letra,
+        ordinal: c.ordinal,
         publicado,
         subtitle: publicado ? c.subtitle : null,
         coverUrl: publicado ? (c.coverUrl ?? c.blocks[0]?.imageAsset?.url ?? null) : null,
@@ -174,15 +185,20 @@ export class ContentService {
       anfitriao,
       contents,
       /**
-       * A contagem é das LETRAS, e só delas.
+       * A contagem é das CASAS DA GRADE, e só delas.
        *
        * Antes contava tudo o que existisse na lista, e por isso a introdução
        * do projeto entrava nas 26 e empurrava o alfabeto uma casa. O que não
-       * tem letra existe, aparece, e não conta.
+       * está numa casa existe, aparece, e não conta.
+       *
+       * E a casa é a letra no alfabeto e o número nos outros projetos, desde
+       * 19/09. O total era 26 fixo: num projeto de sete dias dizia "0 de 26".
        */
       progresso: {
-        liberadas: contents.filter((c) => c.publicado && c.letra).length,
-        total: 26,
+        liberadas: contents.filter(
+          (c) => c.publicado && (project.sequencia === 'LETRAS' ? c.letra : c.ordinal),
+        ).length,
+        total: project.sequencia === 'LETRAS' ? 26 : project.blocos,
       },
       comunidade: { perfis, impressoes },
     }

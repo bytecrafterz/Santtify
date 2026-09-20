@@ -32,6 +32,8 @@ export function ExperienciaContinua({
   contents,
   progresso,
   categorias = [],
+  sequencia = 'LETRAS',
+  blocos = 26,
 }: {
   projectSlug: string
   projectId: string
@@ -39,7 +41,26 @@ export function ExperienciaContinua({
   progresso: ProgressoDasLetras
   /** As categorias do projeto, para o filtro do tocador. */
   categorias?: Array<{ slug: string; name: string }>
+  /**
+   * Como este projeto numera as casas: A–Z ou 1..N.
+   *
+   * Pedido dele em 19/09. O Jesus Alfabeto é um alfabeto; os outros projetos
+   * têm a quantidade de blocos que ele definiu no painel. A grade é a mesma —
+   * muda o que está escrito em cada casa e quantas casas existem.
+   */
+  sequencia?: 'LETRAS' | 'NUMEROS'
+  blocos?: number
 }) {
+  const porLetras = sequencia === 'LETRAS'
+  /** As casas desta grade, na ordem em que aparecem. */
+  const casas: Array<string | number> = porLetras
+    ? ALFABETO
+    : Array.from({ length: Math.max(0, blocos) }, (_, i) => i + 1)
+  /** O conteúdo que mora numa casa, ou nada se ela ainda estiver vazia. */
+  const conteudoDaCasa = (casa: string | number) =>
+    contents.find(
+      (c) => (porLetras ? c.letra === casa : c.ordinal === casa) && c.publicado,
+    )
   const [escolhida, definirEscolhida] = useState<string | null>(null)
   const [cache, definirCache] = useState<Record<string, PaginaConteudo>>({})
   /* O espelho da cache, para quem lê de dentro de um ouvinte registado uma vez. */
@@ -280,35 +301,44 @@ export function ExperienciaContinua({
         <strong>
           {progresso.liberadas} de {progresso.total}
         </strong>
-        <span>{progresso.liberadas === 1 ? 'letra liberada' : 'letras liberadas'}</span>
+        <span>
+          {porLetras
+            ? progresso.liberadas === 1
+              ? 'letra liberada'
+              : 'letras liberadas'
+            : progresso.liberadas === 1
+              ? 'bloco liberado'
+              : 'blocos liberados'}
+        </span>
         <span className="trilha" role="presentation">
           <span className="preenchido" style={{ width: `${porcento}%` }} />
         </span>
       </div>
 
-      <h2>Escolha uma letra</h2>
+      <h2>{porLetras ? 'Escolha uma letra' : 'Escolha um bloco'}</h2>
       <p className="subtitulo">Aprenda com fé, saúde, música e diversão</p>
 
       <div className="grade-letras">
-        {ALFABETO.map((letra) => {
+        {casas.map((casa) => {
           /**
-           * A grade tem sempre 26 casas, uma por letra, e cada conteúdo entra
-           * na casa da SUA letra.
+           * A grade tem uma casa por letra (ou por número) e cada conteúdo
+           * entra na casa que é SUA.
            *
            * Antes era a lista por ordem de posição, e por isso bastou existir
            * uma introdução para o A cair no lugar do B e tudo escorregar. A
            * casa do A é do A mesmo que nada esteja publicado nela.
            */
-          const dela = contents.find((c) => c.letra === letra && c.publicado)
+          const dela = conteudoDaCasa(casa)
+          const nomeDaCasa = porLetras ? `Letra ${casa}` : `Bloco ${casa}`
 
           if (!dela) {
             return (
               <div
                 className="letra-bloco trancada"
-                key={letra}
-                aria-label={`Letra ${letra}, ainda bloqueada`}
+                key={casa}
+                aria-label={`${nomeDaCasa}, ainda bloqueada`}
               >
-                {letra}
+                {casa}
                 <span className="cadeado" aria-hidden>
                   🔒
                 </span>
@@ -320,15 +350,16 @@ export function ExperienciaContinua({
             <button
               type="button"
               className={escolhida === dela.slug ? 'letra-bloco escolhida' : 'letra-bloco'}
-              key={letra}
+              key={casa}
               onClick={() => escolher(dela)}
               aria-pressed={escolhida === dela.slug}
+              aria-label={`${nomeDaCasa} — ${dela.title}`}
             >
               {dela.coverUrl ? (
                 // eslint-disable-next-line @next/next/no-img-element
                 <img src={dela.coverUrl} alt={dela.title} />
               ) : (
-                letra
+                casa
               )}
             </button>
           )
@@ -409,11 +440,11 @@ export function ExperienciaContinua({
 
           {/* Só depois da impressão é que se anuncia a próxima. */}
           {(() => {
-            const seguinte = proximaLetraDepoisDe(aberta.content.letra, contents)
+            const seguinte = proximaCasaDepoisDe(aberta.content, contents, porLetras, blocos)
             if (!seguinte) return null
             return (
               <div className="proxima-letra">
-                <p className="rotulo-proxima">Próxima letra</p>
+                <p className="rotulo-proxima">{porLetras ? 'Próxima letra' : 'Próximo bloco'}</p>
                 <button
                   type="button"
                   className="cartao-proxima"
@@ -425,7 +456,8 @@ export function ExperienciaContinua({
                     <img src={seguinte.coverUrl} alt={seguinte.title} />
                   )}
                   <span className="nome-proxima">
-                    Letra {seguinte.letra} — {seguinte.title}
+                    {porLetras ? `Letra ${seguinte.letra}` : `Bloco ${seguinte.ordinal}`} —{' '}
+                    {seguinte.title}
                   </span>
                   {!seguinte.publicado && <span className="cadeado-proxima">🔒 Em breve</span>}
                 </button>
@@ -440,12 +472,25 @@ export function ExperienciaContinua({
 
 
 /**
- * A letra a seguir a esta no alfabeto.
+ * A casa a seguir a esta: a letra seguinte, ou o número seguinte.
  *
- * Vai pela LETRA e não pela posição na lista. Foi a posição que já pôs o A na
+ * Vai pela CASA e não pela posição na lista. Foi a posição que já pôs o A na
  * casa do B uma vez, e não volta a entrar por aqui.
  */
-function proximaLetraDepoisDe(letra: string | null, contents: ItemIndice[]) {
+function proximaCasaDepoisDe(
+  atual: { letra: string | null; ordinal?: number | null },
+  contents: ItemIndice[],
+  porLetras: boolean,
+  blocos: number,
+) {
+  if (!porLetras) {
+    const n = atual.ordinal
+    if (!n || n + 1 > blocos) return null
+    const dela = contents.find((c) => c.ordinal === n + 1)
+    if (dela) return dela
+    return vazia({ ordinal: n + 1 })
+  }
+  const letra = atual.letra
   if (!letra) return null
   const i = ALFABETO.indexOf(letra.toUpperCase())
   if (i < 0 || i + 1 >= ALFABETO.length) return null
@@ -456,6 +501,11 @@ function proximaLetraDepoisDe(letra: string | null, contents: ItemIndice[]) {
   // é sabido de antemão: a casa seguinte é sempre o B, esteja ou não preparada.
   const dela = contents.find((c) => c.letra === seguinte)
   if (dela) return dela
+  return vazia({ letra: seguinte })
+}
+
+/** A casa que ainda não existe, desenhada como "em breve". */
+function vazia(casa: { letra?: string; ordinal?: number }): ItemIndice {
   return {
     id: '',
     slug: '',
@@ -463,8 +513,9 @@ function proximaLetraDepoisDe(letra: string | null, contents: ItemIndice[]) {
     subtitle: null,
     coverUrl: null,
     position: 0,
-    letra: seguinte,
+    letra: casa.letra ?? null,
+    ordinal: casa.ordinal ?? null,
     publicado: false,
     stats: null,
-  } satisfies ItemIndice
+  }
 }

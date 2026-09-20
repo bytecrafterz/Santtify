@@ -958,26 +958,35 @@ export class AdminContentService {
   }
 
   /**
-   * A composição inteira: 26 vagões, cada um com os seus cartões.
+   * A composição inteira: um vagão por casa, cada um com os seus cartões.
    *
-   * Devolve as 26 letras SEMPRE, existam ou não conteúdos. A casa da letra é
-   * dela mesmo quando está vazia — foi o que faltou quando o A caiu no lugar
-   * do B, e é o que ele descreveu como a linha azul que não se interrompe.
+   * Devolve as casas TODAS, existam ou não conteúdos. A casa é dela mesmo
+   * quando está vazia — foi o que faltou quando o A caiu no lugar do B, e é o
+   * que ele descreveu como a linha azul que não se interrompe.
+   *
+   * DESDE 19/09 A CASA PODE SER UM NÚMERO. O alfabeto continua em A–Z; os
+   * outros projetos têm a quantidade de blocos que ele definiu no painel, e o
+   * `ordinal` faz ali o papel que a letra faz aqui.
    */
   async alfabeto(projectSlug: string) {
     const project = await this.prisma.project.findUnique({
       where: { slug: projectSlug },
-      select: { id: true, slug: true, name: true },
+      select: { id: true, slug: true, name: true, sequencia: true, blocos: true },
     })
     if (!project) throw new NotFoundException('Projeto não encontrado')
 
+    const porLetras = project.sequencia === 'LETRAS'
+
     const conteudos = await this.prisma.content.findMany({
-      where: { projectId: project.id, letra: { not: null } },
-      orderBy: { letra: 'asc' },
+      where: porLetras
+        ? { projectId: project.id, letra: { not: null } }
+        : { projectId: project.id, ordinal: { not: null } },
+      orderBy: porLetras ? { letra: 'asc' } : { ordinal: 'asc' },
       select: {
         id: true,
         slug: true,
         letra: true,
+        ordinal: true,
         title: true,
         status: true,
         coverUrl: true,
@@ -1002,17 +1011,41 @@ export class AdminContentService {
       },
     })
 
-    const porLetra = new Map(conteudos.map((c) => [c.letra!, c]))
+    /*
+      AS CASAS DESTE PROJETO, pela ordem em que ele as vê.
+
+      No alfabeto são as 26 letras, sempre. Nos outros é 1..blocos, o número que
+      ele escreveu no painel. Uma casa sem conteúdo aparece na mesma, vazia,
+      como a casa de uma letra por preencher.
+    */
+    const casas: Array<{ letra: string | null; numero: number | null; rotulo: string }> =
+      porLetras
+        ? 'ABCDEFGHIJKLMNOPQRSTUVWXYZ'
+            .split('')
+            .map((letra) => ({ letra, numero: null, rotulo: `Letra ${letra}` }))
+        : Array.from({ length: project.blocos }, (_, i) => ({
+            letra: null,
+            numero: i + 1,
+            rotulo: `Bloco ${i + 1}`,
+          }))
+
+    const porCasa = new Map(conteudos.map((c) => [porLetras ? c.letra! : String(c.ordinal), c]))
 
     return {
       project,
-      vagoes: 'ABCDEFGHIJKLMNOPQRSTUVWXYZ'.split('').map((letra) => {
-        const c = porLetra.get(letra)
+      vagoes: casas.map((casa) => {
+        const chave = casa.letra ?? String(casa.numero)
+        const c = porCasa.get(chave)
         return {
-          letra,
+          /** A casa: "A" no alfabeto, "3" num projeto numerado. */
+          casa: chave,
+          letra: casa.letra,
+          numero: casa.numero,
+          /** Como se chama no ecrã: "Letra A" ou "Bloco 3". */
+          rotulo: casa.rotulo,
           contentId: c?.id ?? null,
           slug: c?.slug ?? null,
-          title: c?.title ?? `Letra ${letra}`,
+          title: c?.title ?? casa.rotulo,
           publicado: c?.status === ContentStatus.PUBLISHED,
           coverUrl: c?.coverUrl ?? null,
           cartoes: (c?.blocks ?? []).map((b) => ({
@@ -1082,10 +1115,19 @@ export class AdminContentService {
         select: { id: true, displayName: true, avatarUrl: true, bio: true },
       }),
       this.prisma.content.findFirst({
-        // A introdução é o conteúdo sem letra E que não é o Produto Vivo. Os
-        // dois vivem fora do alfabeto, e sem esta distinção o Produto Vivo
-        // apareceria como introdução no dia em que fosse criado primeiro.
-        where: { projectId: project.id, letra: null, slug: { not: 'produto-vivo' } },
+        // A introdução é o conteúdo que não está em casa nenhuma da grade E que
+        // não é o Produto Vivo. Os dois vivem fora da sequência, e sem esta
+        // distinção o Produto Vivo apareceria como introdução no dia em que
+        // fosse criado primeiro.
+        //
+        // `ordinal: null` também, desde 19/09: num projeto numerado, todos os
+        // blocos são conteúdos sem letra, e o bloco 1 passaria por introdução.
+        where: {
+          projectId: project.id,
+          letra: null,
+          ordinal: null,
+          slug: { not: 'produto-vivo' },
+        },
         orderBy: { position: 'asc' },
         select: {
           id: true,
@@ -1112,9 +1154,14 @@ export class AdminContentService {
           },
         },
       }),
+      // As casas da grade, para o resumo do topo: no alfabeto são as letras,
+      // nos outros projetos são os blocos numerados.
       this.prisma.content.findMany({
-        where: { projectId: project.id, letra: { not: null } },
-        orderBy: { letra: 'asc' },
+        where:
+          project.sequencia === 'LETRAS'
+            ? { projectId: project.id, letra: { not: null } }
+            : { projectId: project.id, ordinal: { not: null } },
+        orderBy: project.sequencia === 'LETRAS' ? { letra: 'asc' } : { ordinal: 'asc' },
         select: { letra: true, status: true },
       }),
     ])
@@ -1807,7 +1854,9 @@ export class AdminContentService {
   async projetoPorSlug(slug: string) {
     const p = await this.prisma.project.findUnique({
       where: { slug },
-      select: { id: true, slug: true, name: true },
+      // A sequência vem junto: quem monta a estrutura precisa de saber se as
+      // casas deste projeto são letras ou números.
+      select: { id: true, slug: true, name: true, sequencia: true, blocos: true },
     })
     if (!p) throw new NotFoundException('Projeto não encontrado')
     return p

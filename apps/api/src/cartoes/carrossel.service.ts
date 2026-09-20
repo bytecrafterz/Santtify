@@ -1,5 +1,12 @@
 import { BadRequestException, Injectable, NotFoundException } from '@nestjs/common'
-import { DestaqueDoCarrossel, ProjectStatus } from '@pv/db'
+import {
+  BlockType,
+  CardEstado,
+  CardPapel,
+  DestaqueDoCarrossel,
+  ProjectStatus,
+  SequenciaDoProjeto,
+} from '@pv/db'
 import { PrismaService } from '../prisma/prisma.service'
 import { ContagensService } from '../social/contagens.service'
 
@@ -49,6 +56,8 @@ export class CarrosselService {
         destaque: true,
         ordemNoCarrossel: true,
         status: true,
+        sequencia: true,
+        blocos: true,
       },
     })
 
@@ -85,6 +94,9 @@ export class CarrosselService {
         nome: p.name,
         tagline: p.tagline,
         capa: p.coverUrl,
+        // Quantas casas tem a grade deste projeto, e se são letras ou números.
+        sequencia: p.sequencia,
+        blocos: p.sequencia === SequenciaDoProjeto.LETRAS ? 26 : p.blocos,
         capaLargura: (p.coverUrl && medidas.get(p.coverUrl)?.width) || null,
         capaAltura: (p.coverUrl && medidas.get(p.coverUrl)?.height) || null,
         destaque: p.destaque,
@@ -200,6 +212,114 @@ export class CarrosselService {
   }
 
   /**
+   * Quantos blocos este projeto tem, decidido por ele no painel.
+   *
+   * Ponto dele em 19/09: "não quero que a quantidade fique fixa no código". Põe
+   * 7 e ficam sete casas; põe 31 e ficam trinta e uma.
+   *
+   * CRESCER CRIA; ENCOLHER NUNCA APAGA TRABALHO. As casas a mais só
+   * desaparecem se estiverem vazias — sem áudio, sem imagem, sem texto e sem
+   * QR Code apontado para elas. Se alguma tiver conteúdo, a operação pára e diz
+   * qual: um número escrito por engano não pode apagar a gravação de um dia.
+   *
+   * Os alfabetos não passam por aqui: 26 letras são 26 letras.
+   */
+  async definirBlocos(projectSlug: string, quantidade: number) {
+    if (quantidade < 0 || quantidade > 200) {
+      throw new BadRequestException('A quantidade de blocos tem de ficar entre 0 e 200.')
+    }
+    const projeto = await this.prisma.project.findUnique({
+      where: { slug: projectSlug },
+      select: { id: true, sequencia: true, blocos: true },
+    })
+    if (!projeto) throw new NotFoundException('Projeto não encontrado.')
+    if (projeto.sequencia === SequenciaDoProjeto.LETRAS) {
+      throw new BadRequestException('Este projeto é um alfabeto: são sempre 26 letras.')
+    }
+
+    const existentes = await this.prisma.content.findMany({
+      where: { projectId: projeto.id, ordinal: { not: null } },
+      select: {
+        id: true,
+        ordinal: true,
+        title: true,
+        status: true,
+        _count: { select: { shortLink: true } },
+        blocks: {
+          select: {
+            id: true,
+            assetId: true,
+            imageAssetId: true,
+            text: true,
+            titulo: true,
+            label: true,
+          },
+        },
+      },
+    })
+    const porNumero = new Map(existentes.map((c) => [c.ordinal!, c]))
+
+    /*
+      O QUE CONTA COMO TRABALHO DELE.
+
+      Áudio, imagem, texto, um título escrito por ele, um QR Code apontado para
+      a página, ou a página estar no ar. Tudo isso trava a remoção.
+
+      O TÍTULO IGUAL AO RÓTULO NÃO CONTA, e isto não é um pormenor: quando um
+      cartão é gravado sem título, `sincronizarEstado` copia-lhe o rótulo da
+      casa ("Explicação", "Música"). Sem esta distinção, qualquer casa alguma
+      vez gravada parecia ter conteúdo, e reduzir a quantidade ficava
+      impossível numa grade inteiramente vazia — foi o que o percurso apanhou.
+    */
+    const escritoPorEle = (valor: string | null, rotulo: string | null) => {
+      const texto = valor?.trim() ?? ''
+      return texto !== '' && texto !== (rotulo?.trim() ?? '')
+    }
+    const temConteudo = (c: (typeof existentes)[number]) =>
+      c.status === 'PUBLISHED' ||
+      c._count.shortLink > 0 ||
+      c.blocks.some(
+        (b) =>
+          b.assetId ||
+          b.imageAssetId ||
+          b.text?.trim() ||
+          escritoPorEle(b.titulo, b.label),
+      )
+
+    const aMais = existentes.filter((c) => c.ordinal! > quantidade)
+    const comTrabalho = aMais.filter(temConteudo)
+    if (comTrabalho.length) {
+      const lista = comTrabalho.map((c) => c.ordinal).sort((a, b) => a! - b!).join(', ')
+      throw new BadRequestException(
+        `Não dá para reduzir para ${quantidade}: os blocos ${lista} já têm conteúdo. ` +
+          'Esvazie-os primeiro, ou mantenha a quantidade.',
+      )
+    }
+
+    await this.prisma.$transaction(async (tx) => {
+      if (aMais.length) {
+        await tx.content.deleteMany({ where: { id: { in: aMais.map((c) => c.id) } } })
+      }
+      for (let n = 1; n <= quantidade; n++) {
+        if (porNumero.has(n)) continue
+        await tx.content.create({
+          data: {
+            projectId: projeto.id,
+            slug: String(n),
+            title: `Bloco ${n}`,
+            position: n,
+            ordinal: n,
+            blocks: { create: casasEmBranco() },
+          },
+        })
+      }
+      await tx.project.update({ where: { id: projeto.id }, data: { blocos: quantidade } })
+    })
+
+    return this.listar(true)
+  }
+
+  /**
    * Cria um projeto novo com a quantidade de blocos que ele escolher.
    *
    * Ponto 3 do documento dele: informar o nome e quantos blocos quer, e o
@@ -240,11 +360,16 @@ export class CarrosselService {
         tagline: dados.tagline?.trim() || null,
         status: ProjectStatus.DRAFT,
         ordemNoCarrossel: (ultimo?.ordemNoCarrossel ?? 0) + 1,
+        sequencia: SequenciaDoProjeto.NUMEROS,
+        blocos: dados.blocos,
         contents: {
           create: Array.from({ length: dados.blocos }, (_, i) => ({
             slug: String(i + 1),
             title: `Bloco ${i + 1}`,
             position: i + 1,
+            // A casa da grade. É o que a `letra` é no alfabeto.
+            ordinal: i + 1,
+            blocks: { create: casasEmBranco() },
           })),
         },
       },
@@ -257,4 +382,26 @@ export class CarrosselService {
       blocos: projeto._count.contents,
     }
   }
+}
+
+/**
+ * As quatro casas em branco de um bloco, iguais às de uma letra.
+ *
+ * Um bloco de um projeto novo tem a mesma estrutura de uma letra do alfabeto —
+ * foi o que ele pediu em 19/09: "usando o mesmo player e a mesma lógica que já
+ * estão funcionando". Nascem vazias, e uma casa vazia não aparece na página a
+ * ninguém: só se mostra quando ele lhe puser alguma coisa dentro.
+ *
+ * Os nomes são os mesmos do alfabeto (`vagoes-do-alfabeto.ts`) e são internos:
+ * a regra dele de 23/08 é que o nome da casa não aparece na página.
+ */
+function casasEmBranco() {
+  return ['Explicação', 'Música', 'Repetição do versículo', 'Oração'].map((nome, i) => ({
+    type: BlockType.AUDIO,
+    papel: CardPapel.CARTAO,
+    estado: CardEstado.RASCUNHO,
+    slot: i + 1,
+    label: nome,
+    position: i + 1,
+  }))
 }

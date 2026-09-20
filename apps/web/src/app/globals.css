@@ -8555,6 +8555,31 @@ h2.funil {
   cursor: pointer;
 }
 
+.painel-blocos {
+  display: inline-flex;
+  gap: 6px;
+  align-items: center;
+}
+
+.painel-blocos label {
+  display: inline-flex;
+  gap: 4px;
+  align-items: center;
+  font-size: 0.8rem;
+  color: var(--cor-texto-suave);
+}
+
+.painel-blocos input {
+  width: 4.5rem;
+  padding: 7px 8px;
+  font: inherit;
+  font-size: 0.85rem;
+  color: var(--cor-texto);
+  background: var(--cor-fundo);
+  border: 1px solid var(--cor-borda);
+  border-radius: 10px;
+}
+
 .painel-botao-destaque {
   padding: 8px 10px;
   font: inherit;

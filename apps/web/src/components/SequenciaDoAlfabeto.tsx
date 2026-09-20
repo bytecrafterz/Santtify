@@ -29,9 +29,9 @@ type Onde =
    * 26 letras, quatro cartões cada, e voltar ao topo a cada gravação é descer a
    * lista dezenas de vezes num dia de trabalho.
    */
-  | { tela: 'sequencia'; letra?: string }
-  | { tela: 'quadrados'; letra: string }
-  | { tela: 'cartao'; letra: string; cartaoId: string }
+  | { tela: 'sequencia'; casa?: string }
+  | { tela: 'quadrados'; casa: string }
+  | { tela: 'cartao'; casa: string; cartaoId: string }
 
 /** As quatro casas nascem sempre, mesmo quando a letra ainda está vazia. */
 const CASAS = ['Explicação', 'Música', 'Repetição do versículo', 'Oração']
@@ -75,8 +75,8 @@ export function SequenciaDoAlfabeto({ projectSlug }: { projectSlug: string }) {
    * o que se espera de voltar.
    */
   useEffect(() => {
-    if (onde.tela !== 'sequencia' || !onde.letra) return
-    document.getElementById(`vagao-${onde.letra}`)?.scrollIntoView({ block: 'center' })
+    if (onde.tela !== 'sequencia' || !onde.casa) return
+    document.getElementById(`vagao-${onde.casa}`)?.scrollIntoView({ block: 'center' })
   }, [onde])
   /** A ordem enquanto ele mexe, antes de gravar. Nula = a do servidor. */
   const [ordem, definirOrdem] = useState<string[] | null>(null)
@@ -109,7 +109,7 @@ export function SequenciaDoAlfabeto({ projectSlug }: { projectSlug: string }) {
     void recarregar()
   }, [recarregar, aRestaurarSessao, usuario?.id])
 
-  const vagao = 'letra' in onde ? vagoes.find((v) => v.letra === onde.letra) : undefined
+  const vagao = 'casa' in onde ? vagoes.find((v) => v.casa === onde.casa) : undefined
 
   // ── Tela 3: o cartão ──────────────────────────────────────────────
   if (onde.tela === 'cartao' && vagao) {
@@ -121,24 +121,24 @@ export function SequenciaDoAlfabeto({ projectSlug }: { projectSlug: string }) {
         <>
           <CabecalhoFixo
             projectSlug={projectSlug}
-            onde={`Letra ${vagao.letra}`}
+            onde={vagao.rotulo}
             voltarPara={`/${projectSlug}/admin`}
           />
           <EditorDoCartaoDeImpressao
             key={cartao.id}
             cartao={cartao}
-            letra={vagao.letra}
+            letra={vagao.letra ?? String(vagao.numero ?? '')}
             projectSlug={projectSlug}
             contentSlug={vagao.slug}
             aoApagar={async () => {
               await recarregar()
-              definirOnde({ tela: 'quadrados', letra: vagao.letra })
+              definirOnde({ tela: 'quadrados', casa: vagao.casa })
             }}
             aoGuardar={async () => {
               await recarregar()
-              definirOnde({ tela: 'quadrados', letra: vagao.letra })
+              definirOnde({ tela: 'quadrados', casa: vagao.casa })
             }}
-            aoCancelar={() => definirOnde({ tela: 'quadrados', letra: vagao.letra })}
+            aoCancelar={() => definirOnde({ tela: 'quadrados', casa: vagao.casa })}
           />
         </>
       )
@@ -148,7 +148,7 @@ export function SequenciaDoAlfabeto({ projectSlug }: { projectSlug: string }) {
         <>
           <CabecalhoFixo
             projectSlug={projectSlug}
-            onde={`Letra ${vagao.letra}`}
+            onde={vagao.rotulo}
             voltarPara={`/${projectSlug}/admin`}
           />
           <EditorDeCartao
@@ -159,10 +159,10 @@ export function SequenciaDoAlfabeto({ projectSlug }: { projectSlug: string }) {
               await recarregar()
               // Volta aos quatro quadrados, como ele pediu: guardar um cartão
               // não é sair do trabalho, é passar ao seguinte.
-              definirOnde({ tela: 'quadrados', letra: vagao.letra })
+              definirOnde({ tela: 'quadrados', casa: vagao.casa })
             }}
             aoMudar={recarregar}
-            aoCancelar={() => definirOnde({ tela: 'quadrados', letra: vagao.letra })}
+            aoCancelar={() => definirOnde({ tela: 'quadrados', casa: vagao.casa })}
           />
         </>
       )
@@ -191,18 +191,18 @@ export function SequenciaDoAlfabeto({ projectSlug }: { projectSlug: string }) {
       <>
         <CabecalhoFixo
           projectSlug={projectSlug}
-          onde={`Letra ${vagao.letra}`}
+          onde={vagao.rotulo}
           voltarPara={`/${projectSlug}/admin`}
         />
         <div className="painel-quadrados">
           <button
             type="button"
             className="voltar-sequencia"
-            onClick={() => definirOnde({ tela: 'sequencia', letra: vagao.letra })}
+            onClick={() => definirOnde({ tela: 'sequencia', casa: vagao.casa })}
           >
             ← Alfabeto
           </button>
-          <h1>Conteúdos da Letra {vagao.letra}</h1>
+          <h1>Conteúdos: {vagao.rotulo}</h1>
           <p className="nota">Toque para editar • Toque nos três pontos para ver opções</p>
 
           <div className="grade-quadrados">
@@ -216,7 +216,7 @@ export function SequenciaDoAlfabeto({ projectSlug }: { projectSlug: string }) {
                 aoAbrirMenu={() => definirMenuAberto(menuAberto === c.id ? null : c.id)}
                 aoEditar={() => {
                   definirMenuAberto(null)
-                  definirOnde({ tela: 'cartao', letra: vagao.letra, cartaoId: c.id })
+                  definirOnde({ tela: 'cartao', casa: vagao.casa, cartaoId: c.id })
                 }}
                 aDuplicar={aDuplicar === c.id}
                 acabadaDeCriar={copiaNova === c.id}
@@ -298,7 +298,7 @@ export function SequenciaDoAlfabeto({ projectSlug }: { projectSlug: string }) {
 
           {/* O QR fica aqui, na letra, e não dentro do cartão de impressão:
               as letras sem cartão criado também precisam do seu. */}
-          <QrDaLetra projectSlug={projectSlug} contentSlug={vagao.slug} letra={vagao.letra} />
+          <QrDaLetra projectSlug={projectSlug} contentSlug={vagao.slug} letra={vagao.letra ?? String(vagao.numero ?? '')} />
 
           {/* SALVAR ORDEM só aparece depois de ele mexer em alguma coisa.
               Um botão de gravar sempre à vista, sem nada por gravar, ensina a
@@ -330,7 +330,7 @@ export function SequenciaDoAlfabeto({ projectSlug }: { projectSlug: string }) {
               type="button"
               className="quadrado-impressao pronto"
               onClick={() =>
-                definirOnde({ tela: 'cartao', letra: vagao.letra, cartaoId: impressao.id })
+                definirOnde({ tela: 'cartao', casa: vagao.casa, cartaoId: impressao.id })
               }
             >
               <span className="icone" aria-hidden>
@@ -364,7 +364,7 @@ export function SequenciaDoAlfabeto({ projectSlug }: { projectSlug: string }) {
                   await recarregar()
                   // Abre já o editor: criar e ficar no mesmo sítio seria pedir-lhe
                   // que descobrisse o passo seguinte sozinho outra vez.
-                  definirOnde({ tela: 'cartao', letra: vagao.letra, cartaoId: novo.id })
+                  definirOnde({ tela: 'cartao', casa: vagao.casa, cartaoId: novo.id })
                 } finally {
                   definirACriarImpressao(false)
                 }
@@ -410,17 +410,17 @@ export function SequenciaDoAlfabeto({ projectSlug }: { projectSlug: string }) {
             dois vagões quando um deles ainda está vazio. */}
         <ol className="composicao">
           {vagoes.map((v) => (
-            <li key={v.letra} id={`vagao-${v.letra}`} className="vagao">
+            <li key={v.casa} id={`vagao-${v.casa}`} className="vagao">
               <button
                 type="button"
                 className="cabeca-vagao"
-                onClick={() => definirOnde({ tela: 'quadrados', letra: v.letra })}
+                onClick={() => definirOnde({ tela: 'quadrados', casa: v.casa })}
               >
-                <span className="bola-letra" style={{ background: corDaLetra(v.letra) }}>
-                  {v.letra}
+                <span className="bola-letra" style={{ background: corDaCasa(v.casa) }}>
+                  {v.casa}
                 </span>
                 <span className="dados-vagao">
-                  <strong>LETRA {v.letra}</strong>
+                  <strong>{v.rotulo.toUpperCase()}</strong>
                   {/* AS CASAS E O QUE ELE CRIOU SÃO DUAS CONTAS, E DIZEM-SE AS
                       DUAS. Dizer só "1 de 4" numa letra onde ele acabou de
                       publicar é, do lado dele, dizer que o trabalho sumiu. */}
@@ -507,9 +507,19 @@ function Quadradinho({
 }
 
 /** Uma cor por letra, estável: a mesma letra tem sempre a mesma cor. */
-function corDaLetra(letra: string) {
+/**
+ * A cor da bola de cada casa. Seis cores que se repetem, para a composição não
+ * ficar uma coluna monocromática.
+ *
+ * Serve letras ("A") e números ("12"): o que conta é a ordem da casa, e por
+ * isso um número com dois dígitos escolhe cor pelo número inteiro e não pelo
+ * primeiro algarismo.
+ */
+function corDaCasa(casa: string) {
   const cores = ['#16a34a', '#2563eb', '#ea580c', '#7c3aed', '#0891b2', '#db2777']
-  return cores[(letra.charCodeAt(0) - 65) % cores.length]
+  const numero = Number(casa)
+  const posicao = Number.isFinite(numero) && casa.trim() !== '' ? numero - 1 : casa.charCodeAt(0) - 65
+  return cores[((posicao % cores.length) + cores.length) % cores.length]
 }
 
 function Quadrado({

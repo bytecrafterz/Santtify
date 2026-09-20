@@ -102,6 +102,20 @@ model Project {
   categoriasDeCartoes CategoriaDeCartoes[]
   palavrasDeDestaque  PalavraDeDestaque[]
 
+  /// Como este projeto numera os seus blocos: A–Z ou 1, 2, 3…
+  ///
+  /// O Jesus Alfabeto é um alfabeto e tem 26 letras. Os outros projetos dele
+  /// não são alfabetos: têm a quantidade de blocos que ele decidir no painel —
+  /// sete dias, trinta e um atributos, dois. Regra dele, 19/09.
+  sequencia SequenciaDoProjeto @default(NUMEROS)
+
+  /// Quantos blocos este projeto tem. Nos alfabetos são sempre 26.
+  ///
+  /// É uma QUANTIDADE e não uma contagem de conteúdos: a casa do bloco 5 existe
+  /// mesmo antes de ele lá pôr alguma coisa, como a casa da letra E existe
+  /// vazia. Sem isto, a grade encolhia enquanto ele preenchia.
+  blocos Int @default(0)
+
   /// Quem pode abrir o Modo Karaokê das faixas deste projeto.
   karaokeAcesso    KaraokeAcesso     @default(TODOS)
   precoDeCartoes   PrecoDeCartoes?
@@ -124,6 +138,13 @@ enum ProjectStatus {
 /// Num próximo projeto, pode ser um produto, um vídeo, um episódio.
 model Content {
   id String @id @default(uuid()) @db.Uuid
+
+  /// O número do bloco, nos projetos que não são alfabetos: 1, 2, 3…
+  ///
+  /// É o mesmo papel que a `letra` tem no alfabeto — diz em que casa da grade
+  /// este conteúdo mora. Nulo no que não faz parte da sequência: a introdução,
+  /// o Produto Vivo, e as páginas dos cartões dos adultos.
+  ordinal Int?
 
   /// A LETRA a que este conteúdo pertence: "A", "B"... ou nulo.
   ///
@@ -176,6 +197,8 @@ model Content {
   posts     Post[]
 
   @@unique([projectId, slug])
+  /// Duas casas com o mesmo número seriam duas casas no mesmo sítio.
+  @@unique([projectId, ordinal])
   @@index([projectId, status, position])
   @@map("contents")
 }
@@ -1805,4 +1828,12 @@ model PalavraDeDestaque {
 
   @@unique([projectId, palavra])
   @@map("palavras_de_destaque")
+}
+
+/// Como um projeto numera os seus blocos. Ver `Project.sequencia`.
+enum SequenciaDoProjeto {
+  /// A, B, C… — só o Jesus Alfabeto Saudável.
+  LETRAS
+  /// 1, 2, 3… até à quantidade que ele definir no painel.
+  NUMEROS
 }

@@ -101,6 +101,10 @@ class CartaoDoCarrosselDto {
   @IsOptional() @IsBoolean() publicado?: boolean
 }
 
+class BlocosDoProjetoDto {
+  @IsInt() @Min(0) @Max(200) quantidade!: number
+}
+
 class OrdemDoCarrosselDto {
   @IsArray() @ArrayMaxSize(200) @IsString({ each: true }) slugs!: string[]
 }
@@ -243,6 +247,11 @@ export class AdminCartoesController {
     @Body() dto: CartaoDoCarrosselDto,
   ) {
     return this.carrossel.actualizarCartao(projectSlug, dto)
+  }
+
+  @Patch('projects/:projectSlug/blocos')
+  definirBlocos(@Param('projectSlug') projectSlug: string, @Body() dto: BlocosDoProjetoDto) {
+    return this.carrossel.definirBlocos(projectSlug, dto.quantidade)
   }
 
   @Post('carrossel/ordem')

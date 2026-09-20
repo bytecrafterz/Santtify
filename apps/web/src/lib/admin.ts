@@ -207,9 +207,16 @@ export interface CartaoAdmin {
   folhaA4?: string | null
 }
 
-/** Um vagão da composição: a letra e os seus cartões. */
+/** Um vagão da composição: a casa (letra ou número) e os seus cartões. */
 export interface VagaoAdmin {
-  letra: string
+  /** A casa: "A" no alfabeto, "3" num projeto numerado. */
+  casa: string
+  /** A letra, só nos alfabetos. */
+  letra: string | null
+  /** O número do bloco, só nos projetos numerados. */
+  numero: number | null
+  /** Como se chama no ecrã: "Letra A" ou "Bloco 3". */
+  rotulo: string
   contentId: string | null
   slug: string | null
   title: string
@@ -636,6 +643,10 @@ export interface PrecoAdmin {
 export interface ProjetoNoPainel {
   slug: string
   nome: string
+  /** Como as casas deste projeto se chamam: A–Z ou 1..N. */
+  sequencia?: 'LETRAS' | 'NUMEROS'
+  /** Quantas casas tem a grade. Nos alfabetos, 26. */
+  blocos?: number
   tagline: string | null
   capa: string | null
   /** As medidas da imagem, para reservar a altura antes de ela chegar. */
@@ -741,6 +752,18 @@ export const painelDeCartoes = {
     chamarAdmin<ProjetoNoPainel[]>(`/admin/projects/${projeto}/cartao-do-carrossel`, {
       method: 'PATCH',
       body: JSON.stringify(dados),
+    }),
+
+  /**
+   * Quantos blocos um projeto tem.
+   *
+   * Crescer cria as casas que faltam; encolher só apaga as que estiverem
+   * vazias, e recusa-se se alguma já tiver conteúdo.
+   */
+  definirBlocos: (projeto: string, quantidade: number) =>
+    chamarAdmin<ProjetoNoPainel[]>(`/admin/projects/${projeto}/blocos`, {
+      method: 'PATCH',
+      body: JSON.stringify({ quantidade }),
     }),
 
   /** A ordem inteira da lista da página inicial, de cima para baixo. */

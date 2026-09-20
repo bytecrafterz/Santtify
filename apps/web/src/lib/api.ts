@@ -10,6 +10,10 @@ export interface Projeto {
   branding: Record<string, unknown>
   /** Link externo de compra, quando o dono já tiver cadastrado. */
   checkoutUrl?: string | null
+  /** Como este projeto numera as casas da grade: A–Z ou 1..N. */
+  sequencia?: 'LETRAS' | 'NUMEROS'
+  /** Quantas casas tem a grade deste projeto. Nos alfabetos, 26. */
+  blocos?: number
 }
 
 export type TipoBloco = 'TEXT' | 'RICH_TEXT' | 'AUDIO' | 'VIDEO' | 'IMAGE' | 'EMBED' | 'LINK'
@@ -91,6 +95,8 @@ export interface ItemIndice {
   position: number
   /** A letra a que pertence: "A".."Z", ou nulo quando não é uma letra. */
   letra: string | null
+  /** O número do bloco, nos projetos que não são alfabetos. Ver `sequencia`. */
+  ordinal?: number | null
   /** Falso enquanto a letra ainda não tem conteúdo: aparece trancada na grade. */
   publicado: boolean
   stats: { views: number; likes: number; comments: number; shares: number } | null
