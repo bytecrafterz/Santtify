@@ -1,8 +1,9 @@
-import { BadRequestException, Injectable, NotFoundException } from '@nestjs/common'
+import { BadRequestException, Injectable, Logger, NotFoundException } from '@nestjs/common'
 import { BlockType, CardEstado, CardPapel, ContentStatus, MediaKind, Prisma } from '@pv/db'
 import { PrismaService } from '../prisma/prisma.service'
 import { ShortLinksService } from '../short-links/short-links.service'
 import { ContagensService } from '../social/contagens.service'
+import { TranscricaoService } from '../karaoke/transcricao.service'
 import { ordemDoProdutoVivo } from '../content/ordem-do-produto-vivo'
 import {
   cartaoEstaInteiro,
@@ -22,10 +23,13 @@ import {
  */
 @Injectable()
 export class AdminContentService {
+  private readonly logger = new Logger(AdminContentService.name)
+
   constructor(
     private readonly prisma: PrismaService,
     private readonly shortLinks: ShortLinksService,
     private readonly contagens: ContagensService,
+    private readonly transcricao: TranscricaoService,
   ) {}
 
   /** Lista TUDO, inclusive rascunho — diferente da leitura pública. */
@@ -1369,8 +1373,10 @@ export class AdminContentService {
   ) {
     const antes = await this.prisma.contentBlock.findUnique({
       where: { id: cartaoId },
-      // O slug vem junto: é ele que diz se este cartão precisa de som.
-      select: { id: true, content: { select: { projectId: true, slug: true } } },
+      // O slug vem junto: é ele que diz se este cartão precisa de som. O
+      // `assetId` vem junto porque é ele que diz se entrou um áudio NOVO —
+      // gravar o título outra vez não pode mandar a música ouvir de novo.
+      select: { id: true, assetId: true, content: { select: { projectId: true, slug: true } } },
     })
     if (!antes) throw new NotFoundException('Cartão não encontrado')
 
@@ -1460,6 +1466,25 @@ export class AdminContentService {
     })
 
     await this.sincronizarEstado(cartaoId)
+
+    /*
+      ÁUDIO NOVO ENTRA SOZINHO NA FILA DO KARAOKÊ.
+
+      Pedido dele em 19/09: "eu publico o áudio e o sistema reconhece o que
+      está sendo cantado". Aqui é onde um áudio novo aparece na plataforma, por
+      isso é aqui que o pedido nasce — e não num botão que ele teria de lembrar
+      de carregar em cada uma das sessenta e tal músicas.
+
+      Só quando o áudio MUDA: gravar o título de um cartão não põe a música na
+      fila outra vez. E falhar a enfileirar não pode estragar o gravar: o painel
+      tem um botão para pedir de novo.
+    */
+    if (dados.assetId !== undefined && dados.assetId && dados.assetId !== antes.assetId) {
+      await this.transcricao
+        .enfileirar(cartaoId, 'AUDIO_NOVO')
+        .catch((erro) => this.logger.warn(`Não foi possível enfileirar a transcrição: ${erro}`))
+    }
+
     const estado = this.estadoDoCartao(guardado, antes.content.slug)
     await this.auditar(adminId, antes.content.projectId, 'card.save', 'ContentBlock', cartaoId, {
       estado,

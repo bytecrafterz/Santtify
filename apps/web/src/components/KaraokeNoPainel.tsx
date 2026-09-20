@@ -3,6 +3,7 @@
 import Link from 'next/link'
 import { useCallback, useEffect, useState } from 'react'
 import { ErroDeApi } from '@/lib/auth'
+import { OficinaDasLetras } from './OficinaDasLetras'
 import {
   karaoke,
   type EstadoDaLetra,
@@ -83,6 +84,9 @@ export function KaraokeNoPainel({ projectSlug }: { projectSlug: string }) {
   return (
     <div className="painel-cartoes">
       {erro && <p className="cartoes-erro">{erro}</p>}
+
+      {/* Primeiro o que trabalha sozinho, depois o que ele afina à mão. */}
+      <OficinaDasLetras projectSlug={projectSlug} />
 
       <section className="painel-bloco">
         <h2>Quem pode cantar</h2>

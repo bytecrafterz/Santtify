@@ -49,6 +49,17 @@ export declare const MS_POR_PESO: number
 export declare function normalizarPalavra(texto: string): string
 export declare function separarPalavras(linha: string): string[]
 export declare function frasesDoTexto(texto: string, anteriores?: Frase[] | null): Frase[]
+
+/** O que o transcritor ouviu (tiradas com as palavras e os tempos delas). */
+export interface TiradaOuvida {
+  texto: string
+  inicioMs: number
+  fimMs: number
+  palavras: Array<{ texto: string; inicioMs: number; fimMs: number }>
+}
+
+/** As tiradas ouvidas no áudio, arrumadas em frases de karaokê. */
+export declare function frasesDeTranscricao(tiradas: TiradaOuvida[]): Frase[]
 export declare function pesoDaPalavra(texto: string): number
 export declare function fimDaFrase(
   frase: Frase,

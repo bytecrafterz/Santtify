@@ -7,9 +7,13 @@ import { ShortLinksModule } from '../short-links/short-links.module'
 import { ContentModule } from '../content/content.module'
 import { PostsModule } from '../social/posts.module'
 import { IdentityModule } from '../identity/identity.module'
+import { KaraokeModule } from '../karaoke/karaoke.module'
 
 @Module({
   imports: [
+    // O karaokê entra aqui por uma razão só: quando ele envia um áudio novo,
+    // a faixa vai sozinha para a fila de transcrição. Ver `salvarCartao`.
+    KaraokeModule,
     ShortLinksModule,
     IdentityModule,
     ContentModule,

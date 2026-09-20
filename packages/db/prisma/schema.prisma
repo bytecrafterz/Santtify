@@ -307,6 +307,8 @@ model ContentBlock {
 
   /// A letra sincronizada desta faixa, quando existe — o Modo Karaokê.
   letraSincronizada LetraSincronizada?
+  /// O pedido para o sistema ouvir esta faixa e escrever a letra dela.
+  transcricao       TranscricaoDeAudio?
 
   @@index([contentId, position])
   @@index([contentId, slot])
@@ -1823,6 +1825,13 @@ model LetraSincronizada {
   /// a meio não pode aparecer ao público.
   publicada Boolean @default(false)
 
+  /// De onde veio esta letra: escrita à mão no painel ou ouvida pelo sistema.
+  ///
+  /// Serve para o painel dizer a verdade a quem revê: uma letra transcrita
+  /// pode ter palavras trocadas, e ele precisa de saber quais ainda não passou
+  /// pelos olhos dele. Quando ele corrige e grava, passa a MANUAL.
+  origem OrigemDaLetra @default(MANUAL)
+
   criadoEm     DateTime @default(now())
   atualizadoEm DateTime @updatedAt
 
@@ -1861,4 +1870,56 @@ enum SequenciaDoProjeto {
   LETRAS
   /// 1, 2, 3… até à quantidade que ele definir no painel.
   NUMEROS
+}
+
+/// Quem escreveu a letra sincronizada de uma faixa.
+enum OrigemDaLetra {
+  /// Escrita e marcada no painel, por ele.
+  MANUAL
+  /// Ouvida pelo sistema a partir do próprio áudio.
+  AUTOMATICA
+}
+
+/// Em que ponto está a transcrição de uma faixa.
+enum EstadoDaTranscricao {
+  /// À espera de vez na fila.
+  PENDENTE
+  /// Está a ser ouvida neste momento.
+  A_OUVIR
+  /// A letra ficou pronta e o karaokê da faixa já existe.
+  PRONTA
+  /// Correu mal. `erro` diz o quê, e dá para tentar outra vez.
+  FALHOU
+}
+
+/// A fila de faixas à espera de serem ouvidas pelo sistema.
+///
+/// Ouvir uma música de seis minutos demora minutos de processador, e não pode
+/// acontecer enquanto ele espera num ecrã. Por isso é uma FILA: quem envia um
+/// áudio deixa aqui um pedido, e o transcritor vai tirando um de cada vez.
+///
+/// Uma linha por faixa (`@@unique`), de propósito: pedir duas vezes a mesma
+/// música não faz duas transcrições, volta a pôr a mesma na fila.
+model TranscricaoDeAudio {
+  id      String       @id @default(uuid()) @db.Uuid
+  blocoId String       @unique @db.Uuid
+  bloco   ContentBlock @relation(fields: [blocoId], references: [id], onDelete: Cascade)
+
+  estado     EstadoDaTranscricao @default(PENDENTE)
+  /// De 0 a 100, para a barra do painel andar enquanto a música é ouvida.
+  progresso  Int                 @default(0)
+  /// Quantas vezes já se tentou. Ao fim de três, pára e espera por ele.
+  tentativas Int                 @default(0)
+  erro       String?
+
+  /// Quanto tempo o sistema levou a ouvir esta música, em segundos.
+  segundosAOuvir Int?
+
+  criadoEm     DateTime  @default(now())
+  atualizadoEm DateTime  @updatedAt
+  comecouEm    DateTime?
+  terminouEm   DateTime?
+
+  @@index([estado, criadoEm])
+  @@map("transcricoes_de_audio")
 }

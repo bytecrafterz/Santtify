@@ -82,6 +82,15 @@ const schema = z.object({
    */
   PAGAMENTOS_PROVEDOR: z.enum(['manual', 'mercadopago']).default('manual'),
 
+  /**
+   * A chave partilhada com o transcritor — o programa que ouve as músicas.
+   *
+   * Sem ela, a porta do transcritor não abre de todo (ver `TranscritorController`).
+   * É máquina a falar com máquina dentro do servidor, e uma porta dessas aberta
+   * ao mundo deixava qualquer pessoa escrever letras na plataforma.
+   */
+  TRANSCRITOR_TOKEN: vazioComoAusente,
+
   /** O Access Token da aplicação no Mercado Pago. É uma senha: só no servidor. */
   MERCADOPAGO_ACCESS_TOKEN: vazioComoAusente,
   /**

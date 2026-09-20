@@ -295,3 +295,30 @@ antes de cada toque), a barra de baixo cobre o fundo do ecrã (o ponto do toque
 confirma-se com `elementFromPoint`), e o ecrã muda antes do servidor responder
 (espera-se pela resposta antes de lhe perguntar).
 
+
+## `letras-automaticas.mjs`
+
+O caminho inteiro da transcrição automática, como ele o vive: envia um áudio
+num cartão vazio e a música entra na fila **sem carregar em nada**; o painel
+mostra a percentagem a subir, com a roda a andar e a barra da faixa a
+acompanhar; no fim, a letra fica publicada, palavra a palavra, marcada como
+automática. Confirma também as duas metades da regra que protege o trabalho
+dele: trocar o áudio manda ouvir a música nova, e uma letra que ele escreveu à
+mão não é apagada por áudio nenhum.
+
+Quem faz de transcritor é o próprio percurso, pela porta e com a chave do
+programa que ouve as músicas (`TRANSCRITOR_TOKEN`) — assim o caminho é o mesmo
+sem os minutos de espera.
+
+```bash
+SITE=http://localhost:3100 API=http://localhost:3333/api \
+PROJ=31-atributos-de-deus VAGO=<id de um cartão de áudio SEM áudio> \
+TRANSCRITOR_TOKEN=... PV_ADMIN_EMAIL=... PV_ADMIN_SENHA=... \
+node deploy/percursos/letras-automaticas.mjs
+```
+
+**Duas travas para poder correr contra produção.** Só mexe no cartão `VAGO` que
+lhe derem, e repõe-no vazio no fim mesmo se falhar. E se houver músicas na fila,
+não faz a parte que escreve: a que lhe viesse à mão podia ser uma delas, e o
+percurso escrevia-lhe por cima uma letra de mentira. Sem `VAGO` ou sem chave,
+faz só as verificações que não escrevem nada — o anel, os números e o botão.

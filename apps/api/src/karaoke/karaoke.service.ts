@@ -5,7 +5,7 @@ import {
   Injectable,
   NotFoundException,
 } from '@nestjs/common'
-import { BlockType, ContentStatus, KaraokeAcesso, Prisma } from '@pv/db'
+import { BlockType, ContentStatus, KaraokeAcesso, OrigemDaLetra, Prisma } from '@pv/db'
 import {
   estaSincronizada,
   frasesDoTexto,
@@ -203,6 +203,15 @@ export class KaraokeService {
       texto,
       frases: frases as unknown as Prisma.InputJsonValue,
       publicada,
+      /*
+        GRAVAR À MÃO TORNA A LETRA DELE.
+
+        A transcrição automática recusa-se a passar por cima de uma letra
+        MANUAL publicada. Se ele corrigir uma palavra numa letra que o
+        computador escreveu, essa letra passa a ser dele — e uma segunda volta
+        do transcritor não pode apagar a correcção que ele acabou de fazer.
+      */
+      origem: OrigemDaLetra.MANUAL,
     }
     await this.prisma.letraSincronizada.upsert({
       where: { blocoId },

@@ -557,6 +557,77 @@ por isso não é uma tabela por palavra.
 ecrã convida a entrar; o cliente tenta renovar a sessão antes) e `DESLIGADO` (o
 botão desaparece e a rota dá 404).
 
+### As letras escrevem-se sozinhas
+
+Pedido dele em 19/09, depois de perceber o que era sincronizar sessenta músicas
+à mão: *"eu envio o áudio e o sistema faz a transcrição automática da voz, sem eu
+precisar fornecer nenhum texto"*. O computador ouve a música e escreve a letra
+com o tempo de cada palavra — que é exactamente o que o karaokê precisa.
+
+| O quê | Onde |
+| --- | --- |
+| Fila | tabela `TranscricaoDeAudio` (uma linha por cartão com áudio), `TranscricaoService` |
+| Porta do transcritor | `POST /api/interno/transcricoes/proxima`, `PATCH :id/progresso`, `POST :id/pronta`, `POST :id/falhou` — fechadas pela chave `TRANSCRITOR_TOKEN` |
+| Painel | `GET/POST /api/admin/projects/:slug/transcricoes`, `POST /api/admin/cards/:id/transcricao` |
+| Quem ouve | `deploy/transcritor/transcritor.py` (imagem própria, serviço `transcritor` no compose) |
+| Ecrã | `OficinaDasLetras` no topo de `/[projeto]/admin/karaoke` |
+| Agrupamento em frases | `frasesDeTranscricao` em `@pv/karaoke` |
+
+**Porque é uma fila e não um pedido.** Ouvir uma música demora à volta do tempo
+da própria música. Um pedido HTTP que demora seis minutos morre em qualquer
+proxy, e ninguém fica a olhar para um ecrã à espera. Quem envia o áudio deixa um
+pedido; o transcritor — processo à parte, que ninguém chama — pergunta se há
+trabalho, faz um de cada vez e devolve o resultado. Parar o transcritor a meio
+não parte nada: uma música presa há mais de 30 minutos volta sozinha à fila.
+
+**O áudio novo entra sozinho.** `salvarCartao` põe a faixa na fila quando o
+`assetId` muda. É a única porta por onde entra áudio na plataforma, e é por isso
+que o pedido nasce ali e não num botão que ele teria de carregar sessenta vezes.
+
+**Quem pode passar por cima de quê** (`PorqueOuvir`):
+
+| Razão | Quando | O que respeita |
+| --- | --- | --- |
+| `AUDIO_NOVO` | ele trocou o áudio do cartão | refaz mesmo que já tivesse sido ouvida (a letra antiga é de outra música), mas **não toca em letra escrita à mão** |
+| `FALTA_LETRA` | "Escrever as letras que faltam" | só mexe em quem não tem letra publicada nem foi ouvida |
+| `ELE_PEDIU` | "Ouvir de novo" / "Refazer todas" | refaz tudo, incluindo o que ele escreveu |
+
+Gravar a letra no painel marca-a `MANUAL` — a partir daí é dele, e só volta a
+ser ouvida se ele pedir. Basta haver texto: uma letra colada e ainda por
+sincronizar também está protegida.
+
+**Publicar.** A letra automática passa pelo mesmo `validarFrases` da escrita à
+mão e vai ao ar publicada, sem revisão. É uma decisão: uma letra com uma palavra
+trocada é melhor do que nenhuma — a criança canta à mesma — e deixá-la à espera
+de revisão punha-o a fazer, uma a uma, o trabalho de que se queixou. O painel
+marca-a como **automática** para ele saber onde olhar. Se as frases não passarem
+nas regras (áudio mais curto do que a letra, por exemplo), fica **guardada por
+publicar** e a faixa aparece com a razão escrita.
+
+**A percentagem.** Conta a música que está a ser ouvida agora, e não só as
+acabadas: com sessenta faixas de quatro minutos, uma barra que só saltasse de
+faixa em faixa ficaria parada minutos a fio, e uma barra parada é
+indistinguível de uma avaria. Cada música vale uma e não mais.
+
+**O modelo.** `medium` do Whisper (via faster-whisper, `int8`, CPU). Medido com
+as músicas dele: o `small` é três vezes mais rápido e escreve disparates em voz
+cantada ("Antes de eu nascer" saía "Ante deus e nasce"); o `medium` acerta. O
+filtro de silêncio (VAD) vai **desligado**: numa canção com instrumental, o
+filtro tomava a música por silêncio e deitava fora metade da letra.
+
+```bash
+# no servidor, uma vez
+TRANSCRITOR_TOKEN=$(openssl rand -hex 24)   # vai para .env.production
+docker compose -f docker-compose.prod.yml up -d --build transcritor
+docker compose -f docker-compose.prod.yml logs -f transcritor
+```
+
+Depois, no painel, **Escrever as letras que faltam** põe tudo na fila. Conta com
+mais ou menos o tempo somado das músicas — sessenta faixas de quatro minutos são
+umas quatro a sete horas de servidor, e o site continua a funcionar enquanto
+isso acontece. Num servidor de 1 vCPU vale a pena fazê-lo de noite, ou pôr o
+`transcritor` numa máquina maior: ele só precisa de alcançar a API.
+
 ### O que falta, e não é código
 
 As **duas músicas de exemplo** fazem-se no painel de produção, com os áudios e as

@@ -66,6 +66,7 @@ services:
       MAIL_REMETENTE_NOME: ${MAIL_REMETENTE_NOME:-Santtify}
       # Pagamentos dos cartões. Mesma regra da linha de cima: só chega ao
       # contentor o que estiver escrito aqui.
+      TRANSCRITOR_TOKEN: ${TRANSCRITOR_TOKEN:-}
       PAGAMENTOS_PROVEDOR: ${PAGAMENTOS_PROVEDOR:-manual}
       MERCADOPAGO_ACCESS_TOKEN: ${MERCADOPAGO_ACCESS_TOKEN:-}
       MERCADOPAGO_WEBHOOK_SECRET: ${MERCADOPAGO_WEBHOOK_SECRET:-}
@@ -100,6 +101,37 @@ services:
     restart: unless-stopped
     depends_on:
       - api
+
+  # O OUVINTE DAS MÚSICAS.
+  #
+  # Escreve a letra das faixas a partir do áudio, com o tempo de cada palavra,
+  # para o karaokê acender a palavra certa na altura certa. Ver
+  # deploy/transcritor/transcritor.py.
+  #
+  # Não publica portas e ninguém lhe fala: é ele que pergunta à API se há música
+  # nova. Por isso pode ser parado a meio sem partir nada — a música volta à
+  # fila sozinha ao fim de meia hora — e pode um dia mudar-se para uma máquina
+  # com mais força sem tocar no resto.
+  #
+  # PESA. Com `medium` ocupa perto de 1,5 GB de memória enquanto ouve, e ouvir
+  # uma música demora aproximadamente o tempo dela. Num servidor apertado,
+  # TRANSCRITOR_MODELO=small é três vezes mais rápido — e erra bastante mais.
+  transcritor:
+    build:
+      context: .
+      dockerfile: deploy/transcritor/Dockerfile
+    restart: unless-stopped
+    depends_on:
+      - api
+    environment:
+      TRANSCRITOR_API: http://api:3333/api
+      TRANSCRITOR_TOKEN: ${TRANSCRITOR_TOKEN:-}
+      TRANSCRITOR_MODELO: ${TRANSCRITOR_MODELO:-medium}
+      TRANSCRITOR_NUCLEOS: ${TRANSCRITOR_NUCLEOS:-0}
+    volumes:
+      # O modelo descarregado. Um volume para não voltar a puxar 1,5 GB a cada
+      # reinício do contentor.
+      - modelos:/modelos
 
   caddy:
     image: caddy:2-alpine
@@ -142,6 +174,7 @@ services:
 volumes:
   pgdata:
   uploads:
+  modelos:
   cartoes_temporarios:
   backups:
   caddy_data:

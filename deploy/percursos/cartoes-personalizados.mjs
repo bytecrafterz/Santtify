@@ -31,7 +31,7 @@ const foto = async (largura, altura) =>
     .toBuffer()
 
 try {
-  const nav = await chromium.launch()
+  const nav = await chromium.launch({ executablePath: process.env.CHROMIUM || undefined })
   const ctx = await nav.newContext({ viewport: { width: 430, height: 1100 } })
   let pg = await ctx.newPage()
 

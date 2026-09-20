@@ -203,6 +203,106 @@ function marcasDasFrases(frases) {
   })
 }
 
+/**
+ * A letra ouvida pelo sistema, arrumada em frases de karaokê.
+ *
+ * O transcritor devolve TIRADAS — pedaços que ele ouviu de uma vez — e cada
+ * tirada já costuma ser um verso da canção: "Quando eu tenho medo Ele vem me
+ * abraçar". É por essa costura que se corta, e não pelas pausas entre palavras:
+ * medi-las numa música dele deu zero em 95% dos casos, porque dentro de uma
+ * tirada as palavras vêm coladas umas às outras.
+ *
+ * Uma tirada comprida de mais para o ecrã parte-se: primeiro numa vírgula ou
+ * ponto, e se não houver, na maior respiração lá dentro. Uma tirada de duas
+ * palavras junta-se à seguinte, senão o ecrã pisca uma palavra e muda.
+ *
+ * Cada palavra fica `marcada`: o tempo dela veio do áudio, e não de uma conta
+ * repartida. Se ele corrigir uma palavra no painel, o resto fica onde estava.
+ */
+const PALAVRAS_POR_FRASE = 9
+const CARACTERES_POR_FRASE = 46
+/** Abaixo disto, a frase é curta de mais para viver sozinha no ecrã. */
+const PALAVRAS_A_MENOS = 2
+
+function frasesDeTranscricao(tiradas) {
+  const limpar = (p) => ({
+    texto: String(p?.texto || '').trim(),
+    inicioMs: Math.round(Number(p?.inicioMs)),
+    fimMs: Math.round(Number(p?.fimMs)),
+  })
+  const valida = (p) => p.texto && Number.isFinite(p.inicioMs) && Number.isFinite(p.fimMs)
+
+  /** Onde partir uma tirada comprida: na pontuação, ou na maior respiração. */
+  const partir = (palavras) => {
+    const comprimento = palavras.reduce((s, p) => s + p.texto.length + 1, 0)
+    if (palavras.length <= PALAVRAS_POR_FRASE && comprimento <= CARACTERES_POR_FRASE) {
+      return [palavras]
+    }
+    /*
+      O CORTE FICA PERTO DO MEIO, e não onde calhar.
+
+      Cortar no primeiro sinal de pontuação deixava "Quando eu tenho medo Ele
+      vem me abraçar Quando eu" de um lado e três palavras do outro — e a parte
+      comprida continuava a não caber. Entre os sítios possíveis escolhe-se o
+      mais próximo do meio: as duas metades ficam parecidas e a recursão acaba
+      sempre.
+    */
+    const meio = (palavras.length - 1) / 2
+    const dentro = (i) => i >= Math.floor(palavras.length / 4) && i <= Math.ceil((palavras.length * 3) / 4)
+    const candidatos = []
+    for (let i = 0; i < palavras.length - 1; i++) {
+      if (dentro(i) && /[.!?;:,]$/.test(palavras[i].texto)) candidatos.push(i)
+    }
+    if (!candidatos.length) {
+      let maior = -1
+      for (let i = 0; i < palavras.length - 1; i++) {
+        const respiracao = palavras[i + 1].inicioMs - palavras[i].fimMs
+        if (dentro(i) && respiracao > maior) {
+          maior = respiracao
+          candidatos.length = 0
+          candidatos.push(i)
+        }
+      }
+    }
+    const corte = candidatos.length
+      ? candidatos.reduce((a, b) => (Math.abs(a - meio) <= Math.abs(b - meio) ? a : b))
+      : Math.floor(meio)
+    return [...partir(palavras.slice(0, corte + 1)), ...partir(palavras.slice(corte + 1))]
+  }
+
+  const grupos = []
+  for (const tirada of tiradas || []) {
+    const palavras = (tirada?.palavras || []).map(limpar).filter(valida)
+    if (!palavras.length) continue
+    grupos.push(...partir(palavras))
+  }
+
+  // Uma palavra sozinha não é uma frase: junta-se a quem está mais perto dela.
+  for (let i = 0; i < grupos.length; i++) {
+    if (grupos[i].length > PALAVRAS_A_MENOS || grupos.length === 1) continue
+    const anterior = grupos[i - 1]
+    const seguinte = grupos[i + 1]
+    const paraTras = anterior ? grupos[i][0].inicioMs - anterior[anterior.length - 1].fimMs : Infinity
+    const paraFrente = seguinte ? seguinte[0].inicioMs - grupos[i][grupos[i].length - 1].fimMs : Infinity
+    if (anterior && paraTras <= paraFrente) {
+      anterior.push(...grupos[i])
+      grupos.splice(i, 1)
+      i--
+    } else if (seguinte) {
+      seguinte.unshift(...grupos[i])
+      grupos.splice(i, 1)
+      i--
+    }
+  }
+
+  return grupos.map((palavras) => ({
+    texto: palavras.map((p) => p.texto).join(' '),
+    inicioMs: palavras[0].inicioMs,
+    fimMs: palavras[palavras.length - 1].fimMs,
+    palavras: palavras.map((p) => ({ ...p, marcada: true })),
+  }))
+}
+
 /** Palavras que nunca ganham destaque sozinhas: artigos, preposições, pronomes. */
 const PALAVRAS_PEQUENAS = new Set(
   (
@@ -359,6 +459,7 @@ module.exports = {
   normalizarPalavra,
   separarPalavras,
   frasesDoTexto,
+  frasesDeTranscricao,
   pesoDaPalavra,
   fimDaFrase,
   distribuirTempos,

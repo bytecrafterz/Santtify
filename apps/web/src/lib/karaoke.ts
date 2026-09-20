@@ -45,6 +45,35 @@ export interface PainelDoKaraoke {
   }>
 }
 
+/** O estado de uma faixa na fila de quem ouve as músicas. */
+export type EstadoDaTranscricao = 'PENDENTE' | 'A_OUVIR' | 'PRONTA' | 'FALHOU'
+
+export interface FaixaAOuvir {
+  id: string
+  nome: string
+  conteudo: string
+  conteudoSlug: string
+  duracaoMs: number | null
+  estado: EstadoDaTranscricao | null
+  progresso: number
+  erro: string | null
+  temLetra: boolean
+  origem: 'MANUAL' | 'AUTOMATICA' | null
+  frases: number
+}
+
+export interface AndamentoDasLetras {
+  faixas: FaixaAOuvir[]
+  resumo: {
+    total: number
+    prontas: number
+    naFila: number
+    falhadas: number
+    aOuvirAgora: number
+    percentagem: number
+  }
+}
+
 export interface LetraDoCartao {
   faixa: {
     id: string
@@ -111,6 +140,20 @@ export const karaoke = {
     }),
   apagarPalavra: (id: string) =>
     chamar<PainelDoKaraoke>(`/admin/karaoke/palavras/${id}`, { method: 'DELETE' }),
+
+  /* A oficina: as músicas a serem ouvidas e a percentagem que ele vê a subir. */
+  andamento: (projectSlug: string) =>
+    chamar<AndamentoDasLetras>(`/admin/projects/${projectSlug}/transcricoes`),
+  ouvirTudo: (projectSlug: string, refazer = false) =>
+    chamar<{ postas: number; total: number }>(`/admin/projects/${projectSlug}/transcricoes`, {
+      method: 'POST',
+      body: JSON.stringify({ refazer }),
+    }),
+  ouvirUma: (blocoId: string) =>
+    chamar<{ id?: string; estado?: string; ignorado?: boolean; motivo?: string }>(
+      `/admin/cards/${blocoId}/transcricao`,
+      { method: 'POST' },
+    ),
 
   letra: (blocoId: string) => chamar<LetraDoCartao>(`/admin/cards/${blocoId}/karaoke`),
   gravarLetra: (

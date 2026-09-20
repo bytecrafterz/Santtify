@@ -9761,3 +9761,640 @@ h2.funil {
   gap: 8px;
   margin-top: 10px;
 }
+
+/* ── A SALA DO KARAOKÊ (painel) ─────────────────────────────────────
+ *
+ * A única página escura do painel, e é de propósito. É aqui que ele vê o
+ * trabalho mais bonito da plataforma — a letra a acender palavra a palavra — e
+ * um fundo de sala de espetáculo faz o dourado valer o que vale. Tudo o que se
+ * segue está preso à classe `painel-karaoke`: nenhuma regra daqui escorre para
+ * as outras páginas do painel, que continuam claras.
+ */
+
+.painel-karaoke {
+  --k-tinta: #f7f2ff;
+  --k-tinta-suave: #b7abd2;
+  --k-ouro: #f2c14e;
+  --k-ouro-claro: #ffe6a3;
+  --k-violeta: #a78bfa;
+  --k-vidro: rgba(255, 255, 255, 0.055);
+  --k-fio: rgba(255, 255, 255, 0.12);
+  color: var(--k-tinta);
+  position: relative;
+}
+
+/* A página inteira escurece, e não só a coluna de texto. O `:has` é o que
+ * permite pintar o `body` a partir daqui, sem uma classe no layout que teria de
+ * ser tirada quando ele sai desta página. */
+body:has(.painel-karaoke) {
+  background: #0b0616;
+}
+
+/* Por cima dessa base, os halos. Fixos, para acompanharem quem rola a página. */
+.painel-karaoke::before {
+  content: '';
+  position: fixed;
+  inset: 0;
+  z-index: -1;
+  background:
+    radial-gradient(900px 520px at 78% -8%, rgba(124, 58, 237, 0.42), transparent 62%),
+    radial-gradient(760px 480px at 12% 8%, rgba(236, 72, 153, 0.2), transparent 60%),
+    radial-gradient(620px 420px at 50% 108%, rgba(245, 193, 78, 0.14), transparent 62%),
+    linear-gradient(168deg, #140b26 0%, #0c0718 52%, #080511 100%);
+}
+
+.painel-karaoke h1 {
+  font-family: var(--fonte-karaoke), 'Arial Rounded MT Bold', system-ui, sans-serif;
+  font-size: clamp(2rem, 7vw, 2.9rem);
+  letter-spacing: 0.01em;
+  background: linear-gradient(100deg, var(--k-ouro-claro), var(--k-ouro) 42%, #fff6dc);
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+  text-shadow: 0 10px 40px rgba(242, 193, 78, 0.16);
+}
+
+.painel-karaoke .subtitulo,
+.painel-karaoke .painel-projeto-nome span {
+  color: var(--k-tinta-suave);
+}
+
+.painel-karaoke .voltar {
+  color: var(--k-tinta-suave);
+  text-decoration: none;
+}
+
+.painel-karaoke .voltar:hover {
+  color: var(--k-ouro-claro);
+}
+
+/* Os blocos de sempre, em vidro. A estrutura é a mesma do resto do painel — só
+ * mudam as cores, para ele não ter de reaprender nada. */
+.painel-karaoke .painel-bloco {
+  background: var(--k-vidro);
+  border: 1px solid var(--k-fio);
+  border-radius: 20px;
+  backdrop-filter: blur(14px);
+  box-shadow:
+    0 24px 60px rgba(4, 2, 12, 0.5),
+    inset 0 1px 0 rgba(255, 255, 255, 0.07);
+}
+
+.painel-karaoke .painel-bloco h2 {
+  font-family: var(--fonte-karaoke), 'Arial Rounded MT Bold', system-ui, sans-serif;
+  font-size: 1.25rem;
+  letter-spacing: 0.02em;
+  color: var(--k-ouro-claro);
+}
+
+.painel-karaoke input,
+.painel-karaoke select,
+.painel-karaoke textarea {
+  background: rgba(10, 6, 20, 0.6);
+  border: 1px solid var(--k-fio);
+  color: var(--k-tinta);
+  border-radius: 12px;
+}
+
+.painel-karaoke input::placeholder {
+  color: rgba(183, 171, 210, 0.7);
+}
+
+.painel-karaoke input:focus,
+.painel-karaoke select:focus,
+.painel-karaoke textarea:focus {
+  outline: 2px solid rgba(242, 193, 78, 0.55);
+  outline-offset: 1px;
+  border-color: transparent;
+}
+
+.painel-karaoke .painel-botao-destaque {
+  background: rgba(255, 255, 255, 0.06);
+  border: 1px solid var(--k-fio);
+  color: var(--k-tinta);
+  border-radius: 14px;
+  text-decoration: none;
+}
+
+.painel-karaoke .painel-botao-destaque span {
+  color: var(--k-tinta-suave);
+}
+
+.painel-karaoke .painel-botao-destaque.activo {
+  background: linear-gradient(135deg, rgba(242, 193, 78, 0.9), rgba(255, 230, 163, 0.75));
+  border-color: transparent;
+  color: #1a1004;
+}
+
+.painel-karaoke .painel-botao-destaque.activo span {
+  color: rgba(26, 16, 4, 0.75);
+}
+
+.painel-karaoke .botao-acao {
+  background: linear-gradient(135deg, var(--k-ouro), var(--k-ouro-claro));
+  color: #1a1004;
+}
+
+.painel-karaoke .botao-acao:hover {
+  background: linear-gradient(135deg, var(--k-ouro-claro), var(--k-ouro));
+}
+
+.painel-karaoke .painel-projeto {
+  background: rgba(255, 255, 255, 0.035);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 14px;
+}
+
+.painel-karaoke .painel-selo-pronto {
+  color: #0e2b17;
+  background: linear-gradient(135deg, #7ee2a8, #34d399);
+}
+
+.painel-karaoke .painel-selo-falta {
+  color: #2a1a02;
+  background: linear-gradient(135deg, #ffe6a3, #f2c14e);
+}
+
+.painel-karaoke .karaoke-palavra {
+  background: rgba(255, 255, 255, 0.05);
+  border-color: var(--k-fio);
+}
+
+.painel-karaoke .karaoke-palavra button {
+  color: var(--k-tinta-suave);
+}
+
+.painel-karaoke .cartoes-erro {
+  background: rgba(220, 38, 38, 0.16);
+  border: 1px solid rgba(248, 113, 113, 0.4);
+  color: #ffd9d9;
+  border-radius: 12px;
+  padding: 10px 12px;
+}
+
+/* ── A oficina das letras ────────────────────────────────────────── */
+
+.oficina {
+  position: relative;
+  overflow: hidden;
+  padding: 22px 20px 20px;
+  border-radius: 24px;
+  border: 1px solid rgba(242, 193, 78, 0.28);
+  background:
+    linear-gradient(160deg, rgba(60, 30, 100, 0.55), rgba(18, 10, 34, 0.72)),
+    rgba(255, 255, 255, 0.03);
+  box-shadow:
+    0 30px 80px rgba(4, 2, 12, 0.55),
+    inset 0 1px 0 rgba(255, 255, 255, 0.09);
+}
+
+/* O halo por cima do card. Só decoração, e por isso `aria-hidden`. */
+.oficina-luz {
+  position: absolute;
+  inset: -40% -20% auto -20%;
+  height: 320px;
+  background: radial-gradient(closest-side, rgba(242, 193, 78, 0.22), transparent 70%);
+  pointer-events: none;
+}
+
+.oficina-a-abrir {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  color: var(--k-tinta-suave);
+}
+
+.oficina-topo {
+  position: relative;
+}
+
+.oficina-etiqueta {
+  margin: 0;
+  font-size: 0.72rem;
+  font-weight: 700;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: var(--k-ouro);
+}
+
+.oficina h2 {
+  margin: 4px 0 6px;
+  font-family: var(--fonte-karaoke), 'Arial Rounded MT Bold', system-ui, sans-serif;
+  font-size: clamp(1.35rem, 5vw, 1.8rem);
+  color: #fff;
+  letter-spacing: 0.01em;
+}
+
+.oficina-linha {
+  margin: 0;
+  max-width: 54ch;
+  font-size: 0.9rem;
+  line-height: 1.5;
+  color: var(--k-tinta-suave);
+}
+
+.oficina-medidor {
+  position: relative;
+  display: flex;
+  align-items: center;
+  gap: 22px;
+  margin: 18px 0 14px;
+  flex-wrap: wrap;
+}
+
+/* O ANEL É A PERCENTAGEM. Um `conic-gradient` preso a uma variável: o React só
+ * escreve o número e o desenho segue-o, sem SVG nem biblioteca nenhuma. */
+.oficina-anel {
+  position: relative;
+  width: 132px;
+  height: 132px;
+  flex: none;
+  border-radius: 50%;
+  background: conic-gradient(
+    from -90deg,
+    var(--k-ouro) calc(var(--parte, 0) * 1%),
+    rgba(255, 255, 255, 0.09) 0
+  );
+  display: grid;
+  place-items: center;
+  box-shadow: 0 0 0 1px rgba(255, 255, 255, 0.08), 0 18px 40px rgba(242, 193, 78, 0.14);
+  transition: background 600ms ease;
+}
+
+.oficina-anel::after {
+  content: '';
+  position: absolute;
+  inset: 9px;
+  border-radius: 50%;
+  background: radial-gradient(circle at 50% 30%, #241541, #0e0820 72%);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.08);
+}
+
+.oficina-anel-centro {
+  position: relative;
+  z-index: 1;
+  text-align: center;
+  line-height: 1.05;
+}
+
+.oficina-anel-centro strong {
+  display: block;
+  font-size: 2.3rem;
+  font-variant-numeric: tabular-nums;
+  background: linear-gradient(100deg, #fff6dc, var(--k-ouro));
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+}
+
+.oficina-anel-centro strong span {
+  font-size: 1rem;
+  margin-left: 1px;
+}
+
+.oficina-anel-nota {
+  display: block;
+  margin-top: 2px;
+  font-size: 0.72rem;
+  color: var(--k-tinta-suave);
+}
+
+.oficina-numeros {
+  display: grid;
+  /* Quatro a fio quando há largura, dois a dois no telemóvel. */
+  grid-template-columns: repeat(auto-fit, minmax(108px, 1fr));
+  gap: 8px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  flex: 1 1 220px;
+}
+
+.oficina-numeros li {
+  padding: 8px 10px;
+  border-radius: 14px;
+  background: rgba(255, 255, 255, 0.045);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.oficina-numeros strong {
+  display: block;
+  font-size: 1.3rem;
+  font-variant-numeric: tabular-nums;
+  color: #fff;
+}
+
+.oficina-numeros span {
+  font-size: 0.74rem;
+  color: var(--k-tinta-suave);
+}
+
+.oficina-numeros li.a-ouvir {
+  border-color: rgba(242, 193, 78, 0.45);
+  background: rgba(242, 193, 78, 0.1);
+}
+
+.oficina-numeros li.falhou {
+  border-color: rgba(248, 113, 113, 0.4);
+  background: rgba(220, 38, 38, 0.12);
+}
+
+.oficina-barra {
+  position: relative;
+  height: 10px;
+  border-radius: 999px;
+  overflow: hidden;
+  background: rgba(255, 255, 255, 0.08);
+}
+
+.oficina-barra > span {
+  display: block;
+  height: 100%;
+  border-radius: 999px;
+  background: linear-gradient(90deg, #f2c14e, #ffe6a3 55%, #a78bfa);
+  transition: width 700ms cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+/* O brilho a correr só existe enquanto houver trabalho: parado, seria um
+ * enfeite a pedir bateria a um telemóvel que está só a mostrar um número. */
+.oficina.a-trabalhar .oficina-barra::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.45), transparent);
+  transform: translateX(-100%);
+  animation: oficina-correr 1.9s linear infinite;
+}
+
+@keyframes oficina-correr {
+  to {
+    transform: translateX(100%);
+  }
+}
+
+.oficina-estado {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin: 10px 0 0;
+  font-size: 0.85rem;
+  color: var(--k-ouro-claro);
+}
+
+.oficina-roda {
+  width: 14px;
+  height: 14px;
+  flex: none;
+  border-radius: 50%;
+  border: 2px solid rgba(242, 193, 78, 0.28);
+  border-top-color: var(--k-ouro);
+  animation: oficina-rodar 900ms linear infinite;
+}
+
+@keyframes oficina-rodar {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+.oficina-aviso,
+.oficina-recado,
+.oficina-erro,
+.oficina-vazio {
+  margin: 12px 0 0;
+  padding: 10px 12px;
+  border-radius: 12px;
+  font-size: 0.86rem;
+  line-height: 1.45;
+}
+
+.oficina-aviso {
+  background: rgba(242, 193, 78, 0.12);
+  border: 1px solid rgba(242, 193, 78, 0.35);
+  color: var(--k-ouro-claro);
+}
+
+.oficina-recado {
+  background: rgba(52, 211, 153, 0.12);
+  border: 1px solid rgba(52, 211, 153, 0.35);
+  color: #b9f7d8;
+}
+
+.oficina-erro {
+  background: rgba(220, 38, 38, 0.15);
+  border: 1px solid rgba(248, 113, 113, 0.4);
+  color: #ffd9d9;
+}
+
+.oficina-vazio {
+  background: rgba(255, 255, 255, 0.04);
+  border: 1px solid var(--k-fio);
+  color: var(--k-tinta-suave);
+}
+
+.oficina-accoes {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-top: 14px;
+}
+
+.oficina-botao {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  padding: 0.62rem 1.05rem;
+  border-radius: 999px;
+  border: 1px solid var(--k-fio);
+  background: rgba(255, 255, 255, 0.06);
+  color: var(--k-tinta);
+  font-family: inherit;
+  font-size: 0.88rem;
+  font-weight: 700;
+  cursor: pointer;
+  text-decoration: none;
+  transition: transform 120ms ease, background 200ms ease;
+}
+
+.oficina-botao:hover:not(:disabled) {
+  background: rgba(255, 255, 255, 0.12);
+  transform: translateY(-1px);
+}
+
+.oficina-botao:disabled {
+  opacity: 0.55;
+  cursor: progress;
+}
+
+.oficina-botao.principal {
+  background: linear-gradient(135deg, var(--k-ouro), var(--k-ouro-claro));
+  border-color: transparent;
+  color: #1a1004;
+  box-shadow: 0 12px 30px rgba(242, 193, 78, 0.22);
+}
+
+.oficina-botao.pequeno {
+  padding: 0.38rem 0.7rem;
+  font-size: 0.78rem;
+  font-weight: 600;
+}
+
+.oficina-faixas {
+  list-style: none;
+  margin: 16px 0 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.oficina-faixa {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex-wrap: wrap;
+  padding: 10px 12px;
+  border-radius: 14px;
+  background: rgba(255, 255, 255, 0.04);
+  border: 1px solid rgba(255, 255, 255, 0.07);
+}
+
+.oficina-faixa.a-ouvir {
+  border-color: rgba(242, 193, 78, 0.45);
+  background: rgba(242, 193, 78, 0.08);
+}
+
+.oficina-faixa.falhou {
+  border-color: rgba(248, 113, 113, 0.35);
+}
+
+.oficina-faixa.pronta .oficina-selo {
+  color: #b9f7d8;
+}
+
+.oficina-faixa-nome {
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+  min-width: 0;
+  /* O nome da música manda na linha: é por ele que ele a reconhece. */
+  flex: 3 1 240px;
+}
+
+.oficina-faixa-nome strong {
+  font-size: 0.92rem;
+  color: #fff;
+  /* O nome inteiro, mesmo que precise de duas linhas: cortar "Antes de eu
+     nascer (trecho)" a meio deixa-o sem saber qual das músicas é. */
+  overflow-wrap: anywhere;
+}
+
+.oficina-faixa-nome span {
+  font-size: 0.74rem;
+  color: var(--k-tinta-suave);
+}
+
+.oficina-faixa-estado {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+  flex: 1 1 130px;
+  max-width: 260px;
+  min-width: 120px;
+}
+
+.oficina-selo {
+  font-size: 0.76rem;
+  color: var(--k-tinta-suave);
+  font-variant-numeric: tabular-nums;
+}
+
+.oficina-faixa.a-ouvir .oficina-selo {
+  color: var(--k-ouro-claro);
+  font-weight: 700;
+}
+
+.oficina-faixa-barra {
+  display: block;
+  height: 6px;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.1);
+  overflow: hidden;
+}
+
+.oficina-faixa-barra > span {
+  display: block;
+  height: 100%;
+  border-radius: 999px;
+  background: linear-gradient(90deg, var(--k-ouro), var(--k-violeta));
+  transition: width 700ms cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+.oficina-faixa-erro {
+  font-size: 0.72rem;
+  color: #ffb4b4;
+}
+
+.oficina-faixa-accoes {
+  display: flex;
+  gap: 6px;
+  flex-wrap: wrap;
+}
+
+/* Em ecrã largo, as três partes da linha ficam em colunas certinhas: o nome, o
+ * estado e os botões. No telemóvel continuam a embrulhar umas por baixo das
+ * outras, que é o que cabe. */
+@media (min-width: 760px) {
+  .oficina-faixa {
+    display: grid;
+    grid-template-columns: minmax(0, 2.2fr) minmax(150px, 1fr) auto;
+    gap: 14px;
+  }
+
+  .oficina-faixa-accoes {
+    justify-content: flex-end;
+  }
+}
+
+.oficina-mais {
+  margin-top: 10px;
+  padding: 0;
+  border: 0;
+  background: none;
+  color: var(--k-ouro);
+  font-family: inherit;
+  font-size: 0.82rem;
+  font-weight: 700;
+  cursor: pointer;
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
+
+@media (max-width: 520px) {
+  .oficina-anel {
+    width: 108px;
+    height: 108px;
+  }
+
+  .oficina-anel-centro strong {
+    font-size: 1.85rem;
+  }
+
+  .oficina-faixa-accoes {
+    width: 100%;
+  }
+}
+
+/* Quem pediu menos movimento fica com os números e as barras — e sem nada a
+ * andar à volta. O estado continua todo legível. */
+@media (prefers-reduced-motion: reduce) {
+  .oficina.a-trabalhar .oficina-barra::after,
+  .oficina-roda {
+    animation: none;
+  }
+
+  .oficina-roda {
+    border-top-color: rgba(242, 193, 78, 0.28);
+  }
+}
