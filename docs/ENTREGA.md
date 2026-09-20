@@ -644,6 +644,45 @@ As **duas músicas de exemplo** fazem-se no painel de produção, com os áudios
 letras reais dele: colar a letra, marcar, publicar. O ambiente de
 desenvolvimento não tem os áudios dele.
 
+## As dependências, e as duas que estão presas por `overrides`
+
+`npm update` mantém tudo dentro das versões declaradas. Duas bibliotecas não se
+deixavam actualizar assim, e ficaram presas no `package.json` da raiz:
+
+```json
+"overrides": {
+  "multer": "^2.4.0",
+  "postcss": "^8.5.28"
+}
+```
+
+- **multer** é quem recebe TODOS os envios de ficheiro, incluindo as fotografias
+  que as mães enviam sem conta nenhuma. O `@nestjs/platform-express@11` prende a
+  versão 2.2.0, que tem quatro avisos de negação de serviço (nomes de campo
+  forjados, descritores por fechar, limite de tamanho contornável). O override
+  põe a 2.4.0 sem trocar de Nest.
+- **postcss** vem preso pelo Next 15 na 8.4.31. É só de compilação, mas não há
+  razão para ficar com ela.
+
+**A armadilha:** mudar um `override` não chega para o instalar. O npm reaproveita
+o `package-lock.json` e o `node_modules` que já existem e diz "up to date". Para
+o aplicar é preciso apagar os dois:
+
+```bash
+rm -rf node_modules package-lock.json && npm install
+```
+
+O `sharp` subiu de 0.34 para **0.35.4** (CVEs do libvips e do libheif — e é ele
+que abre as fotografias das crianças). A biblioteca mudou os tipos de sítio na
+0.35: `sharp.Sharp` e `sharp.Metadata` deixaram de existir para o TypeScript e
+importam-se agora com `import type { Sharp, Metadata } from 'sharp'`.
+
+O que fica por resolver, e porquê: o `deepmerge-ts` que o CLI do Prisma usa tem
+um aviso de esgotamento de pilha. Só se resolve com o Prisma 8, que é uma
+migração à parte, e o CLI corre com a nossa própria configuração — nada de fora
+lhe chega. As outras contas de upgrade maior (Nest 12, Next 16) ficam para uma
+janela em que se possa testar tudo outra vez.
+
 ## Regras que não se partem
 
 **`events` é append-only**, por gatilho na base. `UPDATE` e `DELETE` levantam

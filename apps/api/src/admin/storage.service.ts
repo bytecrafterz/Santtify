@@ -4,6 +4,9 @@ import { randomBytes } from 'node:crypto'
 import { mkdir, readFile, writeFile } from 'node:fs/promises'
 import { extname, join, resolve } from 'node:path'
 import sharp from 'sharp'
+// Os tipos vêm à parte desde o sharp 0.35: a biblioteca passou a publicar os
+// tipos em `.d.cts`, e `Sharp` deixou de existir para o TypeScript.
+import type { Metadata, Sharp } from 'sharp'
 import { PDFDocument } from 'pdf-lib'
 import { MediaKind } from '@pv/db'
 
@@ -401,9 +404,9 @@ export class StorageService {
    * sobre onde a imagem começa e onde acaba.
    */
   private async tirarTarjasPretas(
-    entrada: sharp.Sharp,
-    meta: sharp.Metadata,
-  ): Promise<{ entrada: sharp.Sharp; meta: sharp.Metadata }> {
+    entrada: Sharp,
+    meta: Metadata,
+  ): Promise<{ entrada: Sharp; meta: Metadata }> {
     const L = meta.width ?? 0
     const A = meta.height ?? 0
     if (L < 64 || A < 64) return { entrada, meta }
@@ -497,8 +500,8 @@ export class StorageService {
     const nomeWeb = `${base}.jpg`
     const nomeCartao = `${base}-cartao.jpg`
 
-    let entrada: sharp.Sharp
-    let meta: sharp.Metadata
+    let entrada: Sharp
+    let meta: Metadata
     try {
       entrada = sharp(arquivo.buffer, { failOn: 'none' }).rotate()
       meta = await entrada.metadata()

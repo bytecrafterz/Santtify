@@ -17,6 +17,13 @@ COPY packages/karaoke/package.json packages/karaoke/
 RUN apk add --no-cache python3 make g++ \
  && npm ci --workspace @pv/api --workspace @pv/db --workspace @pv/cartoes --workspace @pv/karaoke --include-workspace-root
 
+# A pasta do workspace pode simplesmente não existir: o npm iça para a raiz tudo
+# o que não colida, e o que fica aqui depende das versões do momento — o argon2
+# esteve cá, e depois de uma actualização deixou de estar. Sem esta linha, o
+# `COPY` do estágio seguinte falhava o build inteiro com "file does not exist",
+# e só se descobria no servidor, a meio de uma publicação.
+RUN mkdir -p apps/api/node_modules
+
 # ── Estágio 2: build ───────────────────────────────────────────────
 FROM node:22-alpine AS build
 WORKDIR /app

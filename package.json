@@ -21,12 +21,16 @@
   "engines": {
     "node": ">=20"
   },
+  "overrides": {
+    "multer": "^2.4.0",
+    "postcss": "^8.5.28"
+  },
   "allowScripts": {
     "@prisma/client@6.19.3": true,
     "@prisma/engines@6.19.3": true,
     "argon2@0.41.1": true,
-    "esbuild@0.28.1": true,
+    "esbuild@0.28.2": true,
     "prisma@6.19.3": true,
-    "sharp@0.34.5": true
+    "sharp@0.35.4": true
   }
 }
