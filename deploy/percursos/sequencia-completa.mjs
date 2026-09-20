@@ -2,15 +2,16 @@
 // viu comportamentos diferentes: A->B uma vez, A->D outra, e a categoria a
 // mudar sozinha. Um salto certo nao prova nada; o que prova e a cadeia.
 import { chromium } from 'playwright'
-const SITE='https://santtify.com', PROJ='jesus-alfabeto-saudavel'
+const SITE = process.env.SITE ?? 'https://santtify.com', PROJ = process.env.PROJ ?? 'jesus-alfabeto-saudavel'
+const API = process.env.API ?? `${API}`
 const CAT=(process.argv[2]||'EXPLICAÇÃO')
 const SALTOS=Number(process.argv[3]||6)
-const d=await (await fetch(`${SITE}/api/projects/${PROJ}/playlist`)).json()
+const d=await (await fetch(`${API}/projects/${PROJ}/playlist`)).json()
 const info=Object.fromEntries((d.faixas??[]).map(f=>[f.id,{letra:f.letra,cat:f.categoriaNome}]))
 const daCat=(d.faixas??[]).filter(f=>f.letra && (f.categoriaNome||'').toUpperCase()===CAT)
 console.log(`categoria ${CAT}: ${daCat.length} faixa(s) -> letras ${daCat.map(f=>f.letra).join(', ')}`)
 
-const nav=await chromium.launch()
+const nav=await chromium.launch({ executablePath: process.env.CHROMIUM || undefined })
 const pg=await (await nav.newContext({viewport:{width:390,height:844}})).newPage()
 pg.on('dialog',x=>x.accept())
 const limpar=async()=>{for(const t of ['AGORA NÃO','CONTINUAR EXPLORANDO','Aceitar']){const b=await pg.$(`button:has-text("${t}")`);if(b){await b.click();await pg.waitForTimeout(400)}}}

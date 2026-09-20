@@ -16,6 +16,35 @@ que existia na minha máquina e em mais lado nenhum. **Um percurso que só corre
 onde foi escrito não serve para o que estes existem**, que é serem corridos por
 outra pessoa, noutro dia, antes de dar uma correção por feita.
 
+## O endereço também vem do ambiente
+
+Estes ficheiros nasceram quando só existia o site no ar, e tinham
+`https://santtify.com` escrito lá dentro. Quem quisesse verificar uma correcção
+**antes** de a publicar não tinha como — e verificá-la depois, contra o site
+dele, significa criar contas de teste na casa do cliente.
+
+Agora todos aceitam o ambiente, com o mesmo valor de sempre por omissão:
+
+```bash
+# como sempre foi, contra o site no ar
+node deploy/percursos/percurso-completo.mjs
+
+# ou contra o que está a correr na sua máquina
+SITE=http://localhost:3100 API=http://localhost:3333/api \
+CHROMIUM=$HOME/.cache/ms-playwright/chromium-1243/chrome-linux64/chrome \
+node deploy/percursos/percurso-completo.mjs
+```
+
+`CHROMIUM` existe porque o navegador que o Playwright descarrega nem sempre é o
+que a máquina tem: sem ele, o percurso morre a dizer "Executable doesn't exist".
+
+**Duas limitações, ditas por inteiro.** Nove destes percursos pedem coisas à API
+pelo endereço da própria página (`fetch('/api/...')` dentro do navegador), e
+isso só funciona onde o site e a API partilham o endereço — em produção
+partilham, em desenvolvimento não. E vários dependem do **conteúdo dele**: a
+Letra B com áudio, as categorias, os perfis. Contra uma base de dados de
+desenvolvimento falham por falta de conteúdo, e não por defeito da plataforma.
+
 ## A conta de administrador vem do ambiente
 
 Os percursos que entram no painel precisam de uma conta de administrador, e essa conta

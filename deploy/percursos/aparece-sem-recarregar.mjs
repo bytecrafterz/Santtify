@@ -3,7 +3,8 @@
 // Mexe no titulo de UM cartao dele e devolve-o no fim, conferindo a leitura de
 // volta. O Produto Vivo ja me ensinou o preco de nao devolver.
 import { chromium } from 'playwright'
-const SITE='https://santtify.com', PROJ='jesus-alfabeto-saudavel', LETRA='e'
+const SITE = process.env.SITE ?? 'https://santtify.com', PROJ = process.env.PROJ ?? 'jesus-alfabeto-saudavel', LETRA='e'
+const API = process.env.API ?? `${API}`
 const CONTA=process.env.PV_ADMIN_EMAIL, SENHA=process.env.PV_ADMIN_SENHA
 if(!CONTA||!SENHA){console.log('Faltam PV_ADMIN_EMAIL e PV_ADMIN_SENHA.');process.exit(2)}
 const falhas=[]
@@ -12,7 +13,7 @@ const MARCA=`VER${Date.now()}`.slice(0,12)
 // A pagina publica, desenhada no servidor. Sem truques para furar a guarda:
 // e exactamente o que o navegador dele recebe.
 const publica=async()=>(await (await fetch(`${SITE}/${PROJ}/${LETRA}`)).text())
-const nav=await chromium.launch()
+const nav=await chromium.launch({ executablePath: process.env.CHROMIUM || undefined })
 const pg=await (await nav.newContext({viewport:{width:390,height:844}})).newPage()
 pg.on('dialog',d=>d.accept())
 const limpar=async()=>{for(const t of ['AGORA NÃO','CONTINUAR EXPLORANDO','Aceitar']){const b=await pg.$(`button:has-text("${t}")`);if(b){await b.click();await pg.waitForTimeout(400)}}}
@@ -97,7 +98,7 @@ if(alvo && original!==null){
     } else {
       falhas.push('LIMPEZA: nao encontrei o campo para devolver o titulo')
     }
-    const agora=await (await fetch(`${SITE}/api/projects/${PROJ}/contents/${LETRA}`)).json()
+    const agora=await (await fetch(`${API}/projects/${PROJ}/contents/${LETRA}`)).json()
     const b=((agora.content||agora).blocks||[]).find(x=>x.id===alvo)
     p_('o titulo dele voltou ao que era', b?.titulo===original, `${JSON.stringify(b?.titulo)} (esperado ${JSON.stringify(original)})`)
   }catch(e){falhas.push('LIMPEZA REBENTOU: '+e.message)}

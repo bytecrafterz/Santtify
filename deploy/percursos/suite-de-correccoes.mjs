@@ -4,7 +4,7 @@
 // intermitente so se apanha repetindo.
 import { chromium } from 'playwright'
 import { criarConta } from './criar-conta.mjs'
-const SITE='https://santtify.com', PROJ='jesus-alfabeto-saudavel'
+const SITE = process.env.SITE ?? 'https://santtify.com', PROJ = process.env.PROJ ?? 'jesus-alfabeto-saudavel'
 const CORRIDA = process.argv[2] || '1'
 const r = []
 const ok=(n,v,e='')=>{r.push({n,v,e}); console.log(`  ${v?'✓':'✗'} ${n}${e?'   '+e:''}`)}
@@ -16,7 +16,7 @@ const marca=`${Date.now()}`.slice(-6)
 const marcaEmLetras = marca.replace(/\d/g, (d) => 'abcdefghij'[Number(d)])
 
 const EMAIL=`teste.suite.${marca}@santtify.dev`, SENHA='Teste.Suite.3008'
-const nav=await chromium.launch()
+const nav=await chromium.launch({ executablePath: process.env.CHROMIUM || undefined })
 const ctx=await nav.newContext({viewport:{width:390,height:844},deviceScaleFactor:2,hasTouch:true,acceptDownloads:true})
 const pg=await ctx.newPage()
 const limpar=async()=>{for(const t of ['AGORA NÃO','CONTINUAR EXPLORANDO','Aceitar']){const b=await pg.$(`button:has-text("${t}")`);if(b){await b.click();await pg.waitForTimeout(400)}}}

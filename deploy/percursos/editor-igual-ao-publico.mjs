@@ -5,12 +5,12 @@ import { chromium } from 'playwright'
 import { criarConta } from './criar-conta.mjs'
 import { arteDeitada } from './imagem-de-teste.mjs'
 import { readFileSync } from 'node:fs'
-const SITE='https://santtify.com', PROJ='jesus-alfabeto-saudavel'
+const SITE = process.env.SITE ?? 'https://santtify.com', PROJ = process.env.PROJ ?? 'jesus-alfabeto-saudavel'
 const falhas=[]
 const p_=(n,ok,e='')=>{console.log(`  ${ok?'✓':'✗'} ${n}${e?'   '+e:''}`); if(!ok) falhas.push(n)}
 const marca=String(Date.now()).slice(-6)
 const EMAIL=`teste.wys.${marca}@santtify.dev`, SENHA='Teste.Wys.2908'
-const nav=await chromium.launch()
+const nav=await chromium.launch({ executablePath: process.env.CHROMIUM || undefined })
 const pg=await (await nav.newContext({viewport:{width:390,height:844},deviceScaleFactor:2,hasTouch:true})).newPage()
 const limpar=async()=>{for(const t of ['AGORA NÃO','CONTINUAR EXPLORANDO','Aceitar']){const b=await pg.$(`button:has-text("${t}")`);if(b){await b.click();await pg.waitForTimeout(400)}}}
 pg.on('dialog',d=>d.accept())

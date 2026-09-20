@@ -4,13 +4,13 @@
 // -> Entrar novamente.
 import { chromium } from 'playwright'
 import { criarConta } from './criar-conta.mjs'
-const SITE='https://santtify.com', PROJ='jesus-alfabeto-saudavel'
+const SITE = process.env.SITE ?? 'https://santtify.com', PROJ = process.env.PROJ ?? 'jesus-alfabeto-saudavel'
 const falhas=[]
 const p_=(n,ok,e='')=>{console.log(`  ${ok?'✓':'✗'} ${n}${e?'   '+e:''}`); if(!ok) falhas.push(n)}
 const marca=String(Date.now()).slice(-6)
 const EMAIL=`teste.item8.${marca}@santtify.dev`, SENHA='Teste.Item8.2808', NOME=`Item8 ${marca}`
 
-const nav=await chromium.launch()
+const nav=await chromium.launch({ executablePath: process.env.CHROMIUM || undefined })
 const ctx=await nav.newContext({viewport:{width:390,height:844},deviceScaleFactor:2,acceptDownloads:true,
   permissions:['clipboard-read','clipboard-write']})
 const pg=await ctx.newPage()

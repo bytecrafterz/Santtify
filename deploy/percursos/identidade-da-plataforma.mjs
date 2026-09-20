@@ -1,9 +1,9 @@
 // Ninguem se pode fazer passar pela plataforma, e o dono nao perde o dele.
 import { chromium } from 'playwright'
-const SITE='https://santtify.com', PROJ='jesus-alfabeto-saudavel'
+const SITE = process.env.SITE ?? 'https://santtify.com', PROJ = process.env.PROJ ?? 'jesus-alfabeto-saudavel'
 const falhas=[]
 const p_=(n,v,e='')=>{console.log(`  ${v?'✓':'✗'} ${n}${e?'   '+e:''}`); if(!v) falhas.push(n)}
-const nav=await chromium.launch()
+const nav=await chromium.launch({ executablePath: process.env.CHROMIUM || undefined })
 const pg=await (await nav.newContext({viewport:{width:390,height:844}})).newPage()
 try{
 await pg.goto(`${SITE}/${PROJ}/cadastrar`,{waitUntil:'domcontentloaded'});await pg.waitForTimeout(2500)

@@ -1,13 +1,14 @@
 // Os tres pontos de 02/09: o cartao de partilha de cada area, tocar em
 // sequencia, e a barra que fica por mais que se desca.
 import { chromium } from 'playwright'
-const SITE='https://santtify.com', PROJ='jesus-alfabeto-saudavel'
+const SITE = process.env.SITE ?? 'https://santtify.com', PROJ = process.env.PROJ ?? 'jesus-alfabeto-saudavel'
+const API = process.env.API ?? `${API}`
 const falhas=[]
 const p_=(n,v,e='')=>{console.log(`  ${v?'✓':'✗'} ${n}${e?'   '+e:''}`); if(!v) falhas.push(n)}
 const og=async(url)=>{const h=await (await fetch(url)).text()
   const g=(p)=>(h.match(new RegExp(`<meta property="og:${p}" content="([^"]*)"`))||[])[1]??null
   return {titulo:g('title'), imagem:g('image'), tipo:g('type')}}
-const nav=await chromium.launch()
+const nav=await chromium.launch({ executablePath: process.env.CHROMIUM || undefined })
 const pg=await (await nav.newContext({viewport:{width:390,height:844}})).newPage()
 pg.on('dialog',d=>d.accept())
 const limpar=async()=>{for(const t of ['AGORA NÃO','CONTINUAR EXPLORANDO','Aceitar']){const b=await pg.$(`button:has-text("${t}")`);if(b){await b.click();await pg.waitForTimeout(400)}}}
@@ -55,7 +56,7 @@ await pg.evaluate(()=>scrollTo(0,0)); await pg.waitForTimeout(800)
   Mede agora o que ele pediu: alguma coisa comeca, e o que comeca tem
   categoria.
 */
-const d=await (await fetch(`${SITE}/api/projects/${PROJ}/playlist`)).json()
+const d=await (await fetch(`${API}/projects/${PROJ}/playlist`)).json()
 const catDe=Object.fromEntries((d.faixas??[]).map(f=>[f.id, f.categoriaNome]))
 const seq=await pg.evaluate(async()=>{
   const audios=[...document.querySelectorAll('audio')]

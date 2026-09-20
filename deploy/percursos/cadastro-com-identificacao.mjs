@@ -6,7 +6,7 @@
 // foi o que o levou a escrever este requisito.
 import { chromium } from 'playwright'
 import { writeFileSync } from 'node:fs'
-const SITE='https://santtify.com', PROJ='jesus-alfabeto-saudavel'
+const SITE = process.env.SITE ?? 'https://santtify.com', PROJ = process.env.PROJ ?? 'jesus-alfabeto-saudavel'
 const falhas=[]
 const p_=(n,v,e='')=>{console.log(`  ${v?'✓':'✗'} ${n}${e?'   '+e:''}`); if(!v) falhas.push(n)}
 const marca=String(Date.now()).slice(-6)
@@ -24,7 +24,7 @@ writeFileSync(FOTO, Buffer.from(
  '+gAnOmCggICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgI'+
  'CAgICAgICAgICAgIDA/wMHFwABZfqzUgAAAABJRU5ErkJggg==','base64'))
 
-const nav=await chromium.launch()
+const nav=await chromium.launch({ executablePath: process.env.CHROMIUM || undefined })
 const pg=await (await nav.newContext({viewport:{width:390,height:844}})).newPage()
 pg.on('dialog',d=>d.accept())
 const limpar=async()=>{for(const t of ['AGORA NÃO','CONTINUAR EXPLORANDO','Aceitar']){const b=await pg.$(`button:has-text("${t}")`);if(b){await b.click();await pg.waitForTimeout(400)}}}

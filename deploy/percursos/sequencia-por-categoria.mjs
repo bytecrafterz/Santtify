@@ -1,16 +1,17 @@
 // A sequencia segue a CATEGORIA escolhida, atravessa de letra em letra, e
 // nunca toca sozinha um audio sem categoria.
 import { chromium } from 'playwright'
-const SITE='https://santtify.com', PROJ='jesus-alfabeto-saudavel'
+const SITE = process.env.SITE ?? 'https://santtify.com', PROJ = process.env.PROJ ?? 'jesus-alfabeto-saudavel'
+const API = process.env.API ?? `${API}`
 const falhas=[]
 const p_=(n,v,e='')=>{console.log(`  ${v?'✓':'✗'} ${n}${e?'   '+e:''}`); if(!v) falhas.push(n)}
-const nav=await chromium.launch()
+const nav=await chromium.launch({ executablePath: process.env.CHROMIUM || undefined })
 const pg=await (await nav.newContext({viewport:{width:390,height:844}})).newPage()
 pg.on('dialog',d=>d.accept())
 const limpar=async()=>{for(const t of ['AGORA NÃO','CONTINUAR EXPLORANDO','Aceitar']){const b=await pg.$(`button:has-text("${t}")`);if(b){await b.click();await pg.waitForTimeout(400)}}}
 try{
 // A fila que o servidor entrega, que e a base de tudo.
-const d=await (await fetch(`${SITE}/api/projects/${PROJ}/playlist`)).json()
+const d=await (await fetch(`${API}/projects/${PROJ}/playlist`)).json()
 const faixas=d.faixas??[]
 const semCat=faixas.filter(f=>!f.categoriaNome)
 console.log(`   fila do servidor: ${faixas.length} faixas, ${semCat.length} sem categoria`)

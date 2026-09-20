@@ -2,7 +2,7 @@
 // Ele disse tres vezes que o compartilhar "chega de forma generica" e eu andava
 // a olhar para o endereco, que ja estava certo.
 import { chromium } from 'playwright'
-const SITE='https://santtify.com', PROJ='jesus-alfabeto-saudavel'
+const SITE = process.env.SITE ?? 'https://santtify.com', PROJ = process.env.PROJ ?? 'jesus-alfabeto-saudavel'
 const falhas=[]
 const p_=(n,v,e='')=>{console.log(`  ${v?'✓':'✗'} ${n}${e?'   '+e:''}`); if(!v) falhas.push(n)}
 const meta=async(url)=>{
@@ -11,7 +11,7 @@ const meta=async(url)=>{
   return {titulo:g('title'), descricao:g('description'), imagem:g('image')}
 }
 try{
-const nav=await chromium.launch(); const pg=await (await nav.newContext()).newPage()
+const nav=await chromium.launch({ executablePath: process.env.CHROMIUM || undefined }); const pg=await (await nav.newContext()).newPage()
 await pg.goto(`${SITE}/${PROJ}`,{waitUntil:'domcontentloaded'})
 const faixas=await pg.evaluate(async()=>{
   const r=await fetch('/api/projects/jesus-alfabeto-saudavel/contents/b')

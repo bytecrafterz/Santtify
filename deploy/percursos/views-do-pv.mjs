@@ -1,14 +1,15 @@
 // As visualizacoes do Produto Vivo passam a contar. Nao mexe em nada dele: uma
 // visita a uma pagina publica e o que qualquer pessoa faz.
 import { chromium } from 'playwright'
-const SITE='https://santtify.com', PROJ='jesus-alfabeto-saudavel'
+const SITE = process.env.SITE ?? 'https://santtify.com', PROJ = process.env.PROJ ?? 'jesus-alfabeto-saudavel'
+const API = process.env.API ?? `${API}`
 const falhas=[]
 const p_=(n,v,e='')=>{console.log(`  ${v?'✓':'✗'} ${n}${e?'   '+e:''}`); if(!v) falhas.push(n)}
 const contar=async()=>{
-  const r=await fetch(`${SITE}/api/projects/${PROJ}/contents/produto-vivo`)
+  const r=await fetch(`${API}/projects/${PROJ}/contents/produto-vivo`)
   const d=await r.json(); const c=d.content||d
   return c.stats?.views ?? null }
-const nav=await chromium.launch()
+const nav=await chromium.launch({ executablePath: process.env.CHROMIUM || undefined })
 try{
 const antes=await contar()
 console.log(`   visualizacoes antes: ${antes}`)
