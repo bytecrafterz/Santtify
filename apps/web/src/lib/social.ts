@@ -93,6 +93,15 @@ export interface EstadoDaFaixa {
   lista: ComentarioDaFaixa[]
 }
 
+/** Os quatro números de um projeto, mais o que esta pessoa já fez nele. */
+export interface EstadoDoProjeto {
+  views: number
+  likes: number
+  comments: number
+  shares: number
+  curtidoPorMim: boolean
+}
+
 export type MotivoDeDenuncia =
   | 'IMPROPRIO'
   | 'SENSUAL'
@@ -232,5 +241,34 @@ export const social = {
     chamar<{ url: string; code: string }>(`/contents/${contentId}/share`, {
       method: 'POST',
       body: JSON.stringify({ projectId, canal }),
+    }),
+
+  // ── O PROJETO COMO PEÇA SOCIAL (19/09) ────────────────────────────
+  //
+  // O card de cada projeto, na página inicial: curtir curte o projeto inteiro,
+  // comentar abre os comentários do projeto, e partilhar leva a página dele.
+  // As visualizações continuam a ser só um número, como ele definiu.
+
+  estadoDoProjeto: (projectSlug: string) =>
+    chamar<EstadoDoProjeto>(`/projects/${projectSlug}/social`),
+
+  curtirProjeto: (projectSlug: string) =>
+    chamar<{ curtido: boolean; total: number }>(`/projects/${projectSlug}/social/like`, {
+      method: 'POST',
+    }),
+
+  comentariosDoProjeto: (projectSlug: string) =>
+    chamar<ComentarioDaFaixa[]>(`/projects/${projectSlug}/social/comments`),
+
+  comentarNoProjeto: (projectSlug: string, body: string, parentId?: string) =>
+    chamar<ComentarioDaFaixa>(`/projects/${projectSlug}/social/comments`, {
+      method: 'POST',
+      body: JSON.stringify({ body, parentId }),
+    }),
+
+  compartilharProjeto: (projectSlug: string, canal: CanalDeCompartilhamento) =>
+    chamar<{ url: string; code: string }>(`/projects/${projectSlug}/social/share`, {
+      method: 'POST',
+      body: JSON.stringify({ canal }),
     }),
 }

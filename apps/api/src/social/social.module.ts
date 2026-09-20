@@ -2,6 +2,7 @@ import { Module } from '@nestjs/common'
 import { SocialService } from './social.service'
 import {
   SocialController,
+  ProjetoSocialController,
   FaixasController,
   ComentariosController,
   MinhasPublicacoesController,
@@ -19,6 +20,7 @@ import { ContagensModule } from './contagens.module'
   imports: [ShortLinksModule, TrackingModule, IdentityModule, PostsModule, ContagensModule],
   controllers: [
     SocialController,
+    ProjetoSocialController,
     FaixasController,
     ComentariosController,
     MinhasPublicacoesController,

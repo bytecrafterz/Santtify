@@ -369,6 +369,178 @@ export class SocialService {
     }
   }
 
+  // ── O PROJETO COMO PEÇA SOCIAL (19/09) ───────────────────────────────
+  //
+  // O card de cada projeto, na página inicial, passou a ter os quatro
+  // indicadores a funcionar: "LIKE = clicável e funcional. COMENTÁRIO/MENSAGEM
+  // = clicável e funcional. COMPARTILHAR = clicável e funcional. VIEW =
+  // contador". As visualizações continuam a ser só contagem — é o que ele quis.
+  //
+  // Um comentário do projeto é um `Comment` sem conteúdo, sem faixa e sem
+  // perfil: o modelo já o permitia desde o início. A curtida do projeto tem
+  // tabela própria, pela razão escrita em `ProjectReaction`.
+
+  /** O projeto, se existir e estiver no ar. */
+  private async projetoPublicado(slug: string) {
+    const projeto = await this.prisma.project.findUnique({
+      where: { slug },
+      select: { id: true, slug: true, name: true, status: true },
+    })
+    if (!projeto || projeto.status === 'ARCHIVED') throw new NotFoundException('Projeto não encontrado')
+    return projeto
+  }
+
+  /** O id do projeto pelo endereço, para o contexto da visita. */
+  async idDoProjeto(slug: string) {
+    return (await this.projetoPublicado(slug)).id
+  }
+
+  /**
+   * O estado social do card: os totais e se ESTA pessoa já curtiu.
+   *
+   * Os totais são os mesmos que o carrossel mostra — a soma de tudo o que está
+   * dentro do projeto — e vêm de `ContagensService`, que conta na leitura. O
+   * que o card acrescenta é o "curtido por mim", que é de quem está a olhar e
+   * por isso não pode ser guardado em cache partilhada.
+   */
+  async estadoDoProjeto(slug: string, userId: string | null) {
+    const projeto = await this.projetoPublicado(slug)
+    const [numeros, minha] = await Promise.all([
+      this.contagens.deProjectos([projeto.id]),
+      userId
+        ? this.prisma.projectReaction.findUnique({
+            where: {
+              projectId_userId_type: {
+                projectId: projeto.id,
+                userId,
+                type: ReactionType.LIKE,
+              },
+            },
+            select: { id: true },
+          })
+        : null,
+    ])
+    const totais = numeros.get(projeto.id) ?? { views: 0, likes: 0, comments: 0, shares: 0 }
+    return { ...totais, curtidoPorMim: Boolean(minha) }
+  }
+
+  /** Curtir ou descurtir o projeto. Devolve o total já recontado. */
+  async alternarCurtidaDoProjeto(slug: string, userId: string, ctx: VisitContext) {
+    const projeto = await this.projetoPublicado(slug)
+    const visita = await this.attribution.resolveVisit({ ...ctx, projectId: projeto.id, userId })
+    const atribuicao = { ...visita.attribution, userId }
+
+    const existente = await this.prisma.projectReaction.findUnique({
+      where: {
+        projectId_userId_type: { projectId: projeto.id, userId, type: ReactionType.LIKE },
+      },
+    })
+
+    if (existente) {
+      await this.prisma.projectReaction.delete({ where: { id: existente.id } })
+      await this.events.registrar({ type: EventType.UNLIKE, attribution: atribuicao })
+    } else {
+      await this.prisma.projectReaction.create({
+        data: { projectId: projeto.id, userId, type: ReactionType.LIKE },
+      })
+      await this.events.registrar({ type: EventType.LIKE, attribution: atribuicao })
+    }
+
+    const estado = await this.estadoDoProjeto(slug, userId)
+    return { curtido: !existente, total: estado.likes }
+  }
+
+  /** Os comentários do projeto — os que são do projeto, não os das letras. */
+  async listarComentariosDoProjeto(slug: string, leitorId: string | null = null) {
+    const projeto = await this.projetoPublicado(slug)
+    const escondidos = await this.bloqueadosPor(leitorId)
+    const lista = await this.prisma.comment.findMany({
+      where: {
+        projectId: projeto.id,
+        contentId: null,
+        blockId: null,
+        profileUserId: null,
+        status: 'PUBLISHED',
+        ...(escondidos.length ? { userId: { notIn: escondidos } } : {}),
+        // Uma resposta órfã não tem onde ser desenhada — mesma regra do perfil.
+        OR: [{ parentId: null }, { parent: { is: { status: 'PUBLISHED' } } }],
+      },
+      orderBy: { createdAt: 'desc' },
+      take: 50,
+      select: this.selecaoDeComentario,
+    })
+    return this.comSinalDeCurtida(lista, leitorId)
+  }
+
+  async comentarNoProjeto(
+    slug: string,
+    userId: string,
+    corpo: string,
+    ctx: VisitContext,
+    parentId?: string,
+  ) {
+    const projeto = await this.projetoPublicado(slug)
+    const visita = await this.attribution.resolveVisit({ ...ctx, projectId: projeto.id, userId })
+
+    const comentario = await this.prisma.comment.create({
+      data: { projectId: projeto.id, userId, body: corpo.trim(), parentId },
+      select: this.selecaoDeComentario,
+    })
+
+    await this.events.registrar({
+      type: EventType.COMMENT,
+      attribution: { ...visita.attribution, userId },
+    })
+
+    return comentario
+  }
+
+  /**
+   * Partilhar o projeto: um link curto identificável, como nas publicações.
+   *
+   * O endereço partilhado leva à página do projeto e sabe de quem veio, que é
+   * o que faz o número de partilhas dizer a verdade — ver a nota em
+   * `compartilhar`, que é a mesma história.
+   */
+  async compartilharProjeto(
+    slug: string,
+    userId: string,
+    canal: Platform,
+    ctx: VisitContext,
+  ): Promise<{ url: string; code: string }> {
+    const projeto = await this.projetoPublicado(slug)
+    const visita = await this.attribution.resolveVisit({ ...ctx, projectId: projeto.id, userId })
+
+    const origem =
+      visita.visitor.acquiredViaLinkId ??
+      (
+        await this.prisma.visitor.findFirst({
+          where: { userId, acquiredViaLinkId: { not: null } },
+          orderBy: { firstSeenAt: 'asc' },
+          select: { acquiredViaLinkId: true },
+        })
+      )?.acquiredViaLinkId ??
+      null
+
+    const link = await this.shortLinks.criarCompartilhamento({
+      projectId: projeto.id,
+      contentId: null,
+      userId,
+      channel: canal,
+      linkDeOrigemId: origem,
+      targetPath: `/${projeto.slug}`,
+    })
+
+    await this.prisma.share.create({ data: { userId, shortLinkId: link.id, channel: canal } })
+    await this.events.registrar({
+      type: EventType.SHARE_CREATED,
+      attribution: { ...visita.attribution, userId },
+      props: { canal, projeto: projeto.slug },
+    })
+
+    return { url: this.shortLinks.urlPublica(link.code), code: link.code }
+  }
+
   // ── O comentário como objecto social ─────────────────────────────────
   //
   // Pedido dele em 20/08: curtir, responder, editar e apagar. Responder já

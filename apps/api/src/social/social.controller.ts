@@ -67,6 +67,90 @@ function contextoDaVisita(projectId: string, req: Request): VisitContext {
   }
 }
 
+class ComentarNoProjetoDto {
+  @IsString() @MinLength(1) @MaxLength(2000) body!: string
+  @IsOptional() @IsUUID() parentId?: string
+}
+
+class CompartilharProjetoDto {
+  @IsEnum(Platform) canal!: Platform
+}
+
+/**
+ * O PROJETO COMO PEÇA SOCIAL, a partir do card da página inicial.
+ *
+ * Pedido dele em 19/09: no card, curtir curte, comentar abre os comentários e
+ * compartilhar abre as opções. A visualização fica só a contar.
+ *
+ * Ler é público, como no resto: quem chega pelo QR ainda não tem conta e
+ * precisa de ver que existe gente ali. Escrever exige conta, que é a regra
+ * dele desde 25/08.
+ */
+@Controller('projects/:projectSlug/social')
+export class ProjetoSocialController {
+  constructor(private readonly social: SocialService) {}
+
+  @Get()
+  @AuthOpcional()
+  @UseGuards(AuthGuard)
+  estado(@Param('projectSlug') projectSlug: string, @Req() req: Request) {
+    return this.social.estadoDoProjeto(projectSlug, req.usuario?.id ?? null)
+  }
+
+  @Post('like')
+  @HttpCode(200)
+  @UseGuards(AuthGuard)
+  async curtir(@Param('projectSlug') projectSlug: string, @Req() req: Request) {
+    const projeto = await this.social.idDoProjeto(projectSlug)
+    return this.social.alternarCurtidaDoProjeto(
+      projectSlug,
+      req.usuario!.id,
+      contextoDaVisita(projeto, req),
+    )
+  }
+
+  @Get('comments')
+  @AuthOpcional()
+  @UseGuards(AuthGuard)
+  comentarios(@Param('projectSlug') projectSlug: string, @Req() req: Request) {
+    return this.social.listarComentariosDoProjeto(projectSlug, req.usuario?.id ?? null)
+  }
+
+  @Post('comments')
+  @UseGuards(AuthGuard)
+  async comentar(
+    @Param('projectSlug') projectSlug: string,
+    @Body() dto: ComentarNoProjetoDto,
+    @Req() req: Request,
+  ) {
+    const projeto = await this.social.idDoProjeto(projectSlug)
+    return this.social.comentarNoProjeto(
+      projectSlug,
+      req.usuario!.id,
+      dto.body,
+      contextoDaVisita(projeto, req),
+      dto.parentId,
+    )
+  }
+
+  @Post('share')
+  @HttpCode(200)
+  @UseGuards(AuthGuard)
+  async compartilhar(
+    @Param('projectSlug') projectSlug: string,
+    @Body() dto: CompartilharProjetoDto,
+    @Req() req: Request,
+  ) {
+    const projeto = await this.social.idDoProjeto(projectSlug)
+    return this.social.compartilharProjeto(
+      projectSlug,
+      req.usuario!.id,
+      dto.canal,
+      contextoDaVisita(projeto, req),
+    )
+  }
+}
+
 /**
  * Rotas sociais.
  *

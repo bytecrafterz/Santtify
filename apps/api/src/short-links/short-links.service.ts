@@ -111,7 +111,8 @@ export class ShortLinksService {
    */
   async criarCompartilhamento(params: {
     projectId: string
-    contentId: string
+    /** Nulo quando o que se partilha é o projeto inteiro, e não uma letra. */
+    contentId: string | null
     userId: string
     channel: Platform
     linkDeOrigemId?: string | null

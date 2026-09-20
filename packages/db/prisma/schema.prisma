@@ -101,6 +101,7 @@ model Project {
   modelosDeCartao     ModeloDeCartao[]
   categoriasDeCartoes CategoriaDeCartoes[]
   palavrasDeDestaque  PalavraDeDestaque[]
+  curtidas            ProjectReaction[]
 
   /// Como este projeto numera os seus blocos: A–Z ou 1, 2, 3…
   ///
@@ -757,14 +758,15 @@ model User {
   updatedAt DateTime @updatedAt
 
   visitors           Visitor[]
-  referredUsers      Visitor[]       @relation("UserReferrals")
-  shareLinks         ShortLink[]     @relation("UserShareLinks")
+  referredUsers      Visitor[]         @relation("UserReferrals")
+  shareLinks         ShortLink[]       @relation("UserShareLinks")
   reactions          Reaction[]
+  curtidasEmProjetos ProjectReaction[]
   blockReactions     BlockReaction[]
   comments           Comment[]
-  denuncias          Report[]        @relation("DenunciasFeitas")
-  bloqueiosFeitos    UserBlock[]     @relation("BloqueiosFeitos")
-  bloqueiosRecebidos UserBlock[]     @relation("BloqueiosRecebidos")
+  denuncias          Report[]          @relation("DenunciasFeitas")
+  bloqueiosFeitos    UserBlock[]       @relation("BloqueiosFeitos")
+  bloqueiosRecebidos UserBlock[]       @relation("BloqueiosRecebidos")
   shares             Share[]
   events             Event[]
   sessions           VisitSession[]
@@ -1056,6 +1058,29 @@ model Reaction {
 
 enum ReactionType {
   LIKE
+}
+
+/// Uma curtida no PROJETO inteiro, a partir do card da página inicial.
+///
+/// Tabela própria, e não a `Reaction`, porque uma curtida é sempre de alguma
+/// coisa: a `Reaction` é de um conteúdo, a `BlockReaction` é de uma faixa, e
+/// esta é do projeto. Tornar o conteúdo opcional na `Reaction` deixaria a
+/// mesma tabela a significar duas coisas, e o índice que impede curtir duas
+/// vezes deixava de funcionar — em Postgres, dois nulos não são iguais.
+///
+/// Pedido dele em 19/09: no card do projeto, curtir tem de curtir.
+model ProjectReaction {
+  id        String       @id @default(uuid()) @db.Uuid
+  projectId String       @db.Uuid
+  project   Project      @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  userId    String       @db.Uuid
+  user      User         @relation(fields: [userId], references: [id], onDelete: Cascade)
+  type      ReactionType @default(LIKE)
+  createdAt DateTime     @default(now())
+
+  @@unique([projectId, userId, type])
+  @@index([projectId])
+  @@map("reacoes_de_projeto")
 }
 
 model Comment {

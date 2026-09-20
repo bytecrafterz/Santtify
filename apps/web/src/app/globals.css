@@ -7744,10 +7744,38 @@ h2.funil {
 }
 
 .projeto-da-pagina {
+  position: relative;
   overflow: hidden;
   background: var(--cor-superficie);
   border-radius: var(--raio-grande);
   box-shadow: var(--sombra);
+}
+
+/* O CARD INTEIRO ABRE O PROJETO, pedido dele em 19/09.
+   A camada cobre o card todo, por baixo dos botões: tocar num número curte,
+   comenta ou partilha; tocar em qualquer outro sítio abre o projeto. Um botão
+   dentro de um link seria HTML inválido — e, pior, curtir navegava. */
+.projeto-abrir {
+  display: block;
+  color: inherit;
+  text-decoration: none;
+}
+
+.projeto-abrir::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+}
+
+/* Só os botões sobem acima da camada. A vista não é botão: tocar nela abre o
+   projeto, como em qualquer outro ponto do card. */
+.projeto-numeros button.indicador-grande {
+  position: relative;
+}
+
+.projeto-abrir:focus-visible {
+  outline: 3px solid var(--cor-primaria);
+  outline-offset: -3px;
 }
 
 /* A imagem inteira, na largura toda e na proporção dela, sem cortes: as artes
@@ -7760,19 +7788,14 @@ h2.funil {
   background: var(--cor-borda);
 }
 
+.projeto-abrir:active .projeto-imagem img {
+  filter: brightness(0.94);
+}
+
 .projeto-imagem img {
   display: block;
   width: 100%;
   height: auto;
-}
-
-.projeto-imagem:active img {
-  filter: brightness(0.94);
-}
-
-.projeto-imagem:focus-visible {
-  outline: 3px solid var(--cor-primaria);
-  outline-offset: -3px;
 }
 
 .projeto-sem-imagem {

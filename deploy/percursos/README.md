@@ -270,3 +270,28 @@ Precisa de uma faixa que já tenha áudio (`BLOCO=<id do cartão>`). **Repõe tu
 no fim** — letra, marcas, estado publicado, acesso e palavras — mesmo que falhe,
 por isso pode correr contra produção sem estragar a sincronização dele.
 
+## `blocos-por-projeto.mjs`
+
+A quantidade de blocos é dele, no painel: escreve 3, aparecem 3 casas na grade
+pública; cresce para 5 e as casas novas nascem com os quatro cartões. Confirma
+a regra que protege o trabalho — reduzir só apaga casas vazias, e uma casa com
+conteúdo trava a operação dizendo qual — e que o alfabeto continua em A–Z, com
+26 casas e a falar em letras. **Repõe a quantidade original no fim.**
+
+## `card-do-projeto.mjs`
+
+Os quatro indicadores do card, como ele os definiu: a vista é só contador (nem
+sequer é um botão), curtir curte e descurte, comentar abre e grava, partilhar
+devolve um link identificável, e tocar no card — fora da imagem e fora dos
+botões — abre o projeto. Anda como quem não tem conta (que é convidado a criar
+uma) e como quem tem.
+
+**Desfaz o que fez**: tira a curtida se a pôs e apaga o comentário. A partilha
+fica: é um evento, e apagar um evento seria mentir sobre o registo.
+
+Três armadilhas que este percurso já apanhou e que valem para os próximos: a
+folha de instalar a aplicação volta a aparecer e intercepta toques (fecha-se
+antes de cada toque), a barra de baixo cobre o fundo do ecrã (o ponto do toque
+confirma-se com `elementFromPoint`), e o ecrã muda antes do servidor responder
+(espera-se pela resposta antes de lhe perguntar).
+

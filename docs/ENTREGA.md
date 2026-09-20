@@ -365,6 +365,64 @@ diferente de `abreviar` em `lib/numeros`, que dá "1,5 mil" — as duas estão c
 e servem ecrãs diferentes, ambas escritas por ele. `Intl.NumberFormat` em
 português nunca dá "K".
 
+## Projetos na página inicial, blocos e interações
+
+Refeito em 19/09, depois de ele ver a primeira versão no ar.
+
+### A lista de projetos
+
+Uma imagem horizontal por linha, os quatro números por baixo, o projeto
+seguinte. Sem título nem descrição: o público são crianças, muitas sem saber
+ler. A imagem aparece INTEIRA, na proporção dela (as dele são 3:1 e 16:9, com
+texto até à borda), e as medidas vêm do servidor para a altura ficar reservada
+antes de a imagem chegar (`carrossel.service` → `capaLargura`/`capaAltura`).
+
+No painel, `PainelDoCarrossel`: enviar a imagem, mostrar/esconder (é o
+`ProjectStatus`; escondido sai da lista e o endereço continua a abrir), ordenar
+com setas, e a quantidade de blocos.
+
+### Blocos: A–Z ou 1..N
+
+| | |
+| --- | --- |
+| `Project.sequencia` | `LETRAS` (só o Jesus Alfabeto) ou `NUMEROS` |
+| `Project.blocos` | quantas casas tem a grade; 26 nos alfabetos |
+| `Content.ordinal` | a casa do conteúdo, como a `letra` no alfabeto |
+
+A grade (`ExperienciaContinua`), o progresso e o "próximo bloco" seguem a
+sequência do projeto. O painel do alfabeto (`admin/alfabeto`) devolve `casa`
+("A" ou "3") e `rotulo` ("Letra A" ou "Bloco 3") — o resto do painel é o mesmo.
+
+`PATCH /api/admin/projects/:slug/blocos` muda a quantidade. **Crescer cria** as
+casas em falta, cada uma com as mesmas quatro casas de cartão de uma letra;
+**encolher só apaga casas vazias** e recusa-se a apagar uma com áudio, imagem,
+texto, título escrito por ele, QR Code apontado ou publicada. Um título igual ao
+rótulo NÃO conta como conteúdo: quando um cartão é gravado sem título,
+`sincronizarEstado` copia-lhe o rótulo da casa, e sem essa distinção nenhuma
+grade se deixava reduzir.
+
+O backfill da migração decidiu pelos dados, não pelo nome: quem tinha letras
+ficou `LETRAS`; nos outros, `dia-3` e `3` ganharam ordinal 3, e as páginas dos
+adultos (`adultos-dia-3`) ficaram de fora porque são dos cartões impressos.
+
+### As interações do card
+
+Regra dele: **VIEW = contador**, **LIKE, COMENTÁRIO e COMPARTILHAR = clicáveis
+e funcionais**, **card inteiro abre o projeto**.
+
+- **Curtir o projeto** é `ProjectReaction` (tabela própria: uma curtida é sempre
+  de alguma coisa, e tornar o conteúdo opcional na `Reaction` estragava o índice
+  que impede curtir duas vezes — em Postgres, dois nulos não são iguais).
+- **Comentar o projeto** é um `Comment` sem conteúdo, sem faixa e sem perfil. O
+  modelo já o permitia; a contagem do carrossel já contava por projeto.
+- **Partilhar** cria um link curto identificável para `/{slug}`, como nas
+  publicações — é o que faz o número de partilhas dizer a verdade.
+- Rotas em `projects/:projectSlug/social` (`ProjetoSocialController`): ler é
+  público, escrever exige conta. Sem conta, o card abre o convite de cadastro.
+- **O card inteiro é um link e os botões vivem por cima dele** (`.projeto-abrir::after`
+  cobre o card; só os `button` sobem). Um botão dentro de um link é HTML
+  inválido — e, pior, curtir navegava.
+
 ## Pagamentos: Mercado Pago
 
 A conta é a do cliente, no CPF dele, até ele abrir empresa. Mudar para a conta

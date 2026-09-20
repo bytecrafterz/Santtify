@@ -183,13 +183,37 @@ export class ContagensService {
       if (actual) actual[campo] += quanto
     }
 
-    const [views, likes, topo, respostas, partilhasEmLinha, partilhasEmEvento] = await Promise.all([
+    const [
+      views,
+      likes,
+      curtidasDoProjeto,
+      topo,
+      respostas,
+      partilhasEmLinha,
+      partilhasEmEvento,
+    ] = await Promise.all([
       this.prisma.event.groupBy({
         by: ['projectId'],
         where: { projectId: { in: projectIds }, type: EventType.CONTENT_VIEW },
         _count: { _all: true },
       }),
       this.prisma.reaction.groupBy({
+        by: ['projectId'],
+        where: { projectId: { in: projectIds }, type: ReactionType.LIKE },
+        _count: { _all: true },
+      }),
+      /*
+        AS CURTIDAS NO PRÓPRIO PROJETO, desde 19/09.
+
+        O coração do card passou a curtir o projeto inteiro, e essas curtidas
+        somam-se às das publicações lá dentro. É o mesmo número que ele já via
+        crescer — "o total de tudo o que está dentro do projeto" — com mais uma
+        forma de crescer.
+
+        Os comentários não precisam de linha nova: já se contam por projeto, e
+        um comentário no projeto tem `projectId` como qualquer outro.
+      */
+      this.prisma.projectReaction.groupBy({
         by: ['projectId'],
         where: { projectId: { in: projectIds }, type: ReactionType.LIKE },
         _count: { _all: true },
@@ -234,6 +258,7 @@ export class ContagensService {
 
     for (const l of views) somar(l.projectId, 'views', l._count._all)
     for (const l of likes) somar(l.projectId, 'likes', l._count._all)
+    for (const l of curtidasDoProjeto) somar(l.projectId, 'likes', l._count._all)
     for (const l of topo) somar(l.projectId, 'comments', l._count._all)
     for (const l of respostas) somar(l.projectId, 'comments', l._count._all)
     for (const l of partilhasEmEvento) somar(l.projectId, 'shares', l._count._all)
