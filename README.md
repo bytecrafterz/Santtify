@@ -11,8 +11,9 @@ Cliente: Rossandro Caxito · Contratado via Workana · Fase 1 em desenvolvimento
 
 | Documento | O que é |
 |---|---|
-| [docs/PROGRESSO.md](docs/PROGRESSO.md) | **Comece por aqui.** Estado técnico, relação com o cliente, bloqueios e avisos |
+| [docs/PROGRESSO-2026-08-26.md](docs/PROGRESSO-2026-08-26.md) | **Comece por aqui.** Estado técnico, relação com o cliente, bloqueios e avisos. O [PROGRESSO.md](docs/PROGRESSO.md) parou a 11/08 e fica como história |
 | [docs/ENTREGA.md](docs/ENTREGA.md) | **Para quem chega de fora.** Stack, como rodar, como publicar, e o que já existe de cartões e PDF |
+| [docs/ESTADO-2026-09-20.md](docs/ESTADO-2026-09-20.md) | **O dia mais recente.** Os ficheiros `ESTADO-*.md` são o diário do projeto desde 27/08: um por dia em que aconteceu alguma coisa que vale a pena explicar. O mais recente manda |
 | [docs/ARQUITETURA.md](docs/ARQUITETURA.md) | Decisões técnicas, modelo de dados, fluxo de propagação |
 | [docs/contexto/04-escopo-acordado.md](docs/contexto/04-escopo-acordado.md) | **Fonte da verdade do escopo.** O que entra na Fase 1 e o que é Fase 2 |
 | [docs/contexto/01-requisitos-originais.md](docs/contexto/01-requisitos-originais.md) | Publicação original do projeto |
@@ -20,6 +21,7 @@ Cliente: Rossandro Caxito · Contratado via Workana · Fase 1 em desenvolvimento
 | [docs/contexto/03-historico-conversa.md](docs/contexto/03-historico-conversa.md) | Histórico completo: negociação **e** desenvolvimento |
 | [docs/mensagens/](docs/mensagens/) | Cada mensagem enviada ao cliente, com o contexto e a intenção |
 | [docs/contexto/05-cliente.md](docs/contexto/05-cliente.md) | Perfil do cliente e implicação regulatória (GDPR) |
+| [deploy/README.md](deploy/README.md) e [deploy/percursos/README.md](deploy/percursos/README.md) | Como se publica, e os percursos que andam pelo site como uma pessoa anda |
 
 ## Estrutura
 
