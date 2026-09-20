@@ -97,6 +97,9 @@ services:
         # O número de suporte NUNCA entra no repositório: o histórico do git é
         # permanente e um número lá dentro nunca mais sai. Vive só no servidor.
         NEXT_PUBLIC_SUPORTE_WHATSAPP: ${NEXT_PUBLIC_SUPORTE_WHATSAPP:-}
+        # O endereço das páginas legais. Sem ele o site publica um exemplo, e o
+        # publicar.sh recusa-se a subir.
+        NEXT_PUBLIC_CONTACTO_LEGAL: ${NEXT_PUBLIC_CONTACTO_LEGAL:-}
         PV_COMMIT: ${PV_COMMIT:-desconhecido}
     restart: unless-stopped
     depends_on:

@@ -122,6 +122,25 @@ if [ -n "$em_falta" ]; then
 fi
 ok "as $(echo "$lidas" | grep -c .) variáveis do site chegam todas ao build"
 
+# ── O endereço das páginas legais é de verdade? ─────────────────────
+#
+# As páginas de privacidade e de termos publicam um endereço para quem quiser
+# pedir os seus dados ou o apagamento deles. Durante semanas publicaram
+# `contato@exemplo.pt`, oito vezes, num site com crianças e com metade do
+# público em Portugal. Um endereço falso numa política de privacidade é pior do
+# que não ter nenhum: quem escrevesse para ali não falava com ninguém.
+contacto="$(grep -E '^NEXT_PUBLIC_CONTACTO_LEGAL=' "$ENV_FILE" | head -1 | cut -d= -f2- | tr -d "\"' ")"
+case "$contacto" in
+  ''|*exemplo*|*example*)
+    erro "NEXT_PUBLIC_CONTACTO_LEGAL não está preenchido com um endereço real"
+    echo "  As páginas /privacidade e /termos publicam este endereço, e é por onde"
+    echo "  a lei obriga a aceitar pedidos de acesso e de apagamento de dados."
+    echo "  Escreva-o em $ENV_FILE e publique outra vez."
+    exit 1
+    ;;
+esac
+ok "as páginas legais dão um endereço real ($contacto)"
+
 info "Carimbando a versão no service worker"
 VERSAO="$(date +%Y%m%d%H%M%S)"
 sed -i "s/self.__VERSAO__ || '[^']*'/self.__VERSAO__ || '${VERSAO}'/" apps/web/public/sw.js

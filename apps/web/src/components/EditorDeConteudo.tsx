@@ -630,13 +630,24 @@ function AdicionarBloco({
     <div className="bloco adicionar-bloco">
       <h3>Adicionar bloco</h3>
       <div className="linha-campos">
+        {/*
+          SÓ OS DOIS QUE O SITE SABE MOSTRAR.
+
+          O painel oferecia também Vídeo, Imagem, "Vídeo de outro site" e Link.
+          Nenhum deles é desenhado em página nenhuma: a página da letra mostra
+          os blocos de ÁUDIO, e o texto serve de descrição da pré-visualização
+          do link. Ele podia escrever um bloco de vídeo inteiro, vê-lo no
+          painel, e nunca o encontrar no site — e o trabalho ficava perdido sem
+          ninguém lhe dizer nada.
+
+          Os tipos continuam todos na base de dados: o dia em que houver
+          tocador de vídeo, volta a linha aqui e o que já estiver escrito
+          aparece. Retirar o que não se mostra é a mesma regra de sempre — a
+          tela sai, o servidor fica.
+        */}
         <select value={tipo} onChange={(e) => definirTipo(e.target.value as TipoBloco)}>
           <option value="RICH_TEXT">Texto</option>
           <option value="AUDIO">Áudio ou música</option>
-          <option value="VIDEO">Vídeo</option>
-          <option value="IMAGE">Imagem</option>
-          <option value="EMBED">Vídeo de outro site</option>
-          <option value="LINK">Link</option>
         </select>
         <input
           value={rotulo}

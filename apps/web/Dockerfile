@@ -43,10 +43,14 @@ ARG NEXT_PUBLIC_PV_GRUPO_URL=
 # declarar aqui, o build recebe-o e ignora-o em silêncio, e o botão de suporte
 # nunca aparece — foi o que aconteceu à primeira.
 ARG NEXT_PUBLIC_SUPORTE_WHATSAPP=
+# O endereço de quem responde pelos dados, que as páginas de privacidade e de
+# termos publicam. Ver apps/web/src/lib/legal.ts.
+ARG NEXT_PUBLIC_CONTACTO_LEGAL=
 ENV NEXT_PUBLIC_API_URL=$NEXT_PUBLIC_API_URL \
     NEXT_PUBLIC_PROJETO_PADRAO=$NEXT_PUBLIC_PROJETO_PADRAO \
     NEXT_PUBLIC_PV_GRUPO_URL=$NEXT_PUBLIC_PV_GRUPO_URL \
     NEXT_PUBLIC_SUPORTE_WHATSAPP=$NEXT_PUBLIC_SUPORTE_WHATSAPP \
+    NEXT_PUBLIC_CONTACTO_LEGAL=$NEXT_PUBLIC_CONTACTO_LEGAL \
     NEXT_TELEMETRY_DISABLED=1
 
 # O COMMIT DE ONDE ISTO SAIU, gravado dentro da imagem.

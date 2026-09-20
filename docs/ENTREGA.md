@@ -644,6 +644,20 @@ As **duas músicas de exemplo** fazem-se no painel de produção, com os áudios
 letras reais dele: colar a letra, marcar, publicar. O ambiente de
 desenvolvimento não tem os áudios dele.
 
+## As páginas legais dão um endereço a sério, ou a publicação pára
+
+`/privacidade` e `/termos` publicam o endereço por onde se pede o acesso aos
+dados ou o apagamento deles. É o que a lei obriga a ter, e durante semanas
+esteve lá `contato@exemplo.pt` — oito vezes, num site com crianças e com metade
+do público em Portugal.
+
+Agora o endereço vem de `NEXT_PUBLIC_CONTACTO_LEGAL` e o `publicar.sh` recusa-se
+a subir se estiver vazio ou se tiver "exemplo" lá dentro. Como é `NEXT_PUBLIC_*`,
+fica gravado dentro do JavaScript no momento do build: mudá-lo exige publicar de
+novo.
+
+**Só o cliente pode dar este endereço** — é ele o responsável pelos dados.
+
 ## As dependências, e as duas que estão presas por `overrides`
 
 `npm update` mantém tudo dentro das versões declaradas. Duas bibliotecas não se
