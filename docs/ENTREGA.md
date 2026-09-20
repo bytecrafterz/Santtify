@@ -615,11 +615,21 @@ cantada ("Antes de eu nascer" saía "Ante deus e nasce"); o `medium` acerta. O
 filtro de silêncio (VAD) vai **desligado**: numa canção com instrumental, o
 filtro tomava a música por silêncio e deitava fora metade da letra.
 
+O serviço `transcritor` tem um **perfil** no compose e por isso fica de fora do
+`publicar.sh`: publicar o site não pode arrastar consigo um processo que ocupa
+1,5 GB de memória num servidor de 4 GB. Liga-se à parte, quando se quiser:
+
 ```bash
-# no servidor, uma vez
-TRANSCRITOR_TOKEN=$(openssl rand -hex 24)   # vai para .env.production
-docker compose -f docker-compose.prod.yml up -d --build transcritor
+# no servidor, uma vez: a chave vai para .env.production
+openssl rand -hex 24        # → TRANSCRITOR_TOKEN=...
+
+cd /opt/produtovivo
+docker compose -f docker-compose.prod.yml --env-file .env.production \
+  --profile ouvinte up -d --build transcritor
 docker compose -f docker-compose.prod.yml logs -f transcritor
+
+# e para o calar enquanto não é preciso (a fila fica à espera dele):
+docker compose -f docker-compose.prod.yml stop transcritor
 ```
 
 Depois, no painel, **Escrever as letras que faltam** põe tudo na fila. Conta com

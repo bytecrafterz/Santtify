@@ -117,6 +117,18 @@ services:
   # uma música demora aproximadamente o tempo dela. Num servidor apertado,
   # TRANSCRITOR_MODELO=small é três vezes mais rápido — e erra bastante mais.
   transcritor:
+    # FICA DE FORA DO `up` NORMAL, de propósito.
+    #
+    # Publicar o site não pode arrastar consigo um processo que ocupa 1,5 GB de
+    # memória a ouvir música num servidor de 4 GB. Com o perfil, o `publicar.sh`
+    # nem sequer o constrói, e ele liga-se quando alguém decidir:
+    #
+    #   docker compose -f docker-compose.prod.yml --env-file .env.production \
+    #     --profile ouvinte up -d --build transcritor
+    #
+    # Para o desligar enquanto não é preciso: `... stop transcritor`. As músicas
+    # ficam na fila e continuam sozinhas quando ele voltar.
+    profiles: ['ouvinte']
     build:
       context: .
       dockerfile: deploy/transcritor/Dockerfile
