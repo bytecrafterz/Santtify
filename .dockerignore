@@ -9,6 +9,5 @@ uploads
 .env
 .env.*
 !.env.example
-!.env.production.example
 docs
 *.md

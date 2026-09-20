@@ -70,3 +70,8 @@ p_('e ela acende para se saber qual e', chegou?.acesa===true)
 }catch(e){falhas.push(`excepcao: ${e.message}`);console.log(`  ✗ excepcao: ${e.message}`)}
 await nav.close()
 console.log(falhas.length?`\nFALHOU: ${falhas.length}\n  - ${falhas.join('\n  - ')}`:'\nTUDO CERTO')
+
+// O CODIGO DE SAIDA DIZ O MESMO QUE O ECRA. Sem esta linha, quem corre os
+// percursos em serie le "ok" por cima de uma falha escrita no ecra — foi
+// assim que uma conta de teste ficou viva no site dele. Ver o README.
+process.exit(falhas.length ? 1 : 0)

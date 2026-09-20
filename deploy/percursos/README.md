@@ -71,6 +71,17 @@ teste ficou viva no site do cliente até ele a encontrar e reportar.
 Todos terminam agora em `process.exit(falhas.length ? 1 : 0)`. **Um percurso
 novo tem de acabar assim**, senão nasce mudo.
 
+Cinco tinham escapado — `aparece-sem-recarregar`, `compartilhar-uma-publicacao`,
+`duplicar-um-cartao`, `fluxo-real-do-produto-vivo` e `produto-vivo-ecra-unico`
+diziam as falhas no ecrã e saíam com 0 na mesma. Foi corrigido em 20/09, com a
+frase acima já escrita aqui há semanas: **o que está no README não se verifica
+sozinho**.
+
+`sequencia-completa.mjs` e `sequencia-por-categoria.mjs` não têm veredicto e não
+precisam de código de saída: imprimem a cadeia de faixas para se ler, e é a
+leitura que decide se está certa. `criar-conta.mjs` e `imagem-de-teste.mjs` são
+peças que os outros usam.
+
 ## Porquê aqui e não testes normais
 
 Os testes normais já passavam em todos os defeitos que ele encontrou. O build

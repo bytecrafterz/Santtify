@@ -66,3 +66,8 @@ p_('DELETAR remove a arte, no mesmo ecra', final===antes, `${depois} -> ${final}
 
 console.log(falhas.length? `\n${falhas.length} FALHA(S): ${falhas.join(' | ')}` : '\nO ecra unico faz o que o desenho dele mostra.')
 await nav.close()
+
+// O CODIGO DE SAIDA DIZ O MESMO QUE O ECRA. Sem esta linha, quem corre os
+// percursos em serie le "ok" por cima de uma falha escrita no ecra — foi
+// assim que uma conta de teste ficou viva no site dele. Ver o README.
+process.exit(falhas.length ? 1 : 0)
