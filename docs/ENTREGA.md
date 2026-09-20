@@ -697,6 +697,27 @@ migração à parte, e o CLI corre com a nossa própria configuração — nada 
 lhe chega. As outras contas de upgrade maior (Nest 12, Next 16) ficam para uma
 janela em que se possa testar tudo outra vez.
 
+## O que existe no código e não está ligado a nenhum ecrã
+
+Isto não é lixo esquecido: é a regra desta casa — **a tela sai, o servidor
+fica** — vista do lado de quem chega hoje e não sabe o que aconteceu. Fica
+escrito para ninguém voltar a construir o que já está construído, e para se
+poder decidir com conhecimento.
+
+| O quê | Onde | Porquê está assim |
+| --- | --- | --- |
+| **Meus Lançamentos** | `launches.service.ts`, rotas em `content.controller.ts` e `admin.controller.ts`, CSS `.lancamento` | Ecrã retirado a pedido dele em 12/08. A API e o painel continuam inteiros |
+| **Minha Jornada** (`GET /me/record`) | `identity.controller.ts`, cliente em `lib/auth.ts` | Mesma decisão, mesmo dia |
+| **`VoltarParaOInicio`** | `components/VoltarParaOInicio.tsx` | Pedido dele a 28/08, para sair do perfil dentro da aplicação instalada. **Já não é preciso**: desde 17/09 o perfil traz a barra de baixo, e o primeiro botão dela é o início |
+| **`BotaoImprimir`** e **`CapaComPlaylist`** | `components/` | Componentes de versões anteriores da página da letra. O caminho de impressão vive hoje nos cartões (`EntregaDosCartoes`, `CartaoDeImpressao`) |
+| **`PATCH /admin/contents/:id/metadata`** | `admin.controller.ts` | Os metadados "para a IA futura" do README. Cada conteúdo nasce com uma linha vazia e nenhum ecrã a preenche |
+| **`DailyMetric`** e **`Campaign`** | `schema.prisma` | Agregados que a documentação promete e que ninguém escreve: os números do painel são contados sobre `events` na leitura, que é mais lento e sempre verdadeiro |
+
+**Blocos de VIDEO, IMAGE, EMBED e LINK** existem no `BlockType` e o painel
+deixou de os oferecer em 20/09: nenhuma página os desenha, e ele podia escrever
+um bloco inteiro que nunca apareceria no site. O dia em que houver tocador de
+vídeo, volta a linha ao `EditorDeConteudo` e o que estiver escrito aparece.
+
 ## Regras que não se partem
 
 **`events` é append-only**, por gatilho na base. `UPDATE` e `DELETE` levantam

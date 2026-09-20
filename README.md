@@ -3,7 +3,7 @@
 Plataforma social-comercial white label. **Jesus Alfabeto Saudável** é o projeto nº 1 e a
 primeira vitrine da tecnologia.
 
-Cliente: Rossandro Caxito · Contratado via Workana · Fase 1 em desenvolvimento.
+Cliente: Rossandro Caxito · Contratado via Workana · **No ar em santtify.com desde Agosto de 2026**, em uso diário.
 
 ---
 
@@ -102,7 +102,7 @@ O contrário nunca.
 ## Estado atual
 
 **Pronto e verificado**
-- Modelo de dados completo — 21 tabelas, migrations aplicadas
+- Modelo de dados completo — 40 tabelas, migrations aplicadas
 - Eventos, atribuição em três camadas e cadeia de propagação
 - Guarda append-only nos eventos, testada nos quatro caminhos
 - Geração de link curto + QR por conteúdo
@@ -117,9 +117,13 @@ O contrário nunca.
 - Painel administrativo: criar conteúdo, editar blocos, enviar mídia,
   publicar e baixar o QR para impressão — usável pelo celular
 
-**Próximo**
+**Entregue depois disto** (ver o diário `docs/ESTADO-*.md`)
 - Módulo social: curtir, comentar e compartilhar com link de referência
-- Dashboard com as métricas essenciais (Entrega 2)
+- Dashboard com as métricas essenciais
+- Cartões personalizados com foto, PDF de impressão e pagamento (Mercado Pago)
+- Carrossel de projetos, blocos numerados por projeto e os quatro números do card
+- Modo Karaokê, com a letra a acender palavra a palavra
+- Transcrição automática: o computador ouve a música e escreve a letra
 
 ## Decisões operacionais a revisitar
 
@@ -132,7 +136,14 @@ O contrário nunca.
 
 ## Pendências com o cliente
 
-1. Mockups (anunciados, ainda não enviados)
-2. Conteúdo das 26 letras: músicas, áudios, letras, textos, imagens
-3. Arte e textos da página institucional PV + número de WhatsApp
-4. Plataforma de checkout externo escolhida (pode vir depois)
+Esta lista é de Agosto e as quatro primeiras já foram resolvidas (os mockups
+chegaram, as 26 letras têm conteúdo dele, a página PV está montada). **O que
+falta hoje está em [docs/ESTADO-2026-09-20.md](docs/ESTADO-2026-09-20.md)**, no
+fim, e o essencial é:
+
+1. O endereço das páginas legais (`NEXT_PUBLIC_CONTACTO_LEGAL`) — a publicação
+   pára sem ele, e é o que a lei obriga a ter
+2. As chaves de produção do Mercado Pago e o aviso de pagamento
+3. As sete páginas "Dia" dos cartões, que os QR impressos já abrem
+4. A arte dos cartões em PDF e a medida da moldura em milímetros
+5. O link do grupo do Produto Vivo e o número do suporte
