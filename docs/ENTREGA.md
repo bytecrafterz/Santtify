@@ -394,12 +394,16 @@ sequência do projeto. O painel do alfabeto (`admin/alfabeto`) devolve `casa`
 ("A" ou "3") e `rotulo` ("Letra A" ou "Bloco 3") — o resto do painel é o mesmo.
 
 `PATCH /api/admin/projects/:slug/blocos` muda a quantidade. **Crescer cria** as
-casas em falta, cada uma com as mesmas quatro casas de cartão de uma letra;
-**encolher só apaga casas vazias** e recusa-se a apagar uma com áudio, imagem,
-texto, título escrito por ele, QR Code apontado ou publicada. Um título igual ao
-rótulo NÃO conta como conteúdo: quando um cartão é gravado sem título,
-`sincronizarEstado` copia-lhe o rótulo da casa, e sem essa distinção nenhuma
-grade se deixava reduzir.
+casas em falta, cada uma com as mesmas quatro casas de cartão de uma letra **e
+com o seu QR Code** — criar projeto e definir a quantidade são duas portas novas
+por onde nasce conteúdo, e cada porta tem de repetir o que a antiga fazia (foi
+por falhar isso que a Letra B ficou um dia sem QR).
+
+**Encolher não apaga nada: esconde.** Os blocos a mais saem da grade, continuam
+a abrir pelo endereço e pelo QR, e voltam inteiros se ele aumentar outra vez. A
+primeira versão apagava as casas vazias e estava errada por duas razões: o QR de
+um bloco pode já ter sido impresso antes de o conteúdo existir, e um número
+escrito por engano no painel não pode ser uma ordem de apagar trabalho.
 
 O backfill da migração decidiu pelos dados, não pelo nome: quem tinha letras
 ficou `LETRAS`; nos outros, `dia-3` e `3` ganharam ordinal 3, e as páginas dos

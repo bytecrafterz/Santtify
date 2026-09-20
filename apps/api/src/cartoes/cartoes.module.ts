@@ -17,11 +17,12 @@ import { StorageService } from '../admin/storage.service'
 import { ContagensService } from '../social/contagens.service'
 import { IdentityModule } from '../identity/identity.module'
 import { MailModule } from '../common/mail/mail.module'
+import { ShortLinksModule } from '../short-links/short-links.module'
 
 @Module({
   // O AuthGuard precisa do JwtService, que vive no IdentityModule.
   // O MailModule é o que manda a ligação dos cartões por e-mail.
-  imports: [IdentityModule, MailModule],
+  imports: [IdentityModule, MailModule, ShortLinksModule],
   controllers: [
     CartoesController,
     AdminCartoesController,

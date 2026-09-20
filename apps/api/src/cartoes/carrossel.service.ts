@@ -9,6 +9,7 @@ import {
 } from '@pv/db'
 import { PrismaService } from '../prisma/prisma.service'
 import { ContagensService } from '../social/contagens.service'
+import { ShortLinksService } from '../short-links/short-links.service'
 
 /**
  * O carrossel de projetos que fica debaixo do perfil.
@@ -30,7 +31,29 @@ export class CarrosselService {
   constructor(
     private readonly prisma: PrismaService,
     private readonly contagens: ContagensService,
+    private readonly shortLinks: ShortLinksService,
   ) {}
+
+  /**
+   * O QR Code de um bloco novo.
+   *
+   * CADA PORTA NOVA POR ONDE NASCE CONTEÚDO TEM DE REPETIR O QUE A PORTA
+   * ANTIGA FAZIA. Está escrito assim em `admin-content.service`, e foi por não
+   * o cumprir que a Letra B ficou sem QR nenhum. Criar projetos e definir a
+   * quantidade de blocos são duas portas novas: sem isto, os blocos nasciam
+   * sem QR e o ponto 4 do que ele pediu — um QR por bloco, como no alfabeto —
+   * ficava por cumprir sem dar erro a ninguém.
+   */
+  private async garantirQr(projeto: { id: string; slug: string }, contents: { id: string; slug: string }[]) {
+    for (const c of contents) {
+      await this.shortLinks.criarQrDeConteudo({
+        projectId: projeto.id,
+        contentId: c.id,
+        projectSlug: projeto.slug,
+        contentSlug: c.slug,
+      })
+    }
+  }
 
   /**
    * A lista do carrossel.
@@ -217,10 +240,19 @@ export class CarrosselService {
    * Ponto dele em 19/09: "não quero que a quantidade fique fixa no código". Põe
    * 7 e ficam sete casas; põe 31 e ficam trinta e uma.
    *
-   * CRESCER CRIA; ENCOLHER NUNCA APAGA TRABALHO. As casas a mais só
-   * desaparecem se estiverem vazias — sem áudio, sem imagem, sem texto e sem
-   * QR Code apontado para elas. Se alguma tiver conteúdo, a operação pára e diz
-   * qual: um número escrito por engano não pode apagar a gravação de um dia.
+   * CRESCER CRIA. ENCOLHER NÃO APAGA NADA — esconde.
+   *
+   * A primeira versão disto apagava as casas a mais quando estivessem vazias, e
+   * estava errada por duas razões. A primeira: cada bloco nasce com um QR Code,
+   * que ele pode ter mandado imprimir antes de preencher o conteúdo — apagar o
+   * bloco transformava um QR impresso numa página de erro, e um QR impresso não
+   * se corrige. A segunda: um número escrito por engano no painel não pode ser
+   * uma ordem de apagar trabalho.
+   *
+   * Então reduzir muda só o tamanho da grade. Os blocos a mais saem da página,
+   * continuam a abrir pelo endereço e pelo QR, e voltam à grade inteiros se ele
+   * aumentar outra vez. Nada se perde, e nada fica escondido por acidente sem
+   * ele poder desfazer.
    *
    * Os alfabetos não passam por aqui: 26 letras são 26 letras.
    */
@@ -239,70 +271,15 @@ export class CarrosselService {
 
     const existentes = await this.prisma.content.findMany({
       where: { projectId: projeto.id, ordinal: { not: null } },
-      select: {
-        id: true,
-        ordinal: true,
-        title: true,
-        status: true,
-        _count: { select: { shortLink: true } },
-        blocks: {
-          select: {
-            id: true,
-            assetId: true,
-            imageAssetId: true,
-            text: true,
-            titulo: true,
-            label: true,
-          },
-        },
-      },
+      select: { id: true, ordinal: true },
     })
     const porNumero = new Map(existentes.map((c) => [c.ordinal!, c]))
 
-    /*
-      O QUE CONTA COMO TRABALHO DELE.
-
-      Áudio, imagem, texto, um título escrito por ele, um QR Code apontado para
-      a página, ou a página estar no ar. Tudo isso trava a remoção.
-
-      O TÍTULO IGUAL AO RÓTULO NÃO CONTA, e isto não é um pormenor: quando um
-      cartão é gravado sem título, `sincronizarEstado` copia-lhe o rótulo da
-      casa ("Explicação", "Música"). Sem esta distinção, qualquer casa alguma
-      vez gravada parecia ter conteúdo, e reduzir a quantidade ficava
-      impossível numa grade inteiramente vazia — foi o que o percurso apanhou.
-    */
-    const escritoPorEle = (valor: string | null, rotulo: string | null) => {
-      const texto = valor?.trim() ?? ''
-      return texto !== '' && texto !== (rotulo?.trim() ?? '')
-    }
-    const temConteudo = (c: (typeof existentes)[number]) =>
-      c.status === 'PUBLISHED' ||
-      c._count.shortLink > 0 ||
-      c.blocks.some(
-        (b) =>
-          b.assetId ||
-          b.imageAssetId ||
-          b.text?.trim() ||
-          escritoPorEle(b.titulo, b.label),
-      )
-
-    const aMais = existentes.filter((c) => c.ordinal! > quantidade)
-    const comTrabalho = aMais.filter(temConteudo)
-    if (comTrabalho.length) {
-      const lista = comTrabalho.map((c) => c.ordinal).sort((a, b) => a! - b!).join(', ')
-      throw new BadRequestException(
-        `Não dá para reduzir para ${quantidade}: os blocos ${lista} já têm conteúdo. ` +
-          'Esvazie-os primeiro, ou mantenha a quantidade.',
-      )
-    }
-
+    const novos: { id: string; slug: string }[] = []
     await this.prisma.$transaction(async (tx) => {
-      if (aMais.length) {
-        await tx.content.deleteMany({ where: { id: { in: aMais.map((c) => c.id) } } })
-      }
       for (let n = 1; n <= quantidade; n++) {
         if (porNumero.has(n)) continue
-        await tx.content.create({
+        const criado = await tx.content.create({
           data: {
             projectId: projeto.id,
             slug: String(n),
@@ -311,10 +288,17 @@ export class CarrosselService {
             ordinal: n,
             blocks: { create: casasEmBranco() },
           },
+          select: { id: true, slug: true },
         })
+        novos.push(criado)
       }
       await tx.project.update({ where: { id: projeto.id }, data: { blocos: quantidade } })
     })
+
+    // Fora da transacção: o QR é uma escrita noutra tabela e, se falhar, não
+    // pode desfazer os blocos que ele acabou de criar. Repetir a operação
+    // volta a tentar, porque `criarQrDeConteudo` devolve o que já existir.
+    await this.garantirQr({ id: projeto.id, slug: projectSlug }, novos)
 
     return this.listar(true)
   }
@@ -373,8 +357,14 @@ export class CarrosselService {
           })),
         },
       },
-      include: { _count: { select: { contents: true } } },
+      include: {
+        _count: { select: { contents: true } },
+        contents: { select: { id: true, slug: true } },
+      },
     })
+
+    // Os blocos novos nascem com QR, como as letras. Ver `garantirQr`.
+    await this.garantirQr(projeto, projeto.contents)
 
     return {
       slug: projeto.slug,

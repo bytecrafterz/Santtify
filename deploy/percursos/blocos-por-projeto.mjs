@@ -97,6 +97,16 @@ try {
   p_('as casas sao numeradas, nao letras', grade.vagoes?.[0]?.rotulo === 'Bloco 1', grade.vagoes?.[0]?.rotulo)
   p_('cada bloco nasce com as 4 casas de cartao', grade.vagoes?.every((v) => v.cartoes.length === 4))
 
+  // O QR DE CADA BLOCO, como no alfabeto (ponto 4 do que ele pediu). Nasce com
+  // o bloco: ele pode mandar imprimir antes de acabar de preencher.
+  const comQr = await Promise.all(
+    grade.vagoes.map(async (v) => {
+      const r = await fetch(`${API}/projects/${PROJ}/contents/${v.slug}/qr.svg`)
+      return r.ok && (await r.text()).includes('<svg')
+    }),
+  )
+  p_('cada bloco novo nasce com o seu QR Code', comQr.every(Boolean), comQr.join(', '))
+
   // ── A grade publica ─────────────────────────────────────────────────
   const tel = await nav.newContext({ viewport: { width: 390, height: 844 } })
   const pub = await tel.newPage()
@@ -112,35 +122,48 @@ try {
   await pg.locator('.sincronizador-aviso', { hasText: '5 blocos' }).waitFor({ timeout: 60000 })
   p_('crescer cria as casas que faltam', (await gradeCom(pub, 5)) === 5)
 
-  // Pôr conteudo no bloco 5 e tentar reduzir: tem de recusar e dizer qual.
+  // ESCONDER NAO E APAGAR. Poe-se conteudo no bloco 5, reduz-se para 2, e o
+  // bloco 5 tem de sair da grade sem perder nada: a pagina dele continua a
+  // abrir (o QR impresso continua a valer) e o conteudo volta inteiro quando a
+  // quantidade subir outra vez.
   const composicao = await admin(`/projects/${PROJ}/alfabeto`)
   const quinto = composicao.vagoes.find((v) => v.numero === 5)
   await admin(`/cards/${quinto.cartoes[0].id}`, {
     method: 'PATCH',
     body: JSON.stringify({ titulo: 'Escrito pelo percurso' }),
   })
-  const recusa = await admin(`/projects/${PROJ}/blocos`, {
-    method: 'PATCH',
-    body: JSON.stringify({ quantidade: 4 }),
-  })
-  p_(
-    'reduzir nao apaga um bloco com conteudo',
-    typeof recusa?.message === 'string' && recusa.message.includes('5'),
-    String(recusa?.message).slice(0, 80),
-  )
-  p_('e o bloco continua la', (await gradeCom(pub, 5)) === 5)
 
-  // Esvaziado, ja deixa reduzir.
-  await admin(`/cards/${quinto.cartoes[0].id}`, {
-    method: 'PATCH',
-    body: JSON.stringify({ titulo: null }),
-  })
+  // Como a pagina do bloco respondia ANTES de esconder. Um bloco por publicar
+  // responde 404 a toda a gente — esconder nao pode mudar isso num sentido nem
+  // no outro.
+  const antesDeEsconder = (await fetch(`${SITE}/${PROJ}/${quinto.slug}`)).status
+
   const reduzido = await admin(`/projects/${PROJ}/blocos`, {
     method: 'PATCH',
     body: JSON.stringify({ quantidade: 2 }),
   })
-  p_('esvaziado, reduzir funciona', reduzido.find?.((p) => p.slug === PROJ)?.blocos === 2)
+  p_('reduzir muda o tamanho da grade', reduzido.find?.((p) => p.slug === PROJ)?.blocos === 2)
   p_('e a pagina publica acompanha', (await gradeCom(pub, 2)) === 2)
+
+  const depoisDeEsconder = (await fetch(`${SITE}/${PROJ}/${quinto.slug}`)).status
+  p_(
+    'esconder nao muda o endereco do bloco',
+    depoisDeEsconder === antesDeEsconder,
+    `${antesDeEsconder} → ${depoisDeEsconder}`,
+  )
+  const qrDoQuinto = await fetch(`${API}/projects/${PROJ}/contents/${quinto.slug}/qr.svg`)
+  p_('e o QR dele continua a valer', qrDoQuinto.ok)
+
+  await admin(`/projects/${PROJ}/blocos`, { method: 'PATCH', body: JSON.stringify({ quantidade: 5 }) })
+  const devolta = await admin(`/projects/${PROJ}/alfabeto`)
+  const quintoOutraVez = devolta.vagoes.find((v) => v.numero === 5)
+  p_(
+    'aumentar outra vez devolve o bloco com o conteudo dele',
+    quintoOutraVez?.contentId === quinto.contentId &&
+      quintoOutraVez?.cartoes?.some((c) => c.titulo === 'Escrito pelo percurso'),
+  )
+  // Limpar o que o percurso escreveu no cartao.
+  await admin(`/cards/${quinto.cartoes[0].id}`, { method: 'PATCH', body: JSON.stringify({ titulo: null }) })
 
   // ── O ALFABETO NAO MUDOU. E a parte que ja estava no ar. ─────────────
   const casasDoAlfabeto = await gradeCom(pub, 26, ALFABETO)

@@ -93,7 +93,9 @@ export function PainelDoCarrossel() {
           Cada projeto aparece como uma imagem horizontal, com os números por baixo,
           na ordem desta lista. A imagem aparece inteira, sem cortes, na largura
           da tela: use uma imagem deitada, com pelo menos 1200 pixels de largura.
-          Sem texto por baixo: a imagem é que mostra o que é o projeto.
+          Sem texto por baixo: a imagem é que mostra o que é o projeto. Ao
+          diminuir a quantidade de blocos nada é apagado: os blocos a mais saem
+          da página e voltam se você aumentar de novo.
         </p>
 
         <ul className="painel-projetos">
@@ -212,8 +214,8 @@ export function PainelDoCarrossel() {
  * A quantidade de blocos de um projeto.
  *
  * Ele escreve o número e o sistema cria as casas que faltam — pedido dele em
- * 19/09: "não quero que a quantidade fique fixa no código". Reduzir só apaga
- * casas vazias; se alguma já tiver conteúdo, o servidor recusa e diz quais.
+ * 19/09: "não quero que a quantidade fique fixa no código". Reduzir não apaga
+ * nada: os blocos a mais saem da página e voltam se ele aumentar outra vez.
  */
 function QuantidadeDeBlocos({
   projeto,
