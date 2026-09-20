@@ -106,7 +106,16 @@ export function OficinaDasLetras({ projectSlug }: { projectSlug: string }) {
   const { resumo } = dados
   const porOuvir = resumo.naFila + resumo.aOuvirAgora
   const aTrabalhar = porOuvir > 0
-  const visiveis = tudo ? dados.faixas : dados.faixas.filter((f) => destaque(f))
+  /*
+    A LISTA CURTA SÓ FAZ SENTIDO QUANDO HÁ ALGO A ACONTECER.
+
+    Com a fila vazia não há nada em destaque, e o painel escondia as músicas
+    todas atrás de "Ver as 51 músicas" — que é exactamente o primeiro ecrã que
+    ele vê, e aquele em que precisa de chegar a uma faixa para a mandar ouvir.
+    Sem nada na fila, mostram-se todas.
+  */
+  const emDestaque = dados.faixas.filter(destaque)
+  const visiveis = tudo || emDestaque.length === 0 ? dados.faixas : emDestaque
 
   return (
     <section className={aTrabalhar ? 'oficina a-trabalhar' : 'oficina'}>
@@ -221,7 +230,10 @@ export function OficinaDasLetras({ projectSlug }: { projectSlug: string }) {
         <>
           <ul className="oficina-faixas">
             {visiveis.map((f) => (
-              <li key={f.id} className={`oficina-faixa ${classeDoEstado(f)}`}>
+              // `data-faixa` é para o percurso poder apontar a uma faixa certa:
+              // os nomes repetem-se ("Bloco 1" é o título de uma e o conteúdo de
+              // outra) e um teste que aponta pelo nome mede a linha errada.
+              <li key={f.id} data-faixa={f.id} className={`oficina-faixa ${classeDoEstado(f)}`}>
                 <div className="oficina-faixa-nome">
                   <strong>{f.nome}</strong>
                   <span>{f.conteudo}</span>
@@ -270,7 +282,7 @@ export function OficinaDasLetras({ projectSlug }: { projectSlug: string }) {
               Ver as {dados.faixas.length} músicas
             </button>
           )}
-          {tudo && dados.faixas.length > 6 && (
+          {tudo && emDestaque.length > 0 && (
             <button type="button" className="oficina-mais" onClick={() => definirTudo(false)}>
               Mostrar só o que está a acontecer
             </button>

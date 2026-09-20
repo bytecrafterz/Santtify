@@ -225,7 +225,9 @@ try {
     await transcritor(`/${pedida.id}/progresso`, { progresso: 50 }, 'PATCH')
 
     // ── A percentagem que ele ve, no painel, a subir ───────────────────
-    const naLista = pg.locator('.oficina-faixa').filter({ hasText: cartaoAntes.faixa.titulo })
+    // Pela id da faixa, e nao pelo nome: "Bloco 1" e o titulo de uma e o
+    // conteudo de outra, e o percurso media a linha errada.
+    const naLista = pg.locator(`.oficina-faixa[data-faixa="${VAGO}"]`)
     p_(
       'o painel mostra a musica a ser ouvida, com a percentagem',
       await ateQue(pg, async () => (await naLista.locator('.oficina-selo').innerText().catch(() => '')).includes('50')),
@@ -267,14 +269,8 @@ try {
     await fecharAvisos(pg)
     const verTodas = pg.locator('.oficina-mais')
     if (await verTodas.count()) await verTodas.first().click()
-    // O nome do cartao pode repetir-se noutra faixa (sao rotulos como "Bloco
-    // 1"), por isso olha-se para todos os selos das linhas com aquele nome.
     const selosDaFaixa = () =>
-      pg
-        .locator('.oficina-faixa')
-        .filter({ hasText: cartaoAntes.faixa.titulo })
-        .locator('.oficina-selo')
-        .allTextContents()
+      pg.locator(`.oficina-faixa[data-faixa="${VAGO}"] .oficina-selo`).allTextContents()
     p_(
       'e diz, na lista, que a letra e automatica',
       await ateQue(pg, async () => (await selosDaFaixa()).some((t) => t.includes('automática'))),
