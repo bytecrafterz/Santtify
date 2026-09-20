@@ -10,7 +10,12 @@ FROM python:3.12-slim
 # faster-whisper descodifica o áudio com PyAV, que já traz o ffmpeg dentro: não
 # é preciso instalar nada do sistema. Uma imagem sem compilador nem ferramentas
 # é uma imagem com menos maneiras de correr mal.
-RUN pip install --no-cache-dir "faster-whisper==1.1.1"
+#
+# `requests` vai explícito porque o faster-whisper 1.1.1 importa-o em
+# `utils.py` e NÃO o declara: vinha de boleia no huggingface_hub, que entretanto
+# passou a usar httpx. Sem ele a imagem instala-se, arranca, fala com a API e só
+# rebenta quando vai buscar o modelo — ou seja, na primeira música a sério.
+RUN pip install --no-cache-dir "faster-whisper==1.1.1" "requests>=2.32"
 
 # Os modelos descarregam-se uma vez e ficam num volume. Sem isto, cada reinício
 # voltava a puxar 1,5 GB da internet antes de ouvir a primeira nota.
