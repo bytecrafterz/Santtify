@@ -252,6 +252,12 @@ export const social = {
   estadoDoProjeto: (projectSlug: string) =>
     chamar<EstadoDoProjeto>(`/projects/${projectSlug}/social`),
 
+  /** Quem curtiu alguma coisa do projeto, e o quê. Uma linha por curtida. */
+  quemCurtiuProjeto: (projectSlug: string) =>
+    chamar<{
+      curtiram: Array<{ id: string; displayName: string; avatarUrl: string | null; onde: string }>
+    }>(`/projects/${projectSlug}/social/people`),
+
   curtirProjeto: (projectSlug: string) =>
     chamar<{ curtido: boolean; total: number }>(`/projects/${projectSlug}/social/like`, {
       method: 'POST',

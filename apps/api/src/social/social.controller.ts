@@ -109,6 +109,12 @@ export class ProjetoSocialController {
     )
   }
 
+  /** Quem curtiu, com o nome do que curtiu ao lado. Uma linha por curtida. */
+  @Get('people')
+  quemCurtiu(@Param('projectSlug') projectSlug: string) {
+    return this.social.quemCurtiuOProjeto(projectSlug)
+  }
+
   @Get('comments')
   @AuthOpcional()
   @UseGuards(AuthGuard)

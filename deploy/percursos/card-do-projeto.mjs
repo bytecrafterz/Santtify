@@ -200,6 +200,35 @@ try {
   )
   p_('e tocar outra vez volta ao que era', (await numero(pg, 1)) === curtidasAntes)
 
+  // O NUMERO ABRE A LISTA. Regra dele, 21/09: "se o sistema mostra um numero,
+  // eu tenho que conseguir clicar e conferir de onde aquele numero veio".
+  // Tocar no coracao curte; tocar no NUMERO mostra quem curtiu, e o que.
+  if (curtidasAntes > 0) {
+    await fecharAvisos(pg)
+    await cardDo(pg).locator('.indicador-grande strong').nth(1).click()
+    const folha = pg.locator('.folha-pessoas')
+    const abriu = await folha
+      .waitFor({ timeout: 15000 })
+      .then(() => true)
+      .catch(() => false)
+    p_('tocar no numero das curtidas mostra quem curtiu', abriu)
+    if (abriu) {
+      const linhas = await folha.locator('.lista-pessoas li').count()
+      p_(
+        'e a lista tem tantas linhas quantas o numero diz',
+        linhas === curtidasAntes,
+        `${linhas} linha(s) para ${curtidasAntes} curtida(s)`,
+      )
+      p_(
+        'e cada linha diz o que foi curtido',
+        (await folha.locator('.lista-pessoas .onde').count()) === linhas,
+      )
+      await folha.getByRole('button', { name: 'Fechar' }).click()
+    }
+  } else {
+    console.log('  – a lista de quem curtiu   (este projeto ainda nao tem curtidas)')
+  }
+
   // COMENTAR
   const comentariosAntes = await numero(pg, 2)
   await fecharAvisos(pg)

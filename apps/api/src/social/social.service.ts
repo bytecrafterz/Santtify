@@ -823,6 +823,75 @@ export class SocialService {
     return { curtiram: curtiram.map((c) => c.user).filter(Boolean) }
   }
 
+  /**
+   * Quem curtiu alguma coisa deste projeto, e o quê.
+   *
+   * O número do card é a soma de três sítios: o próprio projeto, as letras e as
+   * faixas. Uma lista só com as curtidas do projeto teria uma pessoa à frente de
+   * um número setenta e nove — e a regra que ele escreveu em 21/09 é
+   * exactamente o contrário: "se o sistema mostra um número, eu tenho que
+   * conseguir clicar e conferir de onde aquele número veio".
+   *
+   * Por isso cada linha é UMA curtida e não uma pessoa: quem curtiu cinco
+   * faixas aparece cinco vezes, uma por faixa, com o nome do que curtiu ao
+   * lado. A lista tem tantas linhas quantas o número diz.
+   */
+  async quemCurtiuOProjeto(projectSlug: string) {
+    const projeto = await this.prisma.project.findUnique({
+      where: { slug: projectSlug },
+      select: { id: true, name: true },
+    })
+    if (!projeto) throw new NotFoundException('Projeto não encontrado')
+
+    const pessoa = { select: { id: true, displayName: true, avatarUrl: true } }
+    // Contas removidas não aparecem numa lista pública: mesma regra de
+    // `quemCurtiu`, e a mesma razão — as curtidas ficam, o nome sai.
+    const activo = { user: { is: { status: 'ACTIVE' as const } } }
+
+    const [noProjeto, nasLetras, nasFaixas] = await Promise.all([
+      this.prisma.projectReaction.findMany({
+        where: { projectId: projeto.id, type: ReactionType.LIKE, ...activo },
+        orderBy: { createdAt: 'desc' },
+        take: 100,
+        select: { createdAt: true, user: pessoa },
+      }),
+      this.prisma.reaction.findMany({
+        where: { projectId: projeto.id, type: ReactionType.LIKE, ...activo },
+        orderBy: { createdAt: 'desc' },
+        take: 100,
+        select: { createdAt: true, user: pessoa, content: { select: { title: true } } },
+      }),
+      this.prisma.blockReaction.findMany({
+        where: {
+          type: ReactionType.LIKE,
+          ...activo,
+          block: { is: { content: { is: { projectId: projeto.id } } } },
+        },
+        orderBy: { createdAt: 'desc' },
+        take: 100,
+        select: {
+          createdAt: true,
+          user: pessoa,
+          block: { select: { titulo: true, label: true, content: { select: { title: true } } } },
+        },
+      }),
+    ])
+
+    const curtiram = [
+      ...noProjeto.map((c) => ({ ...c.user, quando: c.createdAt, onde: projeto.name })),
+      ...nasLetras.map((c) => ({ ...c.user, quando: c.createdAt, onde: c.content?.title ?? projeto.name })),
+      ...nasFaixas.map((c) => ({
+        ...c.user,
+        quando: c.createdAt,
+        onde: c.block?.titulo || c.block?.label || c.block?.content?.title || projeto.name,
+      })),
+    ]
+      .sort((a, b) => b.quando.getTime() - a.quando.getTime())
+      .slice(0, 100)
+
+    return { curtiram }
+  }
+
   async alternarCurtidaDoPerfil(profileUserId: string, userId: string) {
     // O dono pode curtir o próprio perfil. Eu tinha-o proibido — um número que
     // o dono sobe sozinho vale menos — e ele pediu duas vezes o contrário. É

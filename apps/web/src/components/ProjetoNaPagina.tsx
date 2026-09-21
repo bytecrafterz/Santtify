@@ -45,6 +45,9 @@ export function ProjetoNaPagina({
   const [abertos, definirAbertos] = useState(false)
   const [convite, definirConvite] = useState<string | null>(null)
   const [ocupado, definirOcupado] = useState(false)
+  const [quemCurtiu, definirQuemCurtiu] = useState<
+    Array<{ id: string; displayName: string; avatarUrl: string | null; onde: string }> | null
+  >(null)
 
   // O estado de quem está a olhar. Sem conta não há nada para perguntar.
   useEffect(() => {
@@ -90,6 +93,21 @@ export function ProjetoNaPagina({
     } finally {
       definirOcupado(false)
     }
+  }
+
+  /*
+    TOCAR NO NÚMERO MOSTRA QUEM CURTIU; tocar no coração curte.
+
+    A mesma divisão que já existia em cada publicação, trazida para o card em
+    21/09, quando ele escreveu a regra por inteiro: "se o sistema mostra um
+    número, eu tenho que conseguir clicar e conferir de onde aquele número
+    veio". Cada linha da lista é uma curtida, com o nome do que foi curtido ao
+    lado — o número do card soma o projeto, as letras e as faixas, e uma lista
+    de pessoas sem dizer o quê deixava a conta por explicar.
+  */
+  const mostrarQuemCurtiu = async () => {
+    const r = await social.quemCurtiuProjeto(projeto.slug).catch(() => ({ curtiram: [] }))
+    definirQuemCurtiu(r.curtiram)
   }
 
   const abrirComentarios = async () => {
@@ -164,7 +182,16 @@ export function ProjetoNaPagina({
           <span className="simbolo">
             <CoracaoGrande cheio={curtido} />
           </span>
-          <strong aria-hidden="true">{abreviarKM(numeros.likes)}</strong>
+          <strong
+            aria-hidden="true"
+            onClick={(ev) => {
+              ev.preventDefault()
+              ev.stopPropagation()
+              if (numeros.likes > 0) void mostrarQuemCurtiu()
+            }}
+          >
+            {abreviarKM(numeros.likes)}
+          </strong>
           <span className="apenas-leitor-de-ecra">{numeros.likes} curtidas</span>
         </button>
 
@@ -194,6 +221,55 @@ export function ProjetoNaPagina({
           <span className="apenas-leitor-de-ecra">{numeros.shares} compartilhamentos</span>
         </button>
       </div>
+
+      {quemCurtiu && (
+        <div className="fundo-modal" role="dialog" aria-modal="true" aria-label="Quem curtiu">
+          <button
+            type="button"
+            className="fundo-clicavel"
+            aria-label="Fechar"
+            onClick={() => definirQuemCurtiu(null)}
+          />
+          <div className="folha-pessoas">
+            <header>
+              <h2>Quem curtiu</h2>
+              <button
+                type="button"
+                className="fechar-x"
+                aria-label="Fechar"
+                onClick={() => definirQuemCurtiu(null)}
+              >
+                ✕
+              </button>
+            </header>
+            {quemCurtiu.length === 0 && <p className="nota">Ainda ninguém curtiu.</p>}
+            <ul className="lista-pessoas">
+              {quemCurtiu.map((pessoa, i) => (
+                <li key={`${pessoa.id}-${i}`}>
+                  <Link
+                    href={`/${projeto.slug}/pessoa/${pessoa.id}`}
+                    onClick={() => definirQuemCurtiu(null)}
+                  >
+                    {pessoa.avatarUrl ? (
+                      // eslint-disable-next-line @next/next/no-img-element
+                      <img src={pessoa.avatarUrl} alt="" />
+                    ) : (
+                      <span className="inicial" aria-hidden>
+                        {pessoa.displayName.trim().charAt(0).toUpperCase()}
+                      </span>
+                    )}
+                    <span className="quem">
+                      <strong>{pessoa.displayName}</strong>
+                      {/* O QUÊ, e não só quem: é isto que faz a conta fechar. */}
+                      <span className="onde">{pessoa.onde}</span>
+                    </span>
+                  </Link>
+                </li>
+              ))}
+            </ul>
+          </div>
+        </div>
+      )}
 
       {convite && (
         <ConviteDeCadastro

@@ -6143,9 +6143,15 @@ button.menu-player {
   min-width: 0;
 }
 
-.lista-pessoas .quem small {
+.lista-pessoas .quem small,
+/* O que a pessoa curtiu, debaixo do nome dela: sem isto, uma lista de setenta
+   e nove linhas com nomes repetidos não explicava nada a ninguém. */
+.lista-pessoas .quem .onde {
   color: var(--cor-texto-suave);
   font-size: 0.78rem;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 /* A contagem dentro do menu passou a ser botão. */

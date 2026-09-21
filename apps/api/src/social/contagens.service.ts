@@ -187,16 +187,37 @@ export class ContagensService {
       views,
       likes,
       curtidasDoProjeto,
+      curtidasDeFaixas,
       topo,
       respostas,
       partilhasEmLinha,
       partilhasEmEvento,
     ] = await Promise.all([
-      this.prisma.event.groupBy({
-        by: ['projectId'],
-        where: { projectId: { in: projectIds }, type: EventType.CONTENT_VIEW },
-        _count: { _all: true },
-      }),
+      /*
+        AS VISUALIZAÇÕES DO PROJETO SÃO A SOMA DO QUE ELE CONSEGUE CONFERIR.
+
+        Duas correcções, ambas apanhadas por ele em 21/09.
+
+        A primeira: contavam-se só as aberturas de CONTEÚDO, e o "Minha
+        Identidade" aparecia com zero visualizações apesar de quinze pessoas
+        terem aberto a página do projeto. As páginas dele ainda não estão
+        publicadas, portanto conteúdo nenhum podia ser aberto — e mesmo assim
+        houve gente lá. A página do projeto conta.
+
+        A segunda: a soma incluía as visualizações de CARTÃO (os eventos com
+        `blockId`), que o número de cada letra deixa de fora. O total do projeto
+        ficava maior do que a soma das letras, e ele não tinha como o explicar.
+        Agora a regra é a mesma nos dois sítios.
+      */
+      this.prisma.$queryRaw<Array<{ projectId: string; total: number }>>`
+        SELECT "projectId", count(*)::int AS total
+        FROM events
+        WHERE "projectId" = ANY(${projectIds}::uuid[])
+          AND (
+            (type = 'CONTENT_VIEW' AND (props -> 'blockId') IS NULL)
+            OR type = 'PAGE_VIEW'
+          )
+        GROUP BY "projectId"`,
       this.prisma.reaction.groupBy({
         by: ['projectId'],
         where: { projectId: { in: projectIds }, type: ReactionType.LIKE },
@@ -218,6 +239,23 @@ export class ContagensService {
         where: { projectId: { in: projectIds }, type: ReactionType.LIKE },
         _count: { _all: true },
       }),
+      /*
+        E AS CURTIDAS DAS FAIXAS, que é onde as pessoas curtem.
+
+        O coração que a criança toca está debaixo de cada música, e essas
+        curtidas vivem em `block_reactions` — uma tabela que não tem `projectId`
+        e que esta soma nunca abria. Em 21/09 o projeto mostrava 5 curtidas
+        enquanto as faixas dele tinham 74. Ele contou três publicações à mão e
+        viu que não batia certo; tinha razão, e por muito mais do que pensava.
+      */
+      this.prisma.$queryRaw<Array<{ projectId: string; total: number }>>`
+        SELECT c."projectId", count(*)::int AS total
+        FROM block_reactions br
+        JOIN content_blocks b ON b.id = br."blockId"
+        JOIN contents c ON c.id = b."contentId"
+        WHERE c."projectId" = ANY(${projectIds}::uuid[])
+          AND br.type = 'LIKE'
+        GROUP BY c."projectId"`,
       this.prisma.comment.groupBy({
         by: ['projectId'],
         where: {
@@ -256,9 +294,10 @@ export class ContagensService {
       }),
     ])
 
-    for (const l of views) somar(l.projectId, 'views', l._count._all)
+    for (const l of views) somar(l.projectId, 'views', l.total)
     for (const l of likes) somar(l.projectId, 'likes', l._count._all)
     for (const l of curtidasDoProjeto) somar(l.projectId, 'likes', l._count._all)
+    for (const l of curtidasDeFaixas) somar(l.projectId, 'likes', l.total)
     for (const l of topo) somar(l.projectId, 'comments', l._count._all)
     for (const l of respostas) somar(l.projectId, 'comments', l._count._all)
     for (const l of partilhasEmEvento) somar(l.projectId, 'shares', l._count._all)
