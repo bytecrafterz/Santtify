@@ -254,15 +254,27 @@ function frasesDeTranscricao(tiradas) {
       if (dentro(i) && /[.!?;:,]$/.test(palavras[i].texto)) candidatos.push(i)
     }
     if (!candidatos.length) {
-      let maior = -1
+      /*
+        SEM PONTUAÇÃO, PARTE-SE ONDE SE RESPIRA — mas nunca depois de uma
+        palavra pequena.
+
+        Ele publicou o karaokê no TikTok a 21/09 e via-se: "Quem fez os" numa
+        linha, "grandes mares Quem" na seguinte. O modelo devolve o refrão todo
+        numa tirada só, as pausas são quase iguais, e o corte calhava a seguir
+        ao "os". Um artigo sozinho no fim de uma linha lê-se como erro, e estes
+        ecrãs vão para vídeo.
+      */
+      const respiracoes = []
       for (let i = 0; i < palavras.length - 1; i++) {
-        const respiracao = palavras[i + 1].inicioMs - palavras[i].fimMs
-        if (dentro(i) && respiracao > maior) {
-          maior = respiracao
-          candidatos.length = 0
-          candidatos.push(i)
-        }
+        if (!dentro(i)) continue
+        respiracoes.push({ i, ar: palavras[i + 1].inicioMs - palavras[i].fimMs })
       }
+      const bons = respiracoes.filter((c) => !acabaMalALinha(palavras[c.i].texto))
+      const escolha = (bons.length ? bons : respiracoes).reduce(
+        (a, b) => (b.ar > a.ar || (b.ar === a.ar && Math.abs(b.i - meio) < Math.abs(a.i - meio)) ? b : a),
+        { i: -1, ar: -1 },
+      )
+      if (escolha.i >= 0) candidatos.push(escolha.i)
     }
     const corte = candidatos.length
       ? candidatos.reduce((a, b) => (Math.abs(a - meio) <= Math.abs(b - meio) ? a : b))
@@ -357,6 +369,18 @@ function frasesDeTranscricao(tiradas) {
   }
 
   return frases
+}
+
+/**
+ * Palavras que não podem ficar sozinhas no fim de uma linha do karaokê.
+ *
+ * As mesmas que nunca ganham destaque, mais as que abrem uma pergunta: o
+ * refrão "Quem fez os grandes mares" partia-se a seguir ao "os" e a seguir ao
+ * segundo "Quem", e no vídeo lê-se como se faltasse texto.
+ */
+function acabaMalALinha(texto) {
+  const p = normalizarPalavra(texto)
+  return PALAVRAS_PEQUENAS.has(p) || ['QUEM', 'QUAL', 'QUAIS', 'QUANTO', 'QUANTOS'].includes(p)
 }
 
 /** Palavras que nunca ganham destaque sozinhas: artigos, preposições, pronomes. */
