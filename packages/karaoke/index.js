@@ -224,7 +224,7 @@ const CARACTERES_POR_FRASE = 46
 /** Abaixo disto, a frase é curta de mais para viver sozinha no ecrã. */
 const PALAVRAS_A_MENOS = 2
 
-function frasesDeTranscricao(tiradas, duracaoMs) {
+function frasesDeTranscricao(tiradas) {
   const limpar = (p) => ({
     texto: String(p?.texto || '').trim(),
     inicioMs: Math.round(Number(p?.inicioMs)),
@@ -320,11 +320,20 @@ function frasesDeTranscricao(tiradas, duracaoMs) {
   frases.forEach((f, i) => {
     if (f.fimMs > f.inicioMs) return
     const proxima = frases[i + 1]
+    /*
+      E O TECTO DA ÚLTIMA FRASE NÃO É O FIM DO ÁUDIO.
+
+      A primeira versão disto limitava-a à duração ouvida, e na Letra H o
+      remate falado está carimbado no último milissegundo da gravação: a frase
+      foi ao ar a durar 1 ms, ou seja, a última linha nunca chegava a acender.
+      Uma frase que acaba depois do áudio não faz mal nenhum — o leitor pára
+      quando a música pára — e ao menos dá-se a ler.
+    */
     f.fimMs = fimDaFrase(
       f,
       f.inicioMs,
       typeof proxima?.inicioMs === 'number' ? proxima.inicioMs : null,
-      typeof duracaoMs === 'number' ? duracaoMs : null,
+      null,
     )
     f.palavras = distribuirTempos(f.palavras, f.inicioMs, f.fimMs).map((p) => ({
       ...p,

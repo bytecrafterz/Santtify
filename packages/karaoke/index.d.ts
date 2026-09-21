@@ -59,7 +59,7 @@ export interface TiradaOuvida {
 }
 
 /** As tiradas ouvidas no áudio, arrumadas em frases de karaokê. */
-export declare function frasesDeTranscricao(tiradas: TiradaOuvida[], duracaoMs?: number | null): Frase[]
+export declare function frasesDeTranscricao(tiradas: TiradaOuvida[]): Frase[]
 export declare function pesoDaPalavra(texto: string): number
 export declare function fimDaFrase(
   frase: Frase,

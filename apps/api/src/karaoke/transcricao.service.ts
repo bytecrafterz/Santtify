@@ -238,17 +238,8 @@ export class TranscricaoService {
     })
     if (!pedido) throw new NotFoundException('Pedido não encontrado.')
 
-    /*
-      A DURAÇÃO VEM DE QUEM OUVIU, e não do ficheiro.
-
-      O `durationMs` do áudio é metadado do envio e muitas vezes nem existe; o
-      transcritor sabe exactamente quanto tempo de som ouviu. É esse o tecto
-      para a última frase, quando ela precisa de ser esticada (ver a nota sobre
-      o fim da música em `frasesDeTranscricao`).
-    */
-    const duracaoOuvida = typeof segundos === 'number' && segundos > 0 ? Math.round(segundos * 1000) : null
     const duracaoMs = pedido.bloco?.asset?.durationMs ?? null
-    const frases = frasesDeTranscricao(tiradas || [], duracaoOuvida ?? duracaoMs)
+    const frases = frasesDeTranscricao(tiradas || [])
     if (!estaSincronizada(frases)) {
       return this.falhar(id, 'O sistema não ouviu nenhuma voz nesta faixa.', true)
     }
