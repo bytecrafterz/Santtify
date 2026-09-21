@@ -78,7 +78,13 @@ try {
   await pg.goto(`${SITE}/${PROJ}/admin/karaoke`, { waitUntil: 'networkidle' })
   await pg.getByRole('heading', { name: /Músicas/ }).waitFor()
   p_('a lista de palavras mostra as da conta', (await pg.locator('.karaoke-palavra-texto').allTextContents()).some((t) => t === 'Espírito Santo'))
-  p_('a faixa aparece na lista de musicas', (await pg.locator(`a[href$="/admin/karaoke/${BLOCO}"]`).count()) === 1)
+  // Dentro da lista "Musicas", e nao na pagina toda: desde 20/09 a oficina das
+  // letras automaticas tambem tem um caminho para a mesma faixa, e contar os
+  // links da pagina inteira passou a dar dois.
+  p_(
+    'a faixa aparece na lista de musicas',
+    (await pg.locator(`.painel-projetos a[href$="/admin/karaoke/${BLOCO}"]`).count()) === 1,
+  )
 
   await pg.goto(`${SITE}/${PROJ}/admin/karaoke/${BLOCO}`, { waitUntil: 'networkidle' })
   await pg.locator('.sincronizador-texto').fill(LETRA)

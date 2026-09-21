@@ -224,7 +224,7 @@ const CARACTERES_POR_FRASE = 46
 /** Abaixo disto, a frase é curta de mais para viver sozinha no ecrã. */
 const PALAVRAS_A_MENOS = 2
 
-function frasesDeTranscricao(tiradas) {
+function frasesDeTranscricao(tiradas, duracaoMs) {
   const limpar = (p) => ({
     texto: String(p?.texto || '').trim(),
     inicioMs: Math.round(Number(p?.inicioMs)),
@@ -295,12 +295,59 @@ function frasesDeTranscricao(tiradas) {
     }
   }
 
-  return grupos.map((palavras) => ({
+  const frases = grupos.map((palavras) => ({
     texto: palavras.map((p) => p.texto).join(' '),
     inicioMs: palavras[0].inicioMs,
     fimMs: palavras[palavras.length - 1].fimMs,
     palavras: palavras.map((p) => ({ ...p, marcada: true })),
   }))
+
+  /*
+    O FIM DA MÚSICA VEM SEMPRE ESMAGADO NUM MILISSEGUNDO.
+
+    Quando o modelo chega ao fim do áudio, carimba as últimas palavras todas no
+    mesmo instante. Foi o que aconteceu à Letra H: as sete palavras da frase 74
+    — "canal e ative as notificações do canal", o remate falado da gravação —
+    ficaram todas em 353020 ms, e a frase nasceu a começar e a acabar no mesmo
+    sítio. Para o painel isso é um tempo impossível, e com razão: uma frase que
+    dura zero não se canta. A letra ficou escrita e sem poder ir ao ar.
+
+    Aqui dá-se-lhe a duração que ela demoraria a cantar (`fimDaFrase`, o mesmo
+    cálculo da sincronização à mão), sem passar por cima da frase seguinte nem
+    do fim do áudio, e espalham-se as palavras por dentro. Uma estimativa no
+    fim de uma gravação é melhor do que uma letra inteira parada à porta.
+  */
+  frases.forEach((f, i) => {
+    if (f.fimMs > f.inicioMs) return
+    const proxima = frases[i + 1]
+    f.fimMs = fimDaFrase(
+      f,
+      f.inicioMs,
+      typeof proxima?.inicioMs === 'number' ? proxima.inicioMs : null,
+      typeof duracaoMs === 'number' ? duracaoMs : null,
+    )
+    f.palavras = distribuirTempos(f.palavras, f.inicioMs, f.fimMs).map((p) => ({
+      ...p,
+      marcada: true,
+    }))
+  })
+
+  /*
+    E as palavras soltas que ficaram com duração zero dentro de uma frase boa:
+    a palavra acendia e apagava no mesmo instante, ou seja, não acendia. Ganham
+    o tempo que sobra até à palavra seguinte, sem nunca passar do fim da frase.
+  */
+  for (const f of frases) {
+    for (let i = 0; i < f.palavras.length; i++) {
+      const p = f.palavras[i]
+      if (p.fimMs > p.inicioMs) continue
+      const seguinte = f.palavras[i + 1]
+      const tecto = typeof seguinte?.inicioMs === 'number' ? seguinte.inicioMs : f.fimMs
+      p.fimMs = Math.max(p.inicioMs + 1, Math.min(tecto, f.fimMs))
+    }
+  }
+
+  return frases
 }
 
 /** Palavras que nunca ganham destaque sozinhas: artigos, preposições, pronomes. */

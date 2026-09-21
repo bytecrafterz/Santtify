@@ -238,7 +238,17 @@ export class TranscricaoService {
     })
     if (!pedido) throw new NotFoundException('Pedido não encontrado.')
 
-    const frases = frasesDeTranscricao(tiradas || [])
+    /*
+      A DURAÇÃO VEM DE QUEM OUVIU, e não do ficheiro.
+
+      O `durationMs` do áudio é metadado do envio e muitas vezes nem existe; o
+      transcritor sabe exactamente quanto tempo de som ouviu. É esse o tecto
+      para a última frase, quando ela precisa de ser esticada (ver a nota sobre
+      o fim da música em `frasesDeTranscricao`).
+    */
+    const duracaoOuvida = typeof segundos === 'number' && segundos > 0 ? Math.round(segundos * 1000) : null
+    const duracaoMs = pedido.bloco?.asset?.durationMs ?? null
+    const frases = frasesDeTranscricao(tiradas || [], duracaoOuvida ?? duracaoMs)
     if (!estaSincronizada(frases)) {
       return this.falhar(id, 'O sistema não ouviu nenhuma voz nesta faixa.', true)
     }
@@ -254,7 +264,6 @@ export class TranscricaoService {
       Falhar não deita fora o que foi ouvido: a letra fica guardada por
       publicar, e o painel marca a faixa para ele ver o que aconteceu.
     */
-    const duracaoMs = pedido.bloco?.asset?.durationMs ?? null
     const problemas = validarFrases(frases, duracaoMs, true)
 
     const texto = frases.map((f) => f.texto).join('\n')
