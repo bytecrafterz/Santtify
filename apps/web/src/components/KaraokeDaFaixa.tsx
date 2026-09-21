@@ -72,7 +72,17 @@ export function KaraokeDaFaixa({ projectSlug, blocoId }: { projectSlug: string; 
     }
   }, [projectSlug, blocoId])
 
-  const voltar = dados ? `/${projectSlug}/${dados.conteudo.slug}` : `/${projectSlug}`
+  /*
+    SAIR DO KARAOKÊ É VOLTAR À FAIXA, e não ao princípio da letra.
+
+    Ele descreveu-o em 21/09: "estou na Letra D, desço até Carta de Amor de
+    Deus, entro no karaokê, e quando volto o sistema leva-me outra vez para o
+    primeiro áudio da Letra D". A página da letra já dá a cada publicação a
+    sua âncora (`cartao-<id>`) — faltava o caminho de volta trazê-la.
+  */
+  const voltar = dados
+    ? `/${projectSlug}/${dados.conteudo.slug}#cartao-${blocoId}`
+    : `/${projectSlug}`
 
   if (erro) {
     return (

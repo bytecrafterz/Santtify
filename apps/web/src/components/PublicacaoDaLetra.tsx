@@ -1,7 +1,7 @@
 'use client'
 
 import Link from 'next/link'
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import type { Bloco } from '@/lib/api'
 import { TocadorDeOnda } from './TocadorDeOnda'
 import { IndicadoresDaPublicacao, type AlvoSocial } from './IndicadoresDaPublicacao'
@@ -67,6 +67,27 @@ export function PublicacaoDaLetra({
 }) {
   const [expandido, definirExpandido] = useState(false)
   const precisaVerMais = Boolean(texto && texto.length > 150)
+
+  /*
+    A PUBLICAÇÃO A QUE SE VOLTA ABRE-SE SOZINHA.
+
+    Quem sai do karaokê cai aqui com `#cartao-<id>` no endereço. Encontrava o
+    cartão certo e encontrava-o RECOLHIDO, com "ver mais" por carregar: "o
+    conteúdo que estava aberto acaba ficando escondido e preciso clicar
+    novamente para recuperá-lo" (21/09). Se o endereço aponta para esta
+    publicação, ela já vem aberta — e o navegador, que rola até às âncoras
+    antes de o React acordar, é ajudado a chegar ao sítio depois de o texto
+    inteiro estar desenhado.
+  */
+  useEffect(() => {
+    if (typeof window === 'undefined') return
+    if (window.location.hash !== `#${ancora}`) return
+    definirExpandido(true)
+    const ir = () => document.getElementById(ancora)?.scrollIntoView({ block: 'start' })
+    ir()
+    const t = setTimeout(ir, 250)
+    return () => clearTimeout(t)
+  }, [ancora])
 
   return (
     <article className="publicacao" id={ancora}>

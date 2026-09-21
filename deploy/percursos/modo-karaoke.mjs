@@ -172,23 +172,65 @@ try {
   }
   await pub.evaluate((s) => { document.querySelector('audio').currentTime = s }, TOQUES[3] + 0.3)
   await pub.waitForTimeout(350)
-  // Medido como o palco mede: com a palavra cantada parada, que o pulo dela é
-  // de propósito maior do que a linha durante meio segundo.
-  const cabe = async () =>
+  /*
+    MEDIDO COMO ELE VE, e nao como a caixa da linha diz.
+
+    A primeira versao disto comparava scrollWidth com clientWidth de cada
+    linha, e passava sempre — porque o pulo da palavra cantada e uma
+    TRANSFORMACAO: pinta por fora da caixa sem a alargar. Ele mandou em 21/09 um
+    video do TikTok com "NO PRINCIPIO" e "ANTES DA TERRA" cortados, e este
+    percurso estava verde.
+
+    Agora medem-se as PALAVRAS pintadas contra o ecra, e exige-se margem: estes
+    videos vao para redes que poem botoes por cima das laterais e cortam o que
+    nao tem a proporcao delas.
+  */
+  const foraDaAreaSegura = async () =>
     pub.evaluate(() => {
-      const palco = document.querySelector('.k-palco')
-      palco.classList.add('a-medir')
-      const ok =
-        [...document.querySelectorAll('.k-linha')].every((l) => l.scrollWidth <= l.clientWidth + 1) &&
-        document.documentElement.scrollWidth <= window.innerWidth
-      palco.classList.remove('a-medir')
-      return ok
+      const largura = window.innerWidth
+      const margem = largura * 0.04
+      return [...document.querySelectorAll('.k-palavra')]
+        .map((w) => ({ t: w.textContent.trim(), r: w.getBoundingClientRect() }))
+        .filter((w) => w.r.left < margem || w.r.right > largura - margem)
+        .map((w) => `${w.t} [${Math.round(w.r.left)}..${Math.round(w.r.right)}] de ${largura}`)
     })
-  p_('GRATIDAO cabe no ecra a 390px', await cabe())
+  const fora390 = await foraDaAreaSegura()
+  p_('nenhuma palavra sai da area segura a 390px', fora390.length === 0, fora390.join(' | '))
   await pub.setViewportSize({ width: 320, height: 640 })
-  await pub.waitForTimeout(300)
-  p_('e a 320px', await cabe())
+  await pub.waitForTimeout(400)
+  const fora320 = await foraDaAreaSegura()
+  p_('e a 320px', fora320.length === 0, fora320.join(' | '))
+  p_(
+    'a pagina nao ganha barra lateral',
+    await pub.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth),
+  )
   p_('o cabecalho continua visivel', (await pub.locator('.karaoke-topo').boundingBox()).y >= 0)
+
+  /*
+    SAIR DO KARAOKE VOLTA A FAIXA ONDE ELE ESTAVA — e aberta.
+
+    Pedido dele em 21/09, com o exemplo: "estou na Letra D, desco ate Carta de
+    Amor de Deus, entro no karaoke, e quando volto o sistema leva-me outra vez
+    para o primeiro audio da Letra D". E, quando chegava, o texto vinha
+    recolhido, com "ver mais" por carregar.
+  */
+  await pub.setViewportSize({ width: 390, height: 844 })
+  await pub.getByRole('link', { name: /Sair do karaok/i }).click()
+  await pub.waitForTimeout(3000)
+  const volta = await pub.evaluate((id) => {
+    const el = document.getElementById(id)
+    if (!el) return { achou: false, url: location.href }
+    const caixa = el.getBoundingClientRect()
+    return {
+      achou: true,
+      url: location.href,
+      aVista: caixa.top >= -8 && caixa.top < window.innerHeight * 0.5,
+      aberto: !el.querySelector('.texto-publicacao.cortado'),
+    }
+  }, `cartao-${BLOCO}`)
+  p_('sair do karaoke volta ao cartao onde estava', volta.achou && volta.url.includes(`cartao-${BLOCO}`), volta.url)
+  p_('e o cartao esta a vista, e nao no principio da letra', volta.aVista === true)
+  p_('e o texto dele fica aberto', volta.aberto === true)
   await telemovel.close()
 
   // ── So com conta ────────────────────────────────────────────────────

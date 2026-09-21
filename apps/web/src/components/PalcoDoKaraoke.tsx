@@ -182,7 +182,20 @@ export function PalcoDoKaraoke({
         const disponivel = linha.clientWidth
         const precisa = linha.scrollWidth
         if (precisa > disponivel && disponivel > 0) {
-          linha.style.setProperty('--k-encolher', String(Math.max(0.35, (disponivel / precisa) * 0.97)))
+          /*
+            A FOLGA É PARA O PULO DA PALAVRA CANTADA.
+
+            A palavra que se está a cantar cresce até 1,12 (`k-pulo`), e uma
+            transformação não muda a caixa da linha: a palavra pinta-se por
+            fora dela. Medir a linha parada e deixá-la a encher a caixa toda
+            punha a palavra grande do princípio e do fim a pintar fora do
+            ecrã — que é o que ele viu no vídeo do TikTok.
+          */
+          const folgaDoPulo = 0.9
+          linha.style.setProperty(
+            '--k-encolher',
+            String(Math.max(0.35, (disponivel / precisa) * folgaDoPulo)),
+          )
         }
       })
       el.classList.remove('a-medir')
