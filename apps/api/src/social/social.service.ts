@@ -75,7 +75,9 @@ export class SocialService {
   }
 
   private contarCurtidas(contentId: string) {
-    return this.prisma.reaction.count({ where: { contentId, type: ReactionType.LIKE } })
+    return this.prisma.reaction.count({
+      where: { contentId, type: ReactionType.LIKE, user: { is: { status: 'ACTIVE' } } },
+    })
   }
 
   // ── Comentar ──────────────────────────────────────────────────────
@@ -1056,7 +1058,9 @@ export class SocialService {
          * cem pessoas.
          */
         this.contarEventoDaFaixa(blockId, EventType.CONTENT_VIEW),
-        this.prisma.blockReaction.count({ where: { blockId, type: ReactionType.LIKE } }),
+        this.prisma.blockReaction.count({
+        where: { blockId, type: ReactionType.LIKE, user: { is: { status: 'ACTIVE' } } },
+      }),
         this.contarEventoDaFaixa(blockId, EventType.CUSTOM, 'partilhar_faixa'),
         /**
          * QUANTAS VEZES ESTA MÚSICA FOI OUVIDA ATÉ AO FIM.
@@ -1127,7 +1131,9 @@ export class SocialService {
 
     return {
       curtido: !existente,
-      total: await this.prisma.blockReaction.count({ where: { blockId, type: ReactionType.LIKE } }),
+      total: await this.prisma.blockReaction.count({
+        where: { blockId, type: ReactionType.LIKE, user: { is: { status: 'ACTIVE' } } },
+      }),
     }
   }
 

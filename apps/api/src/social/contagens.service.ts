@@ -31,6 +31,17 @@ const ZERO: Contagens = { views: 0, likes: 0, comments: 0, shares: 0 }
  * Sem dependências além do Prisma, de propósito: assim tanto a parte pública
  * como o painel a podem importar sem que os módulos se fechem em círculo.
  */
+/**
+ * O NÚMERO TEM DE BATER CERTO COM A LISTA QUE ELE ABRE.
+ *
+ * As listas de "quem curtiu" deixam de fora as contas removidas — o registo
+ * fica, o nome de quem já não está na plataforma não aparece numa lista
+ * pública. Enquanto as contagens não faziam o mesmo, o card dizia 78 e a lista
+ * mostrava 76, e a regra que ele escreveu em 21/09 é que o número se possa
+ * conferir tocando nele.
+ */
+const SO_CONTAS_ACTIVAS = { user: { is: { status: 'ACTIVE' as const } } }
+
 @Injectable()
 export class ContagensService {
   constructor(private readonly prisma: PrismaService) {}
@@ -220,7 +231,7 @@ export class ContagensService {
         GROUP BY "projectId"`,
       this.prisma.reaction.groupBy({
         by: ['projectId'],
-        where: { projectId: { in: projectIds }, type: ReactionType.LIKE },
+        where: { projectId: { in: projectIds }, type: ReactionType.LIKE, ...SO_CONTAS_ACTIVAS },
         _count: { _all: true },
       }),
       /*
@@ -236,7 +247,7 @@ export class ContagensService {
       */
       this.prisma.projectReaction.groupBy({
         by: ['projectId'],
-        where: { projectId: { in: projectIds }, type: ReactionType.LIKE },
+        where: { projectId: { in: projectIds }, type: ReactionType.LIKE, ...SO_CONTAS_ACTIVAS },
         _count: { _all: true },
       }),
       /*
@@ -253,8 +264,10 @@ export class ContagensService {
         FROM block_reactions br
         JOIN content_blocks b ON b.id = br."blockId"
         JOIN contents c ON c.id = b."contentId"
+        JOIN users u ON u.id = br."userId"
         WHERE c."projectId" = ANY(${projectIds}::uuid[])
           AND br.type = 'LIKE'
+          AND u.status = 'ACTIVE'
         GROUP BY c."projectId"`,
       this.prisma.comment.groupBy({
         by: ['projectId'],
@@ -364,7 +377,7 @@ export class ContagensService {
   async deConteudo(contentId: string, escondidos: string[] = []): Promise<Contagens> {
     const [views, likes, comments, shares] = await Promise.all([
       this.viewsDoConteudo(contentId),
-      this.prisma.reaction.count({ where: { contentId, type: ReactionType.LIKE } }),
+      this.prisma.reaction.count({ where: { contentId, type: ReactionType.LIKE, ...SO_CONTAS_ACTIVAS } }),
       this.comentarios({ contentId }, escondidos),
       Promise.all([
         this.prisma.share.count({ where: { shortLink: { is: { contentId } } } }),
@@ -405,7 +418,7 @@ export class ContagensService {
       this.viewsDosConteudos(contentIds),
       this.prisma.reaction.groupBy({
         by: ['contentId'],
-        where: { contentId: { in: contentIds }, type: ReactionType.LIKE },
+        where: { contentId: { in: contentIds }, type: ReactionType.LIKE, ...SO_CONTAS_ACTIVAS },
         _count: { _all: true },
       }),
       this.prisma.comment.groupBy({
