@@ -1,0 +1,712 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<title>Manual do Santtify</title>
+<style>
+  @page { size: A4; margin: 20mm 18mm 18mm; }
+
+  :root {
+    --tinta: #16181d;
+    --suave: #5b6270;
+    --linha: #d9dde4;
+    --roxo: #6d28d9;
+    --roxo-claro: #f4efff;
+    --verde: #0f7a4d;
+    --verde-claro: #eefbf4;
+    --ambar: #8a5a00;
+    --ambar-claro: #fff8e6;
+    --papel: #ffffff;
+  }
+
+  * { box-sizing: border-box; }
+
+  html { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+
+  body {
+    margin: 0;
+    font-family: "Segoe UI", -apple-system, "Helvetica Neue", Arial, sans-serif;
+    font-size: 10.5pt;
+    line-height: 1.55;
+    color: var(--tinta);
+    background: var(--papel);
+  }
+
+  h1, h2, h3, h4 { line-height: 1.2; margin: 0; }
+
+  /* ── Capa ─────────────────────────────────────────────── */
+  .capa {
+    height: 247mm;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    page-break-after: always;
+  }
+  .capa .selo {
+    display: inline-block;
+    align-self: flex-start;
+    padding: 5px 14px;
+    border-radius: 999px;
+    background: var(--roxo);
+    color: #fff;
+    font-size: 9pt;
+    font-weight: 700;
+    letter-spacing: .08em;
+    text-transform: uppercase;
+  }
+  .capa h1 { font-size: 34pt; font-weight: 800; margin: 22px 0 10px; letter-spacing: -.02em; }
+  .capa .sub { font-size: 14pt; color: var(--suave); max-width: 135mm; }
+  .capa .rodape { margin-top: 42px; padding-top: 18px; border-top: 2px solid var(--tinta); font-size: 10pt; }
+  .capa .rodape strong { display: inline-block; min-width: 34mm; }
+  .capa .rodape p { margin: 3px 0; }
+
+  /* ── Índice ───────────────────────────────────────────── */
+  .indice { page-break-after: always; }
+  .indice ol { margin: 0; padding-left: 20px; }
+  .indice > ol > li { margin: 9px 0; font-weight: 700; }
+  .indice ol ol { padding-left: 16px; }
+  .indice ol ol li { font-weight: 400; color: var(--suave); margin: 1px 0; font-size: 9.6pt; }
+
+  /* ── Estrutura ────────────────────────────────────────── */
+  section { page-break-before: always; }
+  section.junta { page-break-before: auto; }
+
+  h2 {
+    font-size: 19pt;
+    font-weight: 800;
+    letter-spacing: -.01em;
+    padding-bottom: 8px;
+    border-bottom: 2px solid var(--tinta);
+    margin-bottom: 16px;
+  }
+  h2 .n { color: var(--roxo); margin-right: 10px; }
+
+  h3 { font-size: 12.5pt; font-weight: 700; margin: 20px 0 7px; }
+  h4 { font-size: 10.5pt; font-weight: 700; margin: 14px 0 4px; color: var(--suave); text-transform: uppercase; letter-spacing: .05em; font-size: 9pt; }
+
+  p { margin: 0 0 9px; }
+  ul, ol { margin: 0 0 10px; padding-left: 20px; }
+  li { margin: 3px 0; }
+
+  .tecla {
+    display: inline-block;
+    padding: 1px 7px;
+    border: 1px solid var(--linha);
+    border-bottom-width: 2px;
+    border-radius: 5px;
+    background: #f7f8fa;
+    font-size: 9.2pt;
+    font-weight: 700;
+    white-space: nowrap;
+  }
+
+  code, .url {
+    font-family: "Consolas", "SF Mono", "Courier New", monospace;
+    font-size: 9pt;
+    background: #f2f4f7;
+    padding: 1px 5px;
+    border-radius: 4px;
+    word-break: break-all;
+  }
+
+  table { width: 100%; border-collapse: collapse; margin: 10px 0 14px; font-size: 9.6pt; }
+  th, td { text-align: left; vertical-align: top; padding: 7px 9px; border-bottom: 1px solid var(--linha); }
+  th { background: #f4f6f9; font-weight: 700; border-bottom: 2px solid var(--linha); }
+  tr { page-break-inside: avoid; }
+
+  .caixa {
+    padding: 11px 14px;
+    border-radius: 9px;
+    border-left: 4px solid var(--roxo);
+    background: var(--roxo-claro);
+    margin: 12px 0;
+    page-break-inside: avoid;
+  }
+  .caixa.cuidado { border-left-color: var(--ambar); background: var(--ambar-claro); }
+  .caixa.certo { border-left-color: var(--verde); background: var(--verde-claro); }
+  .caixa p:last-child { margin-bottom: 0; }
+  .caixa .rotulo { font-weight: 800; font-size: 9pt; text-transform: uppercase; letter-spacing: .06em; display: block; margin-bottom: 3px; }
+  .caixa .rotulo { color: var(--roxo); }
+  .caixa.cuidado .rotulo { color: var(--ambar); }
+  .caixa.certo .rotulo { color: var(--verde); }
+
+  .passos { counter-reset: passo; padding-left: 0; list-style: none; }
+  .passos > li {
+    counter-increment: passo;
+    position: relative;
+    padding-left: 30px;
+    margin: 9px 0;
+    page-break-inside: avoid;
+  }
+  .passos > li::before {
+    content: counter(passo);
+    position: absolute;
+    left: 0;
+    top: 1px;
+    width: 21px;
+    height: 21px;
+    border-radius: 50%;
+    background: var(--roxo);
+    color: #fff;
+    font-size: 9pt;
+    font-weight: 800;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+
+  .tela {
+    border: 1px solid var(--linha);
+    border-radius: 10px;
+    padding: 12px 14px;
+    margin: 12px 0;
+    background: #fbfcfd;
+    page-break-inside: avoid;
+  }
+  .tela .titulo-tela { font-weight: 800; font-size: 10.5pt; margin-bottom: 6px; }
+  .tela ul { margin-bottom: 0; }
+
+  .duas { display: flex; gap: 14px; }
+  .duas > div { flex: 1; }
+
+  .fim { text-align: center; color: var(--suave); font-size: 9pt; margin-top: 26px; padding-top: 12px; border-top: 1px solid var(--linha); }
+</style>
+</head>
+<body>
+
+<!-- ══════════════════════ CAPA ══════════════════════ -->
+<div class="capa">
+  <span class="selo">Manual de operação</span>
+  <h1>Santtify</h1>
+  <p class="sub">Como publicar, como usar o Modo Karaokê e como cuidar da plataforma — tela por tela, do começo ao fim.</p>
+  <div class="rodape">
+    <p><strong>Para</strong> Rossandro Caxito</p>
+    <p><strong>Plataforma</strong> santtify.com — tecnologia Produto Vivo</p>
+    <p><strong>Versão</strong> 23 de setembro de 2026</p>
+    <p><strong>Projetos</strong> Jesus Alfabeto Saudável · Minha Identidade e Poder em Jesus · 5 Caráter de Deus · 31 Atributos de Deus</p>
+  </div>
+</div>
+
+<!-- ══════════════════════ ÍNDICE ══════════════════════ -->
+<div class="indice">
+  <h2>Índice</h2>
+  <ol>
+    <li>O que você tem nas mãos
+      <ol><li>Os quatro projetos</li><li>Os dois lados: o site e o painel</li></ol></li>
+    <li>Entrar no painel
+      <ol><li>O endereço certo</li><li>Se não conseguir entrar</li></ol></li>
+    <li>O mapa do painel</li>
+    <li>Publicar conteúdo — o caminho principal
+      <ol>
+        <li>Tela 1 — as casas do projeto</li>
+        <li>Tela 2 — os quatro quadrados</li>
+        <li>Tela 3 — o cartão</li>
+        <li>A regra do PUBLICAR</li>
+        <li>Duplicar, esvaziar, excluir e reordenar</li>
+      </ol></li>
+    <li>Modo Karaokê
+      <ol><li>Um clique e pronto</li><li>Corrigir uma palavra</li><li>Quem pode cantar</li><li>Palavras em destaque</li><li>A oficina das letras</li></ol></li>
+    <li>Cartão para impressão e QR Codes</li>
+    <li>Categorias de áudio e a playlist</li>
+    <li>Cartões personalizados</li>
+    <li>Projetos da página inicial</li>
+    <li>Estrutura raiz e Produto Vivo</li>
+    <li>Comunidade, aprovações e suporte</li>
+    <li>Métricas</li>
+    <li>Perguntas frequentes e enganos comuns</li>
+    <li>O que ainda depende de você</li>
+    <li>Ficha técnica e endereços</li>
+  </ol>
+</div>
+
+<!-- ══════════════════════ 1 ══════════════════════ -->
+<section>
+  <h2><span class="n">1</span>O que você tem nas mãos</h2>
+
+  <p>O Santtify é a casa onde os seus projetos moram. Cada projeto é uma sequência de conteúdos — as 26 letras do alfabeto, os 7 dias, os blocos — e cada conteúdo é feito de <strong>cartões</strong>: foto, áudio, título e texto numa peça só.</p>
+
+  <p>Por baixo do Santtify está a <strong>Produto Vivo</strong>, que é a tecnologia. É ela que sabe montar uma sequência, tocar o áudio, escrever a letra do karaokê sozinha, contar quem viu e gerar o QR Code. O Jesus Alfabeto Saudável é o primeiro projeto feito com ela — e é a vitrine que mostra do que ela é capaz.</p>
+
+  <h3>1.1 Os quatro projetos</h3>
+
+  <table>
+    <tr><th>Projeto</th><th>Casas</th><th>Como cada casa se chama</th><th>Endereço</th></tr>
+    <tr><td><strong>Jesus Alfabeto Saudável</strong></td><td>26</td><td>Letra A … Letra Z</td><td class="url">/jesus-alfabeto-saudavel</td></tr>
+    <tr><td><strong>Minha Identidade e Poder em Jesus</strong></td><td>7</td><td>Dia 1 … Dia 7</td><td class="url">/minha-identidade-e-poder-em-jesus</td></tr>
+    <tr><td><strong>5 Caráter de Deus</strong></td><td>15</td><td>Bloco 1 … Bloco 15</td><td class="url">/5-carater-de-deus</td></tr>
+    <tr><td><strong>31 Atributos de Deus</strong></td><td>—</td><td>Bloco</td><td class="url">/31-atributos-de-deus</td></tr>
+  </table>
+
+  <div class="caixa">
+    <span class="rotulo">A mesma estrutura em todos</span>
+    <p>O painel é exatamente igual nos quatro. O que muda é o nome da casa — onde num projeto diz "Letra", no outro diz "Dia" ou "Bloco" — e quantas casas existem. Se você aprendeu a publicar no alfabeto, já sabe publicar nos outros.</p>
+  </div>
+
+  <h3>1.2 Os dois lados: o site e o painel</h3>
+
+  <p><strong>O site</strong> é o que a família vê. Abre em qualquer celular, sem instalar nada, e também dá para instalar como aplicativo. É para onde os QR Codes impressos levam.</p>
+
+  <p><strong>O painel</strong> é a sua área de trabalho. Fica no mesmo endereço, com <code>/admin</code> no fim, e só abre para quem entrou com a sua conta. Ninguém de fora vê o painel.</p>
+
+  <p>Tudo o que você faz no painel aparece no site em segundos — não existe um botão de "enviar para o ar" separado. Publicou, está no ar.</p>
+</section>
+
+<!-- ══════════════════════ 2 ══════════════════════ -->
+<section>
+  <h2><span class="n">2</span>Entrar no painel</h2>
+
+  <h3>2.1 O endereço certo</h3>
+
+  <ol class="passos">
+    <li>Abra <span class="url">https://santtify.com/jesus-alfabeto-saudavel/entrar</span> no celular ou no computador.</li>
+    <li>Digite o seu e-mail e a sua senha.</li>
+    <li>Você cai no painel. O endereço dele é <span class="url">https://santtify.com/jesus-alfabeto-saudavel/admin</span>.</li>
+  </ol>
+
+  <p>Para os outros projetos é o mesmo caminho, só trocando o nome do projeto no endereço. Vale guardar os quatro nos favoritos do celular.</p>
+
+  <div class="caixa certo">
+    <span class="rotulo">Dica</span>
+    <p>No celular, abra o painel e use "Adicionar à tela de início". Ele passa a abrir como aplicativo, em tela cheia, sem a barra do navegador atrapalhando.</p>
+  </div>
+
+  <h3>2.2 Se não conseguir entrar</h3>
+
+  <ul>
+    <li><strong>Senha esquecida:</strong> use <span class="url">/recuperar</span> no mesmo endereço do projeto.</li>
+    <li><strong>A sessão cai sozinha:</strong> é normal depois de muito tempo parado. Entrar de novo resolve.</li>
+    <li><strong>Diz que não encontrou a página:</strong> confira se o nome do projeto no endereço está certo, com os hífens.</li>
+  </ul>
+</section>
+
+<!-- ══════════════════════ 3 ══════════════════════ -->
+<section>
+  <h2><span class="n">3</span>O mapa do painel</h2>
+
+  <p>Estas são todas as entradas do painel, na ordem em que aparecem. Guarde esta página: é o mapa inteiro.</p>
+
+  <table>
+    <tr><th style="width:38%">Entrada</th><th>Para que serve</th></tr>
+    <tr><td><strong>Ajuda e suporte</strong></td><td>Quem tentou criar conta e não conseguiu, e o que fazer por essa pessoa. Fica no topo porque tem gente esperando do outro lado.</td></tr>
+    <tr><td><strong>Estrutura raiz</strong></td><td>O perfil do projeto, a introdução e a sequência — as três partes da página inicial, num lugar só.</td></tr>
+    <tr><td><strong>Produto Vivo</strong></td><td>As imagens e a arte com áudio que as empresas veem quando você apresenta a tecnologia.</td></tr>
+    <tr><td><strong>Letras / Dias / Blocos — sequência infinita</strong></td><td><strong>É AQUI QUE VOCÊ PUBLICA.</strong> As casas do projeto, com quatro cartões em cada uma: foto, áudio, título e texto numa peça só.</td></tr>
+    <tr><td><strong>Cartões personalizados</strong></td><td>Outro produto: os modelos de cartão impresso, as medidas da moldura da foto, o preço e o desconto. <em>Não é aqui que se sobe foto e áudio das letras.</em></td></tr>
+    <tr><td><strong>Projetos da página inicial</strong></td><td>A imagem de cada projeto, a ordem, quais aparecem, e criar projetos novos.</td></tr>
+    <tr><td><strong>Modo Karaokê</strong></td><td>Palavras em destaque, quem pode cantar, e a letra de cada música.</td></tr>
+    <tr><td><strong>Ver métricas</strong></td><td>Visitantes, de onde vieram, o que compartilharam e os conteúdos mais acessados.</td></tr>
+    <tr><td><strong>Link de compra</strong></td><td>O endereço do checkout (Hotmart, Kiwify ou outro) usado pelos botões de venda.</td></tr>
+    <tr><td><strong>Categorias de áudio</strong></td><td>Explicação, música, oração — são elas que viram os filtros da playlist.</td></tr>
+    <tr><td><strong>Comunidade</strong></td><td>Apagar comentário impróprio e bloquear conta.</td></tr>
+    <tr><td><strong>Aprovações</strong></td><td>Só aparece quando há foto de usuário esperando aprovação. Com a fila vazia, some — e isso é de propósito.</td></tr>
+  </table>
+
+  <div class="caixa cuidado">
+    <span class="rotulo">O engano mais comum</span>
+    <p><strong>"Cartões personalizados" não é onde se sobe foto e áudio.</strong> É o produto dos cartões impressos, com modelos e preço. Se você entrar lá procurando o lugar de publicar, vai encontrar uma tela de categorias vazia e concluir, com razão, que não há onde postar.</p>
+    <p>O lugar de publicar é <strong>"Letras — sequência infinita"</strong>.</p>
+  </div>
+</section>
+
+<!-- ══════════════════════ 4 ══════════════════════ -->
+<section>
+  <h2><span class="n">4</span>Publicar conteúdo — o caminho principal</h2>
+
+  <p>Este é o trabalho do dia a dia, e tem só três telas. Uma leva à outra, e o botão de voltar no topo sempre traz você de volta.</p>
+
+  <p>Endereço direto: <span class="url">https://santtify.com/jesus-alfabeto-saudavel/admin/alfabeto</span></p>
+
+  <h3>4.1 Tela 1 — as casas do projeto</h3>
+
+  <div class="tela">
+    <div class="titulo-tela">O que você vê</div>
+    <ul>
+      <li>Todas as casas do projeto: as 26 letras, ou os 7 dias, ou os blocos.</li>
+      <li>As que já têm conteúdo aparecem normais. As que ainda não existem dizem <em>"ainda não existe — toque para criar"</em>.</li>
+      <li>Tocar numa casa abre a Tela 2.</li>
+    </ul>
+  </div>
+
+  <p>Uma casa que ainda não existe se cria com um toque. Ela nasce vazia e sem nada no ar — ninguém vê até você publicar o primeiro cartão dentro dela.</p>
+
+  <h3>4.2 Tela 2 — os quatro quadrados</h3>
+
+  <div class="tela">
+    <div class="titulo-tela">O que você vê</div>
+    <ul>
+      <li>O título <strong>"Conteúdos: Letra N"</strong> (ou o nome da casa em que você entrou).</li>
+      <li>Os quadrados coloridos, um por cartão. Cada um diz <span class="tecla">PRONTO</span> ou <span class="tecla">RASCUNHO</span>.</li>
+      <li>Os quadrados que faltam, oferecidos pelo nome: Explicação, Música, Repetição do versículo, Oração.</li>
+      <li><span class="tecla">ACRESCENTAR CARTÃO</span> — um quinto, sexto, sétimo cartão, além dos quatro.</li>
+      <li><span class="tecla">CARTÃO PARA IMPRESSÃO</span> — a arte em folha A4 e o PDF para a gráfica.</li>
+      <li><span class="tecla">SALVAR ORDEM</span> — aparece quando você reordena os quadrados.</li>
+    </ul>
+  </div>
+
+  <p><strong>As quatro casas fixas</strong> são a estrutura que você desenhou: Explicação, Música, Repetição do versículo e Oração. Elas existem em cada letra e sempre na mesma ordem, para a criança encontrar sempre o mesmo caminho.</p>
+
+  <div class="caixa">
+    <span class="rotulo">Por que às vezes os quadros de criar não aparecem</span>
+    <p>Se a letra já foi montada de outro jeito — com cartões soltos, sem as quatro casas fixas — a oferta de criar não aparece. É proposital: sem isso, uma letra já terminada ganharia quatro cartões vazios por cima do trabalho pronto. Nesse caso use <span class="tecla">ACRESCENTAR CARTÃO</span>.</p>
+  </div>
+
+  <h3>4.3 Tela 3 — o cartão</h3>
+
+  <p>É aqui que tudo acontece. A ordem dos campos é a mesma que a criança vê na página — você preenche olhando para o resultado.</p>
+
+  <ol class="passos">
+    <li><strong>A foto.</strong> Toque no quadrado grande que diz <span class="tecla">🖼 FOTO</span> e escolha a imagem do celular. Ela aparece na hora, antes mesmo de terminar de subir. Com foto no lugar, o rótulo passa a ser "Tocar para trocar".</li>
+    <li><strong>O áudio.</strong> Logo abaixo, a barra <span class="tecla">+ ADICIONAR ÁUDIO</span>. Toque e escolha o arquivo. Com áudio no lugar, aparece o nome dele e um ▶.</li>
+    <li><strong>O karaokê</strong> (só quando há áudio). O botão <span class="tecla">🎤 Preparar o Modo Karaokê</span> aparece na mesma linha dos botões de excluir. Veja o capítulo 5.</li>
+    <li><strong>O título.</strong> O campo grande escrito <span class="tecla">TÍTULO</span>. É o nome que aparece em cima do cartão: "N de Nascimento e Nozes".</li>
+    <li><strong>A descrição.</strong> O campo <span class="tecla">DESCRIÇÃO</span>. É o versículo, a explicação, o texto que acompanha.</li>
+    <li><strong>A categoria.</strong> "Categoria (aparece no filtro do tocador)". Escolha entre as que você criou. É ela que faz o cartão entrar no filtro certo da playlist.</li>
+    <li><strong>O link de venda</strong> (opcional). "Link de venda (Hotmart, Kiwify ou outro)".</li>
+    <li><strong>PUBLICAR.</strong> O botão no fim. Só acende com o cartão inteiro.</li>
+  </ol>
+
+  <h4>Apagar uma peça sem apagar o cartão</h4>
+  <p>Logo abaixo do áudio há <span class="tecla">Excluir foto</span> e <span class="tecla">Excluir áudio</span>. Eles tiram só aquela peça, na hora, e somem da página pública imediatamente. O cartão continua existindo com o resto.</p>
+
+  <h3>4.4 A regra do PUBLICAR</h3>
+
+  <p>Um cartão só vai ao ar inteiro. Enquanto faltar alguma coisa, o botão fica apagado e uma faixa embaixo diz exatamente o que falta:</p>
+
+  <div class="tela">
+    <p style="margin:0"><strong>RASCUNHO — falta a foto, o áudio e o título</strong></p>
+  </div>
+
+  <p>Quando estiver completo, a faixa muda:</p>
+
+  <div class="tela">
+    <p style="margin:0"><strong>PRONTO — este cartão aparece na página assim que guardar</strong></p>
+  </div>
+
+  <table>
+    <tr><th>Projeto</th><th>O que é obrigatório</th></tr>
+    <tr><td>Letras, dias e blocos</td><td>Foto, áudio, título e descrição. Os quatro.</td></tr>
+    <tr><td>Produto Vivo</td><td>Foto, título e descrição. <strong>O áudio é opcional</strong> — ali uma publicação só com imagem é uma imagem, não é uma peça faltando.</td></tr>
+  </table>
+
+  <div class="caixa cuidado">
+    <span class="rotulo">Se o cartão voltar sozinho para rascunho</span>
+    <p>Significa que uma peça saiu depois de publicado — normalmente a foto ou o áudio foram excluídos. A regra é a mesma na hora de publicar e depois: meio cartão não fica no ar. Recoloque a peça e publique de novo.</p>
+  </div>
+
+  <h3>4.5 Duplicar, esvaziar, excluir e reordenar</h3>
+
+  <p>Na Tela 2, os três pontinhos no canto de cada quadrado abrem o menu:</p>
+
+  <table>
+    <tr><th style="width:26%">Opção</th><th>O que faz</th></tr>
+    <tr><td><strong>Editar</strong></td><td>Abre a Tela 3, o cartão.</td></tr>
+    <tr><td><strong>Duplicar</strong></td><td>Cria uma cópia logo ao lado, já com o conteúdo. Serve para ter duas músicas na mesma letra. A cópia acende por alguns segundos para você ver onde ela ficou.</td></tr>
+    <tr><td><strong>Esvaziar</strong></td><td>Para os quatro quadrados fixos: tira o conteúdo e deixa o quadrado. A casa continua existindo.</td></tr>
+    <tr><td><strong>Excluir</strong></td><td>Para as cópias: some de vez.</td></tr>
+  </table>
+
+  <p><strong>Reordenar:</strong> mova os quadrados e toque em <span class="tecla">SALVAR ORDEM</span>. A ordem da tela é a ordem da página.</p>
+</section>
+
+<!-- ══════════════════════ 5 ══════════════════════ -->
+<section>
+  <h2><span class="n">5</span>Modo Karaokê</h2>
+
+  <p>O Modo Karaokê acende a letra da música no ritmo em que ela é cantada, com as palavras importantes em destaque. Ele aparece na página, embaixo do tocador, só nas músicas que têm letra publicada.</p>
+
+  <h3>5.1 Um clique e pronto</h3>
+
+  <p>Depois de publicar uma música com a foto, no próprio cartão, logo abaixo do áudio:</p>
+
+  <ol class="passos">
+    <li>Toque em <span class="tecla">🎤 Preparar o Modo Karaokê</span>.</li>
+    <li>O botão vira um aviso: <strong>"Preparando seu Karaokê… 43%"</strong>, com uma barra andando.</li>
+    <li>Você pode sair da página, fechar o celular e voltar depois. O computador continua ouvindo a música.</li>
+    <li>Quando termina, o karaokê fica liberado sozinho na página. Não há mais nada para fazer.</li>
+  </ol>
+
+  <p>Enquanto trabalha, o aviso passa por dois estados: <strong>"(na fila)"</strong>, esperando a vez, e depois a porcentagem subindo. Uma música leva mais ou menos o tempo dela própria para ser ouvida — uma música de seis minutos leva por volta de seis minutos.</p>
+
+  <div class="caixa">
+    <span class="rotulo">Por que é um botão e não automático</span>
+    <p>Ouvir uma música ocupa o servidor durante mais ou menos o tempo da música inteira. Se começasse sozinho a cada áudio enviado, trocar um arquivo só para corrigir uma coisinha já colocaria o servidor para trabalhar sem ninguém ter pedido. Com o botão, quem escolhe a hora é você.</p>
+  </div>
+
+  <h3>5.2 Corrigir uma palavra</h3>
+
+  <p>Com a letra no ar, aquele mesmo lugar passa a mostrar <span class="tecla">🎤 Karaokê no ar — tocar para acertar</span>. Toque e você entra no sincronizador: a música toca e a letra aparece linha por linha, para você corrigir uma palavra que o computador ouviu errado ou ajustar o tempo de uma frase.</p>
+
+  <div class="caixa certo">
+    <span class="rotulo">O seu trabalho nunca é apagado</span>
+    <p>Se você escreveu ou colou a letra à mão, o botão de preparar não passa por cima dela. Ele responde que aquela música já tem letra e não faz nada. Só o botão <strong>"Ouvir de novo"</strong>, na oficina, refaz uma letra existente — e ele diz isso no próprio nome.</p>
+  </div>
+
+  <h3>5.3 Quem pode cantar</h3>
+
+  <p>Em <strong>Modo Karaokê</strong>, no painel, você escolhe quem tem acesso:</p>
+
+  <table>
+    <tr><th style="width:24%">Opção</th><th>O que significa</th></tr>
+    <tr><td><strong>Todos</strong></td><td>Qualquer pessoa que abrir a página pode cantar, sem criar conta.</td></tr>
+    <tr><td><strong>Conta</strong></td><td>Só quem tem conta no Santtify. Quem não tem vê um convite para criar.</td></tr>
+    <tr><td><strong>Desligado</strong></td><td>O karaokê não aparece em nenhuma faixa desse projeto.</td></tr>
+  </table>
+
+  <p>Hoje o Jesus Alfabeto Saudável está em <strong>Conta</strong>, e os demais projetos em <strong>Todos</strong>.</p>
+
+  <h3>5.4 Palavras em destaque</h3>
+
+  <p>São as palavras que ganham brilho quando são cantadas: JESUS, CRISTO, AMOR, FÉ, LUZ. Você escreve a palavra e escolhe o nível de 1 a 3 — quanto maior, mais forte o destaque.</p>
+
+  <p>A lista vale para o projeto inteiro, então basta cadastrar uma vez. Dá para usar duas palavras juntas ("ESPÍRITO SANTO"). Acentos e maiúsculas não importam: "Fé," na letra e "fé" na lista são a mesma palavra.</p>
+
+  <h3>5.5 A oficina das letras</h3>
+
+  <p>Na mesma tela do Modo Karaokê, embaixo, fica a oficina — a visão de todas as músicas do projeto de uma vez:</p>
+
+  <ul>
+    <li><strong>A barra de progresso geral</strong> e os números: quantas têm letra, quantas estão na fila, quantas estão sendo ouvidas agora, quantas falharam.</li>
+    <li><span class="tecla">Escrever as letras que faltam</span> — põe na fila, de uma vez, todas as músicas sem letra. Serve para quando há dezenas para fazer: você toca uma vez e vai cuidar de outra coisa.</li>
+    <li>Por música: <span class="tecla">Ouvir</span> (ainda não tem letra), <span class="tecla">Ouvir de novo</span> (já tem, refaz) e <span class="tecla">Ver a letra</span>.</li>
+  </ul>
+
+  <div class="caixa cuidado">
+    <span class="rotulo">Atenção ao "refazer tudo"</span>
+    <p>Existe um botão que refaz TODAS as músicas, inclusive as que já têm letra — e as letras que você escreveu à mão são substituídas. Ele pede confirmação antes. Na dúvida, use "Escrever as letras que faltam", que não toca no que já está pronto.</p>
+  </div>
+</section>
+
+<!-- ══════════════════════ 6 ══════════════════════ -->
+<section>
+  <h2><span class="n">6</span>Cartão para impressão e QR Codes</h2>
+
+  <h3>6.1 O cartão impresso</h3>
+
+  <p>Dentro de cada casa, na Tela 2, existe <span class="tecla">CARTÃO PARA IMPRESSÃO</span>. É outro tipo de cartão, com outros campos: a arte de apresentação e a folha A4 pronta para a gráfica. Não tem áudio nem descrição — é papel.</p>
+
+  <p>De lá saem dois arquivos:</p>
+  <ul>
+    <li><strong>A imagem</strong> em resolução de papel, para conferir antes de mandar imprimir.</li>
+    <li><strong>O PDF</strong>, que é o que a gráfica precisa.</li>
+  </ul>
+
+  <h3>6.2 Os QR Codes</h3>
+
+  <p>Cada conteúdo tem um QR Code próprio, gerado pelo sistema. Ele leva para a página daquela letra.</p>
+
+  <div class="caixa">
+    <span class="rotulo">Onde o QR vive agora</span>
+    <p>O QR Code <strong>não aparece mais na página pública</strong> — ele é ferramenta sua, para imprimir, e estava ocupando o fim da página de quem vem só ler. Você continua encontrando o QR de cada conteúdo <strong>no painel</strong>, dentro do editor daquele conteúdo, com o endereço curto ao lado.</p>
+  </div>
+
+  <div class="caixa cuidado">
+    <span class="rotulo">Regra de ouro dos QR impressos</span>
+    <p>Um QR Code impresso não se corrige depois. O endereço curto gravado nele (do tipo <span class="url">santtify.com/r/W9L8eL5</span>) é permanente e continua funcionando mesmo que a página mude de nome ou de conteúdo. Por isso os endereços curtos nunca são apagados nem reaproveitados.</p>
+  </div>
+</section>
+
+<!-- ══════════════════════ 7 ══════════════════════ -->
+<section>
+  <h2><span class="n">7</span>Categorias de áudio e a playlist</h2>
+
+  <p>As categorias são os filtros do tocador: Explicação, Música, Oração, Música Alegre — o que você criar.</p>
+
+  <ol class="passos">
+    <li>Em <strong>Categorias de áudio</strong>, crie a categoria pelo nome.</li>
+    <li>No cartão (Tela 3), escolha a categoria no campo "Categoria (aparece no filtro do tocador)".</li>
+    <li>Pronto: a categoria aparece como filtro na playlist do projeto.</li>
+  </ol>
+
+  <div class="caixa cuidado">
+    <span class="rotulo">Criar não basta</span>
+    <p>Uma categoria criada e nunca escolhida em nenhum cartão não aparece em filtro nenhum — não há o que filtrar. Se você criou "Música Alegre" e ela não apareceu, o passo que falta é o 2: entrar nos cartões e marcá-los com ela.</p>
+  </div>
+
+  <p><strong>A playlist</strong> (<span class="url">/jesus-alfabeto-saudavel/playlist</span>) toca todos os áudios do projeto em sequência, com os filtros por categoria em cima. É a experiência de quem quer ouvir tudo sem ficar abrindo letra por letra.</p>
+</section>
+
+<!-- ══════════════════════ 8 ══════════════════════ -->
+<section>
+  <h2><span class="n">8</span>Cartões personalizados</h2>
+
+  <p>Este é um produto separado: os cartões impressos que o cliente monta com a foto dele. Fica em <strong>Cartões personalizados</strong>, no painel.</p>
+
+  <p>Lá você define:</p>
+  <ul>
+    <li><strong>As categorias</strong> do produto (Crianças, Adultos).</li>
+    <li><strong>Os modelos</strong> — cada arte disponível para escolha.</li>
+    <li><strong>A moldura da foto</strong> — onde, dentro da arte, a foto do cliente entra, e com que medidas.</li>
+    <li><strong>O preço e o desconto.</strong></li>
+  </ul>
+
+  <div class="caixa cuidado">
+    <span class="rotulo">Por que essa tela às vezes parece vazia</span>
+    <p>As categorias e os modelos pertencem a <strong>um projeto de cada vez</strong>. Se você abrir "Cartões personalizados" dentro do Jesus Alfabeto Saudável e as categorias e modelos estiverem cadastrados em outro projeto, a tela mostra "Categorias (0)" — não porque some, mas porque eles moram em outro lugar.</p>
+    <p>Hoje os 7 modelos e as duas categorias estão em <strong>Minha Identidade e Poder em Jesus</strong>.</p>
+  </div>
+</section>
+
+<!-- ══════════════════════ 9 ══════════════════════ -->
+<section>
+  <h2><span class="n">9</span>Projetos da página inicial</h2>
+
+  <p>A página inicial do Santtify mostra os projetos num carrossel. Em <strong>Projetos da página inicial</strong> você controla:</p>
+
+  <ul>
+    <li><strong>A imagem</strong> de cada projeto no carrossel.</li>
+    <li><strong>A ordem</strong> em que aparecem.</li>
+    <li><strong>Quais aparecem</strong> — um projeto em preparação pode ficar fora da vitrine sem deixar de existir.</li>
+    <li><strong>Criar projetos novos</strong>, com o nome da casa ("Letra", "Dia", "Atributo") e quantas casas ele tem.</li>
+  </ul>
+
+  <div class="caixa">
+    <span class="rotulo">Um projeto novo em dois minutos</span>
+    <p>Ao criar, você escolhe se a sequência é por letras ou por números, quantas casas tem e como cada casa se chama. O painel inteiro se adapta sozinho: onde dizia "Letra" passa a dizer "Dia", e a contagem passa a ser a sua.</p>
+  </div>
+</section>
+
+<!-- ══════════════════════ 10 ══════════════════════ -->
+<section>
+  <h2><span class="n">10</span>Estrutura raiz e Produto Vivo</h2>
+
+  <h3>10.1 Estrutura raiz</h3>
+  <p>É a página inicial do projeto, das três partes que ela tem:</p>
+  <ul>
+    <li><strong>O perfil</strong> — o rosto do projeto: foto, nome, descrição.</li>
+    <li><strong>A introdução</strong> — o conteúdo de boas-vindas, que explica como usar.</li>
+    <li><strong>A sequência</strong> — a grade das casas, com as abertas e as trancadas.</li>
+  </ul>
+
+  <p>As casas ainda não publicadas aparecem <strong>trancadas</strong>, com um cadeado, e não escondidas. Foi decisão sua e é a certa: uma grade com buracos parece defeito, uma grade com cadeados parece promessa — e é o cadeado que faz a família voltar na semana seguinte para ver se abriu.</p>
+
+  <h3>10.2 Produto Vivo</h3>
+  <p>É a página de apresentação da tecnologia para empresas: as imagens e a arte com áudio que mostram do que a plataforma é capaz.</p>
+
+  <p>Aqui o áudio é <strong>opcional</strong>: você pode subir várias imagens e deixar só a última com áudio ou vídeo. Foi assim que você pediu, e é por isso que essa página tem uma régua diferente da régua das letras.</p>
+</section>
+
+<!-- ══════════════════════ 11 ══════════════════════ -->
+<section>
+  <h2><span class="n">11</span>Comunidade, aprovações e suporte</h2>
+
+  <h3>11.1 Comunidade</h3>
+  <p>Onde você cuida das pessoas que usam a plataforma:</p>
+  <ul>
+    <li><strong>Apagar um comentário impróprio.</strong> Some na hora, para todo mundo.</li>
+    <li><strong>Bloquear uma conta.</strong> A pessoa deixa de participar, e os comentários dela saem das contagens e das listas.</li>
+  </ul>
+
+  <h3>11.2 Aprovações</h3>
+  <p>Quando uma pessoa envia uma foto para publicar, ela fica nesta fila esperando você. A entrada só aparece no painel quando há algo esperando — com a fila vazia, ela some, para não ocupar espaço com uma tela que nunca tem nada.</p>
+
+  <h3>11.3 Ajuda e suporte</h3>
+  <p>A lista de quem tentou criar conta e não conseguiu, com o motivo de cada caso e o que fazer por essa pessoa. É a única tela do painel em que existe alguém parado do outro lado esperando — por isso ela fica no topo de tudo.</p>
+</section>
+
+<!-- ══════════════════════ 12 ══════════════════════ -->
+<section>
+  <h2><span class="n">12</span>Métricas</h2>
+
+  <p>Em <strong>Ver métricas</strong> você acompanha:</p>
+
+  <table>
+    <tr><th style="width:30%">O quê</th><th>O que responde</th></tr>
+    <tr><td><strong>Visitantes</strong></td><td>Quantas pessoas abriram, e quantas voltaram.</td></tr>
+    <tr><td><strong>Origem</strong></td><td>De onde vieram: QR Code impresso, link compartilhado, busca, rede social.</td></tr>
+    <tr><td><strong>Propagação</strong></td><td>Quem compartilhou, e quantas pessoas chegaram por cada compartilhamento.</td></tr>
+    <tr><td><strong>Conteúdos mais acessados</strong></td><td>Quais letras e quais áudios seguram mais a atenção.</td></tr>
+  </table>
+
+  <p>As visitas contam igual venham de onde vierem — quem abre a letra pela grade da página inicial conta tanto quanto quem chega escaneando o QR do cartão impresso.</p>
+</section>
+
+<!-- ══════════════════════ 13 ══════════════════════ -->
+<section>
+  <h2><span class="n">13</span>Perguntas frequentes e enganos comuns</h2>
+
+  <h3>"Não tem lugar de postar as fotos e áudios"</h3>
+  <p>Tem, e é a entrada <strong>"Letras — sequência infinita"</strong>. O engano acontece quando se entra em "Cartões personalizados", que é o produto dos cartões impressos e mostra "Categorias (0)". Caminho certo: painel → Letras — sequência infinita → a letra → o quadrado → o cartão.</p>
+
+  <h3>"Publiquei e não apareceu na página"</h3>
+  <p>Confira a faixa no fim do cartão. Se disser <strong>RASCUNHO — falta…</strong>, o cartão está incompleto e não vai ao ar. Complete o que falta e publique.</p>
+
+  <h3>"O cartão está mostrando conteúdo de outro"</h3>
+  <p>Isso era um defeito antigo e foi corrigido. Se acontecer de novo, recarregue a página uma vez e avise — não é comportamento esperado.</p>
+
+  <h3>"O áudio não abre no iPhone"</h3>
+  <p>Já tratado: o servidor entrega o áudio em pedaços, que é o que o iPhone exige para tocar sem baixar tudo antes. Se algum áudio específico não abrir, o arquivo é que pode estar com problema — troque por outro.</p>
+
+  <h3>"Consigo excluir o áudio mas não consigo colocar outro"</h3>
+  <p>Resolvido: a barra do som abre ao toque, com ou sem arquivo dentro. Sem áudio ela mostra <span class="tecla">+ ADICIONAR ÁUDIO</span>; com áudio, mostra o nome e "Tocar para trocar".</p>
+
+  <h3>"O karaokê não aparece na página"</h3>
+  <p>Três coisas precisam estar verdadeiras: a música tem letra <strong>publicada</strong>; o cartão tem áudio; e o acesso do projeto não está <strong>Desligado</strong>. Se o acesso estiver em "Conta", quem não tiver conta vê o convite para criar, e não o karaokê.</p>
+
+  <h3>"A próxima letra está errada"</h3>
+  <p>Corrigido. A sequência agora segue o alfabeto — depois do N vem o O, mesmo que o O ainda não esteja publicado (aí ele aparece trancado, com "Em breve"). Antes ela seguia a ordem da lista, e por isso pulava para uma letra fora do lugar.</p>
+
+  <h3>"Como faço uma letra ter duas músicas?"</h3>
+  <p>Duplique o quadrado da Música pelos três pontinhos, ou use <span class="tecla">ACRESCENTAR CARTÃO</span>. Os quatro quadrados fixos continuam os mesmos; o quinto em diante é livre.</p>
+</section>
+
+<!-- ══════════════════════ 14 ══════════════════════ -->
+<section>
+  <h2><span class="n">14</span>O que ainda depende de você</h2>
+
+  <p>Estes pontos não são defeito do sistema — são decisões ou materiais que só você pode fornecer. Enquanto não vierem, a tela fica esperando.</p>
+
+  <table>
+    <tr><th style="width:30%">Pendência</th><th>O que falta</th></tr>
+    <tr><td><strong>As artes dos modelos de cartão</strong></td><td>Os 7 modelos de cartão personalizado estão cadastrados, mas nenhum tem a arte final anexada. Sem ela, o cliente escolhe um modelo e não vê o desenho.</td></tr>
+    <tr><td><strong>Os nomes do Dia 2 e do Dia 7</strong></td><td>A capa impressa diz <em>Renúncia</em> e <em>Minha Identidade em Jesus</em>; o sistema diz <em>Espírito Santo</em> e <em>Jesus Me Guia Todos os Dias</em>. Precisa decidir qual vale — e a mudança é em dois lugares: o título do conteúdo e o nome do modelo de cartão.</td></tr>
+    <tr><td><strong>Os nomes das quatro casas nos dias</strong></td><td>Explicação, Música, Repetição do versículo e Oração foram pensados para as letras. Vale conferir se servem igual para os 7 dias ou se lá eles têm outro nome.</td></tr>
+    <tr><td><strong>A ordem da Letra B</strong></td><td>A Letra B foi criada fora da sequência e, na playlist, toca depois da Letra N. A navegação já não se importa com isso — depois do A vem o B, normalmente — mas a ordem de reprodução ainda mostra o desencontro. É um ajuste de um comando no banco, que precisa da sua autorização.</td></tr>
+    <tr><td><strong>As letras de O a Z</strong></td><td>Estão criadas e em rascunho. Aparecem trancadas na grade, com "Em breve", e abrem sozinhas assim que o primeiro cartão de cada uma for publicado.</td></tr>
+  </table>
+</section>
+
+<!-- ══════════════════════ 15 ══════════════════════ -->
+<section>
+  <h2><span class="n">15</span>Ficha técnica e endereços</h2>
+
+  <h3>15.1 Endereços que vale guardar</h3>
+
+  <table>
+    <tr><th style="width:42%">Para quê</th><th>Endereço</th></tr>
+    <tr><td>Entrar</td><td class="url">santtify.com/jesus-alfabeto-saudavel/entrar</td></tr>
+    <tr><td>Painel</td><td class="url">santtify.com/jesus-alfabeto-saudavel/admin</td></tr>
+    <tr><td><strong>Publicar (foto e áudio)</strong></td><td class="url">santtify.com/jesus-alfabeto-saudavel/admin/alfabeto</td></tr>
+    <tr><td>Modo Karaokê</td><td class="url">santtify.com/jesus-alfabeto-saudavel/admin/karaoke</td></tr>
+    <tr><td>Métricas</td><td class="url">santtify.com/jesus-alfabeto-saudavel/admin/metricas</td></tr>
+    <tr><td>Playlist (o que o público vê)</td><td class="url">santtify.com/jesus-alfabeto-saudavel/playlist</td></tr>
+    <tr><td>Publicar nos 7 dias</td><td class="url">santtify.com/minha-identidade-e-poder-em-jesus/admin/alfabeto</td></tr>
+    <tr><td>Página inicial</td><td class="url">santtify.com</td></tr>
+  </table>
+
+  <h3>15.2 O que roda onde</h3>
+
+  <table>
+    <tr><th style="width:30%">Peça</th><th>O que faz</th></tr>
+    <tr><td><strong>O site</strong></td><td>As páginas que a família vê, e o painel. Funciona como aplicativo instalável.</td></tr>
+    <tr><td><strong>O servidor</strong></td><td>Guarda os conteúdos, as fotos, os áudios, as contas e as métricas.</td></tr>
+    <tr><td><strong>O banco de dados</strong></td><td>Onde tudo fica guardado de verdade. Com cópia de segurança automática — há 16 cópias guardadas no servidor.</td></tr>
+    <tr><td><strong>O ouvinte</strong></td><td>O programa que escuta as músicas e escreve as letras do karaokê. Roda em segundo plano, o dia todo, e pega a próxima da fila sozinho.</td></tr>
+    <tr><td><strong>O endereço seguro</strong></td><td>santtify.com com certificado HTTPS, renovado sozinho. Quem digitar sem https é redirecionado.</td></tr>
+  </table>
+
+  <h3>15.3 Cópias de segurança</h3>
+  <p>O banco é copiado automaticamente, todos os dias, e as cópias ficam guardadas no servidor. Nenhuma ação sua é necessária. Em caso de problema grave, dá para voltar ao estado de qualquer um dos dias guardados.</p>
+
+  <h3>15.4 Se algo parecer errado</h3>
+  <ol class="passos">
+    <li>Recarregue a página uma vez. Muita coisa é só a página guardada no celular.</li>
+    <li>Confira se você está no projeto certo — o nome aparece no endereço e no alto da tela.</li>
+    <li>Anote o que estava fazendo e tire um print. É o print que permite achar o problema rápido.</li>
+    <li>Avise. Nada que você fizer pelo painel apaga conteúdo sem avisar antes.</li>
+  </ol>
+
+  <p class="fim">Manual do Santtify — 23 de setembro de 2026 · Tecnologia Produto Vivo</p>
+</section>
+
+</body>
+</html>
