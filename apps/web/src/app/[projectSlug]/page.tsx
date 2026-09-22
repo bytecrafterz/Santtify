@@ -7,7 +7,6 @@ import { AvisosDeEntrada } from '@/components/AvisosDeEntrada'
 import { CabecalhoDePerfil } from '@/components/CabecalhoDePerfil'
 import { IntroducaoEmCartoes } from '@/components/IntroducaoEmCartoes'
 import { ExperienciaContinua } from '@/components/ExperienciaContinua'
-import { IntroducaoRecolhivel } from '@/components/IntroducaoRecolhivel'
 import { BarraInferior } from '@/components/BarraInferior'
 import { CarrosselDeProjetos } from '@/components/CarrosselDeProjetos'
 
@@ -206,39 +205,50 @@ export default async function IndiceDoProjeto({
           carrossel". */}
       <CarrosselDeProjetos />
 
-      {/* 2, 3 e 4. A INTRODUÇÃO DO PROJETO, e ela recolhe-se depois da
-          primeira visita. Ordem dele, 23/08: capa do perfil, introdução, e
-          depois o alfabeto. Quem já viu a introdução vê o alfabeto logo por
-          baixo do perfil, sem texto de apresentação a ocupar o ecrã. */}
-      <IntroducaoRecolhivel nome={project.name}>
-        {/* As publicações da Introdução também são publicações: o olho
-            delas contava zero desde sempre, por falta destes eventos. */}
-        {introducao && (
-          <VisualizacoesDasPublicacoes
-            projectId={project.id}
-            contentId={introducao.content.id}
-            blocos={introducao.content.blocks.filter((b) => b.type === 'AUDIO').map((b) => b.id)}
-          />
-        )}
+      {/*
+        2, 3 e 4. A INTRODUÇÃO DO PROJETO, SEMPRE ABERTA.
 
-        {introducao && (
-          <IntroducaoEmCartoes
-            contentId={introducao.content.id}
-            contentSlug={introducao.content.slug}
-            blocos={introducao.content.blocks}
-            projectId={project.id}
-            projectSlug={projectSlug}
-            categorias={cats?.categorias ?? []}
-          />
-        )}
+        Ela recolhia-se depois da primeira visita, e isso foi pedido dele em
+        23/08: "depois que o usuário já tiver visto a Introdução uma vez, ela
+        deve ficar recolhida; o Alfabeto deve subir".
 
-        {/* A ÁREA "CONHEÇA O JESUS ALFABETO SAUDÁVEL" SAIU, com o escudo que
-            estava dentro dela. Ele pediu-o duas vezes, e a razão que deu é boa:
-            os textos passaram a viver dentro dos próprios conteúdos, e uma
-            caixa de apresentação separada era a mesma explicação outra vez, num
-            sítio onde já não faz falta. Acabam os áudios da introdução e segue
-            directamente o alfabeto. */}
-      </IntroducaoRecolhivel>
+        Em 21/09 ele desfez o pedido, e a razão que deu é melhor do que a
+        primeira: "quando volto do conteúdo/karaokê, todo o conteúdo superior —
+        alfabeto, perfil e demais informações — fica escondido/recolhido. Eu
+        preciso clicar novamente para fazê-lo aparecer. Não quero esse
+        comportamento." O que em 23/08 parecia arrumar o ecrã tornou-se, com o
+        karaokê a levar e a trazer a pessoa dezenas de vezes por dia, uma porta
+        a fechar-se atrás dela.
+
+        `IntroducaoRecolhivel` deixa de ser usado aqui. Fica no repositório, e
+        de propósito: já foi pedido e despedido uma vez, e a marca que guardava
+        no telemóvel (`pv_introducao_vista`) é a única memória de quem já viu a
+        introdução — se ele voltar a querê-la, é este ficheiro.
+
+        O ALFABETO SOBE DE OUTRA MANEIRA. O botão da barra de baixo passa a
+        saltar para a grade (`#alfabeto`), que é o que ele pediu no mesmo dia.
+        Chega-se lá por escolha, e não por a página se dobrar sozinha.
+      */}
+      {/* As publicações da Introdução também são publicações: o olho
+          delas contava zero desde sempre, por falta destes eventos. */}
+      {introducao && (
+        <VisualizacoesDasPublicacoes
+          projectId={project.id}
+          contentId={introducao.content.id}
+          blocos={introducao.content.blocks.filter((b) => b.type === 'AUDIO').map((b) => b.id)}
+        />
+      )}
+
+      {introducao && (
+        <IntroducaoEmCartoes
+          contentId={introducao.content.id}
+          contentSlug={introducao.content.slug}
+          blocos={introducao.content.blocks}
+          projectId={project.id}
+          projectSlug={projectSlug}
+          categorias={cats?.categorias ?? []}
+        />
+      )}
 
       {/* 6, 7 e 8. Progresso, alfabeto e a letra aberta — tudo aqui dentro. */}
       {contents.length === 0 ? (
