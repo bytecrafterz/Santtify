@@ -1,5 +1,6 @@
 import Link from 'next/link'
 import { ATUALIZADO_EM, RESPONSAVEL } from '@/lib/legal'
+import { Voltar } from '@/components/Voltar'
 
 export const metadata = {
   title: 'Termos de uso',
@@ -24,9 +25,7 @@ export const metadata = {
 export default function PaginaTermos() {
   return (
     <main className="envoltorio texto-legal">
-      <Link className="voltar" href="/">
-        ← Início
-      </Link>
+      <Voltar href="/">Início</Voltar>
 
       <h1>Termos de uso</h1>
       <p className="subtitulo">Atualizados em {ATUALIZADO_EM}</p>

@@ -115,7 +115,13 @@ body {
   padding: 16px 0 24px;
 }
 
-.cabecalho a {
+/*
+  `:not(.voltar-elegante)` porque esta regra é mais específica do que a do botão
+  de voltar (0,1,1 contra 0,1,0) e ganhava-lhe a cor e o tamanho: a pastilha
+  desenhava-se certa e o texto lá dentro saía cinzento e a 15px, desirmanado da
+  seta escura ao lado. Os outros links do cabeçalho continuam como estavam.
+*/
+.cabecalho a:not(.voltar-elegante) {
   color: var(--cor-texto-suave);
   text-decoration: none;
   font-size: 15px;
@@ -2320,6 +2326,187 @@ img.avatar {
 
 /* ── Barra de progresso das letras ──────────────────────────────────── */
 /*
+  ───────────────────────────────────────────────────────────────────────────
+  VOLTAR
+  ───────────────────────────────────────────────────────────────────────────
+
+  Um só desenho para todas as saídas da plataforma. Ver `components/Voltar`.
+
+  O que o faz parecer caro não é nenhum efeito em particular — é as quatro
+  camadas concordarem: a pastilha quase branca sobre o fundo quase branco, o
+  fio de borda que a separa sem a desenhar, a sombra curta que a levanta um
+  milímetro, e a seta que se mexe quando o dedo lá está. Tirada qualquer uma,
+  volta a parecer um link.
+
+  A PASTILHA É MAIS CLARA DO QUE O FUNDO, e não mais escura. O fundo da
+  plataforma é #f6f7fb; um botão cinzento por cima disso lê-se como desactivado.
+  Branco com uma borda lê-se como uma peça pousada em cima.
+
+  A SOMBRA TEM DUAS DEMÃOS: uma curta e quase opaca que encosta a peça ao fundo,
+  e uma longa e muito aberta que lhe dá o ar de estar levantada. Uma sombra só,
+  seja qual for, dá sempre o mesmo resultado plano.
+*/
+.voltar-elegante {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  /* O desenho tem 38px; o alvo do dedo tem 44. A diferença é invisível e é o
+     que separa um botão que se acerta de um que se persegue. */
+  min-height: 44px;
+  padding: 0.3rem 0.95rem 0.3rem 0.3rem;
+  border: 1px solid rgba(23, 26, 34, 0.08);
+  border-radius: 999px;
+  background: #fff;
+  box-shadow:
+    0 1px 2px rgba(16, 24, 40, 0.05),
+    0 6px 16px -6px rgba(16, 24, 40, 0.1);
+  color: var(--cor-texto);
+  font-size: 0.925rem;
+  font-weight: 600;
+  /* O negativo aperta as letras o suficiente para o texto parecer composto e
+     não escrito. Acima de -0.02em começa a ler-se mal em ecrãs pequenos. */
+  letter-spacing: -0.012em;
+  line-height: 1;
+  text-decoration: none;
+  -webkit-tap-highlight-color: transparent;
+  transition:
+    box-shadow 200ms cubic-bezier(0.22, 1, 0.36, 1),
+    border-color 200ms ease,
+    transform 200ms cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+/* Sem texto: um círculo, e o padding volta a ser igual dos dois lados. */
+.voltar-elegante.so-seta {
+  padding: 0.3rem;
+  gap: 0;
+}
+
+/*
+  A SETA MORA NUM CÍRCULO PRÓPRIO.
+
+  Sem ele a seta flutua no meio da pastilha e o botão fica com um lado vazio.
+  O círculo é meio tom mais escuro do que a pastilha — o suficiente para se ver
+  que é uma peça dentro de outra, longe de parecer um segundo botão.
+*/
+.voltar-elegante .seta {
+  display: grid;
+  place-items: center;
+  width: 32px;
+  height: 32px;
+  flex: none;
+  border-radius: 50%;
+  background: linear-gradient(180deg, #f7f8fc 0%, #eef1f7 100%);
+  box-shadow: inset 0 0 0 1px rgba(23, 26, 34, 0.05);
+  color: var(--cor-texto);
+  transition:
+    transform 240ms cubic-bezier(0.22, 1, 0.36, 1),
+    background 200ms ease;
+}
+
+.voltar-elegante .rotulo {
+  /* Um nome de projeto comprido não pode partir a barra do topo em duas
+     linhas nem empurrar o que está do outro lado. */
+  max-width: 14rem;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/*
+  O MOVIMENTO É DA SETA, E NÃO DO BOTÃO.
+
+  Deslocar a pastilha inteira faz saltar o que está à volta dela. Só a seta
+  recua, dois pixéis, que é o gesto que a palavra "voltar" descreve.
+*/
+@media (hover: hover) {
+  .voltar-elegante:hover {
+    border-color: rgba(23, 26, 34, 0.14);
+    box-shadow:
+      0 1px 2px rgba(16, 24, 40, 0.06),
+      0 10px 24px -8px rgba(16, 24, 40, 0.16);
+  }
+
+  .voltar-elegante:hover .seta {
+    background: linear-gradient(180deg, #eef1f7 0%, #e4e9f2 100%);
+    transform: translateX(-2px);
+  }
+}
+
+.voltar-elegante:active {
+  transform: scale(0.975);
+  box-shadow: 0 1px 2px rgba(16, 24, 40, 0.06);
+}
+
+.voltar-elegante:focus-visible {
+  outline: 2px solid var(--cor-primaria);
+  outline-offset: 3px;
+}
+
+/* Quem pediu ao sistema para não haver animações não as tem. */
+@media (prefers-reduced-motion: reduce) {
+  .voltar-elegante,
+  .voltar-elegante .seta {
+    transition: none;
+  }
+  .voltar-elegante:active {
+    transform: none;
+  }
+  .voltar-elegante:hover .seta {
+    transform: none;
+  }
+}
+
+/*
+  NO ESCURO INVERTE-SE A LÓGICA: a pastilha passa a ser um véu claro sobre o
+  fundo escuro, e não uma peça branca — branco aqui seria um holofote ao lado
+  de texto cinzento. A borda faz quase todo o trabalho de a desenhar.
+*/
+@media (prefers-color-scheme: dark) {
+  .voltar-elegante {
+    border-color: rgba(255, 255, 255, 0.12);
+    background: rgba(255, 255, 255, 0.05);
+    box-shadow: 0 1px 2px rgba(0, 0, 0, 0.3);
+    color: rgba(255, 255, 255, 0.92);
+  }
+
+  .voltar-elegante .seta {
+    background: rgba(255, 255, 255, 0.08);
+    box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.08);
+    color: inherit;
+  }
+
+  @media (hover: hover) {
+    .voltar-elegante:hover {
+      border-color: rgba(255, 255, 255, 0.2);
+      background: rgba(255, 255, 255, 0.08);
+      box-shadow: 0 1px 2px rgba(0, 0, 0, 0.35);
+    }
+
+    .voltar-elegante:hover .seta {
+      background: rgba(255, 255, 255, 0.14);
+    }
+  }
+}
+
+/*
+  Dentro do painel escuro do karaokê, que é escuro sempre — não só quando o
+  telemóvel está no modo escuro. Ver a nota em `.painel-karaoke`.
+*/
+.painel-karaoke .voltar-elegante,
+.cabecalho-fixo .voltar-elegante {
+  border-color: rgba(255, 255, 255, 0.14);
+  background: rgba(255, 255, 255, 0.06);
+  box-shadow: none;
+  color: rgba(255, 255, 255, 0.92);
+}
+
+.painel-karaoke .voltar-elegante .seta,
+.cabecalho-fixo .voltar-elegante .seta {
+  background: rgba(255, 255, 255, 0.09);
+  box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.09);
+}
+
+/*
   O cabeçalho mínimo da página de um projeto.
 
   Substitui o perfil e o carrossel que aqui estavam. É só o nome e a saída para
@@ -2333,20 +2520,12 @@ img.avatar {
   margin: 0.25rem 0 0.75rem;
 }
 
-.cabecalho-do-projeto a {
-  flex: none;
-  display: grid;
-  place-items: center;
-  width: 2rem;
-  height: 2rem;
-  border-radius: 999px;
-  border: 1px solid var(--cor-borda);
-  color: inherit;
-  text-decoration: none;
-  font-size: 1.1rem;
-  line-height: 1;
-}
-
+/*
+  A seta aqui desenhava-se nesta folha, e ficou a competir com `.voltar-elegante`
+  assim que o botão passou a ser um componente. Esta regra era mais específica
+  (0,1,1 contra 0,1,0) e ganhava: forçava o botão a um quadrado de 2rem e
+  desfazia a pastilha. O desenho do botão vive num sítio só — ver `Voltar`.
+*/
 .cabecalho-do-projeto h1 {
   margin: 0;
   font-size: 1.25rem;

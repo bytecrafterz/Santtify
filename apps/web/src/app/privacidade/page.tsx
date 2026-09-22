@@ -1,5 +1,6 @@
 import Link from 'next/link'
 import { ATUALIZADO_EM, RESPONSAVEL, RETENCAO_EVENTOS_DIAS, VERSAO_DA_POLITICA } from '@/lib/legal'
+import { Voltar } from '@/components/Voltar'
 
 export const metadata = {
   title: 'Política de privacidade',
@@ -25,9 +26,7 @@ export const metadata = {
 export default function PaginaPrivacidade() {
   return (
     <main className="envoltorio texto-legal">
-      <Link className="voltar" href="/">
-        ← Início
-      </Link>
+      <Voltar href="/">Início</Voltar>
 
       <h1>Política de privacidade</h1>
       <p className="subtitulo">

@@ -1,6 +1,6 @@
 'use client'
 
-import Link from 'next/link'
+import { Voltar } from './Voltar'
 
 /**
  * A barra preta que fica sempre no topo: Alfabeto à esquerda e o nome do sítio
@@ -25,10 +25,13 @@ export function CabecalhoFixo({
   projectSlug,
   onde,
   voltarPara,
+  rotuloDeVolta = 'Voltar',
 }: {
   projectSlug: string
   /** O que a pessoa está a ver: "Letra A", "Gerenciar conteúdo"... */
   onde: string
+  /** O que se lê ao lado da seta. "Voltar" serve em todo o lado. */
+  rotuloDeVolta?: string
   /**
    * Para onde a casinha leva.
    *
@@ -41,24 +44,18 @@ export function CabecalhoFixo({
 }) {
   return (
     <header className="cabecalho-fixo">
-      <Link className="ir-alfabeto" href={voltarPara ?? `/${projectSlug}`}>
-        <span className="casa" aria-hidden>
-          <svg
-            viewBox="0 0 24 24"
-            width="20"
-            height="20"
-            fill="none"
-            stroke="currentColor"
-            strokeWidth="1.9"
-            strokeLinecap="round"
-            strokeLinejoin="round"
-          >
-            <path d="M3 10.5 12 3l9 7.5" />
-            <path d="M5.5 9.5V20h13V9.5" />
-          </svg>
-        </span>
-        <span className="rotulo">Alfabeto</span>
-      </Link>
+      {/*
+        DIZIA "ALFABETO" E QUASE NUNCA IA AO ALFABETO.
+
+        O rótulo estava escrito no código e o destino vinha de fora: no painel,
+        `voltarPara` é `/${projectSlug}/admin`. Ou seja, a casinha dizia
+        "Alfabeto" e abria o painel. E num projeto de sete dias dizia o nome de
+        outro projeto, que é o mesmo defeito que a barra de baixo tinha.
+
+        "Voltar" é verdade nos dois casos — vai sempre um nível acima de onde a
+        pessoa está — e quem quiser dizer outra coisa passa `rotuloDeVolta`.
+      */}
+      <Voltar href={voltarPara ?? `/${projectSlug}`}>{rotuloDeVolta}</Voltar>
 
       {/*
         Só o nome do sítio, sem o retrato ao lado.

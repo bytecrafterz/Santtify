@@ -1,10 +1,10 @@
-import Link from 'next/link'
 import { notFound } from 'next/navigation'
 import { api } from '@/lib/api'
 import { Playlist } from '@/components/Playlist'
 import { RastreadorDeVisita } from '@/components/RastreadorDeVisita'
 import { BannerDeConsentimento } from '@/components/BannerDeConsentimento'
 import { BarraInferior } from '@/components/BarraInferior'
+import { Voltar } from '@/components/Voltar'
 
 // O `<title>` é o nome da aplicação: o iPhone usa-o ao instalar.
 export const metadata = { title: 'Santtify' }
@@ -30,9 +30,7 @@ export default async function PaginaPlaylist({
     <main className="envoltorio com-barra">
       <RastreadorDeVisita projectId={dados.project.id} type="PAGE_VIEW" />
 
-      <Link className="voltar" href={`/${projectSlug}`}>
-        ← {dados.project.name}
-      </Link>
+      <Voltar href={`/${projectSlug}`}>{dados.project.name}</Voltar>
       <h1>Minha Playlist</h1>
       <p className="subtitulo">
         Toca as músicas em sequência, da letra A à letra Z, sem precisar escolher uma por uma.

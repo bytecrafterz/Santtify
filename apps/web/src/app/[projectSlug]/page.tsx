@@ -1,4 +1,3 @@
-import Link from 'next/link'
 import { notFound } from 'next/navigation'
 import { api } from '@/lib/api'
 import { RastreadorDeVisita } from '@/components/RastreadorDeVisita'
@@ -18,6 +17,7 @@ import { BarraInferior } from '@/components/BarraInferior'
  * fica lá.
  */
 import type { Metadata } from 'next'
+import { Voltar } from '@/components/Voltar'
 
 /**
  * A prévia que aparece no WhatsApp quando alguém partilha a página inicial.
@@ -201,9 +201,7 @@ export default async function IndiceDoProjeto({
         página parecer a inicial.
       */}
       <div className="cabecalho-do-projeto">
-        <Link href="/" aria-label="Voltar ao início">
-          ←
-        </Link>
+        <Voltar href="/" rotulo="Voltar ao início" />
         <h1>{project.name}</h1>
       </div>
 

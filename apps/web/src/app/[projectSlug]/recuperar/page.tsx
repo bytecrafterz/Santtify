@@ -2,6 +2,7 @@ import Link from 'next/link'
 import { notFound } from 'next/navigation'
 import { api } from '@/lib/api'
 import { PedirReposicao } from '@/components/PedirReposicao'
+import { Voltar } from '@/components/Voltar'
 
 // O `<title>` é o nome da aplicação: o iPhone usa-o ao instalar.
 export const metadata = { title: 'Santtify' }
@@ -31,7 +32,7 @@ export default async function PaginaDeRecuperacao({
   return (
     <main className="envoltorio estreito">
       <div className="cabecalho">
-        <Link href={`/${projectSlug}/entrar`}>← Voltar para entrar</Link>
+        <Voltar href={`/${projectSlug}/entrar`}>Voltar para entrar</Voltar>
       </div>
 
       <h1>Esqueci minha senha</h1>

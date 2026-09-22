@@ -10,6 +10,7 @@ import { SeloProdutoVivo } from '@/components/SeloProdutoVivo'
 import { BannerDeConsentimento } from '@/components/BannerDeConsentimento'
 import { OfertaDaLetra } from '@/components/OfertaDaLetra'
 import { BarraInferior } from '@/components/BarraInferior'
+import { Voltar } from '@/components/Voltar'
 
 export async function generateMetadata({
   params,
@@ -98,7 +99,7 @@ export default async function PaginaDeConteudo({
       />
 
       <div className="cabecalho">
-        <Link href={`/${projectSlug}`}>← {project.name}</Link>
+        <Voltar href={`/${projectSlug}`}>{project.name}</Voltar>
       </div>
 
       <h1>{content.title}</h1>

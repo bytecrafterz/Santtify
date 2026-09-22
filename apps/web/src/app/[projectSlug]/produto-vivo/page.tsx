@@ -1,4 +1,3 @@
-import Link from 'next/link'
 import type { Metadata } from 'next'
 import { api } from '@/lib/api'
 import { RastreadorDeVisita } from '@/components/RastreadorDeVisita'
@@ -7,6 +6,7 @@ import { ChegouAoFimDoPv } from '@/components/ChegouAoFimDoPv'
 import { IntroducaoEmCartoes } from '@/components/IntroducaoEmCartoes'
 import { BarraInferior } from '@/components/BarraInferior'
 import { VisualizacoesDasPublicacoes } from '@/components/VisualizacoesDasPublicacoes'
+import { Voltar } from '@/components/Voltar'
 
 /**
  * Página institucional do Produto Vivo.
@@ -119,7 +119,7 @@ export default async function PaginaProdutoVivo({
       )}
 
       <div className="cabecalho">
-        <Link href={`/${projectSlug}`}>← Voltar</Link>
+        <Voltar href={`/${projectSlug}`}>Voltar</Voltar>
       </div>
 
       <h1>Produto Vivo</h1>
