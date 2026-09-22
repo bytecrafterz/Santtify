@@ -8,7 +8,6 @@ import { RastreadorDeVisita } from '@/components/RastreadorDeVisita'
 import { VisualizacoesDasPublicacoes } from '@/components/VisualizacoesDasPublicacoes'
 import { SeloProdutoVivo } from '@/components/SeloProdutoVivo'
 import { BannerDeConsentimento } from '@/components/BannerDeConsentimento'
-import { BarraSocial } from '@/components/BarraSocial'
 import { OfertaDaLetra } from '@/components/OfertaDaLetra'
 import { BarraInferior } from '@/components/BarraInferior'
 
@@ -157,22 +156,28 @@ export default async function PaginaDeConteudo({
       ))}
 
       {/*
-        SÓ OS COMENTÁRIOS, e não a fila social outra vez.
+        A FILA DE COMENTÁRIOS DO FIM DA PÁGINA SAIU.
 
-        Cada publicação acima já tem os seus indicadores. Uma segunda fila aqui
-        seria a camada social repetida de que ele se queixou no Produto Vivo em
-        30/08, e teria razão outra vez. Mas os comentários têm de ficar: 21 dos
-        30 comentários da plataforma estão presos ao CONTEÚDO e não a uma
-        faixa, e são de pessoas reais. Tirar a secção apagava-os do ecrã.
+        Estava aqui porque os comentários antigos estão presos ao CONTEÚDO e não
+        a uma faixa, e tirá-la apagava-os do ecrã. A troco disso, ficavam todos
+        empilhados no fim — e ele apanhou exactamente o que isso parece:
+
+          "Essas mensagens que aparecem todas acumuladas no final da página não
+           podem ficar aí. (...) um comentário feito em outro cartão não pode
+           aparecer embaixo do AVISO IMPORTANTE simplesmente porque esse é o
+           final da página."
+
+        Tinha razão, e a regra que escreveu a seguir é a certa: "cartão/áudio
+        específico → comentários daquele conteúdo → campo para comentar naquele
+        conteúdo". Cada publicação acima já faz isso, com o seu próprio contador
+        e a sua própria caixa.
+
+        E NADA SE PERDE, que era o motivo de a secção ficar. Duas coisas
+        seguram os comentários antigos: a migração `comentarios_no_cartao`
+        pendura-os no primeiro cartão do conteúdo onde foram escritos, e a lista
+        do card do projeto passou a trazer o acumulado de tudo — as letras, as
+        faixas e a página do projeto. Deixaram de ter um só sítio onde aparecer.
       */}
-      <BarraSocial
-        soComentarios
-        contentId={content.id}
-        projectId={project.id}
-        projectSlug={projectSlug}
-        titulo={content.title}
-      />
-
       {/* Depois do conteúdo e da área social: a pessoa ouviu, gostou, e é aí
           que faz sentido oferecer. Antes disso seria vender antes de mostrar. */}
       <OfertaDaLetra
