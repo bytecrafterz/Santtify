@@ -258,7 +258,14 @@ export function OficinaDasLetras({ projectSlug }: { projectSlug: string }) {
                     disabled={ocupado !== null}
                     onClick={() =>
                       void accao(`faixa-${f.id}`, async () => {
-                        await karaoke.ouvirUma(f.id)
+                        /* O botão diz "Ouvir de novo" ou "Ouvir", e o pedido
+                           passou a dizer o mesmo ao servidor. Só o primeiro
+                           passa por cima de uma letra que já lá está — e o
+                           "Ouvir" de uma faixa com texto colado à mão deixa
+                           de o apagar sem avisar. */
+                        const refazer = f.temLetra || f.estado === 'PRONTA'
+                        const r = await karaoke.ouvirUma(f.id, refazer)
+                        if (r.ignorado) return `“${f.nome}” ficou como estava: ${r.motivo}.`
                         return `“${f.nome}” foi para a fila.`
                       })
                     }

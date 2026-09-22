@@ -5582,6 +5582,13 @@ button.letra-bloco {
 */
 .remover-pecas {
   display: flex;
+  /*
+    QUEBRA DE LINHA, por causa do karaokê que passou a viver nesta fila.
+    "Preparando seu Karaokê… 43%" com a barra por baixo é largo, e numa linha
+    que não quebra esmagava "Excluir foto" e "Excluir áudio" num telemóvel.
+  */
+  flex-wrap: wrap;
+  align-items: center;
   gap: 0.5rem;
   padding: 0.55rem 0.9rem;
   background: var(--cor-fundo);
@@ -5600,20 +5607,95 @@ button.letra-bloco {
   cursor: pointer;
 }
 
+/*
+  `border: 0` E `font-family` NÃO SÃO ENFEITE, são a consequência de isto ter
+  deixado de ser um link.
+
+  Era um `<a>`, e `.remover-pecas button` nunca lhe tocava. Agora o botão de
+  preparar é um `<button>` de verdade, e aquela regra (0,1,1) dá-lhe a borda
+  cinzenta e o tipo de letra do sistema. Esta (0,2,0) ganha em especificidade,
+  mas só nas propriedades que declara — o que não estiver aqui escrito passa,
+  e passava.
+*/
 .remover-pecas .atalho-karaoke {
-  margin-left: auto;
   padding: 0.3rem 0.75rem;
+  font-family: inherit;
   font-size: 0.8rem;
   font-weight: 700;
   color: #fff;
   text-decoration: none;
   background: var(--cor-tocar);
+  border: 0;
   border-radius: 999px;
+  cursor: pointer;
 }
 
 .remover-pecas button:disabled {
   opacity: 0.5;
   cursor: default;
+}
+
+/*
+  O KARAOKÊ DE UM CLIQUE, ENCOSTADO À DIREITA DA FILA DAS PEÇAS.
+
+  Fica depois de "Excluir foto" e "Excluir áudio" porque é a terceira coisa que
+  se faz a um cartão com música, não a primeira. O `margin-left: auto` mudou-se
+  do botão para esta caixa: quem encosta à direita agora é o conjunto todo —
+  botão, estado e barra — e não só o botão.
+*/
+.karaoke-a-preparar {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 0.3rem;
+  margin-left: auto;
+  min-width: 0;
+  max-width: 100%;
+  text-align: right;
+}
+
+.karaoke-a-preparar small {
+  font-size: 0.72rem;
+  line-height: 1.35;
+  color: var(--cor-texto-suave);
+}
+
+.karaoke-a-preparar .cartoes-erro {
+  margin: 0;
+  padding: 6px 10px;
+  font-size: 0.78rem;
+  text-align: right;
+}
+
+.karaoke-a-preparar-texto {
+  font-size: 0.8rem;
+  font-weight: 700;
+  color: var(--cor-tocar);
+}
+
+/*
+  A BARRA QUE ANDA, e é ela que faz a espera parecer espera e não avaria.
+
+  Ouvir uma música leva mais ou menos o tempo da própria música. Três minutos
+  de ecrã parado parecem uma coisa encravada, e quem acha que encravou carrega
+  outra vez — que é precisamente o clique a mais que este trabalho veio tirar.
+*/
+.karaoke-a-preparar-trilha {
+  display: block;
+  width: 160px;
+  max-width: 100%;
+  height: 5px;
+  border-radius: 999px;
+  background: var(--cor-borda);
+  overflow: hidden;
+}
+
+.karaoke-a-preparar-trilha > span {
+  display: block;
+  height: 100%;
+  border-radius: 999px;
+  background: var(--cor-tocar);
+  transition: width 0.4s ease;
 }
 
 .indicadores-apagados {

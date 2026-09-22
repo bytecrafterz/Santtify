@@ -1,10 +1,10 @@
 'use client'
 
-import Link from 'next/link'
 import { useState } from 'react'
 import { useEffect } from 'react'
 import { admin, type CartaoAdmin, type CategoriaAdmin } from '@/lib/admin'
 import { Voltar } from './Voltar'
+import { PrepararKaraoke } from './PrepararKaraoke'
 
 /**
  * A terceira tela: o cartão, inteiro, numa página só.
@@ -319,11 +319,13 @@ export function EditorDeCartao({
             )}
             {/* Na mesma fila das peças, e não dentro do cartão: o cartão do
                 painel é igual ao público e não ganha botões que lá não há. */}
-            {audio?.url && (
-              <Link className="atalho-karaoke" href={`/${projectSlug}/admin/karaoke/${cartao.id}`}>
-                🎤 Karaokê
-              </Link>
-            )}
+            {/*
+              Isto era um link directo para o sincronizador — a ferramenta de
+              marcar a letra à mão, frase a frase. Ele publicava a música e
+              caía num ecrã a pedir-lhe dezenas de toques, quando o computador
+              já sabia fazer o trabalho sozinho desde 20/09. Ver `PrepararKaraoke`.
+            */}
+            {audio?.url && <PrepararKaraoke blocoId={cartao.id} projectSlug={projectSlug} />}
           </div>
         )}
 

@@ -149,10 +149,15 @@ export const karaoke = {
       method: 'POST',
       body: JSON.stringify({ refazer }),
     }),
-  ouvirUma: (blocoId: string) =>
+  /**
+   * `refazer` é a diferença entre "escreve a letra que falta" e "apaga a que
+   * está e escreve outra". Por omissão é a primeira: ver o comentário em
+   * `AdminKaraokeController.ouvirUma`.
+   */
+  ouvirUma: (blocoId: string, refazer = false) =>
     chamar<{ id?: string; estado?: string; ignorado?: boolean; motivo?: string }>(
       `/admin/cards/${blocoId}/transcricao`,
-      { method: 'POST' },
+      { method: 'POST', body: JSON.stringify({ refazer }) },
     ),
 
   letra: (blocoId: string) => chamar<LetraDoCartao>(`/admin/cards/${blocoId}/karaoke`),

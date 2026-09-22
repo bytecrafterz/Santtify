@@ -124,11 +124,27 @@ export class AdminKaraokeController {
     return this.transcricao.enfileirarProjeto(projectSlug, dto.refazer ?? false)
   }
 
+  /**
+   * QUEM PEDE TEM DE DIZER SE ESTÁ A REFAZER, e isto passou a importar em 22/09.
+   *
+   * Até aqui esta porta era de um chamador só — o botão "Ouvir de novo" da
+   * oficina, ao lado de uma faixa cujo estado ele está a ver — e por isso
+   * passava sempre `ELE_PEDIU`, que atropela tudo, incluindo uma letra escrita
+   * à mão.
+   *
+   * Agora há um segundo chamador com outra intenção: o botão de preparar o
+   * karaokê, no editor do cartão, que quer dizer "esta música ainda não tem
+   * letra, escreve-a". Se esse também forçasse, uma letra colada por ele e
+   * ainda por publicar (`temLetra` é só a publicada) seria apagada por um
+   * clique num botão que nem sequer diz refazer.
+   *
+   * Sem `refazer`, vale a guarda: quem já tem letra à mão, ou já foi ouvida,
+   * responde `ignorado` com o motivo em vez de voltar a ocupar o servidor.
+   */
   @Post('cards/:id/transcricao')
   @HttpCode(200)
-  ouvirUma(@Param('id', ParseUUIDPipe) id: string) {
-    // Pedida à mão: refaz mesmo que já esteja pronta.
-    return this.transcricao.enfileirar(id, 'ELE_PEDIU')
+  ouvirUma(@Param('id', ParseUUIDPipe) id: string, @Body() dto: OuvirTudoDto) {
+    return this.transcricao.enfileirar(id, dto?.refazer ? 'ELE_PEDIU' : 'FALTA_LETRA')
   }
 
   @Get('cards/:id/karaoke')
