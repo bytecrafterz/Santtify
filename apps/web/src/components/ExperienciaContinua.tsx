@@ -308,17 +308,21 @@ export function ExperienciaContinua({
   return (
     <>
       {/*
-        O DESTINO DO BOTÃO "ALFABETO" DA BARRA DE BAIXO.
+        A ÂNCORA DA GRADE.
 
-        Ele escreveu em 21/09: "quando clico em Alfabeto no menu inferior,
-        atualmente não acontece nada". O botão levava a `/${slug}` — que é a
-        página onde ele já estava. Navegar para o sítio onde se está não move
-        nada, e a grade das letras fica a meio da página, por baixo do perfil,
-        do carrossel e da introdução.
+        Nasceu em 21/09 como destino do botão "Alfabeto" da barra de baixo, que
+        até aí levava a `/${slug}` — a página onde ele já estava — e por isso
+        "não acontecia nada". A grade ficava a meio da página, debaixo do
+        perfil, do carrossel e da introdução.
 
-        A âncora é aqui e não na grade: encostar a grade ao topo esconde o
-        "Escolha uma letra" e o contador, e ele fica a olhar para quadrados sem
-        saber que chegou. `scroll-margin-top` está no CSS, pelo cabeçalho fixo.
+        Em 22/09 essas duas peças mudaram-se para a entrada e a grade subiu, e o
+        botão passou a ser a casinha que leva a `/`. A âncora fica na mesma:
+        continua a servir quem chegar com `#alfabeto` num link partilhado, e
+        custa uma linha.
+
+        Está no contador e não na grade porque encostar a grade ao topo esconde
+        o "Escolha uma letra" por baixo do cabeçalho fixo, e quem salta aterra a
+        olhar para quadrados sem saber que chegou.
       */}
       <div className="progresso-letras" id="alfabeto">
         <strong>

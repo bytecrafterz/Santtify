@@ -3,7 +3,6 @@
 import Link from 'next/link'
 import { useEffect, useRef } from 'react'
 import { usePathname } from 'next/navigation'
-import { plural } from '@/lib/unidade'
 
 /**
  * A barra fixa de baixo, com os quatro acessos.
@@ -26,21 +25,11 @@ import { plural } from '@/lib/unidade'
 export function BarraInferior({
   projectSlug,
   linkPdf,
-  unidade,
 }: {
   projectSlug: string
   /** O checkout da Hotmart, quando ele o tiver definido no painel. */
   linkPdf?: string | null
-  /**
-   * Como se chamam as casas deste projeto: "Letra", "Dia", "Atributo".
-   *
-   * O botão dizia "Alfabeto" em todos os projetos, e num de sete dias isso é o
-   * nome de outro projeto. Sem `unidade` fica "Alfabeto", que é o que era —
-   * assim a barra da página inicial, que não é de projeto nenhum, não muda.
-   */
-  unidade?: string
 }) {
-  const nomeDaGrade = unidade ? plural(unidade) : 'Alfabeto'
   const suporte = process.env.NEXT_PUBLIC_SUPORTE_WHATSAPP
   const barra = useRef<HTMLElement | null>(null)
 
@@ -134,30 +123,29 @@ export function BarraInferior({
   return (
     <nav ref={barra} className="barra-inferior" aria-label="Acessos principais">
       {/*
-        ALFABETO LEVA À GRADE DAS LETRAS, e não ao topo da página.
+        A CASINHA LEVA A CASA.
 
-        Ele reportou-o em 21/09: "quando clico em Alfabeto no menu inferior,
-        atualmente não acontece nada". E não acontecia mesmo — o destino era
-        `/${projectSlug}`, a página onde ele já estava. O router não tem para
-        onde ir, e a grade continua onde estava: a meio da página, por baixo do
-        perfil, do carrossel e da introdução.
+        Este botão passou por três destinos em dois dias, e vale a pena dizer
+        porquê, senão alguém desfaz isto.
 
-        Agora o endereço traz a âncora, e quando já estamos na página o salto é
-        feito à mão. As duas coisas são precisas: a âncora serve quem vem de
-        outra página, e o `scrollIntoView` serve quem já está nesta — nesse
-        caso o endereço não muda e o navegador não faz nada sozinho, nem
-        sequer quando a âncora é a mesma de antes.
+        Até 21/09 apontava para `/${projectSlug}` e chamava-se "Alfabeto". Ele
+        queixou-se de que "não acontecia nada" — e não acontecia mesmo: era a
+        página onde ele já estava. Pus-lhe uma âncora para a grade.
+
+        Em 22/09 a página inicial passou a existir de verdade, com o perfil e os
+        projetos, e as páginas de projeto ficaram só com o projeto. A âncora
+        deixou de fazer falta: a grade está agora logo a seguir à introdução, e
+        não enterrada debaixo do perfil e do carrossel. O que passou a faltar
+        foi o caminho de volta à entrada.
+
+        E o ícone sempre foi uma casa. Um ícone de casa que não vai a casa é o
+        tipo de coisa que ensina as pessoas a não confiarem na barra.
+
+        O nome da unidade sai daqui com ele: "Dias" ao lado de uma casinha
+        prometia a grade e entregava a entrada. Quem quiser a grade toca no
+        projeto, que é a viagem que ele desenhou.
       */}
-      <Link
-        href={`/${projectSlug}#alfabeto`}
-        className="item-barra"
-        onClick={(e) => {
-          const grade = document.getElementById('alfabeto')
-          if (!grade) return // noutra página: deixa o link navegar normalmente
-          e.preventDefault()
-          grade.scrollIntoView({ behavior: 'smooth', block: 'start' })
-        }}
-      >
+      <Link href="/" className="item-barra">
         <span className="icone" aria-hidden>
           <svg
             viewBox="0 0 24 24"
@@ -173,7 +161,7 @@ export function BarraInferior({
             <path d="M5.5 9.5V20h13V9.5" />
           </svg>
         </span>
-        {nomeDaGrade}
+        Início
       </Link>
 
       <Link href={`/${projectSlug}/produto-vivo`} className="item-barra">

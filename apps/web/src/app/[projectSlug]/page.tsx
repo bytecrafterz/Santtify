@@ -294,11 +294,7 @@ export default async function IndiceDoProjeto({
       */}
       <AvisosDeEntrada projectSlug={projectSlug} />
       <BannerDeConsentimento projectId={project.id} />
-      <BarraInferior
-        projectSlug={projectSlug}
-        linkPdf={project.checkoutUrl ?? null}
-        unidade={project.unidade ?? 'Letra'}
-      />
+      <BarraInferior projectSlug={projectSlug} linkPdf={project.checkoutUrl ?? null} />
     </main>
   )
 }

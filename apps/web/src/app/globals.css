@@ -2361,9 +2361,10 @@ img.avatar {
   font-size: 0.85rem;
   color: var(--cor-texto-suave);
   /*
-    O botão "Alfabeto" da barra de baixo salta para aqui (`#alfabeto`). Sem esta
-    folga, o cabeçalho fixo fica por cima da primeira linha e quem salta aterra
-    a ler um contador cortado ao meio.
+    Quem chegar a `#alfabeto` — hoje por um link partilhado; até 22/09 pelo
+    botão da barra de baixo, que entretanto passou a ser a casinha que leva a
+    `/` — aterra aqui. Sem esta folga o cabeçalho fixo fica por cima da primeira
+    linha e lê-se um contador cortado ao meio.
   */
   scroll-margin-top: 4.5rem;
 }
