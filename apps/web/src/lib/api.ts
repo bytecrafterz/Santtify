@@ -14,6 +14,13 @@ export interface Projeto {
   sequencia?: 'LETRAS' | 'NUMEROS'
   /** Quantas casas tem a grade deste projeto. Nos alfabetos, 26. */
   blocos?: number
+  /**
+   * Como se chama UMA casa deste projeto: "Letra", "Dia", "Atributo".
+   *
+   * O ecrã junta-lhe o número ou a letra ("Dia 1", "Letra A") e usa-a também no
+   * plural simples, com um "s". Ver `Project.unidade` no schema.
+   */
+  unidade?: string
 }
 
 export type TipoBloco = 'TEXT' | 'RICH_TEXT' | 'AUDIO' | 'VIDEO' | 'IMAGE' | 'EMBED' | 'LINK'

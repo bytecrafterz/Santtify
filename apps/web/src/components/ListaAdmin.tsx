@@ -4,6 +4,7 @@ import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 import { useEffect, useState } from 'react'
 import { admin } from '@/lib/admin'
+import { casasDesteProjeto, plural } from '@/lib/unidade'
 import { useAuth } from '@/components/ProvedorDeAuth'
 
 /**
@@ -90,10 +91,24 @@ export function ListaAdmin({ projectSlug }: { projectSlug: string }) {
         <small>as imagens e a arte com áudio que as empresas veem</small>
       </Link>
 
+      {/*
+        A ENTRADA PARA AS CASAS, ANUNCIADA PELO NOME DELAS.
+
+        Dizia "Alfabeto — sequência infinita / 26 letras" em todos os projetos.
+        No "Minha Identidade e Poder em Jesus", que são sete dias, ele leu isto,
+        entrou, e encontrou um painel a falar de letras — daí "a estrutura de
+        publicação está muito desorganizada e não tem as mesmas opções que já
+        existem no Jesus Alfabeto Saudável", em 21/09.
+
+        A estrutura era a mesma. O que estava diferente era o nome, e a
+        quantidade: 26 escrito à mão num projeto de 7.
+      */}
       <Link className="bloco linha atalho-alfabeto" href={`/${projectSlug}/admin/alfabeto`}>
-        <span>Alfabeto — sequência infinita</span>
+        <span>{`${plural(dados.project.unidade ?? 'Letra')} — sequência infinita`}</span>
         <small>
-          26 letras, quatro cartões em cada uma: foto, áudio, título e texto numa peça só
+          {`${casasDesteProjeto(dados.project)} ${plural(
+            dados.project.unidade ?? 'Letra',
+          ).toLowerCase()}, quatro cartões em cada uma: foto, áudio, título e texto numa peça só`}
         </small>
       </Link>
 

@@ -629,6 +629,11 @@ export class AdminContentService {
         description: true,
         photoApprovalRequired: true,
         checkoutUrl: true,
+        // O painel anuncia a entrada para as casas deste projeto, e tem de a
+        // anunciar pelo nome certo: "Letras", "Dias", "Atributos".
+        unidade: true,
+        sequencia: true,
+        blocos: true,
       },
     })
     if (!project) throw new NotFoundException('Projeto não encontrado')
@@ -975,7 +980,7 @@ export class AdminContentService {
   async alfabeto(projectSlug: string) {
     const project = await this.prisma.project.findUnique({
       where: { slug: projectSlug },
-      select: { id: true, slug: true, name: true, sequencia: true, blocos: true },
+      select: { id: true, slug: true, name: true, sequencia: true, blocos: true, unidade: true },
     })
     if (!project) throw new NotFoundException('Projeto não encontrado')
 
@@ -1021,16 +1026,24 @@ export class AdminContentService {
       No alfabeto são as 26 letras, sempre. Nos outros é 1..blocos, o número que
       ele escreveu no painel. Uma casa sem conteúdo aparece na mesma, vazia,
       como a casa de uma letra por preencher.
+
+      O NOME DA CASA VEM DO PROJETO, e não escrito aqui.
+
+      Dizia "Letra A" ou "Bloco 3" conforme a `sequencia`. Ele foi publicar no
+      "Minha Identidade e Poder em Jesus", que são sete dias, e o painel
+      falava-lhe de blocos — daí "a estrutura de publicação está muito
+      desorganizada e não tem as mesmas opções", em 21/09. A estrutura era a
+      mesma; o que estava diferente era o nome. Ver `Project.unidade`.
     */
     const casas: Array<{ letra: string | null; numero: number | null; rotulo: string }> =
       porLetras
         ? 'ABCDEFGHIJKLMNOPQRSTUVWXYZ'
             .split('')
-            .map((letra) => ({ letra, numero: null, rotulo: `Letra ${letra}` }))
+            .map((letra) => ({ letra, numero: null, rotulo: `${project.unidade} ${letra}` }))
         : Array.from({ length: project.blocos }, (_, i) => ({
             letra: null,
             numero: i + 1,
-            rotulo: `Bloco ${i + 1}`,
+            rotulo: `${project.unidade} ${i + 1}`,
           }))
 
     const porCasa = new Map(conteudos.map((c) => [porLetras ? c.letra! : String(c.ordinal), c]))
@@ -1880,8 +1893,8 @@ export class AdminContentService {
     const p = await this.prisma.project.findUnique({
       where: { slug },
       // A sequência vem junto: quem monta a estrutura precisa de saber se as
-      // casas deste projeto são letras ou números.
-      select: { id: true, slug: true, name: true, sequencia: true, blocos: true },
+      // casas deste projeto são letras ou números, e como se chama uma delas.
+      select: { id: true, slug: true, name: true, sequencia: true, blocos: true, unidade: true },
     })
     if (!p) throw new NotFoundException('Projeto não encontrado')
     return p

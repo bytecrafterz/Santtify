@@ -117,6 +117,24 @@ model Project {
   /// vazia. Sem isto, a grade encolhia enquanto ele preenchia.
   blocos Int @default(0)
 
+  /// COMO SE CHAMA UMA CASA DESTE PROJETO: "Letra", "Dia", "Atributo".
+  ///
+  /// Ele escreveu-o em 21/09, a explicar o que quer que se reaproveite e o que
+  /// muda: "o que muda de um projeto para outro é o conteúdo e a identificação
+  /// da unidade — por exemplo, no Alfabeto é Letra A, Letra B, Letra C; no
+  /// Minha Identidade é Dia 1, Dia 2, Dia 3… A estrutura de gerenciamento e
+  /// publicação deve continuar a mesma."
+  ///
+  /// Estava escrito no código em cinco sítios (`Letra ${casa}`, `Bloco ${casa}`,
+  /// "Escolha uma letra", "letras liberadas", "CONTINUA ATÉ A LETRA Z"), e por
+  /// isso o painel do Minha Identidade falava de letras e de 26 casas num
+  /// projeto de sete dias. Ele foi lá publicar e não reconheceu nada.
+  ///
+  /// É o NOME NO SINGULAR, e o ecrã acrescenta o número ou a letra: "Dia 1",
+  /// "Letra A". Fica na base e não derivado de `sequencia` porque dois projetos
+  /// de números não se chamam o mesmo — ele tem dias e tem atributos.
+  unidade String @default("Bloco")
+
   /// Quem pode abrir o Modo Karaokê das faixas deste projeto.
   karaokeAcesso    KaraokeAcesso     @default(TODOS)
   precoDeCartoes   PrecoDeCartoes?

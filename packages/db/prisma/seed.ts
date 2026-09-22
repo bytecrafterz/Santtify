@@ -28,9 +28,27 @@ function shortCode(length = 7): string {
 
 async function main() {
   console.log('→ Projeto')
+  /*
+    O ALFABETO NASCE A DIZER QUE É UM ALFABETO.
+
+    Isto criava o projeto sem `sequencia`, sem `blocos` e sem `unidade`, e
+    portanto com os valores por omissão: NUMEROS, 0 casas, "Bloco". Num projeto
+    que são 26 letras.
+
+    Em produção nunca se viu, porque a migração de 19/09 corrigiu o projeto que
+    já existia — olhou para os conteúdos, viu letras, e escreveu LETRAS e 26. Mas
+    num servidor NOVO a ordem é a inversa: as migrações correm numa base vazia e
+    o seed só depois. A grade abria com zero casas, e o primeiro passo do
+    `publicar.sh` é exactamente este seed.
+
+    Os três campos vão também no `update`, ao contrário do resto: são o que o
+    projeto É, e não conteúdo que ele tenha escrito. Um alfabeto com 26 letras na
+    base e 0 casas na grade não é uma escolha dele que se deva preservar.
+    `unidade` fica fora do update — esse nome é dele para mudar no painel.
+  */
   const project = await prisma.project.upsert({
     where: { slug: PROJECT_SLUG },
-    update: {},
+    update: { sequencia: 'LETRAS', blocos: LETTERS.length },
     create: {
       slug: PROJECT_SLUG,
       name: 'Jesus Alfabeto Saudável',
@@ -38,6 +56,9 @@ async function main() {
         'Projeto educacional infantil — 26 letras, cada uma com QR Code próprio. ' +
         'Primeira vitrine da tecnologia Produto Vivo.',
       status: 'ACTIVE',
+      sequencia: 'LETRAS',
+      blocos: LETTERS.length,
+      unidade: 'Letra',
       branding: {
         primaryColor: '#2563eb',
         // Preenchido quando o cliente enviar a arte e os mockups.

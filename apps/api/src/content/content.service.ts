@@ -44,6 +44,14 @@ export class ContentService {
          */
         sequencia: true,
         blocos: true,
+        /**
+         * E COMO SE CHAMA UMA CASA: "Letra", "Dia", "Atributo".
+         *
+         * O ecrã dizia "Letra" ou "Bloco" conforme a `sequencia`, escrito no
+         * código. Num projeto de sete dias saía "Bloco 1" e "Escolha um bloco",
+         * e ele não reconheceu o painel que foi usar. Ver `Project.unidade`.
+         */
+        unidade: true,
       },
     })
     if (!project || project.status === 'ARCHIVED') {

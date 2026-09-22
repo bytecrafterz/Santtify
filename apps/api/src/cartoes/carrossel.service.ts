@@ -81,6 +81,7 @@ export class CarrosselService {
         status: true,
         sequencia: true,
         blocos: true,
+        unidade: true,
       },
     })
 
@@ -117,9 +118,11 @@ export class CarrosselService {
         nome: p.name,
         tagline: p.tagline,
         capa: p.coverUrl,
-        // Quantas casas tem a grade deste projeto, e se são letras ou números.
+        // Quantas casas tem a grade deste projeto, se são letras ou números, e
+        // como se chama uma delas ("Letra", "Dia", "Atributo").
         sequencia: p.sequencia,
         blocos: p.sequencia === SequenciaDoProjeto.LETRAS ? 26 : p.blocos,
+        unidade: p.unidade,
         capaLargura: (p.coverUrl && medidas.get(p.coverUrl)?.width) || null,
         capaAltura: (p.coverUrl && medidas.get(p.coverUrl)?.height) || null,
         destaque: p.destaque,

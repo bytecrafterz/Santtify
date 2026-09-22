@@ -263,9 +263,11 @@ export default async function IndiceDoProjeto({
           contents={contents}
           progresso={progresso}
           categorias={cats?.categorias ?? []}
-          // A grade deste projeto: 26 letras, ou os blocos que ele definiu.
+          // A grade deste projeto: 26 letras, ou os blocos que ele definiu, e
+          // como se chama uma casa — "Letra", "Dia", "Atributo".
           sequencia={project.sequencia ?? 'LETRAS'}
           blocos={project.blocos ?? 26}
+          unidade={project.unidade ?? 'Letra'}
         />
       )}
 

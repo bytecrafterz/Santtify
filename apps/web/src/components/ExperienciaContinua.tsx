@@ -6,6 +6,7 @@ import { PublicacaoDaLetra } from './PublicacaoDaLetra'
 import { CartaoDeImpressao } from './CartaoDeImpressao'
 import { rastrear } from '@/lib/track'
 import { publicacoesDe } from '@/lib/publicacoes-da-letra'
+import { artigoIndefinido, liberadas } from '@/lib/unidade'
 
 /**
  * O alfabeto e a letra aberta, tudo na mesma tela.
@@ -34,6 +35,7 @@ export function ExperienciaContinua({
   categorias = [],
   sequencia = 'LETRAS',
   blocos = 26,
+  unidade = 'Letra',
 }: {
   projectSlug: string
   projectId: string
@@ -50,6 +52,14 @@ export function ExperienciaContinua({
    */
   sequencia?: 'LETRAS' | 'NUMEROS'
   blocos?: number
+  /**
+   * Como se chama uma casa: "Letra", "Dia", "Atributo".
+   *
+   * Estava escrito aqui — "Letra" quando havia letras, "Bloco" quando havia
+   * números — e por isso o "Minha Identidade", que são sete dias, dizia
+   * "Escolha um bloco" e "Bloco 1". Ver `Project.unidade`.
+   */
+  unidade?: string
 }) {
   const porLetras = sequencia === 'LETRAS'
   /** As casas desta grade, na ordem em que aparecem. */
@@ -314,21 +324,13 @@ export function ExperienciaContinua({
         <strong>
           {progresso.liberadas} de {progresso.total}
         </strong>
-        <span>
-          {porLetras
-            ? progresso.liberadas === 1
-              ? 'letra liberada'
-              : 'letras liberadas'
-            : progresso.liberadas === 1
-              ? 'bloco liberado'
-              : 'blocos liberados'}
-        </span>
+        <span>{liberadas(unidade, progresso.liberadas)}</span>
         <span className="trilha" role="presentation">
           <span className="preenchido" style={{ width: `${porcento}%` }} />
         </span>
       </div>
 
-      <h2>{porLetras ? 'Escolha uma letra' : 'Escolha um bloco'}</h2>
+      <h2>{`Escolha ${artigoIndefinido(unidade)} ${unidade.toLowerCase()}`}</h2>
       <p className="subtitulo">Aprenda com fé, saúde, música e diversão</p>
 
       <div className="grade-letras">
@@ -342,7 +344,7 @@ export function ExperienciaContinua({
            * casa do A é do A mesmo que nada esteja publicado nela.
            */
           const dela = conteudoDaCasa(casa)
-          const nomeDaCasa = porLetras ? `Letra ${casa}` : `Bloco ${casa}`
+          const nomeDaCasa = `${unidade} ${casa}`
 
           if (!dela) {
             return (

@@ -215,7 +215,7 @@ export interface VagaoAdmin {
   letra: string | null
   /** O número do bloco, só nos projetos numerados. */
   numero: number | null
-  /** Como se chama no ecrã: "Letra A" ou "Bloco 3". */
+  /** Como se chama no ecrã: "Letra A", "Dia 1", "Atributo 7". */
   rotulo: string
   contentId: string | null
   slug: string | null
@@ -295,6 +295,10 @@ export const admin = {
         name: string
         photoApprovalRequired: boolean
         checkoutUrl?: string | null
+        /** Como se chama uma casa aqui: "Letra", "Dia", "Atributo". */
+        unidade?: string
+        sequencia?: 'LETRAS' | 'NUMEROS'
+        blocos?: number
       }
       contents: ItemAdmin[]
     }>(`/projects/${projectSlug}/contents`),
@@ -378,7 +382,13 @@ export const admin = {
 
   alfabeto: (projectSlug: string) =>
     chamar<{
-      project: { id: string; slug: string; name: string }
+      project: {
+        id: string
+        slug: string
+        name: string
+        /** Como se chama uma casa aqui: "Letra", "Dia", "Atributo". */
+        unidade?: string
+      }
       vagoes: VagaoAdmin[]
     }>(`/projects/${projectSlug}/alfabeto`),
 

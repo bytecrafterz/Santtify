@@ -2,6 +2,7 @@
 
 import { useCallback, useEffect, useState } from 'react'
 import { admin, type CartaoAdmin, type VagaoAdmin } from '@/lib/admin'
+import { artigoDefinido, capitalizar, plural, todosOsPlural } from '@/lib/unidade'
 import { CabecalhoFixo } from './CabecalhoFixo'
 import { useAuth } from './ProvedorDeAuth'
 import { EditorDeCartao } from './EditorDeCartao'
@@ -41,6 +42,8 @@ const CORES = ['#2563eb', '#7c3aed', '#ea580c', '#7c3aed']
 
 export function SequenciaDoAlfabeto({ projectSlug }: { projectSlug: string }) {
   const [vagoes, definirVagoes] = useState<VagaoAdmin[]>([])
+  /** "Letra", "Dia", "Atributo" — vem do projeto. Ver `Project.unidade`. */
+  const [unidade, definirUnidade] = useState('Letra')
   const [onde, definirOnde] = useState<Onde>({ tela: 'sequencia' })
   const [carregando, definirCarregando] = useState(true)
   const [erro, definirErro] = useState<string | null>(null)
@@ -86,9 +89,19 @@ export function SequenciaDoAlfabeto({ projectSlug }: { projectSlug: string }) {
     try {
       const r = await admin.alfabeto(projectSlug)
       definirVagoes(r.vagoes)
+      /*
+        COMO SE CHAMA UMA CASA NESTE PROJETO.
+
+        O `rotulo` de cada vagão já vem do servidor com o nome certo, mas os
+        textos em volta — o que se diz no topo, o fim da composição, o aviso de
+        que a casa precisa de conteúdo — estavam escritos a falar de letras. Num
+        projeto de sete dias isso é o painel a falar de outro projeto, e foi o
+        que ele encontrou em 21/09 ao tentar publicar no Minha Identidade.
+      */
+      definirUnidade(r.project?.unidade ?? 'Letra')
       definirErro(null)
     } catch {
-      definirErro('Não foi possível carregar o alfabeto.')
+      definirErro('Não foi possível carregar as casas deste projeto.')
     } finally {
       definirCarregando(false)
     }
@@ -376,7 +389,7 @@ export function SequenciaDoAlfabeto({ projectSlug }: { projectSlug: string }) {
               <span className="nome">CRIAR CARTÃO PARA IMPRESSÃO</span>
               <span className="estado">
                 {!vagao.contentId
-                  ? 'A letra precisa de ter conteúdo primeiro'
+                  ? `${capitalizar(artigoDefinido(unidade))} ${unidade.toLowerCase()} precisa de ter conteúdo primeiro`
                   : aCriarImpressao
                     ? 'A criar...'
                     : 'Arte, folha A4 e PDF para a gráfica'}
@@ -397,8 +410,16 @@ export function SequenciaDoAlfabeto({ projectSlug }: { projectSlug: string }) {
         voltarPara={`/${projectSlug}/admin`}
       />
       <div className="painel-sequencia">
-        <h1>Alfabeto — sequência infinita</h1>
-        <p className="nota">Deslize para baixo para ver todas as letras</p>
+        {/*
+          O TÍTULO É DO PROJETO, e não "Alfabeto" para todos.
+
+          Dizia "Alfabeto — sequência infinita" em qualquer projeto, e por baixo
+          "todas as letras". No Minha Identidade, que são sete dias, isto era o
+          painel a anunciar outro projeto — e foi o que ele encontrou quando lá
+          foi publicar.
+        */}
+        <h1>{`${plural(unidade)} — sequência infinita`}</h1>
+        <p className="nota">{`Deslize para baixo para ver ${todosOsPlural(unidade)}`}</p>
 
         {erro && !aRestaurarSessao && <p className="erro">{erro}</p>}
         {(carregando || aRestaurarSessao) && <p className="nota">A carregar...</p>}
@@ -461,7 +482,18 @@ export function SequenciaDoAlfabeto({ projectSlug }: { projectSlug: string }) {
           ))}
         </ol>
 
-        <p className="fim-composicao">CONTINUA ATÉ A LETRA Z</p>
+        {/*
+          O FIM DA COMPOSIÇÃO É O FIM DESTE PROJETO.
+
+          Dizia "CONTINUA ATÉ A LETRA Z", que num projeto de sete dias é uma
+          promessa de dezanove casas que não existem. Agora diz onde acaba
+          mesmo: a última casa que este projeto tem.
+        */}
+        {vagoes.length > 0 && (
+          <p className="fim-composicao">
+            {`CONTINUA ATÉ ${capitalizar(artigoDefinido(unidade))} ${vagoes[vagoes.length - 1].rotulo}`.toUpperCase()}
+          </p>
+        )}
       </div>
     </>
   )
