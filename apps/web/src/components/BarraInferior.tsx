@@ -3,6 +3,7 @@
 import Link from 'next/link'
 import { useEffect, useRef } from 'react'
 import { usePathname } from 'next/navigation'
+import { plural } from '@/lib/unidade'
 
 /**
  * A barra fixa de baixo, com os quatro acessos.
@@ -25,11 +26,21 @@ import { usePathname } from 'next/navigation'
 export function BarraInferior({
   projectSlug,
   linkPdf,
+  unidade,
 }: {
   projectSlug: string
   /** O checkout da Hotmart, quando ele o tiver definido no painel. */
   linkPdf?: string | null
+  /**
+   * Como se chamam as casas deste projeto: "Letra", "Dia", "Atributo".
+   *
+   * O botão dizia "Alfabeto" em todos os projetos, e num de sete dias isso é o
+   * nome de outro projeto. Sem `unidade` fica "Alfabeto", que é o que era —
+   * assim a barra da página inicial, que não é de projeto nenhum, não muda.
+   */
+  unidade?: string
 }) {
+  const nomeDaGrade = unidade ? plural(unidade) : 'Alfabeto'
   const suporte = process.env.NEXT_PUBLIC_SUPORTE_WHATSAPP
   const barra = useRef<HTMLElement | null>(null)
 
@@ -162,7 +173,7 @@ export function BarraInferior({
             <path d="M5.5 9.5V20h13V9.5" />
           </svg>
         </span>
-        Alfabeto
+        {nomeDaGrade}
       </Link>
 
       <Link href={`/${projectSlug}/produto-vivo`} className="item-barra">

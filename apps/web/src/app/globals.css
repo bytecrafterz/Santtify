@@ -2319,6 +2319,40 @@ img.avatar {
 }
 
 /* ── Barra de progresso das letras ──────────────────────────────────── */
+/*
+  O cabeçalho mínimo da página de um projeto.
+
+  Substitui o perfil e o carrossel que aqui estavam. É só o nome e a saída para
+  a entrada: quem chega por um link partilhado sabe onde está e tem como ir ao
+  resto, sem que a página volte a parecer a inicial — que era a queixa dele.
+*/
+.cabecalho-do-projeto {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  margin: 0.25rem 0 0.75rem;
+}
+
+.cabecalho-do-projeto a {
+  flex: none;
+  display: grid;
+  place-items: center;
+  width: 2rem;
+  height: 2rem;
+  border-radius: 999px;
+  border: 1px solid var(--cor-borda);
+  color: inherit;
+  text-decoration: none;
+  font-size: 1.1rem;
+  line-height: 1;
+}
+
+.cabecalho-do-projeto h1 {
+  margin: 0;
+  font-size: 1.25rem;
+  line-height: 1.2;
+}
+
 .progresso-letras {
   display: flex;
   align-items: center;

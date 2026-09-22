@@ -1,14 +1,13 @@
+import Link from 'next/link'
 import { notFound } from 'next/navigation'
 import { api } from '@/lib/api'
 import { RastreadorDeVisita } from '@/components/RastreadorDeVisita'
 import { VisualizacoesDasPublicacoes } from '@/components/VisualizacoesDasPublicacoes'
 import { BannerDeConsentimento } from '@/components/BannerDeConsentimento'
 import { AvisosDeEntrada } from '@/components/AvisosDeEntrada'
-import { CabecalhoDePerfil } from '@/components/CabecalhoDePerfil'
 import { IntroducaoEmCartoes } from '@/components/IntroducaoEmCartoes'
 import { ExperienciaContinua } from '@/components/ExperienciaContinua'
 import { BarraInferior } from '@/components/BarraInferior'
-import { CarrosselDeProjetos } from '@/components/CarrosselDeProjetos'
 
 /**
  * A experiência inteira numa página só.
@@ -150,7 +149,9 @@ export default async function IndiceDoProjeto({
   const dados = await api.indice(projectSlug)
   if (!dados) notFound()
 
-  const { project, anfitriao, contents, progresso, comunidade } = dados
+  // `comunidade` saiu com o `CabecalhoDePerfil`: os perfis criados são coisa da
+  // entrada, e é lá que agora se contam.
+  const { project, anfitriao, contents, progresso } = dados
 
   /**
    * A introdução é o conteúdo SEM LETRA. Vai buscar-se por inteiro, com os
@@ -180,30 +181,31 @@ export default async function IndiceDoProjeto({
         props={anfitriao ? { perfilId: anfitriao.id } : undefined}
       />
 
-      {/* 1. Perfil */}
       {/*
-        Quem já tem conta entra no seu próprio perfil; quem chega de fora entra
-        no do anfitrião, que é a apresentação do projecto. Pedido dele em 27/08.
+        A PÁGINA DE UM PROJETO MOSTRA O PROJETO, E MAIS NADA.
+
+        Aqui desenhava-se o `CabecalhoDePerfil` e, por baixo, o
+        `CarrosselDeProjetos` — as duas peças da entrada. O resultado é o que ele
+        descreveu em 22/09: tocava num projeto e voltava a encontrar o perfil, os
+        dois cards e a página inicial inteira por cima do conteúdo, com os sete
+        blocos "mais abaixo". Tinha razão em não chamar a isso navegar.
+
+        As duas peças mudaram-se para `/`, que passou a ser a vitrine. Esta
+        página fica com a introdução e a grade — "100% daquele conteúdo", nas
+        palavras dele.
+
+        FICA UM CABEÇALHO MÍNIMO, e isso é deliberado contra o "limpa" dele:
+        quem chega por um link partilhado precisa de saber onde está e de ter
+        como ir ao resto. É o nome do projeto e uma seta para a entrada, sem
+        avatar, sem contadores e sem a fila social — que era o que fazia esta
+        página parecer a inicial.
       */}
-      <CabecalhoDePerfil
-        preferirOUtilizador
-        projectSlug={projectSlug}
-        projectId={project.id}
-        perfisCriados={comunidade.perfis}
-        anfitriao={anfitriao}
-      />
-
-      {/* O CARROSSEL DE PROJETOS, imediatamente debaixo do perfil.
-
-          É a posição exacta do mockup dele, e o perfil acima não foi tocado:
-          entra a seguir ao `CabecalhoDePerfil` e antes da introdução, sem
-          alterar uma linha de nenhum dos dois.
-
-          Os projetos vêm de uma consulta, por isso um projeto novo cadastrado
-          no painel aparece aqui sozinho — que foi o pedido dele: "não quero
-          que cada novo projeto exija reconstruir ou programar novamente o
-          carrossel". */}
-      <CarrosselDeProjetos />
+      <div className="cabecalho-do-projeto">
+        <Link href="/" aria-label="Voltar ao início">
+          ←
+        </Link>
+        <h1>{project.name}</h1>
+      </div>
 
       {/*
         2, 3 e 4. A INTRODUÇÃO DO PROJETO, SEMPRE ABERTA.
@@ -292,7 +294,11 @@ export default async function IndiceDoProjeto({
       */}
       <AvisosDeEntrada projectSlug={projectSlug} />
       <BannerDeConsentimento projectId={project.id} />
-      <BarraInferior projectSlug={projectSlug} linkPdf={project.checkoutUrl ?? null} />
+      <BarraInferior
+        projectSlug={projectSlug}
+        linkPdf={project.checkoutUrl ?? null}
+        unidade={project.unidade ?? 'Letra'}
+      />
     </main>
   )
 }
