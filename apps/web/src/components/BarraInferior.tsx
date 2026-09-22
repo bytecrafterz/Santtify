@@ -122,7 +122,31 @@ export function BarraInferior({
 
   return (
     <nav ref={barra} className="barra-inferior" aria-label="Acessos principais">
-      <Link href={`/${projectSlug}`} className="item-barra">
+      {/*
+        ALFABETO LEVA À GRADE DAS LETRAS, e não ao topo da página.
+
+        Ele reportou-o em 21/09: "quando clico em Alfabeto no menu inferior,
+        atualmente não acontece nada". E não acontecia mesmo — o destino era
+        `/${projectSlug}`, a página onde ele já estava. O router não tem para
+        onde ir, e a grade continua onde estava: a meio da página, por baixo do
+        perfil, do carrossel e da introdução.
+
+        Agora o endereço traz a âncora, e quando já estamos na página o salto é
+        feito à mão. As duas coisas são precisas: a âncora serve quem vem de
+        outra página, e o `scrollIntoView` serve quem já está nesta — nesse
+        caso o endereço não muda e o navegador não faz nada sozinho, nem
+        sequer quando a âncora é a mesma de antes.
+      */}
+      <Link
+        href={`/${projectSlug}#alfabeto`}
+        className="item-barra"
+        onClick={(e) => {
+          const grade = document.getElementById('alfabeto')
+          if (!grade) return // noutra página: deixa o link navegar normalmente
+          e.preventDefault()
+          grade.scrollIntoView({ behavior: 'smooth', block: 'start' })
+        }}
+      >
         <span className="icone" aria-hidden>
           <svg
             viewBox="0 0 24 24"

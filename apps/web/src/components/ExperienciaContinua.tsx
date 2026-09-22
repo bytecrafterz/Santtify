@@ -297,7 +297,20 @@ export function ExperienciaContinua({
 
   return (
     <>
-      <div className="progresso-letras">
+      {/*
+        O DESTINO DO BOTÃO "ALFABETO" DA BARRA DE BAIXO.
+
+        Ele escreveu em 21/09: "quando clico em Alfabeto no menu inferior,
+        atualmente não acontece nada". O botão levava a `/${slug}` — que é a
+        página onde ele já estava. Navegar para o sítio onde se está não move
+        nada, e a grade das letras fica a meio da página, por baixo do perfil,
+        do carrossel e da introdução.
+
+        A âncora é aqui e não na grade: encostar a grade ao topo esconde o
+        "Escolha uma letra" e o contador, e ele fica a olhar para quadrados sem
+        saber que chegou. `scroll-margin-top` está no CSS, pelo cabeçalho fixo.
+      */}
+      <div className="progresso-letras" id="alfabeto">
         <strong>
           {progresso.liberadas} de {progresso.total}
         </strong>

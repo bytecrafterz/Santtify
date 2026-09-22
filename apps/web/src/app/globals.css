@@ -2326,6 +2326,12 @@ img.avatar {
   margin: 0.5rem 0 0.75rem;
   font-size: 0.85rem;
   color: var(--cor-texto-suave);
+  /*
+    O botão "Alfabeto" da barra de baixo salta para aqui (`#alfabeto`). Sem esta
+    folga, o cabeçalho fixo fica por cima da primeira linha e quem salta aterra
+    a ler um contador cortado ao meio.
+  */
+  scroll-margin-top: 4.5rem;
 }
 
 .progresso-letras .trilha {
