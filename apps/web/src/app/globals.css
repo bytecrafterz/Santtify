@@ -9081,9 +9081,26 @@ h2.funil {
     genérica". O desfoque fica, porque é ele que impede o desenho da arte de
     competir com as palavras, mas suave o bastante para se reconhecer o cartão
     que se estava a ouvir.
+
+    22/09: ele voltou a pedir mais — "têm como fazer mais visível a imagem do
+    fundo". De 9px para 6px, e o véu do meio quase a metade (ver o `::after`).
+
+    SEIS E NÃO QUATRO, e a diferença mediu-se com a arte dele. A 4px a arte
+    lê-se tão bem que o TEXTO dentro dela também se lê — o cartão do aviso tem
+    "CRISTÃO", "SEGURO", "TRANSPARENTE" em letras grandes, e ficavam legíveis
+    por trás da letra da música, duas coisas a pedir os olhos ao mesmo tempo. A
+    6px a arte continua a reconhecer-se — o escudo, as caras, as cores — e as
+    palavras dela desfazem-se em manchas. É o ponto em que se vê o cartão sem
+    se o ler.
+
+    O QUE PERMITE BAIXAR O VÉU é a letra, e não a coragem: cada palavra do
+    karaokê leva um contorno de 0.1em mais um halo creme em oito direcções. Uma
+    palavra assim lê-se sobre quase tudo. É o cabeçalho e os controlos — que não
+    têm contorno nenhum — que continuam a precisar de sombra, e por isso a
+    faixa de cima e a de baixo ESCURECEM enquanto o meio clareia.
   */
-  filter: blur(9px) saturate(1.12);
-  transform: scale(1.1);
+  filter: blur(6px) saturate(1.2);
+  transform: scale(1.08);
 }
 
 .karaoke-fundo::after {
@@ -9091,20 +9108,26 @@ h2.funil {
   position: absolute;
   inset: 0;
   /* O véu que segura o contraste das palavras. Mais leve no meio, onde a arte
-     aparece, e mais fechado nas pontas, onde estão o cabeçalho e o tocador. */
+     aparece, e mais fechado nas pontas, onde estão o cabeçalho e o tocador.
+
+     O meio desceu de 0.58/0.52 para 0.30/0.24 — a arte passa a ler-se como
+     arte. As pontas SUBIRAM, de 0.28/0.30 para 0.42/0.46: com o fundo mais
+     nítido, o "MODO KARAOKÊ" e o tempo do tocador precisam de mais sombra por
+     baixo do que precisavam antes, e são as duas únicas coisas neste ecrã sem
+     contorno próprio. */
   background:
     radial-gradient(
       ellipse at 50% 42%,
-      rgba(255, 248, 225, 0.58) 0%,
-      rgba(255, 238, 190, 0.52) 45%,
-      rgba(214, 150, 60, 0.45) 100%
+      rgba(255, 248, 225, 0.3) 0%,
+      rgba(255, 238, 190, 0.24) 45%,
+      rgba(214, 150, 60, 0.32) 100%
     ),
     linear-gradient(
       to bottom,
-      rgba(40, 20, 5, 0.28) 0%,
-      rgba(40, 20, 5, 0) 18%,
-      rgba(40, 20, 5, 0) 80%,
-      rgba(40, 20, 5, 0.3) 100%
+      rgba(40, 20, 5, 0.42) 0%,
+      rgba(40, 20, 5, 0) 20%,
+      rgba(40, 20, 5, 0) 78%,
+      rgba(40, 20, 5, 0.46) 100%
     );
 }
 

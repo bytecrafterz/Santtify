@@ -398,7 +398,20 @@ export class ContentService {
           position: { gt: content.position },
         },
         orderBy: { position: 'asc' },
-        select: { slug: true, title: true },
+        /*
+          A SEGUINTE VIAJA COM A ARTE E COM A CASA.
+
+          Traziam-se só a slug e o título, e a página desenhava com eles duas
+          caixas de texto: "Anterior · Letra C" e "Próximo · Letra E". Ele viu-as
+          em 22/09 e escreveu "não quero que apareça desta forma, apareça a
+          próxima letra".
+
+          A página inicial já anunciava a seguinte como deve ser — a arte dela,
+          e o nome por baixo — e a página da letra, que é a que TODOS os QR Codes
+          impressos abrem, ficava com a versão pobre. Com `coverUrl`, `letra` e
+          `ordinal` passa a poder desenhar a mesma peça.
+        */
+        select: { slug: true, title: true, coverUrl: true, letra: true, ordinal: true },
       }),
     ])
 

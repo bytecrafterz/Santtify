@@ -6,7 +6,7 @@ import { PublicacaoDaLetra } from './PublicacaoDaLetra'
 import { CartaoDeImpressao } from './CartaoDeImpressao'
 import { rastrear } from '@/lib/track'
 import { publicacoesDe } from '@/lib/publicacoes-da-letra'
-import { artigoIndefinido, liberadas } from '@/lib/unidade'
+import { artigoDefinido, artigoIndefinido, liberadas } from '@/lib/unidade'
 
 /**
  * O alfabeto e a letra aberta, tudo na mesma tela.
@@ -463,7 +463,10 @@ export function ExperienciaContinua({
             if (!seguinte) return null
             return (
               <div className="proxima-letra">
-                <p className="rotulo-proxima">{porLetras ? 'Próxima letra' : 'Próximo bloco'}</p>
+                {/* "Próxima letra", "Próximo dia" — e não "Próximo bloco". */}
+                <p className="rotulo-proxima">
+                  {`Próxim${artigoDefinido(unidade) === 'a' ? 'a' : 'o'} ${unidade.toLowerCase()}`}
+                </p>
                 <button
                   type="button"
                   className="cartao-proxima"

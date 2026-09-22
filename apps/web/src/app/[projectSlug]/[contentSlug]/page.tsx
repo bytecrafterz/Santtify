@@ -11,6 +11,7 @@ import { BannerDeConsentimento } from '@/components/BannerDeConsentimento'
 import { OfertaDaLetra } from '@/components/OfertaDaLetra'
 import { BarraInferior } from '@/components/BarraInferior'
 import { Voltar } from '@/components/Voltar'
+import { artigoDefinido } from '@/lib/unidade'
 
 export async function generateMetadata({
   params,
@@ -84,6 +85,8 @@ export default async function PaginaDeConteudo({
   const cats = await api.categorias(projectSlug).catch(() => null)
 
   const { project, content, navegacao } = dados
+  /** "Letra", "Dia", "Atributo" — para anunciar a seguinte pelo nome certo. */
+  const unidade = project.unidade ?? 'Letra'
 
   return (
     <main className="envoltorio com-barra">
@@ -190,22 +193,36 @@ export default async function PaginaDeConteudo({
         linkDeCompra={project.checkoutUrl ?? null}
       />
 
-      <nav className="navegacao">
-        {navegacao.anterior ? (
-          <Link href={`/${projectSlug}/${navegacao.anterior.slug}`}>
-            <span>Anterior</span>
-            {navegacao.anterior.title}
+      {/*
+        A PRÓXIMA ANUNCIA-SE COM A ARTE DELA, como na página inicial.
+
+        Aqui havia duas caixas de texto lado a lado — "Anterior · Letra C" e
+        "Próximo · Letra E". Ele viu-as em 22/09: "não quero que apareça desta
+        forma, apareça a próxima letra".
+
+        A página inicial já fazia isto bem, com a arte e o nome por baixo, e
+        esta — que é a que TODOS os QR Codes impressos abrem — ficava com a
+        versão pobre. Passa a ser a mesma peça, com as mesmas classes.
+
+        O ANTERIOR SAI. A saída para trás já está no cabeçalho, em cima, e ele
+        pediu a PRÓXIMA: numa sequência que se percorre da A à Z, o que
+        interessa depois de ouvir é o que vem a seguir.
+      */}
+      {navegacao.proximo && (
+        <div className="proxima-letra">
+          <p className="rotulo-proxima">{`Próxim${artigoDefinido(unidade) === 'a' ? 'a' : 'o'} ${unidade.toLowerCase()}`}</p>
+          <Link className="cartao-proxima" href={`/${projectSlug}/${navegacao.proximo.slug}`}>
+            {navegacao.proximo.coverUrl && (
+              // eslint-disable-next-line @next/next/no-img-element
+              <img src={navegacao.proximo.coverUrl} alt={navegacao.proximo.title} />
+            )}
+            <span className="nome-proxima">
+              {`${unidade} ${navegacao.proximo.letra ?? navegacao.proximo.ordinal ?? ''}`.trim()} —{' '}
+              {navegacao.proximo.title}
+            </span>
           </Link>
-        ) : (
-          <span />
-        )}
-        {navegacao.proximo && (
-          <Link className="direita" href={`/${projectSlug}/${navegacao.proximo.slug}`}>
-            <span>Próximo</span>
-            {navegacao.proximo.title}
-          </Link>
-        )}
-      </nav>
+        </div>
+      )}
 
       {content.qrUrl && (
         <div className="caixa-qr">

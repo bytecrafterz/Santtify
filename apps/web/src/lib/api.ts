@@ -89,7 +89,14 @@ export interface PaginaConteudo {
   content: Conteudo
   navegacao: {
     anterior: { slug: string; title: string } | null
-    proximo: { slug: string; title: string } | null
+    /** A seguinte traz a arte e a casa, para se anunciar como na página inicial. */
+    proximo: {
+      slug: string
+      title: string
+      coverUrl?: string | null
+      letra?: string | null
+      ordinal?: number | null
+    } | null
   }
 }
 
