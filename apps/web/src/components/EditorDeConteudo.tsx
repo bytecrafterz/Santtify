@@ -1,6 +1,7 @@
 'use client'
 
 import Link from 'next/link'
+import { Voltar } from './Voltar'
 import { useRouter } from 'next/navigation'
 import { useEffect, useRef, useState } from 'react'
 import {
@@ -90,7 +91,7 @@ export function EditorDeConteudo({
   return (
     <>
       <div className="cabecalho">
-        <Link href={`/${projectSlug}/admin`}>← Todos os conteúdos</Link>
+        <Voltar href={`/${projectSlug}/admin`}>Todos os conteúdos</Voltar>
         {publicado && (
           <Link href={`/${projectSlug}/${content.slug}`} target="_blank">
             Ver página ↗

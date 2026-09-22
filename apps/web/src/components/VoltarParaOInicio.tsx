@@ -1,6 +1,7 @@
 'use client'
 
 import { useRouter } from 'next/navigation'
+import { Voltar } from './Voltar'
 
 /**
  * O caminho de saída do perfil.
@@ -19,10 +20,9 @@ export function VoltarParaOInicio({ projectSlug }: { projectSlug: string }) {
   const router = useRouter()
 
   return (
-    <button
-      type="button"
-      className="voltar-do-perfil"
-      onClick={() => {
+    <Voltar
+      emLinha
+      aoClicar={() => {
         /*
           DESTINO FIXO, E NÃO `back()`.
 
@@ -39,7 +39,7 @@ export function VoltarParaOInicio({ projectSlug }: { projectSlug: string }) {
         router.push(`/${projectSlug}`)
       }}
     >
-      <span aria-hidden>←</span> VOLTAR
-    </button>
+      Voltar
+    </Voltar>
   )
 }

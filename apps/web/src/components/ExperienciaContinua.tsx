@@ -474,8 +474,10 @@ export function ExperienciaContinua({
                     // eslint-disable-next-line @next/next/no-img-element
                     <img src={seguinte.coverUrl} alt={seguinte.title} />
                   )}
+                  {/* "Dia 2 — Espírito Santo", e não "Bloco 2". Mesma unidade
+                      que a grade e o painel usam. */}
                   <span className="nome-proxima">
-                    {porLetras ? `Letra ${seguinte.letra}` : `Bloco ${seguinte.ordinal}`} —{' '}
+                    {`${unidade} ${porLetras ? seguinte.letra : seguinte.ordinal}`} —{' '}
                     {seguinte.title}
                   </span>
                   {!seguinte.publicado && <span className="cadeado-proxima">🔒 Em breve</span>}

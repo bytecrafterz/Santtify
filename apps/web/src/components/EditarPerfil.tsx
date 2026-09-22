@@ -1,6 +1,7 @@
 'use client'
 
 import { useState } from 'react'
+import { Voltar } from './Voltar'
 import { auth, ErroDeApi, type PerfilResposta } from '@/lib/auth'
 import { useAuth } from './ProvedorDeAuth'
 import { AjustarFoto } from './AjustarFoto'
@@ -226,9 +227,7 @@ export function EditarPerfil({
         saída, e esta é a segunda vez que o mesmo formulário me ensina isso.
       */}
       <div className="topo-do-editor">
-        <button type="button" className="voltar-do-editor" onClick={fechar}>
-          <span aria-hidden>←</span> VOLTAR AO PERFIL
-        </button>
+        <Voltar aoClicar={fechar}>Voltar ao perfil</Voltar>
       </div>
 
       <span className="bloco-rotulo">Editar perfil</span>

@@ -1,6 +1,7 @@
 'use client'
 
 import { useCallback, useEffect, useState } from 'react'
+import { Voltar } from './Voltar'
 import { useRouter } from 'next/navigation'
 import { auth, type PerfilResposta } from '@/lib/auth'
 import { useAuth } from './ProvedorDeAuth'
@@ -63,9 +64,9 @@ export function PaginaDeEdicaoDoPerfil({ projectSlug }: { projectSlug: string })
 
   return (
     <>
-      <button type="button" className="voltar-do-perfil" onClick={voltarAoPerfil}>
-        <span aria-hidden>←</span> VOLTAR AO PERFIL
-      </button>
+      <Voltar aoClicar={voltarAoPerfil} emLinha>
+        Voltar ao perfil
+      </Voltar>
 
       <h1 className="titulo-da-edicao">Editar perfil</h1>
 

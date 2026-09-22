@@ -348,7 +348,7 @@ export function EditorDeCartoes({ projectSlug }: { projectSlug: string }) {
               className="cartoes-ligacao"
               onClick={() => definirPasso('categoria')}
             >
-              ← Escolher outra categoria
+              Escolher outra categoria
             </button>
           )}
         </section>

@@ -2,7 +2,9 @@
 
 import { useState } from 'react'
 import { admin, type CartaoAdmin } from '@/lib/admin'
+import { Voltar } from './Voltar'
 import { QrDaLetra } from './QrDaLetra'
+import { artigoDefinido } from '@/lib/unidade'
 
 /**
  * O cartão de impressão da letra, no painel.
@@ -26,6 +28,7 @@ import { QrDaLetra } from './QrDaLetra'
 export function EditorDoCartaoDeImpressao({
   cartao,
   letra,
+  unidade = 'Letra',
   projectSlug,
   contentSlug,
   aoGuardar,
@@ -34,6 +37,8 @@ export function EditorDoCartaoDeImpressao({
 }: {
   cartao: CartaoAdmin
   letra: string
+  /** Como se chama uma casa neste projeto: "Letra", "Dia". Ver `Project.unidade`. */
+  unidade?: string
   projectSlug: string
   contentSlug: string | null
   aoGuardar: () => Promise<void>
@@ -143,9 +148,8 @@ export function EditorDoCartaoDeImpressao({
   return (
     <div className="editor-cartao">
       <div className="topo-editor">
-        <button type="button" className="voltar-sequencia" onClick={aoCancelar}>
-          ← Quadrados
-        </button>
+        <Voltar aoClicar={aoCancelar} emLinha>Quadrados</Voltar>
+
         <span className="etiqueta-interna">CARTÃO PARA IMPRESSÃO</span>
       </div>
 
@@ -217,7 +221,7 @@ export function EditorDoCartaoDeImpressao({
         </label>
       </article>
 
-      <QrDaLetra projectSlug={projectSlug} contentSlug={contentSlug} letra={letra} />
+      <QrDaLetra projectSlug={projectSlug} contentSlug={contentSlug} letra={letra} unidade={unidade} />
 
       {/*
         Ver o que sai na impressora antes de mandar imprimir. É o mesmo ficheiro
@@ -234,7 +238,7 @@ export function EditorDoCartaoDeImpressao({
             <a
               className="botao-acao"
               href={pdfParaBaixar}
-              download={`cartao-letra-${letra.toLowerCase()}.pdf`}
+              download={`cartao-${unidade.toLowerCase()}-${letra.toLowerCase()}.pdf`}
             >
               ⬇ BAIXAR PDF
             </a>
@@ -296,7 +300,7 @@ export function EditorDoCartaoDeImpressao({
 
       {aConfirmar && (
         <div className="confirmar-apagar">
-          <p>Apagar o cartão de impressão da Letra {letra}? A arte e a folha A4 vão-se embora.</p>
+          <p>{`Apagar o cartão de impressão ${artigoDefinido(unidade) === 'a' ? 'da' : 'do'} ${unidade} ${letra}?`} A arte e a folha A4 vão-se embora.</p>
           <div className="linha-acoes">
             <button
               type="button"
@@ -348,7 +352,7 @@ export function EditorDoCartaoDeImpressao({
         {falta.length ? (
           <>RASCUNHO — falta {falta.join(' e ')}</>
         ) : estado === 'PUBLICADO' ? (
-          <>NO AR — o cartão da Letra {letra} aparece no fim da letra</>
+          <>{`NO AR — o cartão ${artigoDefinido(unidade) === 'a' ? 'da' : 'do'} ${unidade} ${letra} aparece no fim ${artigoDefinido(unidade) === 'a' ? 'da' : 'do'} ${unidade.toLowerCase()}`}</>
         ) : (
           <>FORA DO AR — está inteiro e guardado, mas ninguém o vê</>
         )}

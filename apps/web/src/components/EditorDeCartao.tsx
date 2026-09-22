@@ -4,6 +4,7 @@ import Link from 'next/link'
 import { useState } from 'react'
 import { useEffect } from 'react'
 import { admin, type CartaoAdmin, type CategoriaAdmin } from '@/lib/admin'
+import { Voltar } from './Voltar'
 
 /**
  * A terceira tela: o cartão, inteiro, numa página só.
@@ -224,9 +225,8 @@ export function EditorDeCartao({
   return (
     <div className="editor-cartao">
       <div className="topo-editor">
-        <button type="button" className="voltar-sequencia" onClick={aoCancelar}>
-          ← Quadrados
-        </button>
+        <Voltar aoClicar={aoCancelar} emLinha>Quadrados</Voltar>
+
         <span className="etiqueta-interna">{(cartao.nomeInterno ?? 'Cartão').toUpperCase()}</span>
       </div>
 

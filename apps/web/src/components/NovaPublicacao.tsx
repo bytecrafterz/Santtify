@@ -1,6 +1,7 @@
 'use client'
 
 import { useState } from 'react'
+import { Voltar } from './Voltar'
 import { admin } from '@/lib/admin'
 
 /**
@@ -109,9 +110,7 @@ export function NovaPublicacao({
   return (
     <div className="publicacao-nova">
       <div className="cabecalho-publicacao">
-        <button type="button" className="voltar-publicacao" onClick={aoCancelar} aria-label="Voltar">
-          ←
-        </button>
+        <Voltar aoClicar={aoCancelar} />
         <h1>Novo conteúdo</h1>
       </div>
 

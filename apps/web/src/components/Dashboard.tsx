@@ -1,6 +1,6 @@
 'use client'
 
-import Link from 'next/link'
+import { Voltar } from './Voltar'
 import { useEffect, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { tokens, ErroDeApi, renovarSessao } from '@/lib/auth'
@@ -151,7 +151,7 @@ export function Dashboard({ projectSlug }: { projectSlug: string }) {
   return (
     <>
       <div className="cabecalho">
-        <Link href={`/${projectSlug}/admin`}>← Painel</Link>
+        <Voltar href={`/${projectSlug}/admin`}>Painel</Voltar>
         <select value={dias} onChange={(e) => definirDias(Number(e.target.value))}>
           <option value={7}>7 dias</option>
           <option value={30}>30 dias</option>

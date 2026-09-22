@@ -8,6 +8,7 @@ import { useAuth } from './ProvedorDeAuth'
 import { EditorDeCartao } from './EditorDeCartao'
 import { EditorDoCartaoDeImpressao } from './EditorDoCartaoDeImpressao'
 import { QrDaLetra } from './QrDaLetra'
+import { Voltar } from './Voltar'
 
 /**
  * O painel do alfabeto, nas três telas que ele desenhou em 23/08.
@@ -148,6 +149,7 @@ export function SequenciaDoAlfabeto({ projectSlug }: { projectSlug: string }) {
             key={cartao.id}
             cartao={cartao}
             letra={vagao.letra ?? String(vagao.numero ?? '')}
+            unidade={unidade}
             projectSlug={projectSlug}
             contentSlug={vagao.slug}
             aoApagar={async () => {
@@ -251,27 +253,9 @@ export function SequenciaDoAlfabeto({ projectSlug }: { projectSlug: string }) {
             telemóvel desenha à sua maneira. Escapou à passagem de 22/09 porque
             este ecrã só se vê com sessão iniciada.
           */}
-          <button
-            type="button"
-            className="voltar-elegante voltar-em-linha"
-            onClick={() => definirOnde({ tela: 'sequencia', casa: vagao.casa })}
-          >
-            <span className="seta" aria-hidden>
-              <svg
-                viewBox="0 0 24 24"
-                width="17"
-                height="17"
-                fill="none"
-                stroke="currentColor"
-                strokeWidth="2.25"
-                strokeLinecap="round"
-                strokeLinejoin="round"
-              >
-                <path d="M14.5 5.5 8 12l6.5 6.5" />
-              </svg>
-            </span>
-            <span className="rotulo">{plural(unidade)}</span>
-          </button>
+          <Voltar aoClicar={() => definirOnde({ tela: 'sequencia', casa: vagao.casa })} emLinha>
+            {plural(unidade)}
+          </Voltar>
           <h1>Conteúdos: {vagao.rotulo}</h1>
           <p className="nota">Toque para editar • Toque nos três pontos para ver opções</p>
 
@@ -368,7 +352,12 @@ export function SequenciaDoAlfabeto({ projectSlug }: { projectSlug: string }) {
 
           {/* O QR fica aqui, na letra, e não dentro do cartão de impressão:
               as letras sem cartão criado também precisam do seu. */}
-          <QrDaLetra projectSlug={projectSlug} contentSlug={vagao.slug} letra={vagao.letra ?? String(vagao.numero ?? '')} />
+          <QrDaLetra
+            projectSlug={projectSlug}
+            contentSlug={vagao.slug}
+            letra={vagao.letra ?? String(vagao.numero ?? '')}
+            unidade={unidade}
+          />
 
           {/*
             AS CASAS QUE AINDA NÃO EXISTEM, e a porta para as criar.
