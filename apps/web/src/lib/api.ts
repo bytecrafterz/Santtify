@@ -88,14 +88,21 @@ export interface PaginaConteudo {
   project: Projeto
   content: Conteudo
   navegacao: {
-    anterior: { slug: string; title: string } | null
-    /** A seguinte traz a arte e a casa, para se anunciar como na página inicial. */
+    /**
+     * A seguinte traz a arte e a casa, para se anunciar como na página inicial.
+     *
+     * `publicado` falso é a casa que ainda não abriu — e nesse caso vem só a
+     * casa, sem slug, sem arte e sem título: o que ele ainda está a preparar
+     * não se mostra antes de tempo. O `anterior` saiu; a saída para trás está
+     * no cabeçalho e ele pediu a PRÓXIMA.
+     */
     proximo: {
-      slug: string
-      title: string
+      slug: string | null
+      title: string | null
       coverUrl?: string | null
       letra?: string | null
       ordinal?: number | null
+      publicado: boolean
     } | null
   }
 }

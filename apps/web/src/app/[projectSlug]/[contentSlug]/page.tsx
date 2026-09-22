@@ -11,7 +11,7 @@ import { BannerDeConsentimento } from '@/components/BannerDeConsentimento'
 import { OfertaDaLetra } from '@/components/OfertaDaLetra'
 import { BarraInferior } from '@/components/BarraInferior'
 import { Voltar } from '@/components/Voltar'
-import { artigoDefinido } from '@/lib/unidade'
+import { artigoDefinido, nomeDaCasa } from '@/lib/unidade'
 
 export async function generateMetadata({
   params,
@@ -208,31 +208,48 @@ export default async function PaginaDeConteudo({
         pediu a PRÓXIMA: numa sequência que se percorre da A à Z, o que
         interessa depois de ouvir é o que vem a seguir.
       */}
+      {/*
+        A CASA SEGUINTE ANUNCIA-SE MESMO QUANDO AINDA NÃO ABRIU.
+
+        Ele viu a Letra N acabar a dizer "Próxima letra — Letra B" e escreveu em
+        22/09 "têm que aparecer a próxima letra visível". Eram dois defeitos ao
+        mesmo tempo: a seguinte era procurada pela posição na lista e caía numa
+        Letra B que ficou fora do sítio, e o nome saía a dobrar porque a casa se
+        chama "Letra B" e o título dela também. Um vai em `casaSeguinte`, no
+        servidor; o outro em `nomeDaCasa`.
+
+        Trancada mostra-se na mesma, como na grade da página inicial: quem acaba
+        de ouvir uma letra tem de saber que a seguinte existe e ainda não abriu.
+        Era isso, e não mais texto, que faltava aqui.
+      */}
       {navegacao.proximo && (
         <div className="proxima-letra">
           <p className="rotulo-proxima">{`Próxim${artigoDefinido(unidade) === 'a' ? 'a' : 'o'} ${unidade.toLowerCase()}`}</p>
-          <Link className="cartao-proxima" href={`/${projectSlug}/${navegacao.proximo.slug}`}>
-            {navegacao.proximo.coverUrl && (
-              // eslint-disable-next-line @next/next/no-img-element
-              <img src={navegacao.proximo.coverUrl} alt={navegacao.proximo.title} />
-            )}
-            <span className="nome-proxima">
-              {`${unidade} ${navegacao.proximo.letra ?? navegacao.proximo.ordinal ?? ''}`.trim()} —{' '}
-              {navegacao.proximo.title}
-            </span>
-          </Link>
-        </div>
-      )}
-
-      {content.qrUrl && (
-        <div className="caixa-qr">
-          {/* eslint-disable-next-line @next/next/no-img-element */}
-          <img src={api.qrSvgUrl(projectSlug, contentSlug)} alt={`QR Code de ${content.title}`} />
-          <div>
-            QR Code desta página, gerado automaticamente pelo sistema.
-            <br />
-            <code>{content.qrUrl}</code>
-          </div>
+          {navegacao.proximo.publicado && navegacao.proximo.slug ? (
+            <Link className="cartao-proxima" href={`/${projectSlug}/${navegacao.proximo.slug}`}>
+              {navegacao.proximo.coverUrl && (
+                // eslint-disable-next-line @next/next/no-img-element
+                <img
+                  src={navegacao.proximo.coverUrl}
+                  alt={navegacao.proximo.title ?? ''}
+                />
+              )}
+              <span className="nome-proxima">
+                {nomeDaCasa(
+                  unidade,
+                  navegacao.proximo.letra ?? navegacao.proximo.ordinal,
+                  navegacao.proximo.title,
+                )}
+              </span>
+            </Link>
+          ) : (
+            <div className="cartao-proxima">
+              <span className="nome-proxima">
+                {nomeDaCasa(unidade, navegacao.proximo.letra ?? navegacao.proximo.ordinal, null)}
+              </span>
+              <span className="cadeado-proxima">🔒 Em breve</span>
+            </div>
+          )}
         </div>
       )}
 

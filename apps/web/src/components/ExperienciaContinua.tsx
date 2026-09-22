@@ -6,7 +6,7 @@ import { PublicacaoDaLetra } from './PublicacaoDaLetra'
 import { CartaoDeImpressao } from './CartaoDeImpressao'
 import { rastrear } from '@/lib/track'
 import { publicacoesDe } from '@/lib/publicacoes-da-letra'
-import { artigoDefinido, artigoIndefinido, liberadas } from '@/lib/unidade'
+import { artigoDefinido, artigoIndefinido, liberadas, nomeDaCasa } from '@/lib/unidade'
 
 /**
  * O alfabeto e a letra aberta, tudo na mesma tela.
@@ -478,10 +478,14 @@ export function ExperienciaContinua({
                     <img src={seguinte.coverUrl} alt={seguinte.title} />
                   )}
                   {/* "Dia 2 — Espírito Santo", e não "Bloco 2". Mesma unidade
-                      que a grade e o painel usam. */}
+                      que a grade e o painel usam — e sem repetir o nome quando
+                      o título dela ainda é o nome da casa. Ver `nomeDaCasa`. */}
                   <span className="nome-proxima">
-                    {`${unidade} ${porLetras ? seguinte.letra : seguinte.ordinal}`} —{' '}
-                    {seguinte.title}
+                    {nomeDaCasa(
+                      unidade,
+                      porLetras ? seguinte.letra : seguinte.ordinal,
+                      seguinte.publicado ? seguinte.title : null,
+                    )}
                   </span>
                   {!seguinte.publicado && <span className="cadeado-proxima">🔒 Em breve</span>}
                 </button>

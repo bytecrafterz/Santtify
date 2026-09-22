@@ -6,6 +6,9 @@ import { StorageService } from '../admin/storage.service'
 import { ContagensService } from '../social/contagens.service'
 import { ordemDoProdutoVivo } from './ordem-do-produto-vivo'
 
+/** As 26 casas, sempre as mesmas e sempre nesta ordem. */
+const ALFABETO = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ'.split('')
+
 /**
  * Leitura de conteúdo para o PWA.
  *
@@ -380,40 +383,7 @@ export class ContentService {
       throw new NotFoundException('Conteúdo não encontrado')
     }
 
-    // Vizinhos, para navegar entre letras sem voltar ao índice.
-    const [anterior, proximo] = await Promise.all([
-      this.prisma.content.findFirst({
-        where: {
-          projectId: project.id,
-          status: ContentStatus.PUBLISHED,
-          position: { lt: content.position },
-        },
-        orderBy: { position: 'desc' },
-        select: { slug: true, title: true },
-      }),
-      this.prisma.content.findFirst({
-        where: {
-          projectId: project.id,
-          status: ContentStatus.PUBLISHED,
-          position: { gt: content.position },
-        },
-        orderBy: { position: 'asc' },
-        /*
-          A SEGUINTE VIAJA COM A ARTE E COM A CASA.
-
-          Traziam-se só a slug e o título, e a página desenhava com eles duas
-          caixas de texto: "Anterior · Letra C" e "Próximo · Letra E". Ele viu-as
-          em 22/09 e escreveu "não quero que apareça desta forma, apareça a
-          próxima letra".
-
-          A página inicial já anunciava a seguinte como deve ser — a arte dela,
-          e o nome por baixo — e a página da letra, que é a que TODOS os QR Codes
-          impressos abrem, ficava com a versão pobre. Com `coverUrl`, `letra` e
-          `ordinal` passa a poder desenhar a mesma peça.
-        */
-        select: { slug: true, title: true, coverUrl: true, letra: true, ordinal: true },
-      }),
-    ])
+    const proximo = await this.casaSeguinte(project, content)
 
     const code = content.shortLink[0]?.code ?? null
 
@@ -540,7 +510,72 @@ export class ContentService {
         qrCode: code,
         qrUrl: code ? this.shortLinks.urlPublica(code) : null,
       },
-      navegacao: { anterior, proximo },
+      navegacao: { proximo },
+    }
+  }
+
+  /**
+   * A CASA A SEGUIR A ESTA VAI PELA CASA, E NÃO PELA POSIÇÃO NA LISTA.
+   *
+   * Isto procurava o primeiro conteúdo publicado com `position` maior. Em 22/09
+   * ele mandou o ecrã da Letra N a anunciar "Próxima letra — Letra B", e não é
+   * um engano de escrita: de O a Z ainda é tudo rascunho, e a primeira linha
+   * publicada depois da posição do N é uma "Letra B" que ficou na posição 101 —
+   * o B entrou fora do sítio porque a slug `b` já era da Letra A, que está
+   * atrás da Introdução.
+   *
+   * A grade da página inicial nunca caiu nisto: vai pela casa, e traz escrito
+   * ao lado que "foi a posição que já pôs o A na casa do B uma vez". Esta
+   * página ficou de fora e apanhou a mesma armadilha pelo mesmo motivo. Depois
+   * do N vem o O, esteja ele publicado, por publicar, ou por criar.
+   *
+   * A CASA SEGUINTE EXISTE MESMO QUANDO A LETRA AINDA NÃO EXISTE. O alfabeto é
+   * sabido de antemão: devolver nada faria o fim de uma letra acabar sem dizer
+   * o que vem depois, e é justamente o que ele quer ver. Sai trancada, como na
+   * grade — e do que está trancado sai só o nome, nunca a arte nem o título
+   * que ele ainda está a preparar.
+   */
+  private async casaSeguinte(
+    project: { id: string; sequencia: string; blocos: number },
+    atual: { letra: string | null; ordinal: number | null },
+  ) {
+    const porLetras = project.sequencia === 'LETRAS'
+
+    let letra: string | null = null
+    let ordinal: number | null = null
+    if (porLetras) {
+      if (!atual.letra) return null
+      const i = ALFABETO.indexOf(atual.letra.toUpperCase())
+      if (i < 0 || i + 1 >= ALFABETO.length) return null
+      letra = ALFABETO[i + 1]
+    } else {
+      const n = atual.ordinal
+      if (!n || n + 1 > project.blocos) return null
+      ordinal = n + 1
+    }
+
+    const dela = await this.prisma.content.findFirst({
+      where: { projectId: project.id, ...(porLetras ? { letra } : { ordinal }) },
+      select: {
+        slug: true,
+        title: true,
+        coverUrl: true,
+        letra: true,
+        ordinal: true,
+        status: true,
+      },
+    })
+
+    if (!dela || dela.status !== ContentStatus.PUBLISHED) {
+      return { slug: null, title: null, coverUrl: null, letra, ordinal, publicado: false }
+    }
+    return {
+      slug: dela.slug,
+      title: dela.title,
+      coverUrl: dela.coverUrl,
+      letra: dela.letra,
+      ordinal: dela.ordinal,
+      publicado: true,
     }
   }
 

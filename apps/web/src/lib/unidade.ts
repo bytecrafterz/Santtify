@@ -82,6 +82,34 @@ export function artigoDefinido(unidade: string) {
   return ehFeminina(unidade) ? 'a' : 'o'
 }
 
+/**
+ * COMO SE ANUNCIA UMA CASA, e nunca "Letra B — Letra B".
+ *
+ * O nome de uma casa é "Letra N" e o título dela é o que ele escreveu: "N de
+ * Nascimento e Nozes". Juntos com um travessão lêem-se bem — desde que sejam
+ * duas coisas diferentes.
+ *
+ * As letras que ele ainda não preencheu nascem com o título "Letra N", que é
+ * exactamente o nome da casa. A junção às cegas devolvia "Letra B — Letra B",
+ * que foi o que ele viu em 22/09 no fim da Letra N e que parece defeito
+ * porque é defeito. O mesmo vale para "em breve", que é a casa que ainda nem
+ * existe na base.
+ *
+ * Quando o título não acrescenta nada, fica só o nome da casa.
+ */
+export function nomeDaCasa(
+  unidade: string,
+  casa: string | number | null | undefined,
+  titulo: string | null | undefined,
+) {
+  const nome = `${capitalizar(unidade.trim())} ${casa ?? ''}`.trim()
+  const escrito = (titulo ?? '').trim()
+  if (!escrito) return nome
+  const igual = escrito.toLocaleLowerCase('pt') === nome.toLocaleLowerCase('pt')
+  if (igual || escrito.toLocaleLowerCase('pt') === 'em breve') return nome
+  return `${nome} — ${escrito}`
+}
+
 /** "todas as letras", "todos os dias". */
 export function todosOsPlural(unidade: string) {
   return ehFeminina(unidade)
