@@ -6,6 +6,11 @@ node_modules/
 # Comitar este arquivo é entregar o servidor junto com o código.
 .env.production
 .env.production.*
+# Cópias de mão do .env. Uma delas foi parar ao histórico com os segredos
+# de desenvolvimento lá dentro, e o padrão acima não a apanhava.
+.env.bak
+.env.*.bak
+*.env.bak
 !deploy/.env.production.exemplo
 dist/
 build/
