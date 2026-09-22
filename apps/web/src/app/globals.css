@@ -4967,7 +4967,23 @@ button.letra-bloco {
   color: #fff;
 }
 
-.cabecalho-fixo a {
+/*
+  `:not(.voltar-elegante)` — A TERCEIRA VEZ QUE ESTA ARMADILHA ME APANHA.
+
+  Esta regra tem especificidade 0,1,1 e o botão de voltar tem 0,1,0, por isso
+  ganhava-lhe: punha-lhe `display: grid` e `font-size: 0.66rem`, e a pastilha
+  desfazia-se num ícone com a palavra "Voltar" empilhada por baixo, em letra
+  minúscula. Foi o que ele fotografou no cabeçalho preto do painel.
+
+  Já tinha acontecido com `.cabecalho a` e com `.cabecalho-do-projeto a`. As
+  três vezes pela mesma razão, e as três vezes só se viu num ecrã de verdade —
+  o `tsc` não sabe nada de cascata.
+
+  A lição, escrita onde se tropeça nela: um componente com desenho próprio não
+  pode viver debaixo de um selector de elemento. Os outros filhos do cabeçalho
+  continuam como estavam.
+*/
+.cabecalho-fixo a:not(.voltar-elegante) {
   display: grid;
   justify-items: center;
   gap: 0.1rem;

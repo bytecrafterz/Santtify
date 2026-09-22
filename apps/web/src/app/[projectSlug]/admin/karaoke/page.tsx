@@ -1,4 +1,4 @@
-import Link from 'next/link'
+import { Voltar } from '@/components/Voltar'
 import { fonteDoKaraoke } from '@/app/fontes/karaoke'
 import { KaraokeNoPainel } from '@/components/KaraokeNoPainel'
 
@@ -21,9 +21,7 @@ export default async function PaginaDoKaraokeNoPainel({
   */
   return (
     <main className={`envoltorio painel-karaoke ${fonteDoKaraoke.variable}`}>
-      <Link className="voltar" href={`/${projectSlug}/admin`}>
-        ← Painel
-      </Link>
+      <Voltar href={`/${projectSlug}/admin`}>Painel</Voltar>
       <h1>Modo Karaokê</h1>
       <p className="subtitulo">
         As palavras que ganham destaque, quem pode cantar, e a letra de cada

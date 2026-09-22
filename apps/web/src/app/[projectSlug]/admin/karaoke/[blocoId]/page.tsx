@@ -1,4 +1,4 @@
-import Link from 'next/link'
+import { Voltar } from '@/components/Voltar'
 import { SincronizadorDoKaraoke } from '@/components/SincronizadorDoKaraoke'
 
 export const metadata = { title: 'Sincronizar a letra' }
@@ -11,9 +11,7 @@ export default async function PaginaDoSincronizador({
   const { projectSlug, blocoId } = await params
   return (
     <main className="envoltorio">
-      <Link className="voltar" href={`/${projectSlug}/admin/karaoke`}>
-        ← Modo Karaokê
-      </Link>
+      <Voltar href={`/${projectSlug}/admin/karaoke`}>Modo Karaokê</Voltar>
       <h1>Sincronizar a letra</h1>
       <SincronizadorDoKaraoke projectSlug={projectSlug} blocoId={blocoId} />
     </main>

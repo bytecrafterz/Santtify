@@ -1,4 +1,4 @@
-import Link from 'next/link'
+import { Voltar } from '@/components/Voltar'
 import type { Metadata } from 'next'
 import { notFound } from 'next/navigation'
 import { api, type PerfilAnfitriao } from '@/lib/api'
@@ -125,7 +125,7 @@ export default async function PaginaDePessoa({
       <VisitaAoPerfil projectId={projeto.id} userId={userId} />
 
       <div className="cabecalho">
-        <Link href={`/${projectSlug}`}>← Voltar</Link>
+        <Voltar href={`/${projectSlug}`}>Voltar</Voltar>
       </div>
 
       {/* O MESMO COMPONENTE DE PERFIL, e não um desenho parecido.

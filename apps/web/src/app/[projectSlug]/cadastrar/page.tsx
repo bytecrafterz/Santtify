@@ -1,4 +1,4 @@
-import Link from 'next/link'
+import { Voltar } from '@/components/Voltar'
 import { Suspense } from 'react'
 import { notFound } from 'next/navigation'
 import { api } from '@/lib/api'
@@ -19,7 +19,7 @@ export default async function PaginaDeCadastro({
   return (
     <main className="envoltorio estreito">
       <div className="cabecalho">
-        <Link href={`/${projectSlug}`}>← {project.name}</Link>
+        <Voltar href={`/${projectSlug}`}>{project.name}</Voltar>
       </div>
       <h1>Criar conta</h1>
       <p className="subtitulo">

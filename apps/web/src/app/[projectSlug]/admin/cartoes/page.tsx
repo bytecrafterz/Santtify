@@ -1,4 +1,4 @@
-import Link from 'next/link'
+import { Voltar } from '@/components/Voltar'
 import { PainelDeModelosDeCartao } from '@/components/PainelDeModelosDeCartao'
 
 export const metadata = { title: 'Cartões personalizados' }
@@ -11,9 +11,7 @@ export default async function PaginaDeCartoes({
   const { projectSlug } = await params
   return (
     <main className="envoltorio">
-      <Link className="voltar" href={`/${projectSlug}/admin`}>
-        ← Painel
-      </Link>
+      <Voltar href={`/${projectSlug}/admin`}>Painel</Voltar>
       <h1>Cartões personalizados</h1>
       <p className="subtitulo">
         Os modelos, o preço e o desconto. As medidas da moldura são o que faz a

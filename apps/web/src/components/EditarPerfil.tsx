@@ -226,9 +226,24 @@ export function EditarPerfil({
         Ele tem razão duas vezes — uma saída que é preciso procurar não é uma
         saída, e esta é a segunda vez que o mesmo formulário me ensina isso.
       */}
-      <div className="topo-do-editor">
-        <Voltar aoClicar={fechar}>Voltar ao perfil</Voltar>
-      </div>
+      {/*
+        MAS SÓ QUANDO ESTE FORMULÁRIO NÃO É A PÁGINA INTEIRA.
+
+        Com `sempreAberto` isto é a página de edição, e essa página já põe a sua
+        própria saída no topo. Os dois juntos davam duas pastilhas "Voltar ao
+        perfil" encostadas uma à outra — ele fotografou-as em 22/09. Enquanto
+        eram um link de texto e um botão com outro estilo passavam por coisas
+        diferentes; iguais, vê-se que são a mesma duas vezes.
+
+        Dentro do perfil, onde o formulário abre e fecha no mesmo ecrã, não há
+        saída nenhuma por cima e esta é a que responde ao que ele pediu em
+        29/08. Aí fica.
+      */}
+      {!sempreAberto && (
+        <div className="topo-do-editor">
+          <Voltar aoClicar={fechar}>Voltar ao perfil</Voltar>
+        </div>
+      )}
 
       <span className="bloco-rotulo">Editar perfil</span>
 
