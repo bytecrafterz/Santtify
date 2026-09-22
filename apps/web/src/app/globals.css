@@ -9082,25 +9082,31 @@ h2.funil {
     competir com as palavras, mas suave o bastante para se reconhecer o cartão
     que se estava a ouvir.
 
-    22/09: ele voltou a pedir mais — "têm como fazer mais visível a imagem do
-    fundo". De 9px para 6px, e o véu do meio quase a metade (ver o `::after`).
+    ── OS 9px FICAM, E FORAM ELE A DECIDI-LO DEPOIS DE VER ──────────────
 
-    SEIS E NÃO QUATRO, e a diferença mediu-se com a arte dele. A 4px a arte
-    lê-se tão bem que o TEXTO dentro dela também se lê — o cartão do aviso tem
-    "CRISTÃO", "SEGURO", "TRANSPARENTE" em letras grandes, e ficavam legíveis
-    por trás da letra da música, duas coisas a pedir os olhos ao mesmo tempo. A
-    6px a arte continua a reconhecer-se — o escudo, as caras, as cores — e as
-    palavras dela desfazem-se em manchas. É o ponto em que se vê o cartão sem
-    se o ler.
+    Em 22/09 ele pediu o contrário: "têm como fazer mais visível a imagem do
+    fundo". Levei a 6px com o véu do meio a metade e publiquei. Ele comparou as
+    duas versões no telemóvel e voltou atrás no mesmo dia:
 
-    O QUE PERMITE BAIXAR O VÉU é a letra, e não a coragem: cada palavra do
-    karaokê leva um contorno de 0.1em mais um halo creme em oito direcções. Uma
-    palavra assim lê-se sobre quase tudo. É o cabeçalho e os controlos — que não
-    têm contorno nenhum — que continuam a precisar de sombra, e por isso a
-    faixa de cima e a de baixo ESCURECEM enquanto o meio clareia.
+      "Quando ficou mais visível, percebi que o fundo começou a competir com a
+       letra do karaokê. Como a própria imagem já tem textos e muitos elementos,
+       o olhar acaba tentando prestar atenção nas duas coisas ao mesmo tempo.
+       (...) pode voltar para o padrão anterior, mais embaçado."
+
+    POR ISSO ISTO NÃO SE VOLTA A BAIXAR sem ele pedir outra vez. Não é um número
+    escolhido a olho: é um número que já foi aberto, visto no ecrã dele, e
+    fechado de novo por decisão dele. As artes das faixas têm texto grande lá
+    dentro, e a partir de certo ponto a nitidez do fundo tira a leitura à letra
+    que se está a cantar — que é a única coisa que este ecrã existe para mostrar.
+
+    E A LIÇÃO DE PROCESSO, que ele escreveu e que vale mais do que o número:
+    uma decisão de desenho tomada por um motivo técnico tem de viajar com o
+    motivo. "Deixei o fundo embaçado para não competir com a letra" cabe numa
+    linha da mensagem. Estava escrito aqui, neste comentário, onde ele nunca o
+    ia ler — e por isso pediu uma mudança que depois teve de desfazer.
   */
-  filter: blur(6px) saturate(1.2);
-  transform: scale(1.08);
+  filter: blur(9px) saturate(1.12);
+  transform: scale(1.1);
 }
 
 .karaoke-fundo::after {
@@ -9110,24 +9116,23 @@ h2.funil {
   /* O véu que segura o contraste das palavras. Mais leve no meio, onde a arte
      aparece, e mais fechado nas pontas, onde estão o cabeçalho e o tocador.
 
-     O meio desceu de 0.58/0.52 para 0.30/0.24 — a arte passa a ler-se como
-     arte. As pontas SUBIRAM, de 0.28/0.30 para 0.42/0.46: com o fundo mais
-     nítido, o "MODO KARAOKÊ" e o tempo do tocador precisam de mais sombra por
-     baixo do que precisavam antes, e são as duas únicas coisas neste ecrã sem
-     contorno próprio. */
+     Estes valores voltaram ao que eram em 22/09, com o desfoque. Ver a nota no
+     `.karaoke-fundo`: o meio chegou a 0.30/0.24 e ele achou, a ver no telemóvel,
+     que o fundo passava a competir com a letra. Baixar isto é meio caminho para
+     o mesmo problema, mesmo com o desfoque alto. */
   background:
     radial-gradient(
       ellipse at 50% 42%,
-      rgba(255, 248, 225, 0.3) 0%,
-      rgba(255, 238, 190, 0.24) 45%,
-      rgba(214, 150, 60, 0.32) 100%
+      rgba(255, 248, 225, 0.58) 0%,
+      rgba(255, 238, 190, 0.52) 45%,
+      rgba(214, 150, 60, 0.45) 100%
     ),
     linear-gradient(
       to bottom,
-      rgba(40, 20, 5, 0.42) 0%,
-      rgba(40, 20, 5, 0) 20%,
-      rgba(40, 20, 5, 0) 78%,
-      rgba(40, 20, 5, 0.46) 100%
+      rgba(40, 20, 5, 0.28) 0%,
+      rgba(40, 20, 5, 0) 18%,
+      rgba(40, 20, 5, 0) 80%,
+      rgba(40, 20, 5, 0.3) 100%
     );
 }
 
