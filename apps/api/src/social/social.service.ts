@@ -452,23 +452,46 @@ export class SocialService {
     return { curtido: !existente, total: estado.likes }
   }
 
-  /** Os comentários do projeto — os que são do projeto, não os das letras. */
+  /**
+   * TODOS os comentários do projeto, porque é isso que o número do card conta.
+   *
+   * Isto filtrava `contentId: null` e `blockId: null` — ou seja, devolvia só os
+   * comentários escritos na página do projeto. O card, ao lado, somava também os
+   * das letras e das faixas. Daí o que ele escreveu em 21/09: "mostra 31
+   * comentários. Quando clico, aparece somente o comentário que publiquei
+   * agora."
+   *
+   * O card é um acumulado, e ele quer que seja — "o total de tudo o que está
+   * dentro do projeto". Então a lista que o toque abre tem de ser o mesmo
+   * acumulado. Os dois filtros saem.
+   *
+   * O que FICA de fora são os comentários de perfil: um comentário no perfil de
+   * uma pessoa não é um comentário no projeto, mesmo tendo `projectId`. Saíram
+   * também da contagem, na mesma passagem — ver `SEM_COMENTARIOS_DE_PERFIL`.
+   *
+   * `user.status` ACTIVE está aqui porque está na contagem. Divergir num
+   * detalhe destes é como o card passou a dizer 78 com 76 na lista.
+   */
   async listarComentariosDoProjeto(slug: string, leitorId: string | null = null) {
     const projeto = await this.projetoPublicado(slug)
     const escondidos = await this.bloqueadosPor(leitorId)
     const lista = await this.prisma.comment.findMany({
       where: {
         projectId: projeto.id,
-        contentId: null,
-        blockId: null,
         profileUserId: null,
         status: 'PUBLISHED',
+        user: { is: { status: 'ACTIVE' } },
         ...(escondidos.length ? { userId: { notIn: escondidos } } : {}),
         // Uma resposta órfã não tem onde ser desenhada — mesma regra do perfil.
         OR: [{ parentId: null }, { parent: { is: { status: 'PUBLISHED' } } }],
       },
       orderBy: { createdAt: 'desc' },
-      take: 50,
+      /*
+        Era 50 enquanto a lista era só a do projeto, que tem dois comentários.
+        Agora traz o acumulado das 26 letras e das faixas todas, e um limite
+        abaixo do número que o card mostra é a mesma promessa falhada outra vez.
+      */
+      take: 300,
       select: this.selecaoDeComentario,
     })
     return this.comSinalDeCurtida(lista, leitorId)

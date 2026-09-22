@@ -42,6 +42,25 @@ const ZERO: Contagens = { views: 0, likes: 0, comments: 0, shares: 0 }
  */
 const SO_CONTAS_ACTIVAS = { user: { is: { status: 'ACTIVE' as const } } }
 
+/**
+ * UM COMENTÁRIO NUM PERFIL NÃO É UM COMENTÁRIO NO PROJETO.
+ *
+ * Ele apanhou-o em 21/09: "o Jesus Alfabeto Saudável mostra 31 comentários.
+ * Quando clico no ícone, aparece somente o comentário que publiquei agora."
+ *
+ * A causa não era a lista — era o número. Todo o comentário tem `projectId`,
+ * INCLUINDO o que é escrito no perfil de uma pessoa, porque a fila de moderação
+ * dele lê tudo da mesma tabela (ver a nota em `Comment.profileUserId`). A conta
+ * do card somava os três níveis e mais os do perfil; a lista que o toque abre
+ * mostrava só os do projeto. Medido na base dele: 24 de perfil, 10 de faixa,
+ * 2 de projeto, 1 de conteúdo. Os 24 eram a maior parte do 31, e nenhum deles
+ * tinha como aparecer ali.
+ *
+ * O número desce, e desce com razão: passa a contar o que a lista mostra. É a
+ * regra que está escrita em cima desta classe, aplicada onde faltava.
+ */
+const SEM_COMENTARIOS_DE_PERFIL = { profileUserId: null }
+
 @Injectable()
 export class ContagensService {
   constructor(private readonly prisma: PrismaService) {}
@@ -127,6 +146,7 @@ export class ContagensService {
       projectId,
       status: 'PUBLISHED' as const,
       user: { is: { status: 'ACTIVE' as const } },
+      ...SEM_COMENTARIOS_DE_PERFIL,
     }
     const [topo, respostas] = await Promise.all([
       this.prisma.comment.count({ where: { ...base, parentId: null } }),
@@ -276,6 +296,7 @@ export class ContagensService {
           status: 'PUBLISHED',
           parentId: null,
           user: { is: { status: 'ACTIVE' } },
+          ...SEM_COMENTARIOS_DE_PERFIL,
         },
         _count: { _all: true },
       }),
@@ -286,6 +307,7 @@ export class ContagensService {
           status: 'PUBLISHED',
           parent: { is: { status: 'PUBLISHED' } },
           user: { is: { status: 'ACTIVE' } },
+          ...SEM_COMENTARIOS_DE_PERFIL,
         },
         _count: { _all: true },
       }),
