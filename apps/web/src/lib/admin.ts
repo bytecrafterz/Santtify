@@ -420,9 +420,18 @@ export const admin = {
 
   duplicarCartao: (id: string) => chamar<CartaoAdmin>(`/cards/${id}/duplicate`, { method: 'POST' }),
 
-  /** Um cartão novo e vazio numa publicação da raiz — sem precisar de original. */
-  acrescentarCartaoDaRaiz: (contentId: string) =>
-    chamar<CartaoAdmin>(`/contents/${contentId}/cards`, { method: 'POST' }),
+  /**
+   * Um cartão novo e vazio, sem precisar de um original para duplicar.
+   *
+   * Com `casa` (1 a 4) nasce naquela casa — é assim que uma publicação de um
+   * projeto novo ganha os quadrados que no alfabeto vinham do seed. Sem `casa`
+   * nasce solto, que é o "acrescentar" da introdução e do Produto Vivo.
+   */
+  acrescentarCartao: (contentId: string, casa?: number) =>
+    chamar<CartaoAdmin>(`/contents/${contentId}/cards`, {
+      method: 'POST',
+      body: JSON.stringify(casa === undefined ? {} : { casa }),
+    }),
 
   /** Esvazia um original (a casa fica) ou remove uma cópia. */
   esvaziarCartao: (id: string) =>

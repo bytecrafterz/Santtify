@@ -24,6 +24,7 @@ import {
   IsOptional,
   IsString,
   IsUUID,
+  Max,
   MaxLength,
   Min,
 } from 'class-validator'
@@ -77,6 +78,18 @@ class SalvarBlocoDto {
  */
 class OrdemDosCartoesDto {
   @IsArray() @IsUUID('4', { each: true }) ids!: string[]
+}
+
+/**
+ * A casa onde o cartão novo nasce, de 1 a 4.
+ *
+ * Opcional: sem ela o cartão nasce solto, que é o "acrescentar" da introdução
+ * e do Produto Vivo. Os limites estão aqui E no serviço — aqui para a mensagem
+ * de erro ser útil, lá porque o serviço também é chamado de outros sítios e uma
+ * regra que só vive no DTO é uma regra que se contorna.
+ */
+class NovoCartaoDto {
+  @IsOptional() @IsInt() @Min(1) @Max(4) casa?: number
 }
 
 class SalvarCartaoDto {
@@ -416,10 +429,17 @@ export class AdminController {
     return this.conteudo.apagarCartao(id, req.usuario!.id)
   }
 
-  /** Acrescenta um cartão vazio a uma publicação da raiz (introdução ou PV). */
+  /**
+   * Acrescenta um cartão vazio a uma publicação.
+   *
+   * Sem `casa`, nasce solto — é o "acrescentar" da introdução e do Produto
+   * Vivo. Com `casa` (1 a 4), nasce na casa que faltava: é assim que uma
+   * publicação de um projeto novo ganha os seus quatro quadrados, que no
+   * alfabeto vinham do seed e nos outros projetos não vinham de lado nenhum.
+   */
   @Post('contents/:id/cards')
-  acrescentarCartaoDaRaiz(@Param('id') id: string, @Req() req: Request) {
-    return this.conteudo.acrescentarCartaoDaRaiz(id, req.usuario!.id)
+  acrescentarCartao(@Param('id') id: string, @Body() dto: NovoCartaoDto, @Req() req: Request) {
+    return this.conteudo.acrescentarCartao(id, req.usuario!.id, dto?.casa)
   }
 
   @Post('cards/:id/duplicate')

@@ -143,7 +143,7 @@ export function EdicaoDoProdutoVivo({ projectSlug }: { projectSlug: string }) {
         type="button"
         className="acrescentar-cartao"
         disabled={ocupado !== null}
-        onClick={() => comOcupado('nova-arte', () => admin.acrescentarCartaoDaRaiz(pv.contentId))}
+        onClick={() => comOcupado('nova-arte', () => admin.acrescentarCartao(pv.contentId))}
       >
         + Acrescentar outra arte (imagem)
       </button>

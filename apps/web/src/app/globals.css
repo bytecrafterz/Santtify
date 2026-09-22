@@ -2382,6 +2382,20 @@ img.avatar {
 }
 
 /*
+  A mesma pastilha como <button> dentro de um ecrã, e não como link no topo.
+  Só precisa de desfazer o que o navegador põe num botão e de uma folga em
+  baixo, porque aqui vem sempre um título a seguir.
+*/
+button.voltar-elegante {
+  font-family: inherit;
+  cursor: pointer;
+}
+
+.voltar-elegante.voltar-em-linha {
+  margin: 0 0 0.75rem;
+}
+
+/*
   A SETA MORA NUM CÍRCULO PRÓPRIO.
 
   Sem ele a seta flutua no meio da pastilha e o botão fica com um lado vazio.

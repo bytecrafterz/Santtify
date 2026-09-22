@@ -78,6 +78,28 @@ async function main() {
         projectId: project.id,
         slug,
         title: `Letra ${letter}`,
+        /*
+          A LETRA VAI NA COLUNA, E NÃO SÓ NO TÍTULO E NOS METADADOS.
+
+          Isto gravava `attributes.letra` e o título "Letra A", e a coluna
+          `letra` ficava nula — ela nasceu depois, na migração de 22/08, e o
+          seed nunca foi actualizado.
+
+          Em produção não se vê, porque lá os conteúdos já existem e o upsert
+          cai no `update`. Num servidor NOVO é o alfabeto inteiro que não
+          funciona: a grade pública casa o conteúdo por `c.letra === casa` e não
+          encontra nenhum, portanto as 26 casas abrem trancadas; e o painel
+          filtra por `letra: { not: null }`, portanto mostra 26 quadrados sem
+          `contentId`, em que tocar não faz nada.
+
+          SÓ NO `create`, e isso é deliberado. Em produção a slug `a` é a
+          Introdução e a Letra A mora na slug `b` — ficou assim quando a
+          introdução tomou a slug `a`, e não se corrige, porque há QR Codes
+          impressos a apontar para estas slugs. Escrever `letra` também no
+          `update` faria o seed carimbar a Letra A por cima da Introdução na
+          próxima vez que alguém o corresse.
+        */
+        letra: letter,
         position: index + 1,
         status: ContentStatus.DRAFT, // publicado quando o cliente subir o conteúdo
         metadata: {

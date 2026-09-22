@@ -64,6 +64,13 @@ export function SequenciaDoAlfabeto({ projectSlug }: { projectSlug: string }) {
   const [aDuplicar, definirADuplicar] = useState<string | null>(null)
   const [copiaNova, definirCopiaNova] = useState<string | null>(null)
   const [aCriarImpressao, definirACriarImpressao] = useState(false)
+  /**
+   * Que casa está a ser criada agora: 1 a 4, ou 0 para um cartão solto.
+   *
+   * `null` quando não há nenhuma. Guarda o número e não um booleano para o
+   * "A criar..." aparecer no quadrado em que ele tocou, e não nos quatro.
+   */
+  const [aCriarCasa, definirACriarCasa] = useState<number | null>(null)
   const { usuario, carregando: aRestaurarSessao } = useAuth()
 
   /**
@@ -192,6 +199,36 @@ export function SequenciaDoAlfabeto({ projectSlug }: { projectSlug: string }) {
       ? (ordem.map((id) => doVagao.find((c) => c.id === id)).filter(Boolean) as typeof doVagao)
       : doVagao
 
+    /*
+      As casas de 1 a 4 que ainda não têm cartão.
+
+      Lida dos cartões que existem e não de uma contagem: uma publicação pode
+      ter a casa 1 e a 3 e faltar-lhe a 2, se ele esvaziou uma pelo meio. O que
+      interessa é qual falta, não quantas.
+
+      ── E NEM TODAS AS PUBLICAÇÕES QUERAM AS QUATRO ──────────────────────
+
+      Medido na base dele antes de escrever isto: 164 cartões têm casa e 79 não
+      têm. A Letra B tem as quatro casas e cinco cópias por cima; a LETRA A tem
+      quatro cartões e NENHUM deles tem casa — foi montada de outra maneira, com
+      publicações soltas.
+
+      Se isto olhasse só para as casas em falta, a Letra A abria com quatro
+      cartões lá dentro e quatro botões a oferecer criar Explicação, Música,
+      Repetição do versículo e Oração. Ele tocava, ficava com oito, e eu tinha-
+      lhe dado um botão que estraga o que já estava feito.
+
+      Por isso a oferta só aparece a quem está VAZIA (a publicação nova, que é o
+      caso dele) ou a quem JÁ USA as casas e tem alguma em falta. Uma publicação
+      feita só de cartões soltos fica como está.
+    */
+    const usaCasas = doVagao.length === 0 || doVagao.some((c) => c.slot !== null)
+    const casasPorPreencher = usaCasas
+      ? CASAS.map((nome, i) => ({ casa: i + 1, nome })).filter(
+          ({ casa }) => !doVagao.some((c) => c.slot === casa),
+        )
+      : []
+
     function mover(i: number, direccao: -1 | 1) {
       const j = i + direccao
       if (j < 0 || j >= lista.length) return
@@ -208,12 +245,32 @@ export function SequenciaDoAlfabeto({ projectSlug }: { projectSlug: string }) {
           voltarPara={`/${projectSlug}/admin`}
         />
         <div className="painel-quadrados">
+          {/*
+            Dizia "← Alfabeto" num projeto de sete dias — o nome de outro
+            projeto — e era a última seta feita com o carácter "←", que cada
+            telemóvel desenha à sua maneira. Escapou à passagem de 22/09 porque
+            este ecrã só se vê com sessão iniciada.
+          */}
           <button
             type="button"
-            className="voltar-sequencia"
+            className="voltar-elegante voltar-em-linha"
             onClick={() => definirOnde({ tela: 'sequencia', casa: vagao.casa })}
           >
-            ← Alfabeto
+            <span className="seta" aria-hidden>
+              <svg
+                viewBox="0 0 24 24"
+                width="17"
+                height="17"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="2.25"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+              >
+                <path d="M14.5 5.5 8 12l6.5 6.5" />
+              </svg>
+            </span>
+            <span className="rotulo">{plural(unidade)}</span>
           </button>
           <h1>Conteúdos: {vagao.rotulo}</h1>
           <p className="nota">Toque para editar • Toque nos três pontos para ver opções</p>
@@ -312,6 +369,97 @@ export function SequenciaDoAlfabeto({ projectSlug }: { projectSlug: string }) {
           {/* O QR fica aqui, na letra, e não dentro do cartão de impressão:
               as letras sem cartão criado também precisam do seu. */}
           <QrDaLetra projectSlug={projectSlug} contentSlug={vagao.slug} letra={vagao.letra ?? String(vagao.numero ?? '')} />
+
+          {/*
+            AS CASAS QUE AINDA NÃO EXISTEM, e a porta para as criar.
+
+            Este ecrã desenhava só os cartões que já existiam. No alfabeto isso
+            nunca se notou, porque as quatro casas de cada letra vieram do seed.
+            Nos projetos que ele cria no painel não vêm de lado nenhum: os sete
+            dias do Minha Identidade têm zero blocos, e abrir um deles dava um
+            ecrã vazio, sem nada em que tocar.
+
+            Ele apanhou-o em 22/09, no dia seguinte a eu lhe ter dito que o
+            painel estava pronto para publicar: "você ainda não fez a estrutura
+            para postar fotos e áudio". Estava tudo feito menos isto — o editor,
+            o envio da foto e do áudio, o publicar, o duplicar. Faltava a porta.
+
+            Abre o editor logo a seguir a criar. Criar e ficar no mesmo sítio
+            seria pedir-lhe que procurasse o que acabou de pedir — é a mesma
+            razão que está escrita no botão do cartão de impressão.
+          */}
+          {vagao.contentId &&
+            casasPorPreencher.length > 0 &&
+            casasPorPreencher.map(({ casa, nome }) => (
+              <button
+                key={casa}
+                type="button"
+                className="quadrado-impressao criar"
+                disabled={aCriarCasa !== null}
+                onClick={async () => {
+                  definirACriarCasa(casa)
+                  try {
+                    const novo = await admin.acrescentarCartao(vagao.contentId!, casa)
+                    await recarregar()
+                    definirOnde({ tela: 'cartao', casa: vagao.casa, cartaoId: novo.id })
+                  } catch (e) {
+                    definirErro(
+                      e instanceof Error ? e.message : 'Não foi possível criar este quadrado.',
+                    )
+                  } finally {
+                    definirACriarCasa(null)
+                  }
+                }}
+              >
+                <span className="icone" aria-hidden>
+                  +
+                </span>
+                <span className="nome">{nome.toUpperCase()}</span>
+                <span className="estado">
+                  {aCriarCasa === casa ? 'A criar...' : 'ainda não existe — toque para criar'}
+                </span>
+              </button>
+            ))}
+
+          {/*
+            ACRESCENTAR ALÉM DAS QUATRO.
+
+            "Assim consigo acrescentar músicas, explicações, versículos, orações
+            ou outros conteúdos sem ficar limitado aos quatro iniciais" — 21/09.
+
+            Não aparece nas letras: uma letra tem quatro casas fixas e é dessa
+            forma repetida que a composição das 26 vive. O servidor recusa na
+            mesma; isto é só não mostrar um botão que ia dar erro.
+          */}
+          {vagao.contentId && vagao.letra === null && (
+            <button
+              type="button"
+              className="quadrado-impressao criar"
+              disabled={aCriarCasa !== null}
+              onClick={async () => {
+                definirACriarCasa(0)
+                try {
+                  const novo = await admin.acrescentarCartao(vagao.contentId!)
+                  await recarregar()
+                  definirOnde({ tela: 'cartao', casa: vagao.casa, cartaoId: novo.id })
+                } catch (e) {
+                  definirErro(
+                    e instanceof Error ? e.message : 'Não foi possível acrescentar o cartão.',
+                  )
+                } finally {
+                  definirACriarCasa(null)
+                }
+              }}
+            >
+              <span className="icone" aria-hidden>
+                +
+              </span>
+              <span className="nome">ACRESCENTAR CARTÃO</span>
+              <span className="estado">
+                {aCriarCasa === 0 ? 'A criar...' : 'foto, áudio, título e texto numa peça só'}
+              </span>
+            </button>
+          )}
 
           {/* SALVAR ORDEM só aparece depois de ele mexer em alguma coisa.
               Um botão de gravar sempre à vista, sem nada por gravar, ensina a

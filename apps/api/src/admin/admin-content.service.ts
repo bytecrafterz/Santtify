@@ -13,6 +13,24 @@ import {
 } from '../content/cartao-inteiro'
 
 /**
+ * AS QUATRO CASAS COM QUE UMA PUBLICAÇÃO NASCE.
+ *
+ * Estavam escritas só no ecrã (`SequenciaDoAlfabeto`), que desenhava quatro
+ * quadrados a partir desta lista e não tinha como criar nenhum deles. Agora que
+ * o servidor os cria, o nome tem de vir de um sítio só, senão a casa 2 chama-se
+ * "Música" no ecrã e "Publicação" na base.
+ *
+ * SÃO OS NOMES DO ALFABETO, e isso é a última coisa do alfabeto que ainda vive
+ * na plataforma — a regra da `ARQUITETURA.md` diz que não devia. Fica assim de
+ * propósito até ele responder: perguntei-lhe em 22/09 se estes servem para os
+ * dias ou se quer outros, e inventar uma resposta agora seria dar-lhe quatro
+ * nomes que ele não escolheu. Quando responder, isto passa a `Project`, como a
+ * `unidade` passou.
+ */
+const NOMES_DAS_CASAS = ['Explicação', 'Música', 'Repetição do versículo', 'Oração']
+const CASAS_POR_PUBLICACAO = NOMES_DAS_CASAS.length
+
+/**
  * Operações do painel administrativo.
  *
  * Tudo genérico sobre Project/Content: o painel que o cliente usa para as 26
@@ -1661,26 +1679,56 @@ export class AdminContentService {
    * ninguém pediu e que iria direito à página.
    */
   /**
-   * Acrescenta um cartão vazio a uma publicação da raiz.
+   * Acrescenta um cartão vazio a uma publicação.
    *
    * Ele pediu em 28/08 que o número de imagens do Produto Vivo fosse livre, e
    * que desse para acrescentar sem depender de já existir uma para duplicar.
    * Duplicar precisa de um original; isto não precisa de nada, e é o que torna
    * possível recomeçar depois de apagar tudo.
    *
-   * SÓ NA RAIZ. Uma letra do alfabeto tem quatro casas fixas, e é dessa forma
-   * repetida que a composição vive; acrescentar uma quinta faria a letra deixar
-   * de ter a mesma forma das outras vinte e cinco. A raiz — a introdução e o
-   * Produto Vivo — é a parte multiplicável, e é a única onde isto entra.
+   * ── COM `casa`: NASCE A CASA QUE FALTAVA ──────────────────────────────
+   *
+   * Isto chamava-se `acrescentarCartaoDaRaiz` e só sabia criar cartões soltos,
+   * sem casa. Era suficiente enquanto as quatro casas de cada publicação vinham
+   * sempre do seed — e vinham, no alfabeto.
+   *
+   * Nos projetos que ele cria no painel não vêm de lado nenhum. Ele apanhou-o
+   * em 22/09, depois de eu lhe ter dito que o painel estava pronto: "você ainda
+   * não fez a estrutura para postar fotos e áudio". Tinha razão. Os sete dias do
+   * Minha Identidade têm zero blocos, e o ecrã dos quadrados só desenha cartões
+   * que já existem: abria vazio, sem nada em que tocar. A estrutura existia toda
+   * — o editor, o envio de foto e de áudio, o publicar — e faltava a porta.
+   *
+   * ── PORQUE A GUARDA DAS LETRAS SÓ VALE SEM `casa` ─────────────────────
+   *
+   * Uma letra tem quatro casas fixas, e é dessa forma repetida que a composição
+   * vive: acrescentar-lhe uma quinta fá-la-ia deixar de ter a mesma forma das
+   * outras vinte e cinco. Isso continua proibido.
+   *
+   * Mas criar a casa 3 de uma letra a quem falte a casa 3 não acrescenta nada —
+   * repõe. Por isso a guarda aplica-se ao cartão SOLTO e não ao que tem casa, e
+   * `casa` ocupada é recusada, que é o que impede duas na mesma.
    */
-  async acrescentarCartaoDaRaiz(contentId: string, adminId: string) {
+  async acrescentarCartao(contentId: string, adminId: string, casa?: number) {
     const content = await this.prisma.content.findUnique({
       where: { id: contentId },
       select: { id: true, letra: true, projectId: true },
     })
     if (!content) throw new NotFoundException('Publicação não encontrada')
-    if (content.letra !== null) {
+
+    if (casa === undefined && content.letra !== null) {
       throw new BadRequestException('As letras têm quatro cartões fixos e não se acrescentam.')
+    }
+
+    if (casa !== undefined) {
+      if (!Number.isInteger(casa) || casa < 1 || casa > CASAS_POR_PUBLICACAO) {
+        throw new BadRequestException(`A casa tem de ser de 1 a ${CASAS_POR_PUBLICACAO}.`)
+      }
+      const ocupada = await this.prisma.contentBlock.findFirst({
+        where: { contentId, slot: casa },
+        select: { id: true },
+      })
+      if (ocupada) throw new BadRequestException('Essa casa já tem um cartão.')
     }
 
     const ultimo = await this.prisma.contentBlock.findFirst({
@@ -1695,13 +1743,13 @@ export class AdminContentService {
         type: BlockType.AUDIO,
         papel: CardPapel.CARTAO,
         estado: CardEstado.RASCUNHO,
-        slot: null,
-        label: 'Publicação',
+        slot: casa ?? null,
+        label: casa === undefined ? 'Publicação' : (NOMES_DAS_CASAS[casa - 1] ?? 'Publicação'),
         position: (ultimo?.position ?? 0) + 1,
       },
       select: { id: true, slot: true, label: true, position: true, estado: true },
     })
-    await this.auditar(adminId, content.projectId, 'card.create', 'ContentBlock', novo.id, {})
+    await this.auditar(adminId, content.projectId, 'card.create', 'ContentBlock', novo.id, { casa })
     return novo
   }
 
