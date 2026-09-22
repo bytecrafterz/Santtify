@@ -1,0 +1,8 @@
+# Commits que so mexeram em quebras de linha ou espaco.
+# O git salta-os no blame e mostra quem escreveu a linha de verdade.
+#   git config blame.ignoreRevsFile .git-blame-ignore-revs
+
+# 22/09/2026 - um script em PowerShell gravou sete .tsx em CRLF
+74478f33ec2cb9b6153da52ddb9f1b424220ece1
+# 22/09/2026 - e a reposicao em LF
+3ebd085dacaf7e7914f9712c1759660b44878469
