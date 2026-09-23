@@ -203,6 +203,31 @@ export class AdminCartoesService {
     return modelos.map((m) => ({ ...m, aviso: this.avisoDaArte(m.arteImpressaoUrl, m.fotoLargura) }))
   }
 
+  /**
+   * Em que projetos é que os cartões estão mesmo.
+   *
+   * A entrada "Cartões personalizados" aparece no painel de TODOS os projetos,
+   * porque qualquer projeto pode ter cartões. Mas os que existem hoje estão num
+   * só, e quem abrisse a entrada a partir de outro encontrava um ecrã vazio a
+   * convidá-lo a criar categorias — ou seja, a construir um segundo conjunto
+   * paralelo ao que já tem.
+   *
+   * Foi o que aconteceu: ele procurou a arte no projeto onde passa os dias e
+   * não a encontrou. O ecrã vazio passa a apontar para onde ela está.
+   */
+  async ondeEstaoOsCartoes() {
+    const projetos = await this.prisma.project.findMany({
+      where: { modelosDeCartao: { some: {} } },
+      orderBy: { name: 'asc' },
+      select: {
+        slug: true,
+        name: true,
+        _count: { select: { modelosDeCartao: true } },
+      },
+    })
+    return projetos.map(({ _count, ...p }) => ({ ...p, modelos: _count.modelosDeCartao }))
+  }
+
   async criarModelo(projectSlug: string, dados: CamposDoModelo) {
     const projeto = await this.projeto(projectSlug)
     const categoria = await this.categoriaDoModelo(projeto.id, dados.categoriaId)

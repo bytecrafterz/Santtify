@@ -704,6 +704,10 @@ export const painelDeCartoes = {
   modelos: (projeto: string) =>
     chamarAdmin<ModeloAdmin[]>(`/admin/projects/${projeto}/modelos-de-cartao`),
 
+  /** Onde os cartões estão mesmo — para o ecrã vazio apontar o caminho. */
+  onde: () =>
+    chamarAdmin<Array<{ slug: string; name: string; modelos: number }>>('/admin/cartoes/onde'),
+
   criarModelo: (projeto: string, dados: Partial<ModeloAdmin>) =>
     chamarAdmin<ModeloAdmin>(`/admin/projects/${projeto}/modelos-de-cartao`, {
       method: 'POST',

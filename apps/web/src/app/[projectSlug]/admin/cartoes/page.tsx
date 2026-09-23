@@ -14,9 +14,9 @@ export default async function PaginaDeCartoes({
       <Voltar href={`/${projectSlug}/admin`}>Painel</Voltar>
       <h1>Cartões personalizados</h1>
       <p className="subtitulo">
-        Os modelos, o preço e o desconto. As medidas da moldura são o que faz a
-        verificação de qualidade das fotos funcionar — peça-as ao designer junto
-        com as artes.
+        Aqui carrega a arte de cada cartão, ajusta onde entram a foto e o nome,
+        e define o preço e o desconto. Abra um cartão para ver a folha ao lado:
+        o retângulo mostra onde a foto vai cair.
       </p>
       <PainelDeModelosDeCartao projectSlug={projectSlug} />
     </main>

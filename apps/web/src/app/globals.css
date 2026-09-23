@@ -8741,6 +8741,38 @@ h2.funil {
   border-radius: 10px;
 }
 
+/* O aviso de que os cartões vivem noutro projeto.
+   Destacado de propósito: quem cai aqui está perdido, e o caminho tem de se
+   ver antes de tudo o resto. */
+.painel-noutro-projeto {
+  border-color: var(--cor-primaria);
+  border-left-width: 4px;
+}
+
+.painel-caminhos {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  padding: 0;
+  margin: 12px 0 0;
+  list-style: none;
+}
+
+.painel-caminhos li {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px 10px;
+  align-items: center;
+}
+
+.painel-caminhos .cartoes-accao {
+  width: auto;
+  margin-top: 0;
+  text-decoration: none;
+}
+
+.painel-caminhos small { color: var(--cor-texto-suave); }
+
 .painel-modelos { padding: 0; margin: 0; list-style: none; }
 
 .painel-modelo {

@@ -1,6 +1,7 @@
 'use client'
 
 import { useCallback, useEffect, useRef, useState } from 'react'
+import Link from 'next/link'
 import { A4_MM } from '@pv/cartoes'
 import {
   painelDeCartoes,
@@ -27,6 +28,9 @@ import { ErroDeApi } from '@/lib/auth'
 export function PainelDeModelosDeCartao({ projectSlug }: { projectSlug: string }) {
   const [modelos, definirModelos] = useState<ModeloAdmin[]>([])
   const [categorias, definirCategorias] = useState<CategoriaAdmin[]>([])
+  const [noutrosProjetos, definirNoutrosProjetos] = useState<
+    Array<{ slug: string; name: string; modelos: number }>
+  >([])
   const [preco, definirPreco] = useState<PrecoAdmin | null>(null)
   const [aCarregar, definirACarregar] = useState(true)
   const [erro, definirErro] = useState<string | null>(null)
@@ -35,14 +39,16 @@ export function PainelDeModelosDeCartao({ projectSlug }: { projectSlug: string }
 
   const carregar = useCallback(async () => {
     try {
-      const [m, p, c] = await Promise.all([
+      const [m, p, c, onde] = await Promise.all([
         painelDeCartoes.modelos(projectSlug),
         painelDeCartoes.preco(projectSlug),
         painelDeCartoes.categorias(projectSlug),
+        painelDeCartoes.onde(),
       ])
       definirModelos(m)
       definirPreco(p)
       definirCategorias(c)
+      definirNoutrosProjetos(onde.filter((o) => o.slug !== projectSlug))
     } catch (e) {
       definirErro(e instanceof ErroDeApi ? e.message : 'Não foi possível carregar.')
     } finally {
@@ -71,6 +77,36 @@ export function PainelDeModelosDeCartao({ projectSlug }: { projectSlug: string }
   return (
     <div className="painel-cartoes">
       {erro && <p className="cartoes-erro">{erro}</p>}
+
+      {/* ESTE PROJETO NÃO TEM CARTÕES, MAS OUTRO TEM.
+          Quem chega aqui está à procura de cartões que existem noutro sítio, e
+          o ecrã vazio sozinho fá-lo-ia construir um segundo conjunto em vez de
+          encontrar o primeiro. Por isso o caminho vem primeiro, antes do preço
+          e das categorias. */}
+      {modelos.length === 0 && noutrosProjetos.length > 0 && (
+        <div className="painel-bloco painel-noutro-projeto">
+          <h2>Os cartões estão noutro projeto</h2>
+          <p className="subtitulo">
+            Este projeto ainda não tem cartões. Para carregar ou trocar a arte, abra:
+          </p>
+          <ul className="painel-caminhos">
+            {noutrosProjetos.map((p) => (
+              <li key={p.slug}>
+                <Link className="cartoes-accao" href={`/${p.slug}/admin/cartoes`}>
+                  {p.name}
+                </Link>
+                <small>
+                  {p.modelos === 1 ? '1 cartão' : `${p.modelos} cartões`}
+                </small>
+              </li>
+            ))}
+          </ul>
+          <p className="painel-exemplo">
+            Se quiser mesmo cartões próprios neste projeto, crie uma categoria em baixo — mas
+            serão cartões novos, à parte dos que já existem.
+          </p>
+        </div>
+      )}
 
       {preco && (
         <TabelaDePreco

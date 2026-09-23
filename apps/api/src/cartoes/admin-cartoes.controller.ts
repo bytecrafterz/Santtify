@@ -151,6 +151,12 @@ export class AdminCartoesController {
     return this.admin.criarModelo(projectSlug, dto)
   }
 
+  /** Os projetos que têm cartões, para o ecrã vazio poder apontar o caminho. */
+  @Get('cartoes/onde')
+  ondeEstaoOsCartoes() {
+    return this.admin.ondeEstaoOsCartoes()
+  }
+
   @Patch('modelos-de-cartao/:id')
   actualizarModelo(@Param('id') id: string, @Body() dto: ModeloDto) {
     return this.admin.actualizarModelo(id, dto)
