@@ -143,7 +143,10 @@ export function PainelDeModelosDeCartao({ projectSlug }: { projectSlug: string }
         }
       />
 
-      {categorias.length === 0 && (
+      {/* Cala-se quando o aviso de cima já está a dizer para NÃO criar aqui —
+          senão o ecrã manda fazer e não fazer a mesma coisa, com dois
+          centímetros entre as duas frases. */}
+      {categorias.length === 0 && noutrosProjetos.length === 0 && (
         <p className="painel-aviso">Crie uma categoria para começar a cadastrar cartões.</p>
       )}
 
