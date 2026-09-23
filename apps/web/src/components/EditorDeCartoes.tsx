@@ -19,6 +19,7 @@ import {
 import { ErroDeApi } from '@/lib/auth'
 import { useAuth } from './ProvedorDeAuth'
 import { EntregaDosCartoes } from './EntregaDosCartoes'
+import { Voltar } from './Voltar'
 
 /**
  * O editor dos cartões personalizados.
@@ -250,7 +251,7 @@ export function EditorDeCartoes({ projectSlug }: { projectSlug: string }) {
   if (passo === 'categoria') {
     return (
       <div className="editor-cartoes">
-        <Cabecalho />
+        <Cabecalho projectSlug={projectSlug} />
         <section className="cartoes-passo">
           {categorias === null ? (
             <p className="cartoes-ajuda">A carregar…</p>
@@ -302,7 +303,7 @@ export function EditorDeCartoes({ projectSlug }: { projectSlug: string }) {
   if (passo === 'quantidade') {
     return (
       <div className="editor-cartoes">
-        <Cabecalho />
+        <Cabecalho projectSlug={projectSlug} />
         {/* A MONTRA VEM ANTES DA PERGUNTA.
             Quem chega aqui era recebido com "quantas fotos?" sem nunca ter
             visto um cartão. Ninguém decide quantos compra de uma coisa que
@@ -380,7 +381,7 @@ export function EditorDeCartoes({ projectSlug }: { projectSlug: string }) {
   if (passo === 'fotos') {
     return (
       <div className="editor-cartoes">
-        <Cabecalho />
+        <Cabecalho projectSlug={projectSlug} />
         <section className="cartoes-passo">
           <h2>Envie a foto de cada {rotulo.um}</h2>
           <p className="cartoes-ajuda">
@@ -429,7 +430,7 @@ export function EditorDeCartoes({ projectSlug }: { projectSlug: string }) {
     const aprovadas = pedido.criancas.filter((c) => c.aprovada)
     return (
       <div className="editor-cartoes">
-        <Cabecalho />
+        <Cabecalho projectSlug={projectSlug} />
         <section className="cartoes-passo">
           <h2>Quais você quer produzir agora?</h2>
           <p className="cartoes-ajuda">
@@ -511,7 +512,7 @@ export function EditorDeCartoes({ projectSlug }: { projectSlug: string }) {
     const pago = pedido.estado === 'PAGO' || pedido.estado === 'PRONTO'
     return (
       <div className="editor-cartoes">
-        <Cabecalho />
+        <Cabecalho projectSlug={projectSlug} />
         <section className="cartoes-passo">
           <h2>Pagamento</h2>
           <Resumo pedido={pedido} />
@@ -658,7 +659,7 @@ export function EditorDeCartoes({ projectSlug }: { projectSlug: string }) {
   if (passo === 'editor' && crianca) {
     return (
       <div className="editor-cartoes">
-        <Cabecalho />
+        <Cabecalho projectSlug={projectSlug} />
         <Editor
           projectSlug={projectSlug}
           pedido={pedido}
@@ -693,7 +694,7 @@ export function EditorDeCartoes({ projectSlug }: { projectSlug: string }) {
 
   return (
     <div className="editor-cartoes">
-      <Cabecalho />
+      <Cabecalho projectSlug={projectSlug} />
       <section className="cartoes-passo">
         <h2>Seus cartões estão prontos</h2>
         <ul className="cartoes-prontos">
@@ -812,15 +813,28 @@ function GaleriaDeModelos({
   )
 }
 
-function Cabecalho() {
+/**
+ * ESTA PÁGINA NÃO TINHA SAÍDA.
+ *
+ * Todos os outros ecrãs abrem com a pastilha de voltar; este abria com o
+ * título e mais nada, e de dentro dele só se saía pelo botão do navegador ou
+ * pela barra de baixo. Numa página de compra, não ter porta é o género de
+ * pormenor que faz desistir sem que ninguém saiba porquê.
+ */
+function Cabecalho({ projectSlug }: { projectSlug: string }) {
   return (
-    <header className="cartoes-cabecalho">
-      <h1>Crie seu cartão personalizado</h1>
-      <p>
-        Personalize com o nome e a foto e receba seus cartões prontos para
-        imprimir.
-      </p>
-    </header>
+    <>
+      <div className="cabecalho">
+        <Voltar href={`/${projectSlug}`}>Voltar</Voltar>
+      </div>
+      <header className="cartoes-cabecalho">
+        <h1>Crie seu cartão personalizado</h1>
+        <p>
+          Personalize com o nome e a foto e receba seus cartões prontos para
+          imprimir.
+        </p>
+      </header>
+    </>
   )
 }
 
