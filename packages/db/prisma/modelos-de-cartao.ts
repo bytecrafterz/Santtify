@@ -34,17 +34,40 @@ const MODELOS = [
  * O cliente garantiu que os sete têm exactamente o mesmo espaço para a
  * fotografia e para o nome, e é essa garantia que faz um enquadramento servir
  * os sete. Por isso está escrita uma vez.
+ *
+ * ── MEDIDA NA ARTE, E NÃO ANTES DELA (23/09) ─────────────────────────
+ *
+ * Estes números eram outros — uma elipse em 68,92 com 74×92 e a caixa do nome
+ * em 55,190. Foram escritos quando ainda não havia arte nenhuma, e quando ela
+ * chegou caíram nos sítios errados: a elipse apanhava metade da criança e
+ * passava por cima do nome, e o rectângulo do nome aterrava na faixa "ORAÇÃO".
+ *
+ * Os de agora foram medidos com uma régua de milímetros sobrreposta à arte
+ * final e conferidos na prévia, um de cada vez:
+ *
+ *   - A foto é RECTANGULAR e não elipse: o lugar dela na arte é um rectângulo,
+ *     e uma elipse inscrita nele deixava os cantos da criança de exemplo à
+ *     vista.
+ *   - 66..144 na horizontal é o VÃO ENTRE AS DUAS COLUNAS de cartões. Mais
+ *     larga do que isto, a fotografia tapa "CONHECIDO(A) POR DEUS" à esquerda
+ *     e "DEUS NUNCA SE ESQUECE DE MIM" à direita — a fotografia entra POR CIMA
+ *     da arte, não por baixo.
+ *   - 62..158 na vertical vai do fim da faixa do título ao início da tarja do
+ *     nome, sem tocar no louro nem no escudo FÉ.
+ *
+ * Quem mexer aqui tem de voltar a olhar para uma prévia. Estes números não se
+ * deduzem do desenho: leram-se dele.
  */
 const GEOMETRIA = {
-  fotoX: 68,
-  fotoY: 92,
-  fotoLargura: 74,
-  fotoAltura: 92,
-  fotoFormato: FormatoDaMoldura.ELIPSE,
-  nomeX: 55,
-  nomeY: 190,
-  nomeLargura: 100,
-  nomeAltura: 16,
+  fotoX: 66,
+  fotoY: 62,
+  fotoLargura: 78,
+  fotoAltura: 96,
+  fotoFormato: FormatoDaMoldura.RETANGULO,
+  nomeX: 60,
+  nomeY: 151,
+  nomeLargura: 90,
+  nomeAltura: 20,
   nomeCorHex: '#12356B',
   nomeCorpoMinimo: 8,
   nomeCorpoMaximo: 20,
