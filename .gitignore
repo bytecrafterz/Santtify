@@ -48,3 +48,9 @@ conversa-*.txt
 
 # Fotos de crianças e PDFs em trânsito. Nunca versionar.
 cartoes-temporarios/
+
+# Notas de voz e ficheiros que o cliente manda pelo WhatsApp: entram em docs/
+# por conveniencia, mas nao sao fonte deste projeto.
+docs/audio*.mpeg
+docs/audio*.ogg
+docs/audio*.m4a
