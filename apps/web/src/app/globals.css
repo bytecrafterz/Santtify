@@ -107,12 +107,46 @@ body {
   padding: 24px 20px 64px;
 }
 
+/*
+  ── A SAÍDA ACOMPANHA QUEM ROLA (24/09) ─────────────────────────────
+
+  O botão de voltar ficava no topo do documento e desaparecia ao primeiro
+  arrastar. Numa página de letra — arte, tocador, letra da música, comentários —
+  isso significa que quem está a meio só sai deslizando tudo para trás, ou
+  fechando. Foi a observação dele, e vale para todas as páginas.
+
+  O cabeçalho inteiro passa a colar-se ao topo. Colar só a pastilha deixava-a a
+  flutuar sozinha sobre o texto; colar a faixa mantém a página com um topo, que
+  é o que uma saída fixa precisa de ter para não parecer um autocolante.
+
+  As margens negativas esticam o fundo até às bordas do `.envoltorio`. Sem elas
+  o conteúdo passava visível pelos 20px de folga de cada lado — a faixa tapava o
+  meio e deixava as pontas a andar.
+*/
 .cabecalho {
+  position: sticky;
+  top: 0;
+  z-index: 30;
   display: flex;
   align-items: center;
   justify-content: space-between;
   gap: 12px;
-  padding: 16px 0 24px;
+  padding: 16px 20px 16px;
+  margin: 0 -20px 8px;
+  background: var(--cor-fundo);
+}
+
+/*
+  Onde não há `.cabecalho`, o botão vem solto dentro do envoltório — e aí é ele
+  que cola. `display: flex` em vez de `inline-flex` porque uma caixa em linha
+  gruda-se à própria linha de texto e não ao ecrã, e o efeito não acontecia.
+*/
+.envoltorio > .voltar-elegante:not(.voltar-em-linha) {
+  position: sticky;
+  top: 12px;
+  z-index: 30;
+  display: flex;
+  width: fit-content;
 }
 
 /*
