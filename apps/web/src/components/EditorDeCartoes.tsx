@@ -303,6 +303,23 @@ export function EditorDeCartoes({ projectSlug }: { projectSlug: string }) {
     return (
       <div className="editor-cartoes">
         <Cabecalho />
+        {/* A MONTRA VEM ANTES DA PERGUNTA.
+            Quem chega aqui era recebido com "quantas fotos?" sem nunca ter
+            visto um cartão. Ninguém decide quantos compra de uma coisa que
+            ainda não viu. */}
+        {modelos.length > 0 && (
+          <section className="cartoes-passo">
+            <h2>
+              Os cartões <span className="cartoes-conta">{modelos.length} modelos</span>
+            </h2>
+            <p className="cartoes-ajuda">
+              Cada conjunto traz os {modelos.length}, com o nome e a foto de quem
+              você escolher.
+            </p>
+            <GaleriaDeModelos modelos={modelos} />
+          </section>
+        )}
+
         <section className="cartoes-passo">
           <h2>Quantas fotos você vai enviar?</h2>
           <p className="cartoes-ajuda">
@@ -722,6 +739,73 @@ export function EditorDeCartoes({ projectSlug }: { projectSlug: string }) {
   )
 }
 
+/**
+ * Os modelos como se veem: a arte, e não o nome dela.
+ *
+ * Isto eram sete botões de texto — "Dia 1", "Dia 2" — numa página onde o
+ * cliente tinha acabado de carregar sete artes. Quem escolhe um cartão escolhe
+ * pelo desenho, e um nome escrito não deixa escolher nada.
+ *
+ * A fila rola de lado: sete miniaturas não cabem num telemóvel, e espremê-las
+ * até caberem tirava-lhes justamente o que se vem cá ver.
+ *
+ * Sem `aoEscolher` é montra e não escolha — é assim que aparece a quem ainda
+ * nem sabe o que está a comprar, no primeiro ecrã.
+ */
+function GaleriaDeModelos({
+  modelos,
+  activo,
+  aoEscolher,
+}: {
+  modelos: ModeloDeCartao[]
+  activo?: number
+  aoEscolher?: (i: number) => void
+}) {
+  if (modelos.length === 0) return null
+  const escolhe = Boolean(aoEscolher)
+  return (
+    <>
+      <ul className="cartoes-modelos">
+        {modelos.map((m, i) => {
+          const dentro = (
+            <>
+              <span className="cartoes-modelo-arte">
+                {m.arteUrl ? (
+                  // eslint-disable-next-line @next/next/no-img-element
+                  <img src={m.arteUrl} alt={escolhe ? '' : m.nome} loading="lazy" />
+                ) : (
+                  <span className="cartoes-modelo-sem-arte" aria-hidden="true" />
+                )}
+                <span className="cartoes-modelo-dia">Dia {m.dia}</span>
+              </span>
+              <span className="cartoes-modelo-nome">{m.nome}</span>
+            </>
+          )
+          return (
+            <li key={m.id}>
+              {escolhe ? (
+                <button
+                  type="button"
+                  className={i === activo ? 'cartoes-modelo activo' : 'cartoes-modelo'}
+                  onClick={() => aoEscolher?.(i)}
+                  aria-pressed={i === activo}
+                >
+                  {dentro}
+                </button>
+              ) : (
+                <div className="cartoes-modelo">{dentro}</div>
+              )}
+            </li>
+          )
+        })}
+      </ul>
+      <p className="cartoes-ajuda cartoes-rolar">
+        Arraste para os lados para ver todos os modelos →
+      </p>
+    </>
+  )
+}
+
 function Cabecalho() {
   return (
     <header className="cartoes-cabecalho">
@@ -1002,25 +1086,16 @@ function Editor({
 
   if (!modelo) return <p className="cartoes-ajuda">A carregar os modelos…</p>
 
+  /** Pronto para imprimir: tem nome e a foto aguenta o tamanho da moldura. */
+  const pronto = Boolean(nome.trim()) && qualidade?.nivel !== 'INSUFICIENTE'
+
   return (
     <>
       <section className="cartoes-passo">
-        <h2>1. Escolha um modelo</h2>
-        <ul className="cartoes-modelos">
-          {modelos.map((m, i) => (
-            <li key={m.id}>
-              <button
-                type="button"
-                className={i === modeloActivo ? 'cartoes-modelo activo' : 'cartoes-modelo'}
-                onClick={() => aoMudarModelo(i)}
-                aria-pressed={i === modeloActivo}
-              >
-                <span className="cartoes-modelo-dia">Dia {m.dia}</span>
-                <span className="cartoes-modelo-nome">{m.nome}</span>
-              </button>
-            </li>
-          ))}
-        </ul>
+        <h2>
+          1. Escolha um modelo <span className="cartoes-conta">{modelos.length} modelos</span>
+        </h2>
+        <GaleriaDeModelos modelos={modelos} activo={modeloActivo} aoEscolher={aoMudarModelo} />
       </section>
 
       <div className="cartoes-editor-grelha">
@@ -1112,9 +1187,17 @@ function Editor({
             aoArrastar={mexer}
             grande={ampliado}
           />
-          <button type="button" className="cartoes-ligacao" onClick={() => aoAmpliar(!ampliado)}>
-            {ampliado ? 'Reduzir' : 'Ver em tamanho grande'}
-          </button>
+          <div className="cartoes-ferramentas">
+            <button type="button" className="cartoes-ligacao" onClick={() => aoAmpliar(!ampliado)}>
+              {ampliado ? 'Reduzir' : 'Ver em tamanho grande'}
+            </button>
+            {/* Volta ao enquadramento de fábrica. Existe porque quem arrasta a
+                foto até se perder precisa de uma saída que não seja recomeçar
+                o pedido. */}
+            <button type="button" className="cartoes-ligacao" onClick={definirAjusteNeutro}>
+              Redefinir enquadramento
+            </button>
+          </div>
         </section>
       </div>
 
@@ -1124,10 +1207,21 @@ function Editor({
           O nome e o enquadramento são os mesmos nos {modelos.length}. Mexer num
           mexe em todos.
         </p>
+        {/*
+          O VISTO VERDE É UMA AFIRMAÇÃO, E TEM DE SER VERDADE.
+          Só aparece quando o cartão está mesmo pronto: com nome escrito e com a
+          fotografia a dar resolução que imprime. Enquanto a foto estiver má, os
+          sete ficam sem visto — porque os sete saem da mesma foto, e nenhum
+          deles está pronto.
+        */}
         <ul className="cartoes-miniaturas">
           {modelos.map((m, i) => (
             <li key={m.id}>
-              <button type="button" onClick={() => aoMudarModelo(i)} className="cartoes-miniatura">
+              <button
+                type="button"
+                onClick={() => aoMudarModelo(i)}
+                className={i === modeloActivo ? 'cartoes-miniatura activa' : 'cartoes-miniatura'}
+              >
                 <PreVisualizacao
                   projectSlug={projectSlug}
                   pedidoId={pedido.id}
@@ -1138,6 +1232,7 @@ function Editor({
                   tamanhoDoNome={tamanhoDoNome}
                   miniatura
                 />
+                {pronto && <span className="cartoes-visto" aria-hidden="true">✓</span>}
                 <span>Dia {m.dia}</span>
               </button>
             </li>
