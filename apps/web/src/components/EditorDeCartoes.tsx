@@ -769,6 +769,10 @@ function GaleriaDeModelos({
         {modelos.map((m, i) => {
           const dentro = (
             <>
+              {/* SEM SELO DO DIA POR CIMA DA ARTE.
+                  A arte dele já traz um — "DIA 1", no canto de cima à esquerda —
+                  e o meu caía exactamente em cima dele, a tapar metade do
+                  título. O dia diz-se na legenda, que é onde sobra espaço. */}
               <span className="cartoes-modelo-arte">
                 {m.arteUrl ? (
                   // eslint-disable-next-line @next/next/no-img-element
@@ -776,9 +780,11 @@ function GaleriaDeModelos({
                 ) : (
                   <span className="cartoes-modelo-sem-arte" aria-hidden="true" />
                 )}
-                <span className="cartoes-modelo-dia">Dia {m.dia}</span>
               </span>
-              <span className="cartoes-modelo-nome">{m.nome}</span>
+              <span className="cartoes-modelo-nome">
+                <span className="cartoes-modelo-dia">Dia {m.dia}</span>
+                {m.nome}
+              </span>
             </>
           )
           return (
