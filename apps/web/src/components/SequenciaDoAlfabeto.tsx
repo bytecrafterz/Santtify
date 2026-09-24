@@ -369,15 +369,6 @@ export function SequenciaDoAlfabeto({ projectSlug }: { projectSlug: string }) {
             ))}
           </div>
 
-          {/* O QR fica aqui, na letra, e não dentro do cartão de impressão:
-              as letras sem cartão criado também precisam do seu. */}
-          <QrDaLetra
-            projectSlug={projectSlug}
-            contentSlug={vagao.slug}
-            letra={vagao.letra ?? String(vagao.numero ?? '')}
-            unidade={unidade}
-          />
-
           {/*
             AS CASAS QUE AINDA NÃO EXISTEM, e a porta para as criar.
 
@@ -552,6 +543,30 @@ export function SequenciaDoAlfabeto({ projectSlug }: { projectSlug: string }) {
               </span>
             </button>
           )}
+
+          {/*
+            O QR NO FIM, E NÃO NO MEIO (24/09).
+
+            Estava entre os cartões que já existem e as casas que ainda faltam
+            criar — e empurrava essas casas para baixo de si. Ele fotografou o
+            Dia 1 com o botão verde do SVG em cima e MÚSICA, REPETIÇÃO e ORAÇÃO
+            por baixo, e escreveu "não quero que apareça isso abaixo".
+
+            A razão é simples e eu tinha-a escrito ao contrário: este ecrã é
+            para PREENCHER a casa. Os quadrados, os que faltam e o cartão de
+            impressão são o trabalho, e vêm todos seguidos. O QR é uma
+            ferramenta — leva-se quando está tudo feito, e por isso fica no fim,
+            como já ficava no editor de cada conteúdo.
+
+            Continua fora do cartão de impressão: uma casa sem cartão criado
+            precisa do QR dela na mesma.
+          */}
+          <QrDaLetra
+            projectSlug={projectSlug}
+            contentSlug={vagao.slug}
+            letra={vagao.letra ?? String(vagao.numero ?? '')}
+            unidade={unidade}
+          />
         </div>
       </>
     )
