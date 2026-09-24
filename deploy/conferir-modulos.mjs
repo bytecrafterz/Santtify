@@ -149,8 +149,21 @@ const criancas = oferecidas.find((c) => c.slug === 'criancas')
 ok('a oferta tem cartaz', Boolean(criancas?.capaUrl), criancas?.capaUrl ?? 'sem arte')
 
 const pagina = await (await fetch(`${SITE}/${CARTOES}`)).text()
-ok('o cartaz está na página dos dias e leva ao editor',
-   pagina.includes('oferta-cartaz') && pagina.includes(`/${CARTOES}/cartoes?categoria=criancas`))
+ok('o cartaz está na página dos dias', pagina.includes('oferta-cartaz'))
+
+// A porta abre ou não conforme a chave dele, e a verificação segue a chave em
+// vez de exigir uma das duas: as duas são estados legítimos. O que NUNCA pode
+// acontecer é desencontrarem-se — dizer "em breve" e abrir na mesma, ou estar
+// aberta e não ter para onde ir.
+const abre = pagina.includes(`/${CARTOES}/cartoes?categoria=criancas`)
+ok(criancas?.ofertaEmBreve ?? criancas?.emBreve ? 'em breve: o cartaz não abre o editor'
+                                                : 'o cartaz leva ao editor',
+   (criancas?.emBreve ?? false) ? !abre : abre)
+
+ok('o áudio da oferta está na página',
+   !criancas?.audioUrl || pagina.includes('voz-oferta'))
+
+ok('o Mercado Pago aparece ao pé do cartaz', /Mercado(&nbsp;|\s|\u00a0)?Pago/.test(pagina))
 
 console.log(
   falhas === 0
