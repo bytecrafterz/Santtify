@@ -9391,27 +9391,131 @@ h2.funil {
 .cartoes-categoria span { font-size: 0.88rem; color: var(--cor-texto-suave); }
 .cartoes-categoria-preco { font-variant-numeric: tabular-nums; }
 
-.painel-categorias { padding: 0; margin: 10px 0; list-style: none; }
-.painel-categoria { padding: 10px 0; border-bottom: 1px solid var(--cor-borda); }
+/*
+  AS CATEGORIAS, EM FICHAS.
 
-.painel-categoria-topo {
-  display: flex;
-  flex-wrap: wrap;
+  Eram linhas separadas por um traço, com a palavra "Editar" em azul claro
+  encostada à margem direita, no fim de uma linha que já dizia o nome, a
+  contagem e o preço. Quem trabalha neste painel todos os dias não a encontrou
+  à primeira — e é esta a porta para a arte da oferta e para o preço de cada
+  categoria, que são as duas coisas do módulo que ele mexe sozinho.
+
+  Cada uma passa a ser uma ficha com superfície própria, a miniatura do cartaz à
+  esquerda e um botão com forma à direita. A ficha aberta acende-se, para se
+  saber em qual se está quando houver seis.
+*/
+.painel-categorias {
+  display: grid;
   gap: 10px;
-  align-items: center;
+  padding: 0;
+  margin: 12px 0;
+  list-style: none;
 }
 
-.painel-categoria-topo strong { flex: 1; }
-.painel-categoria-topo span { font-size: 0.82rem; color: var(--cor-texto-suave); }
+.painel-categoria {
+  padding: 0;
+  overflow: hidden;
+  background: var(--cor-superficie);
+  border: 1px solid var(--cor-borda);
+  border-radius: 14px;
+  transition:
+    border-color 0.15s ease,
+    box-shadow 0.15s ease;
+}
 
-/* O .cartoes-ligacao é um bloco de largura inteira; numa linha estica-se todo. */
-.painel-categoria-topo .cartoes-ligacao { width: auto; padding: 4px 8px; margin: 0; }
+.painel-categoria.aberta {
+  border-color: var(--cor-primaria);
+  box-shadow: 0 6px 22px rgb(37 99 235 / 14%);
+}
+
+.painel-categoria-topo {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr) auto;
+  gap: 12px;
+  align-items: center;
+  padding: 12px 14px;
+}
+
+/* A proporção é a do cartaz dele, que é vertical. Uma miniatura quadrada
+   cortava-lhe o preço e o botão, que são o que se quer reconhecer. */
+.painel-categoria-miniatura {
+  display: block;
+  width: 40px;
+  height: 56px;
+  object-fit: cover;
+  background: var(--cor-fundo);
+  border: 1px solid var(--cor-borda);
+  border-radius: 9px;
+}
+
+/* Sem cartaz, o lugar dele fica marcado e vazio — a mesma linguagem das casas
+   por preencher na grade dos dias. */
+.painel-categoria-miniatura.sem-arte { border-style: dashed; }
+
+.painel-categoria-nome {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 2px 8px;
+  align-items: baseline;
+  min-width: 0;
+}
+
+.painel-categoria-nome strong { font-size: 1rem; }
+
+.painel-categoria-nome small {
+  flex-basis: 100%;
+  font-size: 0.82rem;
+  color: var(--cor-texto-suave);
+}
+
+.painel-categoria-editar {
+  display: inline-flex;
+  gap: 7px;
+  align-items: center;
+  min-height: 40px;
+  padding: 0 16px;
+  font: inherit;
+  font-size: 0.9rem;
+  font-weight: 700;
+  color: var(--cor-primaria);
+  white-space: nowrap;
+  cursor: pointer;
+  background: var(--cor-primaria-suave);
+  border: 0;
+  border-radius: 999px;
+  transition:
+    background 0.15s ease,
+    color 0.15s ease;
+}
+
+/* A seta vira quando a ficha abre: o botão passa a dizer para onde vai. */
+.painel-categoria-editar::after {
+  width: 7px;
+  height: 7px;
+  content: '';
+  border-right: 2px solid currentcolor;
+  border-bottom: 2px solid currentcolor;
+  transform: translateY(-2px) rotate(45deg);
+  transition: transform 0.2s ease;
+}
+
+.painel-categoria-editar[aria-expanded='true']::after {
+  transform: translateY(2px) rotate(-135deg);
+}
+
+@media (hover: hover) {
+  .painel-categoria-editar:hover {
+    color: #fff;
+    background: var(--cor-primaria);
+  }
+}
 
 .painel-categoria-corpo {
   display: flex;
   flex-direction: column;
   gap: 10px;
-  padding: 10px 0 4px;
+  padding: 12px 14px 14px;
+  border-top: 1px solid var(--cor-borda);
 }
 
 .painel-categoria-corpo .cartoes-campo { margin-bottom: 0; }

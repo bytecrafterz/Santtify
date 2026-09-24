@@ -696,20 +696,50 @@ function LinhaDeCategoria({
   }
 
   return (
-    <li className="painel-categoria">
+    <li className={aberta ? 'painel-categoria aberta' : 'painel-categoria'}>
       <div className="painel-categoria-topo">
-        <strong>{categoria.nome}</strong>
-        <span>
-          {categoria.modelos === 1 ? '1 cartão' : `${categoria.modelos} cartões`} ·{' '}
-          {categoria.precoUnitarioCent == null
-            ? 'preço padrão'
-            : (categoria.precoUnitarioCent / 100).toLocaleString('pt-BR', {
-                style: 'currency',
-                currency: 'BRL',
-              })}
+        {/*
+          A MINIATURA DIZ DE RELANCE QUAL DELAS JÁ TEM CARTAZ.
+
+          Sem ela é preciso abrir cada categoria para saber se a oferta está no
+          ar. Com duas ainda se faz de cabeça; com as que ele vier a criar, não.
+          O lugar vazio fica marcado a tracejado — é a mesma linguagem das casas
+          por preencher na grade dos dias.
+        */}
+        {categoria.capaUrl ? (
+          <img src={categoria.capaUrl} alt="" className="painel-categoria-miniatura" />
+        ) : (
+          <span className="painel-categoria-miniatura sem-arte" aria-hidden="true" />
+        )}
+
+        <span className="painel-categoria-nome">
+          <strong>{categoria.nome}</strong>
+          {!categoria.ativo && <span className="painel-selo-falta">desativada</span>}
+          <small>
+            {categoria.modelos === 1 ? '1 cartão' : `${categoria.modelos} cartões`} ·{' '}
+            {categoria.precoUnitarioCent == null
+              ? 'preço padrão'
+              : (categoria.precoUnitarioCent / 100).toLocaleString('pt-BR', {
+                  style: 'currency',
+                  currency: 'BRL',
+                })}
+          </small>
         </span>
-        {!categoria.ativo && <span className="painel-selo-falta">desativada</span>}
-        <button type="button" className="cartoes-ligacao" onClick={() => definirAberta(!aberta)}>
+
+        {/*
+          UM BOTÃO, E NÃO UMA PALAVRA AZUL ENCOSTADA À MARGEM.
+
+          O que estava aqui era `cartoes-ligacao`: texto azul de 0,88rem no fim
+          de uma linha que já dizia o nome, a contagem e o preço. Quem conhece o
+          painel de cor não o encontrou à primeira — e é por esta porta que se
+          chega à arte da oferta e ao preço de cada categoria.
+        */}
+        <button
+          type="button"
+          className="painel-categoria-editar"
+          aria-expanded={aberta}
+          onClick={() => definirAberta(!aberta)}
+        >
           {aberta ? 'Fechar' : 'Editar'}
         </button>
       </div>
