@@ -253,6 +253,41 @@ export default async function PaginaDeConteudo({
         </div>
       )}
 
+      {/*
+        O QR VOLTA — DEPOIS DA PRÓXIMA, E NÃO NO LUGAR DELA.
+
+        Tinha saído em 23/09, quando ele escreveu "não pode aparecer QR code,
+        tem que aparecer a próxima letra visível". A leitura literal era tirar o
+        QR, e foi o que fiz; mas o que ele estava a ver não era o QR no lugar
+        errado — era a próxima a NÃO aparecer, e o QR a ser a única coisa no fim
+        da página. Essa avaria foi corrigida no mesmo dia.
+
+        Agora pediu-o de volta, para cada dia dos cartões. Fica onde já estava:
+        a seguir à próxima, e não antes dela.
+
+        E COM O BOTÃO DE BAIXAR, que é a razão de ele o querer à vista. O QR
+        existia no painel e em endereço directo; o que faltava era chegar-lhe à
+        mão sem passar por mim.
+      */}
+      {content.qrUrl && (
+        <div className="caixa-qr">
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img src={api.qrSvgUrl(projectSlug, contentSlug)} alt={`QR Code de ${content.title}`} />
+          <div>
+            QR Code desta página, gerado automaticamente.
+            <br />
+            <code>{content.qrUrl}</code>
+            <br />
+            <a
+              href={api.qrSvgUrl(projectSlug, contentSlug)}
+              download={`qr-${contentSlug}.svg`}
+            >
+              Baixar para impressão (SVG)
+            </a>
+          </div>
+        </div>
+      )}
+
       <SeloProdutoVivo projectSlug={projectSlug} />
       <BannerDeConsentimento projectId={project.id} />
       {/*
