@@ -758,6 +758,16 @@ export const painelDeCartoes = {
       method: 'DELETE',
     }),
 
+  /** O cartaz da oferta, que a página do projeto mostra por baixo da grade. */
+  enviarCapaDaCategoria: (id: string, ficheiro: File) => {
+    const corpo = new FormData()
+    corpo.append('file', ficheiro)
+    return chamarAdmin<CategoriaAdmin>(`/admin/categorias-de-cartoes/${id}/capa`, {
+      method: 'POST',
+      body: corpo,
+    })
+  },
+
   preco: (projeto: string) => chamarAdmin<PrecoAdmin>(`/admin/projects/${projeto}/preco-de-cartoes`),
 
   guardarPreco: (projeto: string, dados: Partial<PrecoAdmin>) =>

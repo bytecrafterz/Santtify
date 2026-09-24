@@ -11153,3 +11153,76 @@ body:has(.painel-karaoke) {
 @media (hover: hover) {
   .painel-outros-projetos a:hover { text-decoration: underline; }
 }
+
+/*
+  A OFERTA DOS CARTÕES, POR BAIXO DOS DIAS.
+
+  Regra única: a arte dele ocupa a largura toda e não leva moldura. O cartaz
+  que ele desenhou já tem fundo, título, preço riscado e botão pintados dentro
+  da imagem — uma borda nossa à volta punha duas molduras na mesma coisa.
+
+  `aspect-ratio` não entra de propósito: o cartaz dele é alto (1024×1536) e o
+  próximo pode não ser. A altura vem da imagem, e a página ajusta-se à arte em
+  vez de a cortar.
+*/
+.oferta-cartoes {
+  display: grid;
+  gap: 16px;
+  margin: 24px 0 8px;
+}
+
+.oferta-cartaz {
+  display: block;
+  overflow: hidden;
+  line-height: 0;
+  border-radius: var(--raio);
+  transition: transform 0.15s ease;
+}
+
+.oferta-cartaz img {
+  display: block;
+  width: 100%;
+  height: auto;
+}
+
+/* No telemóvel não há rato, e um cartaz que encolhe ao toque parece avariado. */
+@media (hover: hover) {
+  .oferta-cartaz:hover { transform: scale(1.01); }
+}
+
+.oferta-cartaz:focus-visible {
+  outline: 3px solid var(--cor-primaria);
+  outline-offset: 3px;
+}
+
+/* No ecrã grande o cartaz pára de crescer: é uma peça vertical, e a largura
+   toda de um monitor deixava-a mais alta do que a janela. */
+@media (min-width: 640px) {
+  .oferta-cartaz {
+    max-width: 420px;
+    margin-inline: auto;
+  }
+}
+
+/* O mesmo cartaz, do lado do painel. */
+.painel-cartaz { margin: 12px 0; }
+
+.painel-cartaz-previa {
+  display: block;
+  width: 100%;
+  max-width: 200px;
+  height: auto;
+  margin: 6px 0;
+  border: 1px solid var(--cor-borda);
+  border-radius: 10px;
+}
+
+.painel-cartaz-accoes {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  align-items: center;
+  margin: 8px 0 4px;
+}
+
+.painel-cartaz-accoes .cartoes-accao-secundaria { width: auto; margin-top: 0; }

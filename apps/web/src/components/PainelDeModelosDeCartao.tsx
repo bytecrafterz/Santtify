@@ -123,6 +123,13 @@ export function PainelDeModelosDeCartao({ projectSlug }: { projectSlug: string }
       <GestaoDeCategorias
         categorias={categorias}
         ocupado={ocupado !== null}
+        aEnviar={ocupado}
+        aoEnviarCapa={(id, f) =>
+          comErro(`capa-${id}`, async () => {
+            await painelDeCartoes.enviarCapaDaCategoria(id, f)
+            await carregar()
+          })
+        }
         aoCriar={(dados) =>
           comErro('categoria', async () => {
             await painelDeCartoes.criarCategoria(projectSlug, dados)
@@ -553,15 +560,20 @@ function FolhaDeReferencia({ modelo }: { modelo: ModeloAdmin }) {
 function GestaoDeCategorias({
   categorias,
   ocupado,
+  aEnviar,
   aoCriar,
   aoGuardar,
   aoRemover,
+  aoEnviarCapa,
 }: {
   categorias: CategoriaAdmin[]
   ocupado: boolean
+  /** Qual acção está a correr, para o botão do cartaz dizer "A enviar…". */
+  aEnviar: string | null
   aoCriar: (dados: Partial<CategoriaAdmin>) => void
   aoGuardar: (id: string, dados: Partial<CategoriaAdmin>) => void
   aoRemover: (id: string) => void
+  aoEnviarCapa: (id: string, ficheiro: File) => void
 }) {
   const [nome, definirNome] = useState('')
   const [singular, definirSingular] = useState('pessoa')
@@ -581,8 +593,10 @@ function GestaoDeCategorias({
             key={c.id}
             categoria={c}
             ocupado={ocupado}
+            aEnviar={aEnviar === `capa-${c.id}`}
             aoGuardar={(dados) => aoGuardar(c.id, dados)}
             aoRemover={() => aoRemover(c.id)}
+            aoEnviarCapa={(f) => aoEnviarCapa(c.id, f)}
           />
         ))}
       </ul>
@@ -637,15 +651,20 @@ function maiusculaDe(texto: string): string {
 function LinhaDeCategoria({
   categoria,
   ocupado,
+  aEnviar,
   aoGuardar,
   aoRemover,
+  aoEnviarCapa,
 }: {
   categoria: CategoriaAdmin
   ocupado: boolean
+  aEnviar: boolean
   aoGuardar: (dados: Partial<CategoriaAdmin>) => void
   aoRemover: () => void
+  aoEnviarCapa: (ficheiro: File) => void
 }) {
   const [aberta, definirAberta] = useState(false)
+  const cartaz = useRef<HTMLInputElement | null>(null)
   const [nome, definirNome] = useState(categoria.nome)
   const [singular, definirSingular] = useState(categoria.rotuloSingular)
   const [plural, definirPlural] = useState(categoria.rotuloPlural)
@@ -736,6 +755,64 @@ function LinhaDeCategoria({
           <p className="painel-exemplo">
             Deixe em branco para usar o preço e o desconto padrão do projeto.
           </p>
+
+          {/*
+            O CARTAZ DA OFERTA.
+
+            É a arte que ele mandou em 24/09 com a frase "abaixo viria esta
+            arte". Aparece por baixo da grade dos dias, na página do projeto, e
+            quem toca nela cai já no editor desta categoria — que é a segunda
+            frase dele, "quanto clica ja aparece o cartao para editar".
+
+            Fica aqui, e não num ecrã novo, porque é a mesma decisão de sempre:
+            o cartaz vende OS CARTÕES DESTA CATEGORIA, e o preço riscado que ele
+            desenhou também se define nesta ficha. Num sítio só.
+          */}
+          <div className="painel-cartaz">
+            <span className="bloco-rotulo">Arte da oferta</span>
+            {categoria.capaUrl ? (
+              <img src={categoria.capaUrl} alt="" className="painel-cartaz-previa" />
+            ) : (
+              <p className="painel-exemplo">
+                Sem arte, a oferta não aparece na página do projeto.
+              </p>
+            )}
+            <input
+              ref={cartaz}
+              type="file"
+              accept="image/*"
+              className="apenas-leitor-de-ecra"
+              onChange={(e) => {
+                const f = e.target.files?.[0]
+                if (f) aoEnviarCapa(f)
+                e.target.value = ''
+              }}
+            />
+            <div className="painel-cartaz-accoes">
+              <button
+                type="button"
+                className="cartoes-accao-secundaria"
+                disabled={ocupado}
+                onClick={() => cartaz.current?.click()}
+              >
+                {aEnviar ? 'A enviar…' : categoria.capaUrl ? 'Trocar arte' : 'Enviar arte'}
+              </button>
+              {categoria.capaUrl && (
+                <button
+                  type="button"
+                  className="cartoes-ligacao"
+                  disabled={ocupado}
+                  onClick={() => aoGuardar({ capaUrl: null })}
+                >
+                  Tirar do site
+                </button>
+              )}
+            </div>
+            <p className="painel-exemplo">
+              Aparece por baixo dos dias, na página do projeto. Quem tocar nela vai
+              direito ao editor destes cartões.
+            </p>
+          </div>
 
           <div className="painel-modelo-accoes">
             <button

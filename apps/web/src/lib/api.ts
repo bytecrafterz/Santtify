@@ -217,6 +217,26 @@ export const api = {
     buscar<{ categorias: Array<{ id: string; slug: string; name: string }> }>(
       `/projects/${slug}/categories`,
     ),
+  /**
+   * As categorias de cartões à venda, para a oferta na página do projeto.
+   *
+   * É o mesmo endereço que o editor usa, lido aqui no servidor: o cartaz tem de
+   * vir com o HTML, senão quem chega pelo WhatsApp vê a grade dos dias e só
+   * depois, com um salto, a oferta a aparecer por baixo.
+   *
+   * Uma categoria sem cartões activos já não vem da API — e por isso não há
+   * aqui nenhum filtro a repetir essa regra.
+   */
+  cartoesDoProjeto: (slug: string) =>
+    buscar<
+      Array<{
+        slug: string
+        nome: string
+        descricao: string | null
+        capaUrl: string | null
+        cartoes: number
+      }>
+    >(`/projects/${slug}/cartoes/categorias`),
   playlist: (slug: string) =>
     buscar<{ project: Projeto; categorias: CategoriaDeAudio[]; faixas: Faixa[] }>(
       `/projects/${slug}/playlist`,

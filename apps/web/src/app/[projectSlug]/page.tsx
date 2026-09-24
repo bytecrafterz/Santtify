@@ -6,6 +6,7 @@ import { BannerDeConsentimento } from '@/components/BannerDeConsentimento'
 import { AvisosDeEntrada } from '@/components/AvisosDeEntrada'
 import { IntroducaoEmCartoes } from '@/components/IntroducaoEmCartoes'
 import { ExperienciaContinua } from '@/components/ExperienciaContinua'
+import { OfertaDeCartoes } from '@/components/OfertaDeCartoes'
 import { BarraInferior } from '@/components/BarraInferior'
 
 /**
@@ -168,6 +169,10 @@ export default async function IndiceDoProjeto({
   // As categorias que ele criou no painel, para o filtro do tocador.
   const cats = await api.categorias(projectSlug).catch(() => null)
 
+  // E as categorias de CARTÕES, que são outra coisa: a oferta por baixo da
+  // grade. Vem nula quando a API falha, e aí a página abre sem oferta.
+  const ofertas = await api.cartoesDoProjeto(projectSlug).catch(() => null)
+
   return (
     <main className="envoltorio com-barra">
       {/* A BARRA PRETA DO TOPO SAIU.
@@ -270,6 +275,20 @@ export default async function IndiceDoProjeto({
           unidade={project.unidade ?? 'Letra'}
         />
       )}
+
+      {/*
+        A OFERTA DOS CARTÕES, LOGO A SEGUIR AOS DIAS.
+
+        Ele foi exacto sobre o lugar — "abaixo viria esta arte" — e o lugar é o
+        argumento: quem chega aqui acabou de ver os sete dias, seis deles ainda
+        fechados. É o único instante da página em que a pessoa já sabe o que o
+        produto é e ainda não o tem todo.
+
+        Depois da grade e ANTES dos avisos de entrada, que são convites a
+        instalar e a pôr fotografia — conversa de plataforma. A oferta é conversa
+        de produto, e vai primeiro.
+      */}
+      {ofertas && <OfertaDeCartoes projectSlug={projectSlug} categorias={ofertas} />}
 
       {/* O selo do Produto Vivo deixa de flutuar no fim da página: passou a
           ser um dos quatro acessos da barra de baixo, sempre à mão. */}

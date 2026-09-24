@@ -93,7 +93,14 @@ function emailValido(texto: string): boolean {
   return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(texto.trim())
 }
 
-export function EditorDeCartoes({ projectSlug }: { projectSlug: string }) {
+export function EditorDeCartoes({
+  projectSlug,
+  categoriaInicial = null,
+}: {
+  projectSlug: string
+  /** A categoria por que a pessoa entrou, vinda do cartaz da oferta. */
+  categoriaInicial?: string | null
+}) {
   const [modelos, definirModelos] = useState<ModeloDeCartao[]>([])
   const [pedido, definirPedido] = useState<Pedido | null>(null)
   const [passo, definirPasso] = useState<Passo>('categoria')
@@ -124,8 +131,14 @@ export function EditorDeCartoes({ projectSlug }: { projectSlug: string }) {
       .then((lista) => {
         if (!vivo) return
         definirCategorias(lista)
-        if (lista.length === 1) {
-          definirCategoria((actual) => actual ?? lista[0].slug)
+        // Uma só categoria não é uma escolha. Nem é escolha quando a pessoa já
+        // escolheu lá atrás, ao tocar no cartaz de uma delas.
+        const escolhida =
+          lista.length === 1
+            ? lista[0]
+            : (categoriaInicial && lista.find((c) => c.slug === categoriaInicial)) || null
+        if (escolhida) {
+          definirCategoria((actual) => actual ?? escolhida.slug)
           definirPasso((actual) => (actual === 'categoria' ? 'quantidade' : actual))
         }
       })

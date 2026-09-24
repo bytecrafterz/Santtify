@@ -222,6 +222,27 @@ export class AdminCartoesController {
     return this.admin.removerCategoria(id)
   }
 
+  /**
+   * A ARTE DA OFERTA DESTA CATEGORIA.
+   *
+   * Ele desenhou-a em 24/09 e explicou-a em duas frases: "abaixo viria esta
+   * arte" e "quanto clica ja aparece o cartao para editar". É um cartaz por
+   * categoria, guardado como a capa dela, que a página do projeto mostra por
+   * baixo da grade e que leva direito ao editor daquela categoria.
+   *
+   * NÃO passa pelo caminho da arte dos modelos, e isso é de propósito: aquele
+   * mede 300 dpi sobre A4 e avisa quando a arte não serve para imprimir. Este
+   * cartaz nunca vai a papel — vive no ecrã, e exigir-lhe 2480px seria um aviso
+   * falso de cada vez que ele trocasse o cartaz.
+   */
+  @Post('categorias-de-cartoes/:id/capa')
+  @UseInterceptors(FileInterceptor('file', { limits: { fileSize: TAMANHO_MAXIMO } }))
+  async enviarCapaDaCategoria(@Param('id') id: string, @UploadedFile() file: Express.Multer.File) {
+    if (!file?.buffer?.length) throw new BadRequestException('Nenhum arquivo recebido.')
+    const salvo = await this.storage.salvar(file)
+    return this.admin.actualizarCategoria(id, { capaUrl: salvo.url })
+  }
+
   // ── Preço e desconto ──────────────────────────────────────────────
 
   @Get('projects/:projectSlug/preco-de-cartoes')
