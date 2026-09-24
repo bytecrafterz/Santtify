@@ -141,6 +141,17 @@ const publicos = await ch(`/projects/${CARTOES}/cartoes/modelos?categoria=crianc
 ok('o editor público vê os sete com arte',
    publicos.length === 7 && publicos.every((m) => m.arteUrl))
 
+// A porta que ele desenhou em 24/09: o cartaz por baixo dos dias e o caminho
+// que ele abre. Duas partes, e são duas verificações de propósito — o cartaz
+// pode estar cá e o link levar a lado nenhum.
+const oferecidas = await ch(`/projects/${CARTOES}/cartoes/categorias`)
+const criancas = oferecidas.find((c) => c.slug === 'criancas')
+ok('a oferta tem cartaz', Boolean(criancas?.capaUrl), criancas?.capaUrl ?? 'sem arte')
+
+const pagina = await (await fetch(`${SITE}/${CARTOES}`)).text()
+ok('o cartaz está na página dos dias e leva ao editor',
+   pagina.includes('oferta-cartaz') && pagina.includes(`/${CARTOES}/cartoes?categoria=criancas`))
+
 console.log(
   falhas === 0
     ? '\n  Tudo o que funcionava continua a funcionar.\n'
