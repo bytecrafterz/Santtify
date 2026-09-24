@@ -11329,4 +11329,12 @@ body:has(.painel-karaoke) {
   margin: 8px 0 4px;
 }
 
+/* Os dois são blocos de largura inteira lá fora — numa linha, esticavam-se e o
+   segundo caía para debaixo do primeiro. */
 .painel-cartaz-accoes .cartoes-accao-secundaria { width: auto; margin-top: 0; }
+
+.painel-cartaz-accoes .cartoes-ligacao {
+  width: auto;
+  padding: 0 8px;
+  margin-top: 0;
+}
