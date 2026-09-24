@@ -160,6 +160,10 @@ export default async function PaginaDeConteudo({
   const { project, content, navegacao } = dados
   /** "Letra", "Dia", "Atributo" — para anunciar a seguinte pelo nome certo. */
   const unidade = project.unidade ?? 'Letra'
+  /* Calculado uma vez: a capa precisa de saber se alguma faixa traz arte,
+     e a lista precisa das faixas. Chamar duas vezes percorreria os blocos
+     duas vezes para dar a mesma resposta. */
+  const publicacoes = publicacoesDe(dados)
 
   return (
     <main className="envoltorio com-barra">
@@ -186,7 +190,21 @@ export default async function PaginaDeConteudo({
           A altura é limitada porque a arte é retrato A4; sem limite, ela
           empurraria o botão de tocar para fora da tela do celular, e quem chega
           pelo QR Code vem para ouvir. */}
-      {content.coverUrl && (
+      {/*
+        A CAPA SÓ SE DESENHA QUANDO AS FAIXAS NÃO TRAZEM ARTE (24/09).
+
+        Cada faixa de áudio tem arte própria, e a capa é outra coisa: é ela que
+        vai na grade do projecto e na prévia do link quando alguém partilha no
+        WhatsApp. Só que as duas apareciam aqui, uma por cima da outra — no Dia
+        1, assim que a faixa ganhou arte, a mesma imagem passou a ser desenhada
+        duas vezes seguidas.
+
+        Não se resolve apagando a capa: sem ela a casa fica sem quadrado na
+        grade e o link partilhado perde a prévia. Resolve-se aqui, onde a
+        duplicação acontece. A capa continua a ser o retrato desta página para
+        quem chega de fora; dentro dela, quem manda é a arte de cada faixa.
+      */}
+      {content.coverUrl && !publicacoes.some((pub) => pub.imagem) && (
         // eslint-disable-next-line @next/next/no-img-element
         <img
           className="capa-conteudo"
@@ -213,7 +231,7 @@ export default async function PaginaDeConteudo({
         Passa a desenhar as mesmas publicações da experiência contínua, pela
         mesma função.
       */}
-      {publicacoesDe(dados).map((pub) => (
+      {publicacoes.map((pub) => (
         <PublicacaoDaLetra
           somFazParteDaEstrutura
           key={pub.ancora}
