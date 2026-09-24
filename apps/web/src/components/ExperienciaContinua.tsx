@@ -1,6 +1,7 @@
 'use client'
 
 import { useEffect, useRef, useState } from 'react'
+import Link from 'next/link'
 import type { ItemIndice, PaginaConteudo, ProgressoDasLetras } from '@/lib/api'
 import { PublicacaoDaLetra } from './PublicacaoDaLetra'
 import { CartaoDeImpressao } from './CartaoDeImpressao'
@@ -365,13 +366,23 @@ export function ExperienciaContinua({
             )
           }
 
+          /*
+            TOCAR NUMA CASA LEVA À PÁGINA DELA (24/09).
+
+            Isto era um botão que abria a casa POR BAIXO da grade, sem sair da
+            página — regra que ele fixou em 20/08. Hoje pediu o contrário: que
+            cada casa abra o seu próprio endereço, `/projecto/h`.
+
+            O que abre por baixo continua a existir e continua a ser preciso:
+            é por aí que entra quem recebe um link partilhado de uma faixa
+            (`?letra=…&pub=…`), e esse tem de aterrar na faixa exacta e não
+            numa página genérica. O que muda é só o gesto de tocar na grade.
+          */
           return (
-            <button
-              type="button"
-              className={escolhida === dela.slug ? 'letra-bloco escolhida' : 'letra-bloco'}
+            <Link
+              className="letra-bloco"
               key={casa}
-              onClick={() => escolher(dela)}
-              aria-pressed={escolhida === dela.slug}
+              href={`/${projectSlug}/${dela.slug}`}
               aria-label={`${nomeDaCasa} — ${dela.title}`}
             >
               {dela.coverUrl ? (
@@ -380,7 +391,7 @@ export function ExperienciaContinua({
               ) : (
                 casa
               )}
-            </button>
+            </Link>
           )
         })}
       </div>
