@@ -11261,51 +11261,135 @@ body:has(.painel-karaoke) {
 /*
   A OFERTA DOS CARTÕES, POR BAIXO DOS DIAS.
 
-  Regra única: a arte dele ocupa a largura toda e não leva moldura. O cartaz
-  que ele desenhou já tem fundo, título, preço riscado e botão pintados dentro
-  da imagem — uma borda nossa à volta punha duas molduras na mesma coisa.
+  "O cartao fe 1 a 7 nao fica grande", "Faça que o cartao fique grande" — 24/09,
+  e a queixa é legitíma: dentro do cartaz há uma fila de sete cartões com um
+  título cada, e a 380px de largura nenhum deles se lê.
 
-  `aspect-ratio` não entra de propósito: o cartaz dele é alto (1024×1536) e o
-  próximo pode não ser. A altura vem da imagem, e a página ajusta-se à arte em
-  vez de a cortar.
+  Por isso o cartaz SAI DAS MARGENS: puxa os 20px de padding do `.envoltorio`
+  para fora e ocupa o ecrã todo. É a única peça da página que o faz, e é
+  deliberado — é também a única que existe para ser lida como um cartaz.
+
+  `aspect-ratio` não entra: a arte provisória dele é 1024×1536 e a que o designer
+  entrega amanhã pode não ser. A altura vem da imagem.
 */
 .oferta-cartoes {
   display: grid;
-  gap: 16px;
-  margin: 24px 0 8px;
+  gap: 28px;
+  margin: 28px 0 8px;
+}
+
+.oferta-item {
+  display: grid;
+  gap: 12px;
 }
 
 .oferta-cartaz {
   display: block;
+  margin-inline: -20px;
   overflow: hidden;
   line-height: 0;
-  border-radius: var(--raio);
   transition: transform 0.15s ease;
 }
 
-.oferta-cartaz img {
+.oferta-arte {
   display: block;
   width: 100%;
   height: auto;
 }
 
-/* No telemóvel não há rato, e um cartaz que encolhe ao toque parece avariado. */
+/* Em breve é uma imagem e não um botão: não cresce ao passar o rato, porque
+   não há nada para onde ir. */
 @media (hover: hover) {
-  .oferta-cartaz:hover { transform: scale(1.01); }
+  .oferta-cartaz:not(.em-breve):hover { transform: scale(1.01); }
 }
 
 .oferta-cartaz:focus-visible {
   outline: 3px solid var(--cor-primaria);
-  outline-offset: 3px;
+  outline-offset: -3px;
 }
 
-/* No ecrã grande o cartaz pára de crescer: é uma peça vertical, e a largura
-   toda de um monitor deixava-a mais alta do que a janela. */
-@media (min-width: 640px) {
+/* Passada a largura da página, sair das margens deixa de ter sentido: o cartaz
+   ficaria uma faixa gigante num monitor. Volta para dentro, com cantos. */
+@media (min-width: 720px) {
   .oferta-cartaz {
-    max-width: 420px;
     margin-inline: auto;
+    max-width: 480px;
+    border-radius: var(--raio);
   }
+}
+
+/*
+  O NOME DE QUEM PROCESSA O PAGAMENTO, ANTES DO CLIQUE.
+
+  Pedido dele em 24/09 — "Deixa bem claro que estamos usado mercado pago para
+  mostrar credibilidade". Discreto de propósito: se competisse com o cartaz,
+  tirava-lhe força em vez de lhe dar crédito.
+*/
+.oferta-selo {
+  display: flex;
+  gap: 8px;
+  align-items: baseline;
+  margin: 0;
+  font-size: 0.82rem;
+  line-height: 1.5;
+  color: var(--cor-texto-suave);
+}
+
+.oferta-selo strong { color: var(--cor-texto); }
+.oferta-selo-cadeado { flex: none; font-size: 0.9rem; }
+
+/*
+  A VOZ DELE, POR BAIXO DO CARTAZ.
+
+  Uma barra e não um tocador inteiro: é um áudio só, de quem apresenta o
+  produto, e não uma faixa de uma playlist.
+*/
+.voz-oferta {
+  display: flex;
+  gap: 12px;
+  align-items: center;
+  padding: 12px 14px;
+  background: var(--cor-superficie);
+  border: 1px solid var(--cor-borda);
+  border-radius: var(--raio);
+}
+
+.voz-oferta-botao {
+  display: grid;
+  flex: none;
+  place-items: center;
+  width: 46px;
+  height: 46px;
+  padding: 0;
+  font-size: 0.95rem;
+  color: #fff;
+  cursor: pointer;
+  background: var(--cor-tocar);
+  border: 0;
+  border-radius: 50%;
+}
+
+.voz-oferta-corpo {
+  display: grid;
+  gap: 2px;
+  min-width: 0;
+}
+
+.voz-oferta-corpo strong {
+  overflow: hidden;
+  font-size: 0.9rem;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.voz-oferta-corpo small { font-size: 0.78rem; color: var(--cor-texto-suave); }
+
+.voz-oferta-barra {
+  width: 100%;
+  height: 4px;
+  margin: 2px 0;
+  cursor: pointer;
+  accent-color: var(--cor-tocar);
 }
 
 /* O mesmo cartaz, do lado do painel. */
@@ -11338,3 +11422,24 @@ body:has(.painel-karaoke) {
   padding: 0 8px;
   margin-top: 0;
 }
+
+/* O nome de quem processa o pagamento, no ecrã de pagar. Ver a nota no
+   `EditorDeCartoes`. */
+.cartoes-processador {
+  display: flex;
+  gap: 8px;
+  align-items: baseline;
+  padding: 12px 14px;
+  margin: 12px 0;
+  font-size: 0.84rem;
+  line-height: 1.5;
+  color: var(--cor-texto-suave);
+  background: var(--cor-primaria-suave);
+  border-radius: 12px;
+}
+
+.cartoes-processador strong { color: var(--cor-texto); }
+
+/* O áudio da oferta, do lado do painel: o tocador do navegador chega, porque
+   quem o ouve aqui é ele, uma vez, para conferir o que enviou. */
+.painel-audio { width: 100%; margin: 6px 0; }

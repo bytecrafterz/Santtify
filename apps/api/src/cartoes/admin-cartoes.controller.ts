@@ -73,6 +73,8 @@ class CategoriaDto {
   @IsOptional() @IsString() @MaxLength(80) slug?: string
   @IsOptional() @IsString() @MaxLength(300) descricao?: string | null
   @IsOptional() @IsString() capaUrl?: string | null
+  @IsOptional() @IsBoolean() ofertaEmBreve?: boolean
+  @IsOptional() @IsString() ofertaAudioUrl?: string | null
   @IsOptional() @IsString() @MaxLength(40) rotuloSingular?: string
   @IsOptional() @IsString() @MaxLength(40) rotuloPlural?: string
   @IsOptional() @IsBoolean() ativo?: boolean
@@ -235,6 +237,24 @@ export class AdminCartoesController {
    * cartaz nunca vai a papel — vive no ecrã, e exigir-lhe 2480px seria um aviso
    * falso de cada vez que ele trocasse o cartaz.
    */
+  /**
+   * A VOZ DELE, POR BAIXO DA ARTE.
+   *
+   * "Estou fazendo o audio paga colocar abaixo da arte" — 24/09. Mesmo caminho
+   * da capa: passa pelo `StorageService`, que já aceita mpeg, m4a, ogg e wav, e
+   * o endereço guarda-se na categoria.
+   */
+  @Post('categorias-de-cartoes/:id/audio')
+  @UseInterceptors(FileInterceptor('file', { limits: { fileSize: TAMANHO_MAXIMO } }))
+  async enviarAudioDaOferta(@Param('id') id: string, @UploadedFile() file: Express.Multer.File) {
+    if (!file?.buffer?.length) throw new BadRequestException('Nenhum arquivo recebido.')
+    const salvo = await this.storage.salvar(file)
+    if (salvo.kind !== 'AUDIO') {
+      throw new BadRequestException('Envie um áudio (MP3, M4A, OGG ou WAV).')
+    }
+    return this.admin.actualizarCategoria(id, { ofertaAudioUrl: salvo.url })
+  }
+
   @Post('categorias-de-cartoes/:id/capa')
   @UseInterceptors(FileInterceptor('file', { limits: { fileSize: TAMANHO_MAXIMO } }))
   async enviarCapaDaCategoria(@Param('id') id: string, @UploadedFile() file: Express.Multer.File) {

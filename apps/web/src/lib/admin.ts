@@ -645,6 +645,9 @@ export interface CategoriaAdmin {
   nome: string
   descricao: string | null
   capaUrl: string | null
+  /** A arte aparece na página do projeto, mas ainda não abre o editor. */
+  ofertaEmBreve: boolean
+  ofertaAudioUrl: string | null
   rotuloSingular: string
   rotuloPlural: string
   ativo: boolean
@@ -763,6 +766,16 @@ export const painelDeCartoes = {
     const corpo = new FormData()
     corpo.append('file', ficheiro)
     return chamarAdmin<CategoriaAdmin>(`/admin/categorias-de-cartoes/${id}/capa`, {
+      method: 'POST',
+      body: corpo,
+    })
+  },
+
+  /** A voz dele, que fica por baixo do cartaz. */
+  enviarAudioDaOferta: (id: string, ficheiro: File) => {
+    const corpo = new FormData()
+    corpo.append('file', ficheiro)
+    return chamarAdmin<CategoriaAdmin>(`/admin/categorias-de-cartoes/${id}/audio`, {
       method: 'POST',
       body: corpo,
     })

@@ -54,3 +54,10 @@ cartoes-temporarios/
 docs/audio*.mpeg
 docs/audio*.ogg
 docs/audio*.m4a
+
+# Os áudios que ele manda por WhatsApp para eu carregar como conteúdo.
+docs/*.mpeg
+docs/*.ogg
+docs/*.m4a
+docs/*.mp3
+docs/WhatsApp*

@@ -530,6 +530,24 @@ export function EditorDeCartoes({
           <h2>Pagamento</h2>
           <Resumo pedido={pedido} />
 
+          {/*
+            QUEM PROCESSA O PAGAMENTO, DITO PELO NOME.
+
+            "Deixa bem claro que estamos usado mercado pago para mostrar
+            credibilidade" — 24/09. O ecrã dizia "Pagar com Pix" e "Pagar com
+            cartão" e nunca dizia para onde iam os dados do cartão. Numa loja que
+            a pessoa não conhece, e a vender fotografias de crianças, esse
+            silêncio custa vendas — e o nome que o quebra já era verdade desde
+            que o módulo existe: o cartão é sempre cobrado na página deles.
+          */}
+          {!pago && (
+            <p className="cartoes-processador">
+              <span aria-hidden="true">🔒</span>
+              Pagamento processado pelo <strong>Mercado&nbsp;Pago</strong>. O número do
+              cartão é digitado na página deles — nós nunca o vemos nem o guardamos.
+            </p>
+          )}
+
           {!pedido.meio && (
             <div className="cartoes-meios">
               {/* O processador de pagamentos exige um e-mail de quem paga. Vai

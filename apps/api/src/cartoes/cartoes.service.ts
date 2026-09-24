@@ -129,6 +129,9 @@ export class CartoesService {
         nome: c.nome,
         descricao: c.descricao,
         capaUrl: c.capaUrl,
+        // A porta fechada e a voz dele. Ver `ofertaEmBreve` no schema.
+        emBreve: c.ofertaEmBreve,
+        audioUrl: c.ofertaAudioUrl,
         rotuloSingular: c.rotuloSingular,
         rotuloPlural: c.rotuloPlural,
         cartoes: c._count.modelos,

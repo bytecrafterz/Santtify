@@ -43,6 +43,8 @@ export interface CamposDaCategoria {
   slug?: string
   descricao?: string | null
   capaUrl?: string | null
+  ofertaEmBreve?: boolean
+  ofertaAudioUrl?: string | null
   rotuloSingular?: string
   rotuloPlural?: string
   ativo?: boolean
@@ -155,7 +157,8 @@ export class AdminCartoesService {
     if (!categoria) throw new NotFoundException('Categoria não encontrada.')
 
     const campos = [
-      'nome', 'descricao', 'capaUrl', 'rotuloSingular', 'rotuloPlural', 'ativo', 'ordem',
+      'nome', 'descricao', 'capaUrl', 'ofertaEmBreve', 'ofertaAudioUrl',
+      'rotuloSingular', 'rotuloPlural', 'ativo', 'ordem',
       'precoUnitarioCent', 'descontoPercentagem', 'descontoAPartirDe',
     ] as const
     const alteracoes: Record<string, unknown> = {}

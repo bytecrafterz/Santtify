@@ -130,6 +130,12 @@ export function PainelDeModelosDeCartao({ projectSlug }: { projectSlug: string }
             await carregar()
           })
         }
+        aoEnviarAudio={(id, f) =>
+          comErro(`audio-${id}`, async () => {
+            await painelDeCartoes.enviarAudioDaOferta(id, f)
+            await carregar()
+          })
+        }
         aoCriar={(dados) =>
           comErro('categoria', async () => {
             await painelDeCartoes.criarCategoria(projectSlug, dados)
@@ -565,6 +571,7 @@ function GestaoDeCategorias({
   aoGuardar,
   aoRemover,
   aoEnviarCapa,
+  aoEnviarAudio,
 }: {
   categorias: CategoriaAdmin[]
   ocupado: boolean
@@ -574,6 +581,7 @@ function GestaoDeCategorias({
   aoGuardar: (id: string, dados: Partial<CategoriaAdmin>) => void
   aoRemover: (id: string) => void
   aoEnviarCapa: (id: string, ficheiro: File) => void
+  aoEnviarAudio: (id: string, ficheiro: File) => void
 }) {
   const [nome, definirNome] = useState('')
   const [singular, definirSingular] = useState('pessoa')
@@ -594,9 +602,11 @@ function GestaoDeCategorias({
             categoria={c}
             ocupado={ocupado}
             aEnviar={aEnviar === `capa-${c.id}`}
+            aEnviarAudio={aEnviar === `audio-${c.id}`}
             aoGuardar={(dados) => aoGuardar(c.id, dados)}
             aoRemover={() => aoRemover(c.id)}
             aoEnviarCapa={(f) => aoEnviarCapa(c.id, f)}
+            aoEnviarAudio={(f) => aoEnviarAudio(c.id, f)}
           />
         ))}
       </ul>
@@ -652,19 +662,24 @@ function LinhaDeCategoria({
   categoria,
   ocupado,
   aEnviar,
+  aEnviarAudio,
   aoGuardar,
   aoRemover,
   aoEnviarCapa,
+  aoEnviarAudio,
 }: {
   categoria: CategoriaAdmin
   ocupado: boolean
   aEnviar: boolean
+  aEnviarAudio: boolean
   aoGuardar: (dados: Partial<CategoriaAdmin>) => void
   aoRemover: () => void
   aoEnviarCapa: (ficheiro: File) => void
+  aoEnviarAudio: (ficheiro: File) => void
 }) {
   const [aberta, definirAberta] = useState(false)
   const cartaz = useRef<HTMLInputElement | null>(null)
+  const voz = useRef<HTMLInputElement | null>(null)
   const [nome, definirNome] = useState(categoria.nome)
   const [singular, definirSingular] = useState(categoria.rotuloSingular)
   const [plural, definirPlural] = useState(categoria.rotuloPlural)
@@ -839,9 +854,70 @@ function LinhaDeCategoria({
               )}
             </div>
             <p className="painel-exemplo">
-              Aparece por baixo dos dias, na página do projeto. Quem tocar nela vai
-              direito ao editor destes cartões.
+              Aparece por baixo dos dias, na página do projeto.
             </p>
+
+            {/*
+              A CHAVE QUE ABRE A LOJA.
+
+              Ele mandou o cartaz e, meia hora depois, travou-o: "Nao pode ser
+              funcional agora — o designer esta fazendo a arte vai entregar
+              amanhã". Com a chave aqui, o dia de abrir é dele. Sem ela, era uma
+              publicação minha a decidir quando ele começa a vender.
+            */}
+            <label className="painel-activo">
+              <input
+                type="checkbox"
+                checked={categoria.ofertaEmBreve}
+                disabled={ocupado}
+                onChange={(e) => aoGuardar({ ofertaEmBreve: e.target.checked })}
+              />
+              <span>
+                Em breve — a arte aparece, mas ainda não abre o editor
+              </span>
+            </label>
+
+            <span className="bloco-rotulo">Áudio por baixo da arte</span>
+            {categoria.ofertaAudioUrl ? (
+              <audio className="painel-audio" src={categoria.ofertaAudioUrl} controls />
+            ) : (
+              <p className="painel-exemplo">Sem áudio, só aparece a arte.</p>
+            )}
+            <input
+              ref={voz}
+              type="file"
+              accept="audio/*"
+              className="apenas-leitor-de-ecra"
+              onChange={(e) => {
+                const f = e.target.files?.[0]
+                if (f) aoEnviarAudio(f)
+                e.target.value = ''
+              }}
+            />
+            <div className="painel-cartaz-accoes">
+              <button
+                type="button"
+                className="cartoes-accao-secundaria"
+                disabled={ocupado}
+                onClick={() => voz.current?.click()}
+              >
+                {aEnviarAudio
+                  ? 'A enviar…'
+                  : categoria.ofertaAudioUrl
+                    ? 'Trocar áudio'
+                    : 'Enviar áudio'}
+              </button>
+              {categoria.ofertaAudioUrl && (
+                <button
+                  type="button"
+                  className="cartoes-ligacao"
+                  disabled={ocupado}
+                  onClick={() => aoGuardar({ ofertaAudioUrl: null })}
+                >
+                  Tirar o áudio
+                </button>
+              )}
+            </div>
           </div>
 
           <div className="painel-modelo-accoes">

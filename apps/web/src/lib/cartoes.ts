@@ -69,6 +69,10 @@ export interface Categoria {
   nome: string
   descricao: string | null
   capaUrl: string | null
+  /** A arte está de pé mas a porta ainda não abre. */
+  emBreve: boolean
+  /** A voz dele, por baixo da arte. */
+  audioUrl: string | null
   rotuloSingular: string
   rotuloPlural: string
   cartoes: number

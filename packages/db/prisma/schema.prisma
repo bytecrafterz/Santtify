@@ -1549,6 +1549,25 @@ model CategoriaDeCartoes {
   ativo Boolean @default(true)
   ordem Int     @default(0)
 
+  /// A ARTE APARECE, MAS AINDA NÃO ABRE O EDITOR.
+  ///
+  /// Pedido dele em 24/09, na mesma hora em que mandou o cartaz: "Nao pode ser
+  /// funcional agora", "Este e provisório em breve". O designer entrega a arte
+  /// definitiva no dia seguinte, e até lá ele quer o anúncio de pé e a porta
+  /// fechada.
+  ///
+  /// É uma chave e não código porque o dia de abrir é dele. Um `if` aqui
+  /// obrigava-o a pedir-me uma publicação para vender o primeiro cartão.
+  ofertaEmBreve Boolean @default(false)
+
+  /// A voz dele, por baixo da arte da oferta.
+  ///
+  /// "Estou fazendo o audio paga colocar abaixo da arte" — 24/09. Vive na
+  /// categoria e não num `ContentBlock` de propósito: um áudio que vende os
+  /// cartões é do módulo dos cartões. Pô-lo nos blocos era voltar a misturar os
+  /// dois módulos, que foi a queixa dele de 23/09.
+  ofertaAudioUrl String?
+
   /// Nulos = usa o `PrecoDeCartoes` do projeto.
   precoUnitarioCent   Int?
   descontoPercentagem Int?

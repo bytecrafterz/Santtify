@@ -234,6 +234,8 @@ export const api = {
         nome: string
         descricao: string | null
         capaUrl: string | null
+        emBreve: boolean
+        audioUrl: string | null
         cartoes: number
       }>
     >(`/projects/${slug}/cartoes/categorias`),
