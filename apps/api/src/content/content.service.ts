@@ -383,7 +383,22 @@ export class ContentService {
       throw new NotFoundException('Conteúdo não encontrado')
     }
 
-    const proximo = await this.casaSeguinte(project, content)
+    /*
+      OS DOIS LADOS, OUTRA VEZ — MAS NÃO COMO ANTES.
+
+      O anterior tinha saído em 22/09, quando eram duas caixas de texto lado a
+      lado e ele escreveu "não quero que apareça desta forma, apareça a próxima
+      letra". O que estava errado era a FORMA, não existir caminho para trás:
+      texto seco, sem arte, e a próxima tão apagada como a anterior.
+
+      Volta com a arte de cada uma, em miniatura, e a próxima continua a ser a
+      que se destaca. Quem acaba de ouvir tem os dois caminhos à mão sem ter de
+      subir ao cabeçalho.
+    */
+    const [anterior, proximo] = await Promise.all([
+      this.casaVizinha(project, content, -1),
+      this.casaVizinha(project, content, 1),
+    ])
 
     const code = content.shortLink[0]?.code ?? null
 
@@ -510,7 +525,7 @@ export class ContentService {
         qrCode: code,
         qrUrl: code ? this.shortLinks.urlPublica(code) : null,
       },
-      navegacao: { proximo },
+      navegacao: { anterior, proximo },
     }
   }
 
@@ -535,9 +550,17 @@ export class ContentService {
    * grade — e do que está trancado sai só o nome, nunca a arte nem o título
    * que ele ainda está a preparar.
    */
-  private async casaSeguinte(
+  /**
+   * A vizinha, para um lado ou para o outro.
+   *
+   * `passo` é +1 para a seguinte e -1 para a anterior. A conta é a mesma nos
+   * dois sentidos — é o alfabeto ou o número que manda, nunca a posição na
+   * lista — por isso seria erro escrever isto duas vezes.
+   */
+  private async casaVizinha(
     project: { id: string; sequencia: string; blocos: number },
     atual: { letra: string | null; ordinal: number | null },
+    passo: 1 | -1,
   ) {
     const porLetras = project.sequencia === 'LETRAS'
 
@@ -546,12 +569,12 @@ export class ContentService {
     if (porLetras) {
       if (!atual.letra) return null
       const i = ALFABETO.indexOf(atual.letra.toUpperCase())
-      if (i < 0 || i + 1 >= ALFABETO.length) return null
-      letra = ALFABETO[i + 1]
+      if (i < 0 || i + passo < 0 || i + passo >= ALFABETO.length) return null
+      letra = ALFABETO[i + passo]
     } else {
       const n = atual.ordinal
-      if (!n || n + 1 > project.blocos) return null
-      ordinal = n + 1
+      if (!n || n + passo < 1 || n + passo > project.blocos) return null
+      ordinal = n + passo
     }
 
     const dela = await this.prisma.content.findFirst({

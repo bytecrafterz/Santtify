@@ -1685,6 +1685,27 @@ h3 {
   background: var(--cor-fundo);
 }
 
+/*
+  ── NO COMPUTADOR A ARTE NÃO É UM CARTAZ (24/09) ────────────────────
+
+  `width: 100%` foi escrito a pensar num telemóvel, onde 100% são 350px. Num
+  ecrã de computador são os 720px do envoltório, e uma arte quadrada passa a
+  ocupar 720×720: a pessoa abre a página e não vê mais nada senão a capa —
+  o tocador, que é o que ela vem fazer, fica abaixo da dobra.
+
+  `52vh` sozinho não chegava: com `height: auto` a altura vem da largura, e
+  recortar a 52vh só corta a arte em vez de a encolher. Aqui limita-se a
+  LARGURA e centra-se, que encolhe a imagem inteira em vez de a cortar.
+*/
+@media (min-width: 640px) {
+  .capa-conteudo {
+    width: auto;
+    max-width: min(100%, 420px);
+    max-height: none;
+    margin-inline: auto;
+  }
+}
+
 /* Filtros da playlist: ouvir tudo, só músicas, só explicações. */
 .filtros-playlist {
   display: flex;
@@ -4887,6 +4908,128 @@ button.letra-bloco {
 .acoes-impressao .botao-acao {
   width: 100%;
   justify-content: center;
+}
+
+/* ── As duas vizinhas, no fim da página de conteúdo (24/09) ──────────
+   Dois alvos do mesmo tamanho, cada um com a arte em miniatura. Substituem a
+   arte grande da seguinte, que num ecrã de computador enchia a largura toda e
+   não deixava caminho para trás. A grelha é de duas colunas iguais; quando só
+   há um lado, ele ocupa a sua coluna e a outra fica vazia — o anterior à
+   esquerda, o seguinte à direita, sempre nos mesmos sítios. */
+.vizinhas {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+  margin: 24px 0 1.5rem;
+}
+
+.vizinha-anterior { grid-column: 1; }
+.vizinha-proximo { grid-column: 2; }
+
+.vizinha {
+  display: flex;
+  gap: 10px;
+  align-items: center;
+  min-height: 64px;
+  padding: 8px;
+  color: var(--cor-texto);
+  text-decoration: none;
+  background: var(--cor-superficie);
+  border: 1px solid var(--cor-borda);
+  border-radius: 12px;
+  transition:
+    border-color 180ms ease,
+    box-shadow 180ms ease;
+}
+
+/* A seguinte é a que se segue: fica com a cor de acção, a anterior fica
+   discreta. Os dois caminhos existem, mas não pesam o mesmo. */
+.vizinha-proximo { border-color: var(--cor-acao); }
+
+@media (hover: hover) {
+  a.vizinha:hover {
+    border-color: var(--cor-primaria);
+    box-shadow: var(--sombra);
+  }
+}
+
+.vizinha.trancada {
+  color: var(--cor-texto-suave);
+  background: var(--cor-fundo);
+  border-style: dashed;
+}
+
+.vizinha-arte {
+  display: grid;
+  flex: none;
+  width: 48px;
+  height: 48px;
+  overflow: hidden;
+  background: var(--cor-fundo);
+  border-radius: 8px;
+  place-items: center;
+}
+
+.vizinha-arte img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  object-position: top;
+}
+
+.vizinha-cadeado { font-size: 1.1rem; }
+
+.vizinha-texto {
+  display: grid;
+  gap: 1px;
+  min-width: 0;
+}
+
+.vizinha-texto small {
+  font-size: 0.7rem;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--cor-texto-suave);
+}
+
+/* Um título comprido encolhe em vez de partir a caixa em três linhas. */
+.vizinha-texto strong {
+  overflow: hidden;
+  font-size: 0.92rem;
+  line-height: 1.2;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.vizinha-texto em {
+  font-size: 0.72rem;
+  font-style: normal;
+  color: var(--cor-texto-suave);
+}
+
+/* A seta diz o sentido sem precisar de ser lida, e fica do lado para onde
+   aponta: o anterior tem a dele antes da arte, o seguinte depois do texto. */
+.vizinha-anterior::before,
+.vizinha-proximo::after {
+  flex: none;
+  font-size: 1rem;
+  font-weight: 800;
+  color: var(--cor-texto-suave);
+}
+
+.vizinha-anterior::before { content: '‹'; }
+.vizinha-proximo::after { content: '›'; margin-left: auto; }
+
+/* Num telemóvel estreito as duas colunas deixam ~110px para o título, e um
+   nome de casa não cabe em 110px sem virar reticências. Empilham-se, e cada
+   uma fica com a largura toda. */
+@media (max-width: 480px) {
+  .vizinhas { grid-template-columns: 1fr; }
+  .vizinha-anterior,
+  .vizinha-proximo {
+    grid-column: 1;
+  }
 }
 
 /* ── A letra seguinte, depois da impressão ──────────────────────────── */

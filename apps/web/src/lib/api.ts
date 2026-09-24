@@ -89,22 +89,28 @@ export interface PaginaConteudo {
   content: Conteudo
   navegacao: {
     /**
-     * A seguinte traz a arte e a casa, para se anunciar como na página inicial.
+     * As duas vizinhas, cada uma com a arte e a casa.
      *
      * `publicado` falso é a casa que ainda não abriu — e nesse caso vem só a
      * casa, sem slug, sem arte e sem título: o que ele ainda está a preparar
-     * não se mostra antes de tempo. O `anterior` saiu; a saída para trás está
-     * no cabeçalho e ele pediu a PRÓXIMA.
+     * não se mostra antes de tempo.
+     *
+     * `null` é o fim da linha: antes da primeira casa e depois da última não
+     * há vizinha nenhuma, e aí o botão desse lado não se desenha.
      */
-    proximo: {
-      slug: string | null
-      title: string | null
-      coverUrl?: string | null
-      letra?: string | null
-      ordinal?: number | null
-      publicado: boolean
-    } | null
+    anterior: CasaVizinha | null
+    proximo: CasaVizinha | null
   }
+}
+
+/** Uma casa ao lado desta, como a página de conteúdo a anuncia. */
+export interface CasaVizinha {
+  slug: string | null
+  title: string | null
+  coverUrl?: string | null
+  letra?: string | null
+  ordinal?: number | null
+  publicado: boolean
 }
 
 export interface ItemIndice {

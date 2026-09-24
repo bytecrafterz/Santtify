@@ -12,6 +12,79 @@ import { OfertaDaLetra } from '@/components/OfertaDaLetra'
 import { BarraInferior } from '@/components/BarraInferior'
 import { Voltar } from '@/components/Voltar'
 import { artigoDefinido, nomeDaCasa } from '@/lib/unidade'
+import type { CasaVizinha } from '@/lib/api'
+
+/**
+ * Um dos dois caminhos do fim da página: a casa anterior ou a seguinte.
+ *
+ * ── PORQUE É UM BOTÃO COM MINIATURA, E NÃO UMA ARTE INTEIRA ─────────
+ *
+ * Aqui estava só a seguinte, com a arte em tamanho grande. Num telemóvel isso
+ * lê-se bem; num ecrã de computador a arte enchia a largura toda e o fim da
+ * página passava a ser um cartaz. E não havia caminho para trás nenhum.
+ *
+ * Agora são dois alvos do mesmo tamanho, cada um com a sua arte em miniatura —
+ * o suficiente para se reconhecer para onde se vai antes de tocar, que era o
+ * que a arte grande fazia bem e é a única coisa dela que interessa guardar.
+ *
+ * O LADO VAZIO NÃO SE DESENHA. Na primeira casa não há anterior, e um botão
+ * apagado a dizer que não há nada antes ocupa espaço para não informar nada.
+ * A grelha aguenta: quem fica sozinho encosta ao seu lado.
+ */
+function CasaAoLado({
+  casa,
+  lado,
+  unidade,
+  projectSlug,
+}: {
+  casa: CasaVizinha | null
+  lado: 'anterior' | 'proximo'
+  unidade: string
+  projectSlug: string
+}) {
+  if (!casa) return null
+
+  const feminino = artigoDefinido(unidade) === 'a'
+  const rotulo =
+    lado === 'anterior'
+      ? `${unidade} anterior`
+      : `Próxim${feminino ? 'a' : 'o'} ${unidade.toLowerCase()}`
+  const nome = nomeDaCasa(
+    unidade,
+    casa.letra ?? casa.ordinal,
+    casa.publicado ? casa.title : null,
+  )
+
+  const dentro = (
+    <>
+      <span className="vizinha-arte">
+        {casa.publicado && casa.coverUrl ? (
+          // eslint-disable-next-line @next/next/no-img-element
+          <img src={casa.coverUrl} alt="" loading="lazy" />
+        ) : (
+          <span className="vizinha-cadeado" aria-hidden="true">
+            🔒
+          </span>
+        )}
+      </span>
+      <span className="vizinha-texto">
+        <small>{rotulo}</small>
+        <strong>{nome}</strong>
+        {!casa.publicado && <em>Em breve</em>}
+      </span>
+    </>
+  )
+
+  const classe = `vizinha vizinha-${lado}${casa.publicado ? '' : ' trancada'}`
+
+  return casa.publicado && casa.slug ? (
+    <Link className={classe} href={`/${projectSlug}/${casa.slug}`}>
+      {dentro}
+    </Link>
+  ) : (
+    <div className={classe}>{dentro}</div>
+  )
+}
 
 export async function generateMetadata({
   params,
@@ -222,35 +295,24 @@ export default async function PaginaDeConteudo({
         de ouvir uma letra tem de saber que a seguinte existe e ainda não abriu.
         Era isso, e não mais texto, que faltava aqui.
       */}
-      {navegacao.proximo && (
-        <div className="proxima-letra">
-          <p className="rotulo-proxima">{`Próxim${artigoDefinido(unidade) === 'a' ? 'a' : 'o'} ${unidade.toLowerCase()}`}</p>
-          {navegacao.proximo.publicado && navegacao.proximo.slug ? (
-            <Link className="cartao-proxima" href={`/${projectSlug}/${navegacao.proximo.slug}`}>
-              {navegacao.proximo.coverUrl && (
-                // eslint-disable-next-line @next/next/no-img-element
-                <img
-                  src={navegacao.proximo.coverUrl}
-                  alt={navegacao.proximo.title ?? ''}
-                />
-              )}
-              <span className="nome-proxima">
-                {nomeDaCasa(
-                  unidade,
-                  navegacao.proximo.letra ?? navegacao.proximo.ordinal,
-                  navegacao.proximo.title,
-                )}
-              </span>
-            </Link>
-          ) : (
-            <div className="cartao-proxima">
-              <span className="nome-proxima">
-                {nomeDaCasa(unidade, navegacao.proximo.letra ?? navegacao.proximo.ordinal, null)}
-              </span>
-              <span className="cadeado-proxima">🔒 Em breve</span>
-            </div>
-          )}
-        </div>
+      {(navegacao.anterior || navegacao.proximo) && (
+        <nav
+          className="vizinhas"
+          aria-label={`${unidade} anterior e seguinte`}
+        >
+          <CasaAoLado
+            casa={navegacao.anterior}
+            lado="anterior"
+            unidade={unidade}
+            projectSlug={projectSlug}
+          />
+          <CasaAoLado
+            casa={navegacao.proximo}
+            lado="proximo"
+            unidade={unidade}
+            projectSlug={projectSlug}
+          />
+        </nav>
       )}
 
       {/*
