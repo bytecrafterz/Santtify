@@ -1,6 +1,7 @@
 'use client'
 
 import { useCallback, useEffect, useState } from 'react'
+import Link from 'next/link'
 import { admin, type CartaoAdmin, type VagaoAdmin } from '@/lib/admin'
 import { artigoDefinido, capitalizar, plural, todosOsPlural } from '@/lib/unidade'
 import { CabecalhoFixo } from './CabecalhoFixo'
@@ -258,6 +259,24 @@ export function SequenciaDoAlfabeto({ projectSlug }: { projectSlug: string }) {
           </Voltar>
           <h1>Conteúdos: {vagao.rotulo}</h1>
           <p className="nota">Toque para editar • Toque nos três pontos para ver opções</p>
+
+          {/*
+            A IMAGEM DA CASA NÃO TINHA PORTA NENHUMA.
+
+            Os quatro quadrados são os cartões DE DENTRO da casa. A imagem da
+            própria casa — a que aparece na grelha do site e no topo da página —
+            vive no editor do conteúdo, e nenhum ecrã do painel ligava para lá.
+            Só se chegava escrevendo o endereço à mão.
+
+            Ele perguntou hoje, olhando para a grelha, "como é que mudo estas
+            imagens?". A resposta certa não é um endereço: é este botão.
+          */}
+          {vagao.slug && (
+            <Link className="bloco linha atalho-alfabeto" href={`/${projectSlug}/admin/${vagao.slug}`}>
+              <span>{`Imagem e título d${artigoDefinido(unidade)} ${vagao.rotulo}`}</span>
+              <small>a arte que aparece na grelha do site, o título, o subtítulo e o QR Code</small>
+            </Link>
+          )}
 
           <div className="grade-quadrados">
             {lista.map((c, i) => (
