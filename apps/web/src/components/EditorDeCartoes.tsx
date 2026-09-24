@@ -543,8 +543,10 @@ export function EditorDeCartoes({
           {!pago && (
             <p className="cartoes-processador">
               <span aria-hidden="true">🔒</span>
-              Pagamento processado pelo <strong>Mercado&nbsp;Pago</strong>. O número do
-              cartão é digitado na página deles — nós nunca o vemos nem o guardamos.
+              <span>
+                Pagamento processado pelo <strong>Mercado&nbsp;Pago</strong>. O número do
+                cartão é digitado na página deles — nós nunca o vemos nem o guardamos.
+              </span>
             </p>
           )}
 

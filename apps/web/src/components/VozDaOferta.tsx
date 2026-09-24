@@ -49,9 +49,10 @@ export function VozDaOferta({ src, titulo }: { src: string; titulo: string }) {
 
   return (
     <div className="voz-oferta">
-      {/* `preload="none"`: são megabytes, e quem chega à página pode nunca
-          chegar a tocar. O ficheiro só viaja quando o dedo pede. */}
-      <audio ref={audio} src={src} preload="none" />
+      {/* `metadata` e não `none`: são megabytes e ninguém os deve descarregar sem
+          pedir, mas com `none` a barra dizia "0:00" sozinho até alguém tocar —
+          parecia um tocador avariado. `metadata` traz a duração e mais nada. */}
+      <audio ref={audio} src={src} preload="metadata" />
 
       <button
         type="button"

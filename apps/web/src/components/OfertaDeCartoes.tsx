@@ -92,12 +92,21 @@ export function OfertaDeCartoes({
               Fica também quando está "em breve": é informação sobre a compra
               que aí vem, e não uma promessa de que já se pode comprar.
             */}
+            {/*
+              O TEXTO VAI DENTRO DE UM `<span>`, e não solto.
+
+              `.oferta-selo` é um flex de duas colunas — cadeado e frase. Solto,
+              cada pedaço de texto e o `<strong>` viravam itens de flex próprios,
+              e a frase saía repartida por três colunas estreitas.
+            */}
             <p className="oferta-selo">
               <span className="oferta-selo-cadeado" aria-hidden="true">
                 🔒
               </span>
-              Pagamento processado pelo <strong>Mercado&nbsp;Pago</strong> — Pix ou cartão.
-              Os seus dados não passam por nós.
+              <span>
+                Pagamento processado pelo <strong>Mercado&nbsp;Pago</strong> — Pix ou
+                cartão. Os seus dados não passam por nós.
+              </span>
             </p>
           </div>
         )
