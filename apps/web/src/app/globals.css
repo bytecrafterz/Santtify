@@ -5342,6 +5342,23 @@ button.letra-bloco {
   border-color: var(--cor-acao);
 }
 
+/*
+  `padding: 0` — A QUARTA VEZ QUE ESTA ARMADILHA ME APANHA.
+
+  Existe outro `.numero` neste ficheiro: a caixa de estatísticas, com
+  `padding: 14px 8px`. Tem especificidade 0,1,0 e esta regra tem 0,2,0, por
+  isso esta ganha — mas só nas propriedades que DECLARA. O `padding` não estava
+  aqui, e o das estatísticas sobrevivia.
+
+  Com `box-sizing: border-box`, um círculo de 24px com 14px de padding em cima
+  e em baixo fica com altura de conteúdo ZERO: o `place-items: center` centra o
+  dígito num espaço nenhum, 14px abaixo do topo, e o número sai do círculo.
+
+  Foi o que ele fotografou — oito bolas coloridas aparentemente vazias, com os
+  números caídos por baixo. Já tinha acontecido com `.cabecalho a`,
+  `.cabecalho-do-projeto a` e `.remover-pecas button`. As quatro vezes pela
+  mesma razão: uma regra genérica que ninguém lembra que existe.
+*/
 .quadrado .numero {
   position: absolute;
   top: -8px;
@@ -5351,10 +5368,13 @@ button.letra-bloco {
   place-items: center;
   width: 24px;
   height: 24px;
+  padding: 0;
+  border: 0;
   border-radius: 50%;
   color: #fff;
   font-size: 0.78rem;
   font-weight: 800;
+  line-height: 1;
 }
 
 .quadrado .tres-pontos {
