@@ -20,6 +20,8 @@ export function ListaAdmin({ projectSlug }: { projectSlug: string }) {
   const [dados, definirDados] = useState<Awaited<ReturnType<typeof admin.listar>> | null>(null)
   const [erro, definirErro] = useState<string | null>(null)
   const [aguardando, definirAguardando] = useState<number | null>(null)
+  const [projetos, definirProjetos] =
+    useState<Array<{ slug: string; nome: string }> | null>(null)
 
   useEffect(() => {
     if (carregando) return
@@ -44,6 +46,13 @@ export function ListaAdmin({ projectSlug }: { projectSlug: string }) {
       .publicacoesPendentes(projectSlug)
       .then((r) => definirAguardando(r.posts.length))
       .catch(() => definirAguardando(null))
+
+    /* A lista dos projetos, para o painel dizer em qual deles se está e deixar
+       sair para o outro. Como a contagem: se falhar, o painel abre na mesma. */
+    admin
+      .projetosDoPainel()
+      .then(definirProjetos)
+      .catch(() => definirProjetos(null))
   }, [usuario, carregando, projectSlug, router])
 
   if (erro) return <p className="erro">{erro}</p>
@@ -51,8 +60,39 @@ export function ListaAdmin({ projectSlug }: { projectSlug: string }) {
 
   const publicados = dados.contents.filter((c) => c.status === 'PUBLISHED').length
 
+  const outros = (projetos ?? []).filter((p) => p.slug !== projectSlug)
+
   return (
     <>
+      {/*
+        EM QUE PROJETO ESTOU, E COMO SAIO DAQUI (24/09).
+
+        O painel nunca disse em qual projeto estava, e não tinha porta nenhuma
+        para os outros. Enquanto a entrada da sequência dizia "Alfabeto" em
+        todos eles, isso passava despercebido — lia-se aquela palavra e sabia-se
+        onde se estava. Em 22/09 essa entrada passou a chamar-se pelo nome da
+        unidade de cada projeto ("Letras", "Dias"), porque ele pediu que o
+        painel do Minha Identidade deixasse de falar de letras. A palavra
+        "Alfabeto" desapareceu do painel, e com ela a única pista.
+
+        Ele deu por falta dela hoje: "o Jesus Alfabeto Saudável desapareceu".
+        Não desapareceu — o projeto está inteiro e o painel dele também. O que
+        faltava era isto: dizer onde se está e deixar ir ao outro lado.
+      */}
+      <div className="painel-projeto-actual">
+        <span className="bloco-rotulo">Projeto</span>
+        <strong>{dados.project.name}</strong>
+        {outros.length > 0 && (
+          <nav className="painel-outros-projetos" aria-label="Ir para outro projeto">
+            {outros.map((p) => (
+              <Link key={p.slug} href={`/${p.slug}/admin`}>
+                {p.nome}
+              </Link>
+            ))}
+          </nav>
+        )}
+      </div>
+
       <p className="subtitulo">
         {publicados} de {dados.contents.length} conteúdos publicados
       </p>

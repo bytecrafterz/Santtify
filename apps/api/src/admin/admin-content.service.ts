@@ -224,6 +224,23 @@ export class AdminContentService {
    * Sem esta checagem o cliente publicaria uma página vazia sem perceber, e
    * quem escaneasse o QR encontraria só o título. O erro diz o que falta.
    */
+  /**
+   * Os projetos que existem, para o painel dizer em qual deles se está.
+   *
+   * Há uma listagem de projetos no módulo dos cartões, mas é a do carrossel:
+   * traz capa, destaque, ordem e números, e serve para montar a página
+   * inicial. O painel precisa de três campos. Chamar aquela daqui prendia o
+   * painel dos conteúdos a uma rota do outro módulo — e é exactamente o que
+   * ele pediu que deixasse de acontecer.
+   */
+  async projetosDoPainel() {
+    const projetos = await this.prisma.project.findMany({
+      orderBy: [{ ordemNoCarrossel: 'asc' }, { createdAt: 'asc' }],
+      select: { slug: true, name: true, unidade: true },
+    })
+    return projetos.map((p) => ({ slug: p.slug, nome: p.name, unidade: p.unidade }))
+  }
+
   async publicar(contentId: string, publicar: boolean, adminId: string) {
     const content = await this.prisma.content.findUnique({
       where: { id: contentId },

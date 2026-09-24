@@ -287,6 +287,12 @@ export const admin = {
       body: JSON.stringify({ status }),
     }),
 
+  /** Os projetos que existem, para o painel dizer em qual deles se está. */
+  projetosDoPainel: () =>
+    chamarAdmin<Array<{ slug: string; nome: string; unidade: string | null }>>(
+      '/admin/projetos-do-painel',
+    ),
+
   listar: (projectSlug: string) =>
     chamar<{
       project: {

@@ -329,6 +329,12 @@ export class AdminController {
     return this.lancamentos.remover(id, req.usuario!.id)
   }
 
+  /** Os projetos que existem, para o painel se situar e deixar mudar. */
+  @Get('projetos-do-painel')
+  projetosDoPainel() {
+    return this.conteudo.projetosDoPainel()
+  }
+
   @Get('projects/:projectSlug/contents')
   listar(@Param('projectSlug') projectSlug: string) {
     return this.conteudo.listar(projectSlug)

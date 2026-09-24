@@ -11107,3 +11107,49 @@ body:has(.painel-karaoke) {
     border-top-color: rgba(242, 193, 78, 0.28);
   }
 }
+
+/* ── Em que projeto estou, e como saio daqui (24/09) ─────────────────
+   O painel nunca disse em qual projeto estava nem tinha porta para os
+   outros. Enquanto a entrada da sequência se chamava "Alfabeto" em todos,
+   lia-se aquela palavra e sabia-se; quando passou a chamar-se pela unidade de
+   cada projeto, ficou sem pista nenhuma. */
+.painel-projeto-actual {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px 12px;
+  align-items: baseline;
+  padding: 12px 14px;
+  margin-bottom: 12px;
+  background: var(--cor-superficie);
+  border: 1px solid var(--cor-borda);
+  border-radius: var(--raio);
+}
+
+.painel-projeto-actual strong {
+  font-size: 1.02rem;
+  line-height: 1.2;
+}
+
+/* Empurrados para a direita: são a saída, não o assunto. */
+.painel-outros-projetos {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px 14px;
+  margin-left: auto;
+}
+
+.painel-outros-projetos a {
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: var(--cor-primaria);
+  text-decoration: none;
+}
+
+.painel-outros-projetos a::before {
+  content: '↔ ';
+  opacity: 0.7;
+}
+
+@media (hover: hover) {
+  .painel-outros-projetos a:hover { text-decoration: underline; }
+}
