@@ -57,14 +57,28 @@ function CasaAoLado({
 
   const dentro = (
     <>
+      {/*
+        O CADEADO É SOBRE ESTAR FECHADA, NÃO SOBRE FALTAR A IMAGEM.
+
+        Escrevi `casa.publicado && casa.coverUrl` e as duas condições juntas
+        diziam outra coisa: qualquer casa PUBLICADA sem capa desenhava um
+        cadeado. No alfabeto isso é quase todas — as letras raramente têm capa
+        própria, a arte delas vem do primeiro áudio. O resultado era a Letra H
+        e a Letra J anunciadas como trancadas estando as duas no ar.
+
+        Agora o cadeado só sai quando a casa está mesmo fechada. Publicada sem
+        arte nenhuma fica um quadrado vazio, que é verdade e não assusta.
+      */}
       <span className="vizinha-arte">
-        {casa.publicado && casa.coverUrl ? (
-          // eslint-disable-next-line @next/next/no-img-element
-          <img src={casa.coverUrl} alt="" loading="lazy" />
-        ) : (
+        {!casa.publicado ? (
           <span className="vizinha-cadeado" aria-hidden="true">
             🔒
           </span>
+        ) : (
+          casa.coverUrl && (
+            // eslint-disable-next-line @next/next/no-img-element
+            <img src={casa.coverUrl} alt="" loading="lazy" />
+          )
         )}
       </span>
       <span className="vizinha-texto">

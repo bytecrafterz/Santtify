@@ -586,6 +586,21 @@ export class ContentService {
         letra: true,
         ordinal: true,
         status: true,
+        /**
+         * A MESMA RECAÍDA QUE A GRADE JÁ FAZIA: sem capa própria, vale a arte
+         * do primeiro áudio.
+         *
+         * `listar` faz isto desde que ele viu a Letra B aparecer "toda preta"
+         * na grade por não ter capa. Aqui não fazia, e o resultado era o botão
+         * de letra seguinte a desenhar um cadeado numa letra PUBLICADA — só
+         * porque a capa dela é nula. No alfabeto quase todas são.
+         */
+        blocks: {
+          where: { type: BlockType.AUDIO, imageAssetId: { not: null } },
+          orderBy: [{ slot: 'asc' }, { position: 'asc' }],
+          take: 1,
+          select: { imageAsset: { select: { url: true } } },
+        },
       },
     })
 
@@ -595,7 +610,7 @@ export class ContentService {
     return {
       slug: dela.slug,
       title: dela.title,
-      coverUrl: dela.coverUrl,
+      coverUrl: dela.coverUrl ?? dela.blocks[0]?.imageAsset?.url ?? null,
       letra: dela.letra,
       ordinal: dela.ordinal,
       publicado: true,
