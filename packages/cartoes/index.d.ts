@@ -93,6 +93,11 @@ export declare function enquadrar(
   foto: MedidaPx,
   ajuste: Ajuste,
 ): Enquadramento
+export declare function limitesDoDesloc(
+  moldura: MedidaPx,
+  foto: MedidaPx,
+  escala: number,
+): { x: number; y: number }
 export declare function dpiEfetivo(
   molduraMm: MedidaMm,
   foto: MedidaPx,

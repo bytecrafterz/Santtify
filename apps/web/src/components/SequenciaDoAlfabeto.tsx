@@ -225,7 +225,20 @@ export function SequenciaDoAlfabeto({ projectSlug }: { projectSlug: string }) {
       caso dele) ou a quem JÁ USA as casas e tem alguma em falta. Uma publicação
       feita só de cartões soltos fica como está.
     */
-    const usaCasas = doVagao.length === 0 || doVagao.some((c) => c.slot !== null)
+    /*
+      ── E NOS PROJETOS NUMERADOS, NENHUMA ──────────────────────────────────
+
+      "Por favor retire este design de baixo. Só quero como os 2 design dos
+      primeiros" — 25/09, sobre o Dia 2 do Minha Identidade. Os quadrados
+      tracejados de "Repetição do versículo" e "Oração" eram as casas fixas do
+      alfabeto, oferecidas a um projeto que não as tem. Ali cada cartão entra
+      por "Acrescentar cartão", e a função dele — Explicação, Música,
+      Memorização, Oração, Música alegre — escolhe-se na categoria, dentro do
+      próprio cartão. As letras ficam como estavam: é nelas que as quatro
+      casas vivem.
+    */
+    const usaCasas =
+      vagao.letra !== null && (doVagao.length === 0 || doVagao.some((c) => c.slot !== null))
     const casasPorPreencher = usaCasas
       ? CASAS.map((nome, i) => ({ casa: i + 1, nome })).filter(
           ({ casa }) => !doVagao.some((c) => c.slot === casa),

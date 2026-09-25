@@ -81,11 +81,33 @@ function enquadrar(moldura, foto, ajuste) {
   const largura = foto.largura * fator
   const altura = foto.altura * fator
 
+  // A FOTOGRAFIA NUNCA SAI DA MOLDURA. O deslocamento empurrava-a sem limite:
+  // aproximar, arrastar para o canto e voltar a 1x deixava uma faixa vazia
+  // dentro da moldura - no ecra e na folha que vai a grafica. O limite e o
+  // que sobra da foto para cada lado; a 1x, no lado justo, nao sobra nada.
+  const x = (moldura.largura - largura) / 2 + ajuste.deslocX * moldura.largura
+  const y = (moldura.altura - altura) / 2 + ajuste.deslocY * moldura.altura
+
   return {
-    x: (moldura.largura - largura) / 2 + ajuste.deslocX * moldura.largura,
-    y: (moldura.altura - altura) / 2 + ajuste.deslocY * moldura.altura,
+    x: Math.min(0, Math.max(moldura.largura - largura, x)),
+    y: Math.min(0, Math.max(moldura.altura - altura, y)),
     largura,
     altura,
+  }
+}
+
+/**
+ * Ate onde o deslocamento ainda mexe na foto, em fraccao da moldura.
+ *
+ * Alem disto `enquadrar` ja trava, e guardar valores maiores so criava uma zona
+ * morta: o dedo andava e a foto nao, ate desfazer o excesso.
+ */
+function limitesDoDesloc(moldura, foto, escala) {
+  const cobrir = Math.max(moldura.largura / foto.largura, moldura.altura / foto.altura)
+  const fator = cobrir * Math.max(1, escala)
+  return {
+    x: Math.max(0, (foto.largura * fator - moldura.largura) / 2 / moldura.largura),
+    y: Math.max(0, (foto.altura * fator - moldura.altura) / 2 / moldura.altura),
   }
 }
 
@@ -278,6 +300,7 @@ module.exports = {
   mmParaPt,
   ajusteNeutro,
   enquadrar,
+  limitesDoDesloc,
   dpiEfetivo,
   avaliarFoto,
   minimoDePixeis,

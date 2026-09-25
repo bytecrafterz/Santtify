@@ -27,6 +27,8 @@ import { useEffect, useRef, useState } from 'react'
 /** Até onde se pode aproximar. Oito vezes lê o texto mais pequeno de um A4. */
 const MAXIMO = 8
 const MINIMO = 1
+/** Dois toques dentro deste tempo, e perto um do outro, são um toque duplo. */
+const TOQUE_DUPLO_MS = 320
 
 export function LupaDoCartao({
   titulo,
@@ -45,6 +47,16 @@ export function LupaDoCartao({
   // de movimento, e re-desenhar a folha a cada pixel dava um zoom aos saltos.
   const dedos = useRef(new Map<number, { x: number; y: number }>())
   const inicio = useRef<{ dist: number; escala: number; x: number; y: number; px: number; py: number } | null>(null)
+  // A escala e a posição de AGORA, para quem precisa delas a meio de um gesto,
+  // entre dois desenhos. O estado só as tem no desenho seguinte.
+  const escalaAgora = useRef(1)
+  const posAgora = useRef({ x: 0, y: 0 })
+  escalaAgora.current = escala
+  posAgora.current = pos
+  /** O último toque limpo (sem arrasto, um dedo só), para contar o duplo. */
+  const ultimoToque = useRef<{ t: number; x: number; y: number } | null>(null)
+  /** Se o gesto em curso já foi arrasto ou pinça — e aí não é toque. */
+  const gestoMexeu = useRef(false)
 
   useEffect(() => {
     const fechaComEsc = (e: KeyboardEvent) => {
@@ -78,6 +90,34 @@ export function LupaDoCartao({
     return Math.hypot(a.x - b.x, a.y - b.y)
   }
 
+  /*
+    O DEDO QUE FICA RECOMEÇA O ARRASTO A PARTIR DE ONDE ESTÁ.
+
+    Depois de uma pinça, levantar um dos dedos deixava o outro a arrastar com
+    as contas da pinça: o ponto de partida era o do segundo dedo, e a posição
+    a de antes de ampliar. A folha dava um salto e fugia do dedo. Era o
+    "arrastar não funciona bem depois de aproximar e voltar".
+  */
+  function recomecar() {
+    const resta = [...dedos.current.values()][0]
+    inicio.current = resta
+      ? {
+          dist: 0,
+          escala: escalaAgora.current,
+          x: resta.x,
+          y: resta.y,
+          px: posAgora.current.x,
+          py: posAgora.current.y,
+        }
+      : null
+  }
+
+  function alternarZoom() {
+    const nova = escalaAgora.current > 1.2 ? 1 : 3
+    definirEscala(nova)
+    definirPos(nova === 1 ? { x: 0, y: 0 } : (p) => travar(p.x, p.y, nova))
+  }
+
   return (
     <div
       className="lupa"
@@ -99,7 +139,9 @@ export function LupaDoCartao({
         ref={palco}
         className="lupa-palco"
         onPointerDown={(ev) => {
+          if (dedos.current.size === 0) gestoMexeu.current = false
           dedos.current.set(ev.pointerId, { x: ev.clientX, y: ev.clientY })
+          if (dedos.current.size > 1) gestoMexeu.current = true
           ev.currentTarget.setPointerCapture(ev.pointerId)
           if (dedos.current.size === 2) {
             inicio.current = {
@@ -133,17 +175,42 @@ export function LupaDoCartao({
           }
 
           // Um dedo arrasta, mas só quando há para onde arrastar.
-          if (escala <= 1) return
           const i = inicio.current
+          if (Math.hypot(ev.clientX - i.x, ev.clientY - i.y) > 10) gestoMexeu.current = true
+          if (escala <= 1) return
           definirPos(travar(i.px + (ev.clientX - i.x), i.py + (ev.clientY - i.y), escala))
         }}
         onPointerUp={(ev) => {
           dedos.current.delete(ev.pointerId)
-          if (dedos.current.size === 0) inicio.current = null
+          recomecar()
+          if (dedos.current.size > 0) return
+          if (gestoMexeu.current) {
+            ultimoToque.current = null
+            return
+          }
+          /*
+            Dois toques seguidos: aproxima de vez, ou volta ao princípio.
+
+            Contado à mão, porque `onDoubleClick` não chega de forma fiável
+            do Safari do iPhone — e é no iPhone que isto mais se usa.
+          */
+          const agora = { t: Date.now(), x: ev.clientX, y: ev.clientY }
+          const antes = ultimoToque.current
+          if (
+            antes &&
+            agora.t - antes.t < TOQUE_DUPLO_MS &&
+            Math.hypot(agora.x - antes.x, agora.y - antes.y) < 30
+          ) {
+            ultimoToque.current = null
+            alternarZoom()
+          } else {
+            ultimoToque.current = agora
+          }
         }}
         onPointerCancel={(ev) => {
           dedos.current.delete(ev.pointerId)
-          if (dedos.current.size === 0) inicio.current = null
+          recomecar()
+          ultimoToque.current = null
         }}
         /*
           O rato também aproxima, com a roda: metade de quem confere isto está
@@ -164,12 +231,6 @@ export function LupaDoCartao({
             return nova
           })
           definirPos((p) => travar(p.x, p.y, nova))
-        }}
-        /* Dois toques seguidos: aproxima de vez, ou volta ao princípio. */
-        onDoubleClick={() => {
-          const nova = escala > 1.2 ? 1 : 3
-          definirEscala(nova)
-          definirPos(nova === 1 ? { x: 0, y: 0 } : (p) => travar(p.x, p.y, nova))
         }}
       >
         <div

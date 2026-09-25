@@ -1,7 +1,14 @@
 'use client'
 
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
-import { A4_MM, ajusteNeutro, corpoDoNome, enquadrar, type Ajuste } from '@pv/cartoes'
+import {
+  A4_MM,
+  ajusteNeutro,
+  corpoDoNome,
+  enquadrar,
+  limitesDoDesloc,
+  type Ajuste,
+} from '@pv/cartoes'
 import {
   cartoes,
   type AlinhamentoDoNome,
@@ -44,6 +51,10 @@ const PASSO_DE_EMPURRAO = 0.04
 const ESPERA_ANTES_DE_GRAVAR = 500
 /** Arrasto horizontal, em pixéis, a partir do qual se troca de cartão. */
 const ARRASTO_QUE_TROCA = 50
+/** Abaixo disto, um dedo que pousou e saiu foi um toque, e não um arrasto. */
+const TOQUE_MAXIMO = 8
+/** Dois toques dentro deste tempo são um toque duplo. */
+const TOQUE_DUPLO_MS = 320
 
 /**
  * As cores que a família pode escolher para o nome.
@@ -151,17 +162,39 @@ export function CartaoComoEditor({
     [projectSlug, pedidoId, crianca.id, aoMudarCrianca, aoErrar],
   )
 
+  const modeloActual = modelos[indice]
+
+  /*
+    O DESLOCAMENTO FICA DENTRO DO QUE A FOTO TEM PARA DAR.
+
+    Ia até ±1 fosse qual fosse o zoom. Aproximar, arrastar para um canto e
+    voltar a 1× deixava o valor lá longe: a foto ficava presa na borda e o dedo
+    tinha de desfazer o excesso inteiro antes de ela voltar a mexer. Era o
+    "arrastar não funciona depois de aproximar e voltar".
+
+    Trava-se contra a moldura do cartão que está à vista, e volta a travar-se a
+    cada mudança de zoom, porque diminuir encolhe o que sobra para os lados.
+  */
   const mexer = useCallback(
     (mudanca: Partial<Ajuste>) => {
+      const escala = Math.min(6, Math.max(1, mudanca.escala ?? ajuste.escala))
+      const lim =
+        modeloActual && crianca.fotoLargura && crianca.fotoAltura
+          ? limitesDoDesloc(
+              { largura: modeloActual.moldura.largura, altura: modeloActual.moldura.altura },
+              { largura: crianca.fotoLargura, altura: crianca.fotoAltura },
+              escala,
+            )
+          : { x: 1, y: 1 }
       const novo = {
-        escala: Math.min(6, Math.max(1, mudanca.escala ?? ajuste.escala)),
-        deslocX: Math.min(1, Math.max(-1, mudanca.deslocX ?? ajuste.deslocX)),
-        deslocY: Math.min(1, Math.max(-1, mudanca.deslocY ?? ajuste.deslocY)),
+        escala,
+        deslocX: Math.min(lim.x, Math.max(-lim.x, mudanca.deslocX ?? ajuste.deslocX)),
+        deslocY: Math.min(lim.y, Math.max(-lim.y, mudanca.deslocY ?? ajuste.deslocY)),
       }
       definirAjuste(novo)
       gravar(novo)
     },
-    [ajuste, gravar],
+    [ajuste, gravar, modeloActual, crianca.fotoLargura, crianca.fotoAltura],
   )
 
   async function enviarFoto(f: File) {
@@ -209,14 +242,29 @@ export function CartaoComoEditor({
       <Faixa
         indice={indice}
         total={total}
-        // Arrastar ao lado só troca de cartão quando NADA está escolhido. Com a
-        // foto escolhida, o mesmo gesto move a foto — e os dois não podem
-        // disputar o dedo.
-        activo={escolhido === null}
-        aoTrocar={definirIndice}
+        // Com a foto escolhida, arrastar em cima dela move a foto — e esse
+        // gesto nunca chega aqui, porque a moldura fica com o dedo. Tudo o
+        // resto, incluindo a foto ainda por escolher, troca de cartão.
+        aoTrocar={(i) => {
+          definirEscolhido(null)
+          definirSetasAbertas(false)
+          definirPaletaAberta(false)
+          definirIndice(i)
+        }}
       >
         {modelos.map((m, i) => (
-          <div className="ce-casa" key={m.id} aria-hidden={i !== indice}>
+          <div
+            className={i === indice ? 'ce-casa activa' : 'ce-casa'}
+            key={m.id}
+            aria-hidden={i !== indice}
+            // O vizinho à espreita é um atalho: tocar nele leva lá.
+            onClick={i !== indice ? () => definirIndice(i) : undefined}
+          >
+            {i !== indice && (
+              <span className="ce-vizinho-rotulo" aria-hidden="true">
+                {i < indice ? '‹ ' : ''}Dia {m.dia}{i > indice ? ' ›' : ''}
+              </span>
+            )}
             <CartaoDesenhado
               projectSlug={projectSlug}
               pedidoId={pedidoId}
@@ -238,6 +286,26 @@ export function CartaoComoEditor({
                 gravar({ nome: t })
               }}
               barraDaFoto={
+                setasAbertas && temFoto ? (
+                  /*
+                    O "MOVER" TROCA A BARRA POR UMA FILA DE SETAS.
+
+                    As setas eram uma cruz de três andares por cima da barra, e
+                    a barra já sobe acima da moldura: no telemóvel a cruz saía
+                    pelo topo do cartão e ficava cortada. Numa fila só, ocupa a
+                    altura da própria barra e não há onde se esconder.
+
+                    Arrastar continua a ser o gesto principal. As setas são para
+                    quem quer acertar um milímetro, ou não consegue arrastar.
+                  */
+                  <Ferramentas>
+                    <Botao rotulo="Esquerda" simbolo="←" aoTocar={() => mexer({ deslocX: ajuste.deslocX - PASSO_DE_EMPURRAO })} />
+                    <Botao rotulo="Cima" simbolo="↑" aoTocar={() => mexer({ deslocY: ajuste.deslocY - PASSO_DE_EMPURRAO })} />
+                    <Botao rotulo="Baixo" simbolo="↓" aoTocar={() => mexer({ deslocY: ajuste.deslocY + PASSO_DE_EMPURRAO })} />
+                    <Botao rotulo="Direita" simbolo="→" aoTocar={() => mexer({ deslocX: ajuste.deslocX + PASSO_DE_EMPURRAO })} />
+                    <Botao rotulo="Pronto" simbolo="✓" activo aoTocar={() => definirSetasAbertas(false)} />
+                  </Ferramentas>
+                ) : (
                 <Ferramentas>
                   <Botao rotulo="Trocar" simbolo="🖼" aoTocar={() => ficheiro.current?.click()} />
                   <Botao
@@ -266,24 +334,7 @@ export function CartaoComoEditor({
                     aoTocar={() => mexer(ajusteNeutro())}
                   />
                 </Ferramentas>
-              }
-              setas={
-                setasAbertas && temFoto ? (
-                  /*
-                    O "Mover" abre setas em vez de só dizer "arraste".
-
-                    Arrastar já funciona — é o gesto principal. Mas num cartão
-                    onde a moldura tem 4 cm, acertar um milímetro com o polegar
-                    é uma luta, e há quem não consiga arrastar de todo. As setas
-                    dão o mesmo resultado em passos iguais.
-                  */
-                  <div className="ce-setas" onPointerDown={(e) => e.stopPropagation()}>
-                    <button type="button" aria-label="Mover para cima" onClick={() => mexer({ deslocY: ajuste.deslocY - PASSO_DE_EMPURRAO })}>↑</button>
-                    <button type="button" aria-label="Mover para a esquerda" onClick={() => mexer({ deslocX: ajuste.deslocX - PASSO_DE_EMPURRAO })}>←</button>
-                    <button type="button" aria-label="Mover para a direita" onClick={() => mexer({ deslocX: ajuste.deslocX + PASSO_DE_EMPURRAO })}>→</button>
-                    <button type="button" aria-label="Mover para baixo" onClick={() => mexer({ deslocY: ajuste.deslocY + PASSO_DE_EMPURRAO })}>↓</button>
-                  </div>
-                ) : null
+                )
               }
               barraDoNome={
                 <Ferramentas>
@@ -383,7 +434,6 @@ export function CartaoComoEditor({
             aoEscrever={() => {}}
             barraDaFoto={null}
             barraDoNome={null}
-            setas={null}
             paleta={null}
           />
         </LupaDoCartao>
@@ -481,56 +531,88 @@ export function CartaoComoEditor({
 function Faixa({
   indice,
   total,
-  activo,
   aoTrocar,
   children,
 }: {
   indice: number
   total: number
-  activo: boolean
   aoTrocar: (i: number) => void
   children: React.ReactNode
 }) {
-  const inicio = useRef<{ x: number; y: number } | null>(null)
+  const inicio = useRef<{ x: number; y: number; id: number } | null>(null)
+  const arrastou = useRef(false)
   const [puxao, definirPuxao] = useState(0)
 
+  /*
+    ARRASTAR AO LADO TROCA DE DIA, VENHA O DEDO DE ONDE VIER.
+
+    Não trocava quase nunca, por dois motivos que se somavam. Pousar o dedo no
+    cartão abria a lupa logo ali — antes de haver arrasto nenhum —, e pousá-lo
+    na moldura da foto, que ocupa metade do cartão, ficava com o gesto para
+    mover a foto mesmo sem foto nenhuma. Sobrava uma tira fina à volta.
+
+    Agora o dedo só é da foto quando ela já foi escolhida; o resto é da faixa.
+    E a faixa só agarra o ponteiro depois de ele andar: agarrá-lo ao pousar
+    roubava o clique aos alvos, e um toque na foto deixava de a escolher.
+  */
   return (
     <div
       className="ce-faixa"
       onPointerDown={(ev) => {
-        if (!activo) return
-        inicio.current = { x: ev.clientX, y: ev.clientY }
+        arrastou.current = false
+        inicio.current = { x: ev.clientX, y: ev.clientY, id: ev.pointerId }
       }}
       onPointerMove={(ev) => {
-        if (!inicio.current) return
-        const dx = ev.clientX - inicio.current.x
-        // Um gesto que desce mais do que anda ao lado é a página a rolar, e
-        // roubá-lo prendia a pessoa no carrossel.
-        if (Math.abs(ev.clientY - inicio.current.y) > Math.abs(dx)) {
-          inicio.current = null
-          definirPuxao(0)
-          return
+        const i = inicio.current
+        if (!i || i.id !== ev.pointerId) return
+        const dx = ev.clientX - i.x
+        const dy = ev.clientY - i.y
+        if (!arrastou.current) {
+          if (Math.hypot(dx, dy) < TOQUE_MAXIMO) return
+          // Um gesto que desce mais do que anda ao lado é a página a rolar, e
+          // roubá-lo prendia a pessoa no carrossel.
+          if (Math.abs(dy) > Math.abs(dx)) {
+            inicio.current = null
+            return
+          }
+          arrastou.current = true
+          ev.currentTarget.setPointerCapture(ev.pointerId)
         }
-        definirPuxao(dx)
+        // Nas pontas o cartão resiste, em vez de mostrar um vazio ao lado.
+        const naPonta = (indice === 0 && dx > 0) || (indice === total - 1 && dx < 0)
+        definirPuxao(naPonta ? dx / 3 : dx)
       }}
       onPointerUp={() => {
         const dx = puxao
         inicio.current = null
         definirPuxao(0)
+        if (!arrastou.current) return
         if (dx <= -ARRASTO_QUE_TROCA && indice < total - 1) aoTrocar(indice + 1)
         if (dx >= ARRASTO_QUE_TROCA && indice > 0) aoTrocar(indice - 1)
       }}
       onPointerCancel={() => {
         inicio.current = null
+        arrastou.current = false
         definirPuxao(0)
+      }}
+      // O arrasto acaba num clique; sem isto, largar o dedo em cima do vizinho
+      // ou da moldura contava como toque neles.
+      onClickCapture={(ev) => {
+        if (!arrastou.current) return
+        arrastou.current = false
+        ev.stopPropagation()
+        ev.preventDefault()
       }}
     >
       <div
         className="ce-trilho"
-        style={{
-          transform: `translateX(calc(${-indice * 100}% + ${puxao}px))`,
-          transition: puxao ? 'none' : 'transform 0.28s ease',
-        }}
+        style={
+          {
+            '--indice': indice,
+            '--puxao': `${puxao}px`,
+            transition: puxao ? 'none' : undefined,
+          } as React.CSSProperties
+        }
       >
         {children}
       </div>
@@ -559,7 +641,6 @@ function CartaoDesenhado({
   aoAmpliar,
   barraDaFoto,
   barraDoNome,
-  setas,
   paleta,
 }: {
   projectSlug: string
@@ -581,11 +662,12 @@ function CartaoDesenhado({
   aoAmpliar?: () => void
   barraDaFoto: React.ReactNode
   barraDoNome: React.ReactNode
-  setas: React.ReactNode
   paleta: React.ReactNode
 }) {
   const folha = useRef<HTMLDivElement | null>(null)
   const arrasto = useRef<{ x: number; y: number; dx: number; dy: number } | null>(null)
+  const pousou = useRef<{ x: number; y: number } | null>(null)
+  const ultimoToque = useRef(0)
   const [largura, definirLargura] = useState(320)
 
   useEffect(() => {
@@ -647,21 +729,44 @@ function CartaoDesenhado({
       className="ce-folha"
       style={{ height: `${altura}px` }}
       /*
-        TOCAR NO CARTÃO — FORA DA FOTO E DO NOME — ABRE-O EM GRANDE.
+        DOIS TOQUES NO CARTÃO ABREM-NO EM GRANDE; UM TOQUE EDITA.
 
-        Os dois pedidos dele chocavam: "tocou na foto → edita a foto" e "tocou no
-        cartão → abre grande" são o mesmo gesto. A regra que os separa é a que
-        qualquer pessoa adivinha depois de a ver uma vez: o que tem ferramenta
-        edita-se, o resto amplia-se. Os dois alvos param o evento antes de
-        chegar aqui.
+        Abria com um toque só, ao pousar o dedo — e pousar o dedo é também como
+        começa um arrasto para o dia seguinte. Quem tentava deslizar acabava com
+        a lupa aberta. O toque duplo é o gesto que qualquer galeria de fotos já
+        ensinou, e não disputa nada: um toque escolhe a foto ou o nome, dois
+        ampliam, arrastar troca de dia.
+
+        Conta-se à mão, e não com `onDoubleClick`, porque o Safari do iPhone
+        não o dispara de forma fiável num toque duplo.
       */
-      onPointerDown={() => {
-        if (editavel) aoAmpliar?.()
+      onPointerDownCapture={(ev) => {
+        pousou.current = { x: ev.clientX, y: ev.clientY }
+      }}
+      onClick={(ev) => {
+        if (!editavel || !aoAmpliar) return
+        const alvo = ev.target as HTMLElement
+        if (alvo.closest('.ce-barra, input')) return
+        const p = pousou.current
+        if (p && Math.hypot(ev.clientX - p.x, ev.clientY - p.y) > TOQUE_MAXIMO) return
+        const agora = Date.now()
+        if (agora - ultimoToque.current < TOQUE_DUPLO_MS) {
+          ultimoToque.current = 0
+          aoAmpliar()
+        } else {
+          ultimoToque.current = agora
+        }
       }}
     >
       {modelo.arteUrl ? (
         // eslint-disable-next-line @next/next/no-img-element
-        <img src={modelo.arteUrl} alt={`Dia ${modelo.dia} — ${modelo.nome}`} className="ce-arte" />
+        <img
+          src={modelo.arteUrl}
+          alt={`Dia ${modelo.dia} — ${modelo.nome}`}
+          className="ce-arte"
+          // Sem isto o computador arrasta a imagem em vez de deslizar o cartão.
+          draggable={false}
+        />
       ) : (
         <span className="ce-sem-arte">Arte do {modelo.nome} ainda não carregada</span>
       )}
@@ -685,13 +790,21 @@ function CartaoDesenhado({
         role={editavel ? 'button' : undefined}
         tabIndex={editavel ? 0 : -1}
         aria-label="Editar a fotografia"
+        /*
+          UM TOQUE ESCOLHE; SÓ DEPOIS DE ESCOLHIDA É QUE ARRASTAR MOVE A FOTO.
+
+          Antes, pousar o dedo aqui escolhia e agarrava ao mesmo tempo — e a
+          moldura é metade do cartão, por isso quase todo o arrasto para o dia
+          seguinte acabava a empurrar a foto. Agora o primeiro gesto é da faixa.
+        */
         onPointerDown={(ev) => {
-          if (!editavel) return
+          if (!editavel || escolhido !== 'foto' || !rect) return
           ev.stopPropagation()
-          aoEscolher('foto')
-          if (!rect) return
           arrasto.current = { x: ev.clientX, y: ev.clientY, dx: ajuste.deslocX, dy: ajuste.deslocY }
           ev.currentTarget.setPointerCapture(ev.pointerId)
+        }}
+        onClick={() => {
+          if (editavel && escolhido !== 'foto') aoEscolher('foto')
         }}
         onPointerMove={(ev) => {
           if (!arrasto.current) return
@@ -702,6 +815,9 @@ function CartaoDesenhado({
           })
         }}
         onPointerUp={() => {
+          arrasto.current = null
+        }}
+        onPointerCancel={() => {
           arrasto.current = null
         }}
         onKeyDown={(ev) => {
@@ -743,11 +859,12 @@ function CartaoDesenhado({
       {editavel && escolhido === 'foto' && (
         <div
           className="ce-barra ce-barra-foto"
-          style={{ top: `${emPx(modelo.moldura.y)}px`, left: '50%' }}
+          // A barra sobe acima da moldura; com a moldura rente ao topo do cartão,
+          // ela sairia pela beira e ficava cortada. 64px é a altura dela e folga.
+          style={{ top: `${Math.max(emPx(modelo.moldura.y), 64)}px`, left: '50%' }}
           onPointerDown={(e) => e.stopPropagation()}
         >
           {barraDaFoto}
-          {setas}
         </div>
       )}
 
@@ -763,9 +880,12 @@ function CartaoDesenhado({
           height: `${emPx(modelo.nomeCaixa.altura)}px`,
         }}
         onPointerDown={(ev) => {
-          if (!editavel) return
-          ev.stopPropagation()
-          aoEscolher('nome')
+          // Escolhido, o nome é um campo de texto: o dedo é dele, para pôr o
+          // cursor, e não da faixa nem de quem desfaz a escolha.
+          if (editavel && escolhido === 'nome') ev.stopPropagation()
+        }}
+        onClick={() => {
+          if (editavel && escolhido !== 'nome') aoEscolher('nome')
         }}
       >
         {editavel && escolhido === 'nome' ? (

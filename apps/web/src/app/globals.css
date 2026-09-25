@@ -11575,27 +11575,92 @@ body:has(.painel-karaoke) {
 */
 .ce-faixa {
   margin-inline: -20px;
+  padding-block: 6px 10px;
   overflow: hidden;
 }
 
+/*
+  O TRILHO CENTRA O CARTÃO DA VEZ E DEIXA 10% DE CADA VIZINHO À VISTA.
+
+  Cada casa tem 80% da largura; o primeiro 10% empurra a casa activa para o
+  meio. O puxão do dedo soma-se em pixéis, para o cartão seguir o polegar.
+*/
 .ce-trilho {
+  --largura-da-casa: 80%;
+
   display: flex;
-  align-items: flex-start;
+  align-items: center;
+  transform: translateX(
+    calc((100% - var(--largura-da-casa)) / 2 - var(--indice, 0) * var(--largura-da-casa) + var(--puxao, 0px))
+  );
+  transition: transform 0.38s cubic-bezier(0.22, 0.8, 0.26, 1);
   will-change: transform;
 }
 
 .ce-casa {
-  flex: 0 0 100%;
-  padding-inline: 8%;
+  position: relative;
+  flex: 0 0 var(--largura-da-casa);
+  padding-inline: 6px;
 }
 
-/* O vizinho recua: está lá, mas não disputa a atenção com o que se edita. */
-.ce-casa[aria-hidden='true'] .ce-folha {
-  opacity: 0.45;
-  transform: scale(0.94);
+.ce-casa .ce-folha {
   transition:
-    opacity 0.28s ease,
-    transform 0.28s ease;
+    opacity 0.38s ease,
+    transform 0.38s cubic-bezier(0.22, 0.8, 0.26, 1),
+    box-shadow 0.38s ease,
+    filter 0.38s ease;
+}
+
+/*
+  O VIZINHO RECUA, E DIZ QUEM É.
+
+  Mais pequeno, mais apagado e inclinado para dentro, como uma carta atrás da
+  que está na mão. A etiqueta com o dia diz para onde leva o toque — que leva
+  mesmo: tocar no vizinho abre esse cartão.
+*/
+.ce-casa:not(.activa) {
+  cursor: pointer;
+}
+
+.ce-casa:not(.activa) .ce-folha {
+  pointer-events: none;
+  filter: saturate(0.75) brightness(0.96);
+  opacity: 0.55;
+  box-shadow: 0 4px 14px rgb(0 0 0 / 10%);
+  transform: scale(0.86);
+}
+
+.ce-casa.activa .ce-folha {
+  box-shadow:
+    0 18px 40px -12px rgb(0 0 0 / 35%),
+    0 2px 6px rgb(0 0 0 / 8%);
+}
+
+.ce-vizinho-rotulo {
+  position: absolute;
+  top: 50%;
+  z-index: 2;
+  padding: 5px 10px;
+  font-size: 0.72rem;
+  font-weight: 800;
+  color: #fff;
+  letter-spacing: 0.02em;
+  white-space: nowrap;
+  pointer-events: none;
+  background: rgb(17 20 27 / 72%);
+  border-radius: 999px;
+  box-shadow: 0 4px 12px rgb(0 0 0 / 22%);
+  backdrop-filter: blur(6px);
+  transform: translateY(-50%);
+}
+
+/* A etiqueta fica na beira que se vê: a do vizinho da esquerda à direita dele. */
+.ce-casa.activa ~ .ce-casa .ce-vizinho-rotulo { left: 10px; }
+.ce-casa:has(~ .ce-casa.activa) .ce-vizinho-rotulo { right: 10px; }
+
+@media (prefers-reduced-motion: reduce) {
+  .ce-trilho,
+  .ce-casa .ce-folha { transition: none; }
 }
 
 .ce-folha {
@@ -11794,36 +11859,6 @@ body:has(.painel-karaoke) {
   .ce-ferramenta:hover:not(:disabled) { background: rgb(255 255 255 / 16%); }
   .ce-ferramenta.activa:hover { background: #1d6dff; }
 }
-
-/* As setas do "Mover": cruz de quatro, como um comando de jogo. */
-.ce-setas {
-  display: grid;
-  grid-template-areas:
-    '. cima .'
-    'esq . dir'
-    '. baixo .';
-  gap: 3px;
-  padding: 5px;
-  background: rgb(17 20 27 / 92%);
-  border-radius: 12px;
-}
-
-.ce-setas button {
-  width: 34px;
-  height: 34px;
-  font: inherit;
-  font-size: 1rem;
-  color: #fff;
-  cursor: pointer;
-  background: rgb(255 255 255 / 12%);
-  border: 0;
-  border-radius: 8px;
-}
-
-.ce-setas button:nth-child(1) { grid-area: cima; }
-.ce-setas button:nth-child(2) { grid-area: esq; }
-.ce-setas button:nth-child(3) { grid-area: dir; }
-.ce-setas button:nth-child(4) { grid-area: baixo; }
 
 .ce-paleta {
   display: flex;
