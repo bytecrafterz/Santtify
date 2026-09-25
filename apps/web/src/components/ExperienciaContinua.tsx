@@ -1,11 +1,29 @@
 'use client'
 
-import { useEffect, useRef, useState } from 'react'
+import { useEffect, useRef, useState, type CSSProperties } from 'react'
 import Link from 'next/link'
 import type { ItemIndice, PaginaConteudo, ProgressoDasLetras } from '@/lib/api'
 import { PublicacaoDaLetra } from './PublicacaoDaLetra'
 import { CartaoDeImpressao } from './CartaoDeImpressao'
 import { rastrear } from '@/lib/track'
+
+/**
+ * Quantas casas por linha, conforme quantas casas o projeto tem.
+ *
+ * Quatro colunas servem um alfabeto: 26 letras cabem num ecrã e meio, e cada
+ * quadrado é grande o suficiente para se reconhecer a arte. Sete dias em quatro
+ * colunas dão uma linha e meia — muito espaço em branco por baixo e cada casa
+ * reduzida a um selo.
+ *
+ * Os limites não são redondos por acaso: até oito casas, duas colunas ainda
+ * cabem em quatro linhas; até quinze, três colunas dão cinco. Passando disso, o
+ * que manda é caber, e voltam as quatro.
+ */
+function colunasDaGrade(casas: number): number {
+  if (casas <= 8) return 2
+  if (casas <= 15) return 3
+  return 4
+}
 import { publicacoesDe } from '@/lib/publicacoes-da-letra'
 import { artigoDefinido, artigoIndefinido, liberadas, nomeDaCasa } from '@/lib/unidade'
 
@@ -338,7 +356,22 @@ export function ExperienciaContinua({
       <h2>{`Escolha ${artigoIndefinido(unidade)} ${unidade.toLowerCase()}`}</h2>
       <p className="subtitulo">Aprenda com fé, saúde, música e diversão</p>
 
-      <div className="grade-letras">
+      {/*
+        QUANTAS CASAS CABEM NUMA LINHA DEPENDE DE QUANTAS CASAS HÁ.
+
+        Eram quatro sempre, e para um alfabeto de 26 está certo: em quatro
+        colunas as 26 letras cabem num ecrã e meio. Para SETE dias não está —
+        dá quadrados de 85px com a arte lá dentro reduzida a um selo, e foi
+        isso que ele apanhou em 24/09: "O cartao fe 1 a 7 nao fica grande",
+        "Faça que o cartao fique grande".
+
+        Poucas casas, casas grandes. O número vive no CSS como
+        `--colunas`, calculado aqui a partir do que o projeto tem.
+      */}
+      <div
+        className="grade-letras"
+        style={{ '--colunas': colunasDaGrade(casas.length) } as CSSProperties}
+      >
         {casas.map((casa) => {
           /**
            * A grade tem uma casa por letra (ou por número) e cada conteúdo

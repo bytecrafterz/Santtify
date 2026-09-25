@@ -2272,16 +2272,39 @@ img.avatar {
    As letras por publicar continuam visíveis e trancadas, como ele pediu:
    uma grade com buracos parece defeito, uma grade com cadeados parece
    promessa. */
+/*
+  A GRADE DAS CASAS.
+
+  `--colunas` vem do componente, calculado a partir de quantas casas o projeto
+  tem: um alfabeto de 26 leva quatro, sete dias levam duas. Ver `colunasDaGrade`
+  no `ExperienciaContinua`, e o pedido dele de 24/09 que lhe deu origem.
+
+  O `4` aqui é só a rede: se o atributo faltar, a grade fica como sempre esteve.
+*/
 .grade-letras {
   display: grid;
-  grid-template-columns: repeat(4, 1fr);
+  grid-template-columns: repeat(var(--colunas, 4), 1fr);
   gap: 0.6rem;
   margin: 0.75rem 0 1.5rem;
 }
 
+/*
+  No telemóvel estreito cabe menos uma coluna — mas nunca menos de duas, que é
+  onde as casas grandes já estão. `max()` faz as duas coisas numa linha.
+*/
 @media (max-width: 380px) {
   .grade-letras {
-    grid-template-columns: repeat(3, 1fr);
+    grid-template-columns: repeat(max(2, calc(var(--colunas, 4) - 1)), 1fr);
+  }
+}
+
+/*
+  No ecrã largo, uma grade de duas colunas dava casas do tamanho de um cartaz.
+  Sobe uma coluna a partir da largura em que a página deixa de ser um telemóvel.
+*/
+@media (min-width: 560px) {
+  .grade-letras {
+    grid-template-columns: repeat(calc(var(--colunas, 4) + 1), 1fr);
   }
 }
 
