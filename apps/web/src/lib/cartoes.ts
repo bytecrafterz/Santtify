@@ -83,6 +83,8 @@ export interface Categoria {
   cartoes: number
   preco: {
     precoUnitarioCent: number
+    /** O riscado de um conjunto. Nulo quando não há. */
+    precoDeTabelaCent: number | null
     descontoPercentagem: number
     descontoAPartirDe: number
     moeda: string
@@ -107,6 +109,8 @@ export interface Pedido {
     descontoCent: number
     totalCent: number
     percentagemAplicada: number
+    /** O riscado do pedido inteiro. Nulo quando não há. */
+    deTabelaCent: number | null
   }
   meio: 'PIX' | 'CARTAO' | null
   pixCopiaECola: string | null

@@ -1609,6 +1609,7 @@ model CategoriaDeCartoes {
   precoUnitarioCent   Int?
   descontoPercentagem Int?
   descontoAPartirDe   Int?
+  precoDeTabelaCent   Int?
 
   criadoEm     DateTime @default(now())
   atualizadoEm DateTime @updatedAt
@@ -1712,6 +1713,23 @@ model PrecoDeCartoes {
   project   Project @relation(fields: [projectId], references: [id], onDelete: Cascade)
 
   precoUnitarioCent   Int    @default(3000)
+
+  /// O PREÇO RISCADO. Nulo = não há nada riscado.
+  ///
+  /// "Coloca preço 79 por 49" — 25/09. O cartaz dele já mostrava os dois, mas
+  /// pintados dentro da imagem; a caixa cobrava outra coisa.
+  ///
+  /// É um campo próprio e não uma percentagem calculada porque um preço riscado
+  /// é uma AFIRMAÇÃO SOBRE O PASSADO — "custava 79" — e no Brasil o CDC trata-a
+  /// como informação ao consumidor. Quem a escreve tem de ser quem responde por
+  /// ela, e isso é ele, no painel dele. Uma conta minha a inventá-la põe-me a
+  /// fazer uma afirmação comercial em nome dele.
+  ///
+  /// Só se mostra quando é MAIOR que o preço a cobrar: 79 riscado ao lado de 49
+  /// diz alguma coisa; 49 riscado ao lado de 49 é ruído, e 30 riscado ao lado de
+  /// 49 é uma mentira ao contrário.
+  precoDeTabelaCent Int?
+
   moeda               String @default("BRL")
   descontoPercentagem Int    @default(30)
   /// A partir de quantos conjuntos o desconto entra.
@@ -1772,6 +1790,14 @@ model PedidoDeCartoes {
   /// Se o administrador mudar o preço a meio, quem já estava a comprar paga o
   /// que viu — e o histórico continua a fazer sentido daqui a um ano.
   precoUnitarioCent   Int
+
+  /// O preço riscado em vigor quando o pedido nasceu. Nulo = não havia.
+  ///
+  /// Congelado como os outros, e pela mesma razão: quem viu "de R$ 79 por
+  /// R$ 49" ao editar tem de ver o mesmo ao pagar, mesmo que ele mude a
+  /// promoção no painel entretanto.
+  precoDeTabelaCent Int?
+
   descontoPercentagem Int
   /// Copiado da tabela no momento do pedido, como o resto do preço. Antes
   /// estava escrito "2" na conta, e o valor que o administrador punha no

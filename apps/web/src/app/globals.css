@@ -11906,3 +11906,123 @@ body:has(.painel-karaoke) {
 
 .ce-salvar { margin-top: 0; }
 .ce-falta { margin: 0; text-align: center; }
+
+/* O botão que abre a lupa, por baixo das bolinhas. */
+.ce-ver-grande {
+  width: auto;
+  margin: 0 auto;
+  font-weight: 700;
+}
+
+/* O preço riscado, ao lado do que se vai pagar. */
+.cartoes-preco-antigo {
+  margin-right: 8px;
+  font-size: 0.82em;
+  font-weight: 500;
+  color: var(--cor-texto-suave);
+  text-decoration-thickness: 2px;
+}
+
+/* ══════════════════════════════════════════════════
+   A LUPA
+   ══════════════════════════════════════════════════
+
+   Fundo escuro e nada mais no ecrã: quem está a conferir se a fotografia
+   aguenta a impressão não pode ter a página a competir com o cartão.
+*/
+.lupa {
+  position: fixed;
+  inset: 0;
+  z-index: 80;
+  display: grid;
+  grid-template-rows: auto 1fr auto;
+  background: #0b0d12;
+}
+
+.lupa-topo,
+.lupa-fundo {
+  display: flex;
+  gap: 12px;
+  align-items: center;
+  padding: 12px 16px;
+  color: #fff;
+  background: rgb(255 255 255 / 6%);
+}
+
+.lupa-topo strong {
+  flex: 1;
+  overflow: hidden;
+  font-size: 0.95rem;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.lupa-escala {
+  font-size: 0.8rem;
+  font-variant-numeric: tabular-nums;
+  color: rgb(255 255 255 / 65%);
+}
+
+.lupa-fechar {
+  display: grid;
+  place-items: center;
+  width: 38px;
+  height: 38px;
+  padding: 0;
+  font-size: 1.1rem;
+  color: #fff;
+  cursor: pointer;
+  background: rgb(255 255 255 / 12%);
+  border: 0;
+  border-radius: 50%;
+}
+
+/*
+  `touch-action: none` é o que entrega os dois dedos ao componente.
+
+  Sem isto o navegador fica com a pinça para si — faz o zoom da PÁGINA, não o do
+  cartão — e o gesto nunca chega ao `onPointerMove`.
+*/
+.lupa-palco {
+  display: grid;
+  overflow: hidden;
+  place-items: center;
+  padding: 16px;
+  touch-action: none;
+}
+
+.lupa-folha {
+  width: min(100%, 520px);
+  transform-origin: center center;
+  /* Ampliar tem de mostrar os pixéis como eles são. Suavizar a 8× esconderia
+     exactamente o grão que ela veio verificar. */
+  image-rendering: -webkit-optimize-contrast;
+}
+
+.lupa-folha .ce-folha { box-shadow: none; }
+
+/* Dentro da lupa não há nada a editar: os alvos deixam de convidar. */
+.lupa-folha .ce-alvo { cursor: default; }
+
+.lupa-fundo { justify-content: center; }
+
+.lupa-fundo span {
+  font-size: 0.8rem;
+  color: rgb(255 255 255 / 60%);
+}
+
+.lupa-fundo button {
+  display: grid;
+  place-items: center;
+  width: 42px;
+  height: 42px;
+  padding: 0;
+  font-size: 1.2rem;
+  color: #fff;
+  cursor: pointer;
+  background: rgb(255 255 255 / 12%);
+  border: 0;
+  border-radius: 50%;
+}
+
+.lupa-fundo button:disabled { cursor: not-allowed; opacity: 0.3; }

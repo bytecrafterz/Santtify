@@ -96,6 +96,14 @@ export function EditorDeCartoes({
   const [passo, definirPasso] = useState<Passo>('categoria')
   const [quantidade, definirQuantidade] = useState(1)
   const [activa, definirActiva] = useState<string | null>(null)
+  /**
+   * Em qual dos sete cartões ela está.
+   *
+   * Vive AQUI e não dentro do editor porque ir ao pagamento desmonta o editor,
+   * e com o número lá dentro a volta caía sempre no Dia 1 — exactamente o que
+   * ele descreveu em 25/09 com o exemplo do Dia 2.
+   */
+  const [cartaoActivo, definirCartaoActivo] = useState(0)
   const [erro, definirErro] = useState<string | null>(null)
   const [ocupado, definirOcupado] = useState<string | null>(null)
   const { usuario } = useAuth()
@@ -563,7 +571,15 @@ export function EditorDeCartoes({
     const pago = pedido.estado === 'PAGO' || pedido.estado === 'PRONTO'
     return (
       <div className="editor-cartoes">
-        <Cabecalho projectSlug={projectSlug} />
+        {/*
+          Pago, já não há nada para onde voltar a editar: o cartão está comprado
+          e o passo anterior deixou de existir. Aí o Voltar sai para o projeto,
+          como antes.
+        */}
+        <Cabecalho
+          projectSlug={projectSlug}
+          aoVoltar={pago || !crianca ? undefined : () => definirPasso('editor')}
+        />
         <section className="cartoes-passo">
           <h2>Pagamento</h2>
           <Resumo pedido={pedido} />
@@ -737,6 +753,8 @@ export function EditorDeCartoes({
           pedidoId={pedido.id}
           crianca={crianca}
           modelos={modelos}
+          indice={cartaoActivo}
+          aoMudarIndice={definirCartaoActivo}
           aSalvar={ocupado === 'salvar'}
           aoMudarCrianca={(nova) =>
             definirPedido({
@@ -909,11 +927,35 @@ function GaleriaDeModelos({
  * `enxuto` deixa só o Voltar. Os outros passos — pagamento, ficheiros —
  * continuam com o título, porque aí não há nenhuma imagem a explicar-se sozinha.
  */
-function Cabecalho({ projectSlug, enxuto }: { projectSlug: string; enxuto?: boolean }) {
+function Cabecalho({
+  projectSlug,
+  enxuto,
+  aoVoltar,
+}: {
+  projectSlug: string
+  enxuto?: boolean
+  /**
+   * O passo anterior DENTRO do editor, quando existe um.
+   *
+   * "O botão Voltar deve respeitar a etapa imediatamente anterior do fluxo, e
+   * não ter um destino fixo para a página do produto" — 25/09. Tinha razão: do
+   * pagamento, voltar atirava para fora da compra, e quem quisesse corrigir uma
+   * vírgula no nome perdia o caminho todo.
+   *
+   * O trabalho dela não se perde ao voltar porque nunca esteve só no ecrã: foto,
+   * nome e enquadramento vivem no pedido, no servidor, gravados a cada mexida.
+   * O que faltava era lembrar em que cartão dos sete ela estava.
+   */
+  aoVoltar?: () => void
+}) {
   return (
     <>
       <div className="cabecalho">
-        <Voltar href={`/${projectSlug}`}>Voltar</Voltar>
+        {aoVoltar ? (
+          <Voltar aoClicar={aoVoltar}>Voltar</Voltar>
+        ) : (
+          <Voltar href={`/${projectSlug}`}>Voltar</Voltar>
+        )}
       </div>
       {!enxuto && (
         <header className="cartoes-cabecalho">
@@ -950,7 +992,19 @@ function Resumo({ pedido }: { pedido: Pedido }) {
       )}
       <div className="cartoes-resumo-total">
         <dt>Total</dt>
-        <dd>{dinheiro(pedido.preco.totalCent)}</dd>
+        <dd>
+          {/*
+            O riscado ao lado do total, e não numa linha própria.
+
+            Numa linha própria lia-se como mais um item da conta — um valor que
+            se soma ou se tira. Ao lado do número que se vai pagar, lê-se pelo
+            que é: o que custava antes.
+          */}
+          {pedido.preco.deTabelaCent && (
+            <s className="cartoes-preco-antigo">{dinheiro(pedido.preco.deTabelaCent)}</s>
+          )}
+          {dinheiro(pedido.preco.totalCent)}
+        </dd>
       </div>
     </dl>
   )

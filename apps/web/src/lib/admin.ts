@@ -654,6 +654,8 @@ export interface CategoriaAdmin {
   ordem: number
   /** Nulos = usa o preço do projeto. */
   precoUnitarioCent: number | null
+  /** O preço riscado desta categoria. Nulo = o do projeto. */
+  precoDeTabelaCent: number | null
   descontoPercentagem: number | null
   descontoAPartirDe: number | null
   /** Quantos cartões e pedidos tem — o painel não deixa apagar uma cheia. */
@@ -663,6 +665,8 @@ export interface CategoriaAdmin {
 
 export interface PrecoAdmin {
   precoUnitarioCent: number
+  /** O preço riscado. Nulo = não há nada riscado. */
+  precoDeTabelaCent: number | null
   moeda: string
   descontoPercentagem: number
   descontoAPartirDe: number

@@ -73,6 +73,7 @@ class CategoriaDto {
   @IsOptional() @IsString() @MaxLength(80) slug?: string
   @IsOptional() @IsString() @MaxLength(300) descricao?: string | null
   @IsOptional() @IsString() capaUrl?: string | null
+  @IsOptional() @IsInt() @Min(0) precoDeTabelaCent?: number | null
   @IsOptional() @IsBoolean() ofertaEmBreve?: boolean
   @IsOptional() @IsString() ofertaAudioUrl?: string | null
   @IsOptional() @IsString() @MaxLength(40) rotuloSingular?: string
@@ -87,6 +88,8 @@ class CategoriaDto {
 
 class PrecoDto {
   @IsOptional() @IsInt() @Min(0) precoUnitarioCent?: number
+  /** O riscado. Nulo tira-o. */
+  @IsOptional() @IsInt() @Min(0) precoDeTabelaCent?: number | null
   @IsOptional() @IsString() @MaxLength(3) moeda?: string
   @IsOptional() @IsInt() @Min(0) @Max(100) descontoPercentagem?: number
   @IsOptional() @IsInt() @Min(1) descontoAPartirDe?: number

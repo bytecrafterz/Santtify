@@ -50,6 +50,7 @@ export interface CamposDaCategoria {
   ativo?: boolean
   ordem?: number
   precoUnitarioCent?: number | null
+  precoDeTabelaCent?: number | null
   descontoPercentagem?: number | null
   descontoAPartirDe?: number | null
 }
@@ -140,6 +141,7 @@ export class AdminCartoesService {
         ativo: dados.ativo ?? true,
         ordem: dados.ordem ?? (ultima?.ordem ?? 0) + 1,
         precoUnitarioCent: dados.precoUnitarioCent ?? null,
+        precoDeTabelaCent: dados.precoDeTabelaCent ?? null,
         descontoPercentagem: dados.descontoPercentagem ?? null,
         descontoAPartirDe: dados.descontoAPartirDe ?? null,
       },
@@ -159,7 +161,7 @@ export class AdminCartoesService {
     const campos = [
       'nome', 'descricao', 'capaUrl', 'ofertaEmBreve', 'ofertaAudioUrl',
       'rotuloSingular', 'rotuloPlural', 'ativo', 'ordem',
-      'precoUnitarioCent', 'descontoPercentagem', 'descontoAPartirDe',
+      'precoUnitarioCent', 'precoDeTabelaCent', 'descontoPercentagem', 'descontoAPartirDe',
     ] as const
     const alteracoes: Record<string, unknown> = {}
     for (const campo of campos) {
@@ -417,6 +419,7 @@ export class AdminCartoesService {
     projectSlug: string,
     dados: {
       precoUnitarioCent?: number
+      precoDeTabelaCent?: number | null
       moeda?: string
       descontoPercentagem?: number
       descontoAPartirDe?: number

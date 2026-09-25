@@ -268,6 +268,9 @@ function TabelaDePreco({
   aoGuardar: (dados: Partial<PrecoAdmin>) => void
 }) {
   const [reais, definirReais] = useState((preco.precoUnitarioCent / 100).toFixed(2))
+  const [tabela, definirTabela] = useState(
+    preco.precoDeTabelaCent == null ? '' : (preco.precoDeTabelaCent / 100).toFixed(2),
+  )
   const [desconto, definirDesconto] = useState(String(preco.descontoPercentagem))
   const [aPartirDe, definirAPartirDe] = useState(String(preco.descontoAPartirDe))
 
@@ -286,6 +289,23 @@ function TabelaDePreco({
             inputMode="decimal"
             value={reais}
             onChange={(e) => definirReais(e.target.value)}
+          />
+        </label>
+        {/*
+          O PREÇO RISCADO.
+
+          "Coloca preço 79 por 49" — 25/09. O cartaz dele já mostrava os dois, mas
+          pintados dentro da imagem; a caixa cobrava outra coisa. Agora os dois
+          números vivem no mesmo sítio e ninguém os pode deixar a discordar.
+        */}
+        <label className="cartoes-campo">
+          <span>Preço riscado (R$)</span>
+          <input
+            type="text"
+            inputMode="decimal"
+            value={tabela}
+            placeholder="sem riscado"
+            onChange={(e) => definirTabela(e.target.value)}
           />
         </label>
         <label className="cartoes-campo">
@@ -309,6 +329,16 @@ function TabelaDePreco({
         </label>
       </div>
 
+      {/* O aviso só aparece quando o riscado não serve, e diz porquê. */}
+      {tabela.trim() &&
+        Math.round(Number(tabela.replace(',', '.')) * 100) <=
+          Math.round(Number(reais.replace(',', '.')) * 100) && (
+          <p className="painel-aviso">
+            O preço riscado tem de ser maior do que o preço a cobrar. Assim, não
+            aparece no site.
+          </p>
+        )}
+
       <p className="painel-exemplo">
         {(() => {
           const cent = Math.round(Number(reais.replace(',', '.')) * 100) || 0
@@ -327,6 +357,9 @@ function TabelaDePreco({
         onClick={() =>
           aoGuardar({
             precoUnitarioCent: Math.round(Number(reais.replace(',', '.')) * 100),
+            precoDeTabelaCent: tabela.trim()
+              ? Math.round(Number(tabela.replace(',', '.')) * 100)
+              : null,
             descontoPercentagem: Number(desconto),
             descontoAPartirDe: Number(aPartirDe),
           })

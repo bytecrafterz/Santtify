@@ -175,16 +175,30 @@ export class CartoesService {
       precoUnitarioCent: number | null
       descontoPercentagem: number | null
       descontoAPartirDe: number | null
+      precoDeTabelaCent: number | null
     },
     projeto: {
       precoUnitarioCent: number
       descontoPercentagem: number
       descontoAPartirDe: number
+      precoDeTabelaCent: number | null
       moeda: string
     },
   ) {
+    const aCobrar = categoria.precoUnitarioCent ?? projeto.precoUnitarioCent
+    const deTabela = categoria.precoDeTabelaCent ?? projeto.precoDeTabelaCent
+
     return {
-      precoUnitarioCent: categoria.precoUnitarioCent ?? projeto.precoUnitarioCent,
+      precoUnitarioCent: aCobrar,
+      /*
+        O RISCADO SÓ SAI SE FOR MAIOR QUE O QUE SE COBRA.
+
+        A regra vive aqui, no servidor, e não no ecrã: se estivesse no ecrã,
+        bastava um segundo ecrã — o resumo do pedido, o recibo — esquecê-la para
+        um dos dois mostrar "de R$ 30 por R$ 49". Um preço riscado abaixo do
+        preço é uma mentira ao contrário, e na loja dele isso é CDC.
+      */
+      precoDeTabelaCent: deTabela && deTabela > aCobrar ? deTabela : null,
       descontoPercentagem: categoria.descontoPercentagem ?? projeto.descontoPercentagem,
       descontoAPartirDe: categoria.descontoAPartirDe ?? projeto.descontoAPartirDe,
       moeda: projeto.moeda,
@@ -225,6 +239,7 @@ export class CartoesService {
         idioma,
         userId: userId ?? null,
         precoUnitarioCent: preco.precoUnitarioCent,
+        precoDeTabelaCent: preco.precoDeTabelaCent,
         descontoPercentagem: preco.descontoPercentagem,
         descontoAPartirDe: preco.descontoAPartirDe,
         moeda: preco.moeda,
@@ -264,6 +279,20 @@ export class CartoesService {
       descontoAPartirDe: pedido.descontoAPartirDe,
     })
 
+    /*
+      O RISCADO DO PEDIDO INTEIRO, e não o de um conjunto.
+
+      Dois conjuntos a R$ 49 valem R$ 98 de tabela a R$ 79, e mostrar R$ 79 ao
+      lado de um total de R$ 68,60 não diz nada a ninguém. Multiplica-se pela
+      mesma quantidade que o subtotal usou, para os dois números falarem da mesma
+      compra. Nulo quando não há riscado ou quando ele não ficaria acima do que se
+      cobra — ver a nota em `precoEfetivo`.
+    */
+    const tabelaCent = pedido.precoDeTabelaCent
+      ? pedido.precoDeTabelaCent * preco.quantidade
+      : null
+    const deTabelaCent = tabelaCent && tabelaCent > preco.totalCent ? tabelaCent : null
+
     return {
       id: pedido.id,
       projectSlug: pedido.project.slug,
@@ -271,7 +300,7 @@ export class CartoesService {
       idioma: pedido.idioma,
       estado: pedido.estado,
       moeda: pedido.moeda,
-      preco,
+      preco: { ...preco, deTabelaCent },
       meio: pedido.meio,
       pixCopiaECola: pedido.pixCopiaECola,
       pixQrSvg: pedido.pixQrSvg,

@@ -8,6 +8,7 @@ import {
   type CriancaDoPedido,
   type ModeloDeCartao,
 } from '@/lib/cartoes'
+import { LupaDoCartao } from './LupaDoCartao'
 
 /**
  * O CARTÃO É O EDITOR.
@@ -77,6 +78,8 @@ export function CartaoComoEditor({
   pedidoId,
   crianca,
   modelos,
+  indice,
+  aoMudarIndice,
   aoMudarCrianca,
   aoErrar,
   aoSalvar,
@@ -86,12 +89,23 @@ export function CartaoComoEditor({
   pedidoId: string
   crianca: CriancaDoPedido
   modelos: ModeloDeCartao[]
+  /**
+   * Em que cartão ela está — e o estado vive FORA deste componente.
+   *
+   * Ele apanhou-o em 25/09: "estou no Dia 2 de 7, coloquei a foto, escrevi o
+   * nome (…) apertei Voltar. Tenho que retornar ao Dia 2 de 7". Enquanto o
+   * número vivesse aqui dentro, ir ao pagamento desmontava o componente e a
+   * volta caía sempre no Dia 1.
+   */
+  indice: number
+  aoMudarIndice: (i: number) => void
   aoMudarCrianca: (c: CriancaDoPedido) => void
   aoErrar: (m: string | null) => void
   aoSalvar: () => void
   aSalvar: boolean
 }) {
-  const [indice, definirIndice] = useState(0)
+  const definirIndice = aoMudarIndice
+  const [lupaAberta, definirLupaAberta] = useState(false)
   const [escolhido, definirEscolhido] = useState<Escolhido>(null)
   const [paletaAberta, definirPaletaAberta] = useState(false)
   const [setasAbertas, definirSetasAbertas] = useState(false)
@@ -214,6 +228,7 @@ export function CartaoComoEditor({
               alinhamento={alinhamento}
               cor={cor}
               editavel={i === indice}
+              aoAmpliar={() => definirLupaAberta(true)}
               escolhido={i === indice ? escolhido : null}
               aEnviar={aEnviar}
               aoEscolher={definirEscolhido}
@@ -339,6 +354,42 @@ export function CartaoComoEditor({
       </Faixa>
 
       {/*
+        A LUPA, com o mesmo desenho que está na página.
+
+        "preciso conseguir verificar essa qualidade antes de comprar" — 25/09.
+        Recebe o cartão tal como ele está, e não outra imagem: mostrar aqui coisa
+        diferente seria mostrar-lhe uma qualidade que não é a que vai receber.
+      */}
+      {lupaAberta && (
+        <LupaDoCartao
+          titulo={`Dia ${modelo.dia} — ${modelo.nome}`}
+          aoFechar={() => definirLupaAberta(false)}
+        >
+          <CartaoDesenhado
+            projectSlug={projectSlug}
+            pedidoId={pedidoId}
+            crianca={crianca}
+            modelo={modelo}
+            ajuste={ajuste}
+            nome={nome}
+            tamanho={tamanho}
+            alinhamento={alinhamento}
+            cor={cor}
+            editavel={false}
+            escolhido={null}
+            aEnviar={false}
+            aoEscolher={() => {}}
+            aoMexer={() => {}}
+            aoEscrever={() => {}}
+            barraDaFoto={null}
+            barraDoNome={null}
+            setas={null}
+            paleta={null}
+          />
+        </LupaDoCartao>
+      )}
+
+      {/*
         "‹ ● ○ ○ ○ ○ ○ ○ ›  1 de 7" — desenhado como ele o escreveu.
 
         As bolinhas são botões: num ecrã largo não há para onde arrastar, e
@@ -379,6 +430,21 @@ export function CartaoComoEditor({
           {indice + 1} de {total}
         </strong>
       </nav>
+
+      {/*
+        A LUPA TAMBÉM TEM BOTÃO.
+
+        Tocar no cartão abre-a — mas tocar no cartão é também o gesto de editar a
+        foto e o nome, e ninguém adivinha que o resto do cartão faz outra coisa.
+        Um botão com o nome escrito resolve-o para quem não experimentar.
+      */}
+      <button
+        type="button"
+        className="cartoes-ligacao ce-ver-grande"
+        onClick={() => definirLupaAberta(true)}
+      >
+        🔍 Ver em tamanho grande
+      </button>
 
       {/*
         SALVAR É O ÚNICO BOTÃO FORA DO CARTÃO, e fica cá em baixo no telemóvel,
@@ -490,6 +556,7 @@ function CartaoDesenhado({
   aoEscolher,
   aoMexer,
   aoEscrever,
+  aoAmpliar,
   barraDaFoto,
   barraDoNome,
   setas,
@@ -510,6 +577,8 @@ function CartaoDesenhado({
   aoEscolher: (e: Escolhido) => void
   aoMexer: (m: Partial<Ajuste>) => void
   aoEscrever: (t: string) => void
+  /** Ausente dentro da própria lupa: ali não há nada para ampliar outra vez. */
+  aoAmpliar?: () => void
   barraDaFoto: React.ReactNode
   barraDoNome: React.ReactNode
   setas: React.ReactNode
@@ -573,7 +642,23 @@ function CartaoDesenhado({
   )
 
   return (
-    <div ref={folha} className="ce-folha" style={{ height: `${altura}px` }}>
+    <div
+      ref={folha}
+      className="ce-folha"
+      style={{ height: `${altura}px` }}
+      /*
+        TOCAR NO CARTÃO — FORA DA FOTO E DO NOME — ABRE-O EM GRANDE.
+
+        Os dois pedidos dele chocavam: "tocou na foto → edita a foto" e "tocou no
+        cartão → abre grande" são o mesmo gesto. A regra que os separa é a que
+        qualquer pessoa adivinha depois de a ver uma vez: o que tem ferramenta
+        edita-se, o resto amplia-se. Os dois alvos param o evento antes de
+        chegar aqui.
+      */
+      onPointerDown={() => {
+        if (editavel) aoAmpliar?.()
+      }}
+    >
       {modelo.arteUrl ? (
         // eslint-disable-next-line @next/next/no-img-element
         <img src={modelo.arteUrl} alt={`Dia ${modelo.dia} — ${modelo.nome}`} className="ce-arte" />
