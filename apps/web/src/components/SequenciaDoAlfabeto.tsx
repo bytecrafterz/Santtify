@@ -382,97 +382,6 @@ export function SequenciaDoAlfabeto({ projectSlug }: { projectSlug: string }) {
             ))}
           </div>
 
-          {/*
-            AS CASAS QUE AINDA NÃO EXISTEM, e a porta para as criar.
-
-            Este ecrã desenhava só os cartões que já existiam. No alfabeto isso
-            nunca se notou, porque as quatro casas de cada letra vieram do seed.
-            Nos projetos que ele cria no painel não vêm de lado nenhum: os sete
-            dias do Minha Identidade têm zero blocos, e abrir um deles dava um
-            ecrã vazio, sem nada em que tocar.
-
-            Ele apanhou-o em 22/09, no dia seguinte a eu lhe ter dito que o
-            painel estava pronto para publicar: "você ainda não fez a estrutura
-            para postar fotos e áudio". Estava tudo feito menos isto — o editor,
-            o envio da foto e do áudio, o publicar, o duplicar. Faltava a porta.
-
-            Abre o editor logo a seguir a criar. Criar e ficar no mesmo sítio
-            seria pedir-lhe que procurasse o que acabou de pedir — é a mesma
-            razão que está escrita no botão do cartão de impressão.
-          */}
-          {vagao.contentId &&
-            casasPorPreencher.length > 0 &&
-            casasPorPreencher.map(({ casa, nome }) => (
-              <button
-                key={casa}
-                type="button"
-                className="quadrado-impressao criar"
-                disabled={aCriarCasa !== null}
-                onClick={async () => {
-                  definirACriarCasa(casa)
-                  try {
-                    const novo = await admin.acrescentarCartao(vagao.contentId!, casa)
-                    await recarregar()
-                    definirOnde({ tela: 'cartao', casa: vagao.casa, cartaoId: novo.id })
-                  } catch (e) {
-                    definirErro(
-                      e instanceof Error ? e.message : 'Não foi possível criar este quadrado.',
-                    )
-                  } finally {
-                    definirACriarCasa(null)
-                  }
-                }}
-              >
-                <span className="icone" aria-hidden>
-                  +
-                </span>
-                <span className="nome">{nome.toUpperCase()}</span>
-                <span className="estado">
-                  {aCriarCasa === casa ? 'A criar...' : 'ainda não existe — toque para criar'}
-                </span>
-              </button>
-            ))}
-
-          {/*
-            ACRESCENTAR ALÉM DAS QUATRO.
-
-            "Assim consigo acrescentar músicas, explicações, versículos, orações
-            ou outros conteúdos sem ficar limitado aos quatro iniciais" — 21/09.
-
-            Não aparece nas letras: uma letra tem quatro casas fixas e é dessa
-            forma repetida que a composição das 26 vive. O servidor recusa na
-            mesma; isto é só não mostrar um botão que ia dar erro.
-          */}
-          {vagao.contentId && vagao.letra === null && (
-            <button
-              type="button"
-              className="quadrado-impressao criar"
-              disabled={aCriarCasa !== null}
-              onClick={async () => {
-                definirACriarCasa(0)
-                try {
-                  const novo = await admin.acrescentarCartao(vagao.contentId!)
-                  await recarregar()
-                  definirOnde({ tela: 'cartao', casa: vagao.casa, cartaoId: novo.id })
-                } catch (e) {
-                  definirErro(
-                    e instanceof Error ? e.message : 'Não foi possível acrescentar o cartão.',
-                  )
-                } finally {
-                  definirACriarCasa(null)
-                }
-              }}
-            >
-              <span className="icone" aria-hidden>
-                +
-              </span>
-              <span className="nome">ACRESCENTAR CARTÃO</span>
-              <span className="estado">
-                {aCriarCasa === 0 ? 'A criar...' : 'foto, áudio, título e texto numa peça só'}
-              </span>
-            </button>
-          )}
-
           {/* SALVAR ORDEM só aparece depois de ele mexer em alguma coisa.
               Um botão de gravar sempre à vista, sem nada por gravar, ensina a
               pessoa a ignorá-lo — e no dia em que houver mesmo alterações por
@@ -498,64 +407,166 @@ export function SequenciaDoAlfabeto({ projectSlug }: { projectSlug: string }) {
             </button>
           )}
 
-          {impressao ? (
-            <button
-              type="button"
-              className="quadrado-impressao pronto"
-              onClick={() =>
-                definirOnde({ tela: 'cartao', casa: vagao.casa, cartaoId: impressao.id })
-              }
-            >
-              <span className="icone" aria-hidden>
-                🖨
-              </span>
-              <span className="nome">CARTÃO PARA IMPRESSÃO</span>
-              <span className="estado">
-                {impressao.estado === 'PUBLICADO' ? 'pronto' : 'rascunho'}
-              </span>
-            </button>
-          ) : (
-            /*
-              UM BOTÃO, E NÃO UM AVISO A DIZER ONDE FICA O BOTÃO.
+          {/*
+            AS ACÇÕES SÃO QUADRADOS COMO OS OUTROS.
 
-              Isto era um texto morto: "Criado a partir do quarto quadrado". O
-              caminho existia mesmo, dentro do menu de três pontinhos do quarto
-              quadrado, e ninguém o encontrava. Ele foi à Letra C em 26/08 e
-              escreveu que não havia "um caminho claro para colocar o cartão de
-              impressão e gerar o PDF". Tinha razão: havia um letreiro a apontar
-              para uma porta escondida.
-            */
-            <button
-              type="button"
-              className="quadrado-impressao criar"
-              disabled={!vagao.contentId || aCriarImpressao}
-              onClick={async () => {
-                if (!vagao.contentId) return
-                definirACriarImpressao(true)
-                try {
-                  const novo = await admin.criarCartaoDeImpressao(vagao.contentId)
-                  await recarregar()
-                  // Abre já o editor: criar e ficar no mesmo sítio seria pedir-lhe
-                  // que descobrisse o passo seguinte sozinho outra vez.
-                  definirOnde({ tela: 'cartao', casa: vagao.casa, cartaoId: novo.id })
-                } finally {
-                  definirACriarImpressao(false)
+            "Coloca o restante de baixo igual o de cima" — 25/09. Acrescentar e
+            o cartão de impressão eram faixas tracejadas a toda a largura, com
+            outro tamanho, outra letra e outra borda: pareciam de outro ecrã.
+            Agora assentam na mesma grelha de duas colunas, com a mesma caixa,
+            e só o sinal verde diz que ali se cria em vez de se editar.
+          */}
+          <div className="grade-quadrados grade-acoes">
+            {/*
+              AS CASAS QUE AINDA NÃO EXISTEM, e a porta para as criar.
+
+              Este ecrã desenhava só os cartões que já existiam. No alfabeto isso
+              nunca se notou, porque as quatro casas de cada letra vieram do seed.
+              Nos projetos que ele cria no painel não vêm de lado nenhum: os sete
+              dias do Minha Identidade têm zero blocos, e abrir um deles dava um
+              ecrã vazio, sem nada em que tocar.
+
+              Ele apanhou-o em 22/09, no dia seguinte a eu lhe ter dito que o
+              painel estava pronto para publicar: "você ainda não fez a estrutura
+              para postar fotos e áudio". Estava tudo feito menos isto — o editor,
+              o envio da foto e do áudio, o publicar, o duplicar. Faltava a porta.
+
+              Abre o editor logo a seguir a criar. Criar e ficar no mesmo sítio
+              seria pedir-lhe que procurasse o que acabou de pedir — é a mesma
+              razão que está escrita no botão do cartão de impressão.
+            */}
+            {vagao.contentId &&
+              casasPorPreencher.length > 0 &&
+              casasPorPreencher.map(({ casa, nome }) => (
+                <button
+                  key={casa}
+                  type="button"
+                  className="quadrado-impressao criar"
+                  disabled={aCriarCasa !== null}
+                  onClick={async () => {
+                    definirACriarCasa(casa)
+                    try {
+                      const novo = await admin.acrescentarCartao(vagao.contentId!, casa)
+                      await recarregar()
+                      definirOnde({ tela: 'cartao', casa: vagao.casa, cartaoId: novo.id })
+                    } catch (e) {
+                      definirErro(
+                        e instanceof Error ? e.message : 'Não foi possível criar este quadrado.',
+                      )
+                    } finally {
+                      definirACriarCasa(null)
+                    }
+                  }}
+                >
+                  <span className="icone" aria-hidden>
+                    +
+                  </span>
+                  <span className="nome">{nome.toUpperCase()}</span>
+                  <span className="estado">
+                    {aCriarCasa === casa ? 'A criar...' : 'ainda não existe — toque para criar'}
+                  </span>
+                </button>
+              ))}
+
+            {/*
+              ACRESCENTAR ALÉM DAS QUATRO.
+
+              "Assim consigo acrescentar músicas, explicações, versículos, orações
+              ou outros conteúdos sem ficar limitado aos quatro iniciais" — 21/09.
+
+              Não aparece nas letras: uma letra tem quatro casas fixas e é dessa
+              forma repetida que a composição das 26 vive. O servidor recusa na
+              mesma; isto é só não mostrar um botão que ia dar erro.
+            */}
+            {vagao.contentId && vagao.letra === null && (
+              <button
+                type="button"
+                className="quadrado-impressao criar"
+                disabled={aCriarCasa !== null}
+                onClick={async () => {
+                  definirACriarCasa(0)
+                  try {
+                    const novo = await admin.acrescentarCartao(vagao.contentId!)
+                    await recarregar()
+                    definirOnde({ tela: 'cartao', casa: vagao.casa, cartaoId: novo.id })
+                  } catch (e) {
+                    definirErro(
+                      e instanceof Error ? e.message : 'Não foi possível acrescentar o cartão.',
+                    )
+                  } finally {
+                    definirACriarCasa(null)
+                  }
+                }}
+              >
+                <span className="icone" aria-hidden>
+                  +
+                </span>
+                <span className="nome">ACRESCENTAR CARTÃO</span>
+                <span className="estado">
+                  {aCriarCasa === 0 ? 'A criar...' : 'foto, áudio, título e texto numa peça só'}
+                </span>
+              </button>
+            )}
+
+            {impressao ? (
+              <button
+                type="button"
+                className="quadrado-impressao pronto"
+                onClick={() =>
+                  definirOnde({ tela: 'cartao', casa: vagao.casa, cartaoId: impressao.id })
                 }
-              }}
-            >
-              <span className="icone" aria-hidden>
-                🖨
-              </span>
-              <span className="nome">CRIAR CARTÃO PARA IMPRESSÃO</span>
-              <span className="estado">
-                {!vagao.contentId
-                  ? `${capitalizar(artigoDefinido(unidade))} ${unidade.toLowerCase()} precisa de ter conteúdo primeiro`
-                  : aCriarImpressao
-                    ? 'A criar...'
-                    : 'Arte, folha A4 e PDF para a gráfica'}
-              </span>
-            </button>
-          )}
+              >
+                <span className="icone" aria-hidden>
+                  🖨
+                </span>
+                <span className="nome">CARTÃO PARA IMPRESSÃO</span>
+                <span className="estado">
+                  {impressao.estado === 'PUBLICADO' ? 'pronto' : 'rascunho'}
+                </span>
+              </button>
+            ) : (
+              /*
+                UM BOTÃO, E NÃO UM AVISO A DIZER ONDE FICA O BOTÃO.
+
+                Isto era um texto morto: "Criado a partir do quarto quadrado". O
+                caminho existia mesmo, dentro do menu de três pontinhos do quarto
+                quadrado, e ninguém o encontrava. Ele foi à Letra C em 26/08 e
+                escreveu que não havia "um caminho claro para colocar o cartão de
+                impressão e gerar o PDF". Tinha razão: havia um letreiro a apontar
+                para uma porta escondida.
+              */
+              <button
+                type="button"
+                className="quadrado-impressao criar"
+                disabled={!vagao.contentId || aCriarImpressao}
+                onClick={async () => {
+                  if (!vagao.contentId) return
+                  definirACriarImpressao(true)
+                  try {
+                    const novo = await admin.criarCartaoDeImpressao(vagao.contentId)
+                    await recarregar()
+                    // Abre já o editor: criar e ficar no mesmo sítio seria pedir-lhe
+                    // que descobrisse o passo seguinte sozinho outra vez.
+                    definirOnde({ tela: 'cartao', casa: vagao.casa, cartaoId: novo.id })
+                  } finally {
+                    definirACriarImpressao(false)
+                  }
+                }}
+              >
+                <span className="icone" aria-hidden>
+                  🖨
+                </span>
+                <span className="nome">CRIAR CARTÃO PARA IMPRESSÃO</span>
+                <span className="estado">
+                  {!vagao.contentId
+                    ? `${capitalizar(artigoDefinido(unidade))} ${unidade.toLowerCase()} precisa de ter conteúdo primeiro`
+                    : aCriarImpressao
+                      ? 'A criar...'
+                      : 'Arte, folha A4 e PDF para a gráfica'}
+                </span>
+              </button>
+            )}
+          </div>
 
           {/*
             O QR NO FIM, E NÃO NO MEIO (24/09).
