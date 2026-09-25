@@ -386,7 +386,15 @@ export function ExperienciaContinua({
         `--colunas`, calculado aqui a partir do que o projeto tem.
       */}
       <div
-        className="grade-letras"
+        /*
+          Com poucas casas, a grade é a mesma em todo o ecrã. As regras de
+          largura tiravam uma coluna no telemóvel e punham outra no computador,
+          e a casa sozinha, calculada para três, caía à direita no telemóvel
+          (2+2+2+1) e deixava de estar sozinha no computador (4+3). Ele pediu
+          três filas com o 7 ao centro — em 25/09 e outra vez hoje, "no
+          computador e no telefone".
+        */
+        className={colunas === 3 ? 'grade-letras grade-fixa' : 'grade-letras'}
         style={{ '--colunas': colunas } as CSSProperties}
       >
         {casas.map((casa, i) => {
