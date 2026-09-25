@@ -165,6 +165,18 @@ ok('o áudio da oferta está na página',
 
 ok('o Mercado Pago aparece ao pé do cartaz', /Mercado(&nbsp;|\s|\u00a0)?Pago/.test(pagina))
 
+// Ver, curtir, comentar, partilhar — os quatro que ele pediu em 25/09.
+const socialDaOferta = await ch(`/projects/${CARTOES}/cartoes/criancas/social`)
+ok('a oferta tem os quatro números',
+   ['visualizacoes', 'curtidas', 'comentarios', 'compartilhamentos']
+     .every((k) => typeof socialDaOferta[k] === 'number'),
+   `vistas ${socialDaOferta.visualizacoes} · curtidas ${socialDaOferta.curtidas} · comentários ${socialDaOferta.comentarios} · partilhas ${socialDaOferta.compartilhamentos}`)
+
+// A barra tem de estar DESENHADA, e não só respondida: já aconteceu três vezes
+// neste projeto números pintados à mão que não chamavam ninguém.
+ok('os quatro botões estão debaixo do cartaz',
+   pagina.includes('indicadores-publicacao') && pagina.includes('vista-da-oferta'))
+
 console.log(
   falhas === 0
     ? '\n  Tudo o que funcionava continua a funcionar.\n'
