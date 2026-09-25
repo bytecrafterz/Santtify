@@ -11306,12 +11306,64 @@ body:has(.painel-karaoke) {
   gap: 12px;
 }
 
+/*
+  O CARTAZ RECUA DAS MARGENS E GANHA UM CONTORNO QUE PISCA.
+
+  Saía das margens da página, encostado a ambos os lados, e aí parecia parte do
+  fundo — uma faixa decorativa, e não uma coisa em que se toca. Pedido dele em
+  25/09: "make it clear that the image is a button", com a arte um pouco mais
+  pequena e o contorno a piscar.
+
+  Recuar 12px de cada lado é o que o separa do fundo. É pouco de propósito: o
+  que se quer é que a arte deixe de tocar nas bordas, e não que encolha até
+  deixar de se lerem os sete cartões lá dentro — que foi a queixa dele de ontem.
+*/
 .oferta-cartaz {
   display: block;
-  margin-inline: -20px;
+  margin-inline: 12px;
   overflow: hidden;
   line-height: 0;
+  border-radius: 14px;
   transition: transform 0.15s ease;
+}
+
+.oferta-cartaz:not(.em-breve) {
+  animation: oferta-a-chamar 2.2s ease-in-out infinite;
+}
+
+/*
+  O pisca-pisca é um anel que cresce e desvanece por FORA da arte, e não uma
+  borda a mudar de cor: uma borda muda a largura do elemento a cada batida e a
+  página toda estremece por baixo dela.
+*/
+@keyframes oferta-a-chamar {
+  0%,
+  100% {
+    box-shadow:
+      0 0 0 0 rgb(22 163 74 / 60%),
+      0 6px 18px rgb(0 0 0 / 12%);
+  }
+
+  50% {
+    box-shadow:
+      0 0 0 7px rgb(22 163 74 / 0%),
+      0 6px 18px rgb(0 0 0 / 12%);
+  }
+}
+
+/*
+  QUEM PEDIU MENOS MOVIMENTO NÃO LEVA PISCA-PISCA.
+
+  É uma definição do sistema operativo, e quem a liga costuma tê-la ligada por
+  razão médica. Fica o anel parado, que diz a mesma coisa sem se mexer.
+*/
+@media (prefers-reduced-motion: reduce) {
+  .oferta-cartaz:not(.em-breve) {
+    animation: none;
+    box-shadow:
+      0 0 0 3px rgb(22 163 74 / 55%),
+      0 6px 18px rgb(0 0 0 / 12%);
+  }
 }
 
 .oferta-arte {
@@ -11336,8 +11388,7 @@ body:has(.painel-karaoke) {
 @media (min-width: 720px) {
   .oferta-cartaz {
     margin-inline: auto;
-    max-width: 480px;
-    border-radius: var(--raio);
+    max-width: 440px;
   }
 }
 
@@ -11392,8 +11443,20 @@ body:has(.painel-karaoke) {
   border-radius: 50%;
 }
 
+/*
+  O CORPO OCUPA O QUE SOBRA DA LINHA.
+
+  Sem `flex: 1` era uma coluna do tamanho do conteúdo, e a barra de avanço —
+  que pede 100% DESSA coluna — parava a meio do cartão, desalinhada do título
+  por cima e do relógio por baixo. Foi o que ele apanhou em 25/09.
+
+  `minmax(0, 1fr)` na coluna interior existe pela mesma razão: uma coluna `auto`
+  não encolhe abaixo do conteúdo, e o título longo voltava a mandar na largura.
+*/
 .voz-oferta-corpo {
   display: grid;
+  flex: 1;
+  grid-template-columns: minmax(0, 1fr);
   gap: 2px;
   min-width: 0;
 }
@@ -11408,9 +11471,11 @@ body:has(.painel-karaoke) {
 .voz-oferta-corpo small { font-size: 0.78rem; color: var(--cor-texto-suave); }
 
 .voz-oferta-barra {
+  display: block;
   width: 100%;
+  min-width: 0;
   height: 4px;
-  margin: 2px 0;
+  margin: 4px 0;
   cursor: pointer;
   accent-color: var(--cor-tocar);
 }

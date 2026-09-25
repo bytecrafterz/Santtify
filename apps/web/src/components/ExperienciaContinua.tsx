@@ -20,9 +20,24 @@ import { rastrear } from '@/lib/track'
  * que manda é caber, e voltam as quatro.
  */
 function colunasDaGrade(casas: number): number {
-  if (casas <= 8) return 2
-  if (casas <= 15) return 3
+  if (casas <= 12) return 3
   return 4
+}
+
+/**
+ * A casa que fica sozinha na última fila, se houver uma.
+ *
+ * Sete casas em três colunas dão 3 + 3 + 1, e esse 1 encostava à esquerda com
+ * dois buracos ao lado — parecia uma casa que tinha ficado para trás. Ele pediu
+ * em 25/09 que ficasse ao centro, e ao centro parece o fecho da série.
+ *
+ * Devolve a coluna onde essa casa deve assentar, ou nulo quando a última fila
+ * vai cheia — com 26 letras em quatro colunas sobram duas, e duas sozinhas
+ * centram-se sem ajuda nenhuma.
+ */
+function colunaDaSozinha(casas: number, colunas: number): number | null {
+  if (casas % colunas !== 1) return null
+  return Math.ceil(colunas / 2)
 }
 import { publicacoesDe } from '@/lib/publicacoes-da-letra'
 import { artigoDefinido, artigoIndefinido, liberadas, nomeDaCasa } from '@/lib/unidade'
@@ -85,6 +100,8 @@ export function ExperienciaContinua({
   const casas: Array<string | number> = porLetras
     ? ALFABETO
     : Array.from({ length: Math.max(0, blocos) }, (_, i) => i + 1)
+  const colunas = colunasDaGrade(casas.length)
+  const sozinhaEm = colunaDaSozinha(casas.length, colunas)
   /** O conteúdo que mora numa casa, ou nada se ela ainda estiver vazia. */
   const conteudoDaCasa = (casa: string | number) =>
     contents.find(
@@ -370,9 +387,14 @@ export function ExperienciaContinua({
       */}
       <div
         className="grade-letras"
-        style={{ '--colunas': colunasDaGrade(casas.length) } as CSSProperties}
+        style={{ '--colunas': colunas } as CSSProperties}
       >
-        {casas.map((casa) => {
+        {casas.map((casa, i) => {
+          // A última casa, quando fica sozinha na fila, salta para o meio.
+          const aoMeio =
+            sozinhaEm !== null && i === casas.length - 1
+              ? ({ gridColumn: sozinhaEm } as CSSProperties)
+              : undefined
           /**
            * A grade tem uma casa por letra (ou por número) e cada conteúdo
            * entra na casa que é SUA.
@@ -389,6 +411,7 @@ export function ExperienciaContinua({
               <div
                 className="letra-bloco trancada"
                 key={casa}
+                style={aoMeio}
                 aria-label={`${nomeDaCasa}, ainda bloqueada`}
               >
                 {casa}
@@ -415,6 +438,7 @@ export function ExperienciaContinua({
             <Link
               className="letra-bloco"
               key={casa}
+              style={aoMeio}
               href={`/${projectSlug}/${dela.slug}`}
               aria-label={`${nomeDaCasa} — ${dela.title}`}
             >
