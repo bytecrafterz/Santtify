@@ -782,6 +782,7 @@ model User {
   shareLinks         ShortLink[]       @relation("UserShareLinks")
   reactions          Reaction[]
   curtidasEmProjetos ProjectReaction[]
+  curtidasNaOferta   ReacaoDaOferta[]
   blockReactions     BlockReaction[]
   comments           Comment[]
   denuncias          Report[]          @relation("DenunciasFeitas")
@@ -1103,6 +1104,27 @@ model ProjectReaction {
   @@map("reacoes_de_projeto")
 }
 
+/// Curtir a OFERTA dos cartões — o cartaz, e não o projeto nem uma letra.
+///
+/// Tabela própria e não uma coluna em `reactions`, pelo mesmo motivo que
+/// `ProjectReaction` é tabela própria: a chave única é o que garante uma curtida
+/// por pessoa, e uma chave única sobre colunas que se alternam a nulo não
+/// garante nada. Quem tentar curtir duas vezes bate no índice, e não num `if`.
+model ReacaoDaOferta {
+  id       String             @id @default(uuid()) @db.Uuid
+  ofertaId String             @db.Uuid
+  oferta   CategoriaDeCartoes @relation(fields: [ofertaId], references: [id], onDelete: Cascade)
+  userId   String             @db.Uuid
+  user     User               @relation(fields: [userId], references: [id], onDelete: Cascade)
+  type     ReactionType       @default(LIKE)
+
+  createdAt DateTime @default(now())
+
+  @@unique([ofertaId, userId, type])
+  @@index([ofertaId])
+  @@map("reacoes_da_oferta")
+}
+
 model Comment {
   id        String   @id @default(uuid()) @db.Uuid
   projectId String   @db.Uuid
@@ -1118,6 +1140,21 @@ model Comment {
   /// ficasse fora dela seria publicado sem ninguém ver.
   profileUserId String? @db.Uuid
   profileUser   User?   @relation("ComentariosNoPerfil", fields: [profileUserId], references: [id], onDelete: Cascade)
+
+  /// A OFERTA DOS CARTÕES COMENTADA.
+  ///
+  /// Pedido dele em 25/09, sobre o cartaz: "Têm que ter esta funções view like
+  /// comentário compartilhamento".
+  ///
+  /// Coluna nova na MESMA tabela, pela razão que já está escrita duas vezes
+  /// acima: a fila de moderação dele lê daqui, e um comentário guardado noutra
+  /// tabela seria publicado sem ninguém o ver. Num cartaz que vende fotografias
+  /// de crianças, isso não é um detalhe de arrumo.
+  ///
+  /// Aponta à categoria porque é a categoria que tem o cartaz — Crianças e
+  /// Adultos terão ofertas diferentes, e portanto conversas diferentes.
+  ofertaId String?             @db.Uuid
+  oferta   CategoriaDeCartoes? @relation("ComentariosNaOferta", fields: [ofertaId], references: [id], onDelete: Cascade)
 
   /// Faixa comentada, quando o comentário é de um áudio e não da letra inteira.
   ///
@@ -1578,6 +1615,10 @@ model CategoriaDeCartoes {
 
   modelos ModeloDeCartao[]
   pedidos PedidoDeCartoes[]
+
+  /// A camada social do cartaz. Ver `ofertaId` em `Comment`.
+  comentariosNaOferta Comment[]        @relation("ComentariosNaOferta")
+  curtidasNaOferta    ReacaoDaOferta[]
 
   @@unique([projectId, slug])
   @@index([projectId, ativo, ordem])

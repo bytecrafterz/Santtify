@@ -3,6 +3,7 @@ import { SocialService } from './social.service'
 import {
   SocialController,
   ProjetoSocialController,
+  OfertaSocialController,
   FaixasController,
   ComentariosController,
   MinhasPublicacoesController,
@@ -21,6 +22,7 @@ import { ContagensModule } from './contagens.module'
   controllers: [
     SocialController,
     ProjetoSocialController,
+    OfertaSocialController,
     FaixasController,
     ComentariosController,
     MinhasPublicacoesController,

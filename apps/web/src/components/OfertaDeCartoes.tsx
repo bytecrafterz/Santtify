@@ -1,5 +1,7 @@
 import Link from 'next/link'
 import { VozDaOferta } from './VozDaOferta'
+import { VistaDaOferta } from './VistaDaOferta'
+import { IndicadoresDaPublicacao } from './IndicadoresDaPublicacao'
 
 /**
  * A OFERTA DOS CARTÕES, POR BAIXO DOS DIAS.
@@ -22,9 +24,11 @@ import { VozDaOferta } from './VozDaOferta'
  */
 export function OfertaDeCartoes({
   projectSlug,
+  projectId,
   categorias,
 }: {
   projectSlug: string
+  projectId: string
   categorias: Array<{
     slug: string
     nome: string
@@ -78,6 +82,29 @@ export function OfertaDeCartoes({
             {c.audioUrl && (
               <VozDaOferta src={c.audioUrl} titulo={`Sobre os cartões — ${c.nome}`} />
             )}
+
+            {/*
+              O CARTAZ É UMA PUBLICAÇÃO: ver, curtir, comentar, partilhar.
+
+              "Têm que ter esta funções view like comentário compartilhamento" —
+              25/09.
+
+              É o MESMO componente que desenha os quatro números de uma faixa, de
+              um conteúdo e de um perfil. O próprio ficheiro dele conta o que
+              acontece quando se desenham noutro sítio: nascem `<span>` que
+              parecem botões e não fazem nada, e já aconteceu três vezes.
+
+              A vista conta-se quando o cartaz entra no ecrã, e não quando a
+              página abre — ver `VistaDaOferta`.
+            */}
+            <VistaDaOferta projectSlug={projectSlug} categoria={c.slug} />
+            <IndicadoresDaPublicacao
+              alvo={{ tipo: 'oferta', projectSlug, categoria: c.slug }}
+              projectId={projectId}
+              projectSlug={projectSlug}
+              titulo={`${c.nome} — 7 cartões personalizados`}
+              ligacao={`/${projectSlug}`}
+            />
 
             {/*
               O MERCADO PAGO DITO POR EXTENSO.

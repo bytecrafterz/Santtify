@@ -158,6 +158,119 @@ export class ProjetoSocialController {
 }
 
 /**
+ * A OFERTA DOS CARTÕES COMO PEÇA SOCIAL.
+ *
+ * "Têm que ter esta funções view like comentário compartilhamento" — 25/09,
+ * sobre o cartaz que entrou por baixo dos dias.
+ *
+ * Mesmas regras de todo o resto: ler é público, escrever exige conta. O alvo é a
+ * categoria — ver a nota no `SocialService`.
+ *
+ * O `view` é `@Post` e não `@Get` porque ESCREVE: regista o evento que faz o
+ * número do olho subir. Um GET que muda a base é o que faz um pré-carregador de
+ * navegador inflacionar contadores sozinho.
+ */
+@Controller('projects/:projectSlug/cartoes/:categoria/social')
+export class OfertaSocialController {
+  constructor(private readonly social: SocialService) {}
+
+  @Get()
+  @AuthOpcional()
+  @UseGuards(AuthGuard)
+  estado(
+    @Param('projectSlug') projectSlug: string,
+    @Param('categoria') categoria: string,
+    @Req() req: Request,
+  ) {
+    return this.social.estadoDaOferta(projectSlug, categoria, req.usuario?.id ?? null)
+  }
+
+  @Post('view')
+  @HttpCode(200)
+  @AuthOpcional()
+  @UseGuards(AuthGuard)
+  async ver(
+    @Param('projectSlug') projectSlug: string,
+    @Param('categoria') categoria: string,
+    @Req() req: Request,
+  ) {
+    const projeto = await this.social.idDoProjeto(projectSlug)
+    return this.social.verOferta(
+      projectSlug,
+      categoria,
+      contextoDaVisita(projeto, req),
+      req.usuario?.id ?? null,
+    )
+  }
+
+  @Post('like')
+  @HttpCode(200)
+  @UseGuards(AuthGuard)
+  async curtir(
+    @Param('projectSlug') projectSlug: string,
+    @Param('categoria') categoria: string,
+    @Req() req: Request,
+  ) {
+    const projeto = await this.social.idDoProjeto(projectSlug)
+    return this.social.alternarCurtidaDaOferta(
+      projectSlug,
+      categoria,
+      req.usuario!.id,
+      contextoDaVisita(projeto, req),
+    )
+  }
+
+  @Get('comments')
+  @AuthOpcional()
+  @UseGuards(AuthGuard)
+  comentarios(
+    @Param('projectSlug') projectSlug: string,
+    @Param('categoria') categoria: string,
+    @Req() req: Request,
+  ) {
+    return this.social.listarComentariosDaOferta(projectSlug, categoria, req.usuario?.id ?? null)
+  }
+
+  @Post('comments')
+  @UseGuards(AuthGuard)
+  async comentar(
+    @Param('projectSlug') projectSlug: string,
+    @Param('categoria') categoria: string,
+    @Body() dto: ComentarNoProjetoDto,
+    @Req() req: Request,
+  ) {
+    const projeto = await this.social.idDoProjeto(projectSlug)
+    return this.social.comentarNaOferta(
+      projectSlug,
+      categoria,
+      req.usuario!.id,
+      dto.body,
+      contextoDaVisita(projeto, req),
+      dto.parentId,
+    )
+  }
+
+  @Post('share')
+  @HttpCode(200)
+  @UseGuards(AuthGuard)
+  async compartilhar(
+    @Param('projectSlug') projectSlug: string,
+    @Param('categoria') categoria: string,
+    @Body() dto: CompartilharProjetoDto,
+    @Req() req: Request,
+  ) {
+    const projeto = await this.social.idDoProjeto(projectSlug)
+    return this.social.compartilharOferta(
+      projectSlug,
+      categoria,
+      req.usuario!.id,
+      dto.canal,
+      contextoDaVisita(projeto, req),
+    )
+  }
+}
+
+/**
  * Rotas sociais.
  *
  * Leitura é pública (`AuthOpcional`): quem chega pelo QR ainda não tem conta e

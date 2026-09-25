@@ -169,6 +169,40 @@ export const social = {
   // ── Por faixa (19/08) ─────────────────────────────────────────────
   estadoDaFaixa: (blockId: string) => chamar<EstadoDaFaixa>(`/blocks/${blockId}/social`),
 
+  /*
+    A OFERTA DOS CARTÕES — o cartaz por baixo dos dias.
+
+    Devolve o mesmo `EstadoDaFaixa` que a faixa e o perfil, de propósito: quem
+    desenha os quatro números é um componente só, e um formato próprio aqui
+    obrigaria a um ramo de tradução lá dentro.
+  */
+  estadoDaOferta: (projeto: string, categoria: string) =>
+    chamar<EstadoDaFaixa>(`/projects/${projeto}/cartoes/${categoria}/social`),
+
+  /** O cartaz entrou no ecrã. É POST porque escreve. */
+  verOferta: (projeto: string, categoria: string) =>
+    chamar<{ registado: boolean }>(`/projects/${projeto}/cartoes/${categoria}/social/view`, {
+      method: 'POST',
+    }),
+
+  curtirOferta: (projeto: string, categoria: string) =>
+    chamar<{ curtido: boolean; total: number }>(
+      `/projects/${projeto}/cartoes/${categoria}/social/like`,
+      { method: 'POST' },
+    ),
+
+  comentarNaOferta: (projeto: string, categoria: string, body: string, parentId?: string) =>
+    chamar<ComentarioDaFaixa>(`/projects/${projeto}/cartoes/${categoria}/social/comments`, {
+      method: 'POST',
+      body: JSON.stringify({ body, parentId }),
+    }),
+
+  compartilharOferta: (projeto: string, categoria: string, canal: CanalDeCompartilhamento) =>
+    chamar<{ url: string; code: string }>(
+      `/projects/${projeto}/cartoes/${categoria}/social/share`,
+      { method: 'POST', body: JSON.stringify({ canal }) },
+    ),
+
   curtirFaixa: (blockId: string, projectId: string) =>
     chamar<{ curtido: boolean; total: number }>(`/blocks/${blockId}/like`, {
       method: 'POST',

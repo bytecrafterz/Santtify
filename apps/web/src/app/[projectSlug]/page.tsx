@@ -288,7 +288,13 @@ export default async function IndiceDoProjeto({
         instalar e a pôr fotografia — conversa de plataforma. A oferta é conversa
         de produto, e vai primeiro.
       */}
-      {ofertas && <OfertaDeCartoes projectSlug={projectSlug} categorias={ofertas} />}
+      {ofertas && (
+        <OfertaDeCartoes
+          projectSlug={projectSlug}
+          projectId={project.id}
+          categorias={ofertas}
+        />
+      )}
 
       {/* O selo do Produto Vivo deixa de flutuar no fim da página: passou a
           ser um dos quatro acessos da barra de baixo, sempre à mão. */}

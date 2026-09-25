@@ -39,6 +39,20 @@ export type AlvoSocial =
    * fica para trás.
    */
   | { tipo: 'perfil'; userId: string }
+  /**
+   * A OFERTA DOS CARTÕES — o cartaz por baixo dos dias.
+   *
+   * "Têm que ter esta funções view like comentário compartilhamento" — 25/09.
+   *
+   * É a quarta vez que um alvo entra neste ficheiro, e a quarta vez que a
+   * alternativa era desenhar quatro números à mão noutro sítio. A nota acima diz
+   * o que acontece quando isso se faz: nasce mais um conjunto de `<span>` que
+   * parecem botões e não fazem nada.
+   *
+   * O alvo é a categoria e não o projeto: Crianças e Adultos têm cartazes
+   * diferentes, e portanto conversas diferentes.
+   */
+  | { tipo: 'oferta'; projectSlug: string; categoria: string }
 
 interface Pessoa {
   id: string
@@ -53,6 +67,20 @@ const VAZIO: EstadoDaFaixa = {
   compartilhamentos: 0,
   curtidoPorMim: false,
   lista: [],
+}
+
+/** A quem se pergunta o estado, conforme o alvo. Um sítio, quatro ramos. */
+function pedirEstado(alvo: AlvoSocial): Promise<EstadoDaFaixa> {
+  switch (alvo.tipo) {
+    case 'faixa':
+      return social.estadoDaFaixa(alvo.blockId)
+    case 'perfil':
+      return social.estadoDoPerfil(alvo.userId)
+    case 'oferta':
+      return social.estadoDaOferta(alvo.projectSlug, alvo.categoria)
+    default:
+      return social.estado(alvo.contentId)
+  }
 }
 
 export function IndicadoresDaPublicacao({
@@ -78,7 +106,13 @@ export function IndicadoresDaPublicacao({
   const [quemCurtiu, definirQuemCurtiu] = useState<Pessoa[] | null>(null)
 
   const chave =
-    alvo.tipo === 'faixa' ? alvo.blockId : alvo.tipo === 'perfil' ? alvo.userId : alvo.contentId
+    alvo.tipo === 'faixa'
+      ? alvo.blockId
+      : alvo.tipo === 'perfil'
+        ? alvo.userId
+        : alvo.tipo === 'oferta'
+          ? `${alvo.projectSlug}/${alvo.categoria}`
+          : alvo.contentId
 
   // Relê quando a sessão entra. O access token só vive em memória, e à primeira
   // leitura ainda não existe: sem isto o servidor responde como responde a um
@@ -93,26 +127,14 @@ export function IndicadoresDaPublicacao({
    */
   useEffect(() => {
     function releitura() {
-      const p =
-        alvo.tipo === 'faixa'
-          ? social.estadoDaFaixa(alvo.blockId)
-          : alvo.tipo === 'perfil'
-            ? social.estadoDoPerfil(alvo.userId)
-            : social.estado(alvo.contentId)
-      void p.then(definirEstado).catch(() => {})
+      void pedirEstado(alvo).then(definirEstado).catch(() => {})
     }
     window.addEventListener('pv:visita-registada', releitura)
     return () => window.removeEventListener('pv:visita-registada', releitura)
   }, [chave, alvo])
 
   useEffect(() => {
-    const pedido =
-      alvo.tipo === 'faixa'
-        ? social.estadoDaFaixa(alvo.blockId)
-        : alvo.tipo === 'perfil'
-          ? social.estadoDoPerfil(alvo.userId)
-          : social.estado(alvo.contentId)
-    void pedido.then(definirEstado).catch(() => {})
+    void pedirEstado(alvo).then(definirEstado).catch(() => {})
   }, [chave, alvo, usuario?.id])
 
   async function curtir() {
@@ -134,7 +156,9 @@ export function IndicadoresDaPublicacao({
           ? await social.curtirFaixa(alvo.blockId, projectId)
           : alvo.tipo === 'perfil'
             ? await social.curtirPerfil(alvo.userId)
-            : await social.curtir(alvo.contentId, projectId)
+            : alvo.tipo === 'oferta'
+              ? await social.curtirOferta(alvo.projectSlug, alvo.categoria)
+              : await social.curtir(alvo.contentId, projectId)
       definirEstado((e) => ({ ...e, curtidoPorMim: r.curtido, curtidas: r.total }))
       definirAviso(null)
     } catch {
@@ -151,7 +175,16 @@ export function IndicadoresDaPublicacao({
         ? `${base}/blocks/${alvo.blockId}/people`
         : alvo.tipo === 'perfil'
           ? `${base}/profiles/${alvo.userId}/people`
-          : `${base}/contents/${alvo.contentId}/people`
+          : alvo.tipo === 'oferta'
+            ? null
+            : `${base}/contents/${alvo.contentId}/people`
+    /*
+      A OFERTA AINDA NÃO TEM LISTA DE QUEM CURTIU, e o número dela não finge que
+      tem: sem endereço, o toque no número não abre uma folha vazia. A regra
+      dele de 25/08 — "não quero somente um número sem saber de onde ele veio" —
+      cumpre-se acrescentando a rota, e não um modal que diz "ainda ninguém".
+    */
+    if (!url) return
     try {
       const r = await fetch(url)
       const d = r.ok ? await r.json() : { curtiram: [] }
@@ -202,6 +235,13 @@ export function IndicadoresDaPublicacao({
       } catch {
         // fica o endereço simples
       }
+    } else if (alvo.tipo === 'oferta') {
+      try {
+        const curto = await social.compartilharOferta(alvo.projectSlug, alvo.categoria, 'WHATSAPP')
+        url = curto.url
+      } catch {
+        // fica o endereço simples
+      }
     }
     try {
       // Contar ANTES de partilhar contava também quem desistia. Cancelar
@@ -221,7 +261,8 @@ export function IndicadoresDaPublicacao({
         número inflacionado é tão inútil para uma apresentação como um a menos.
         A faixa e o perfil ainda não têm link próprio e continuam por evento.
       */
-      if (alvo.tipo !== 'conteudo') {
+      // A oferta também já ficou contada ao gerar o link curto, como o conteúdo.
+      if (alvo.tipo !== 'conteudo' && alvo.tipo !== 'oferta') {
         await rastrear({
           projectId,
           ...(alvo.tipo === 'faixa' ? { blockId: alvo.blockId } : {}),
@@ -372,7 +413,14 @@ export function IndicadoresDaPublicacao({
                 ? await social.comentarNaFaixa(alvo.blockId, projectId, t, parentId)
                 : alvo.tipo === 'perfil'
                   ? await social.comentarNoPerfil(alvo.userId, projectId, t, parentId)
-                  : await social.comentar(alvo.contentId, projectId, t, parentId)
+                  : alvo.tipo === 'oferta'
+                    ? await social.comentarNaOferta(
+                        alvo.projectSlug,
+                        alvo.categoria,
+                        t,
+                        parentId,
+                      )
+                    : await social.comentar(alvo.contentId, projectId, t, parentId)
             definirEstado((x) => ({
               ...x,
               comentarios: x.comentarios + 1,

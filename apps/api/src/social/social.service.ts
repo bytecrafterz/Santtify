@@ -566,6 +566,229 @@ export class SocialService {
     return { url: this.shortLinks.urlPublica(link.code), code: link.code }
   }
 
+  // ── A OFERTA DOS CARTÕES COMO PUBLICAÇÃO ────────────────────
+  //
+  // "Têm que ter esta funções view like comentário compartilhamento" — 25/09,
+  // sobre o cartaz que entrou por baixo dos dias.
+  //
+  // O alvo é a CATEGORIA, e não o projeto: Crianças e Adultos têm cartazes
+  // diferentes e terão conversas diferentes. Usar o projeto era mostrar os
+  // mesmos números duas vezes na mesma página — a camada social repetida de que
+  // ele se queixou em 30/08.
+  //
+  // Os quatro números contam-se na leitura, como todos os outros neste
+  // ficheiro. Ver a nota grande sobre `content_stats` lá em cima: nenhum deles
+  // é guardado, precisamente para nenhum deles poder ficar errado para sempre.
+
+  /** A oferta de uma categoria, só se ela estiver activa e tiver cartaz. */
+  private async ofertaPublicada(projectSlug: string, categoriaSlug: string) {
+    const projeto = await this.projetoPublicado(projectSlug)
+    const oferta = await this.prisma.categoriaDeCartoes.findUnique({
+      where: { projectId_slug: { projectId: projeto.id, slug: categoriaSlug } },
+      select: { id: true, slug: true, nome: true, ativo: true, capaUrl: true },
+    })
+    // Sem cartaz não há oferta no site, e portanto não há o que curtir.
+    if (!oferta || !oferta.ativo || !oferta.capaUrl) {
+      throw new NotFoundException('Oferta não encontrada')
+    }
+    return { projeto, oferta }
+  }
+
+  /** Os quatro números do cartaz, mais o "curtido por mim" de quem está a olhar. */
+  async estadoDaOferta(projectSlug: string, categoriaSlug: string, userId: string | null) {
+    const { oferta } = await this.ofertaPublicada(projectSlug, categoriaSlug)
+
+    const [views, likes, shares, minha, lista] = await Promise.all([
+      /*
+        As vistas do cartaz são os eventos que a página regista quando ele entra
+        no ecrã — e não as vistas da página. Quem abre a página e nunca desce até
+        ao cartaz não o viu, e contá-lo era inflacionar o número que ele vai usar
+        para decidir se a oferta funciona.
+      */
+      this.prisma.event.count({
+        where: { type: EventType.CONTENT_VIEW, props: { path: ['ofertaId'], equals: oferta.id } },
+      }),
+      this.prisma.reacaoDaOferta.count({ where: { ofertaId: oferta.id } }),
+      this.prisma.event.count({
+        where: { type: EventType.SHARE_CREATED, props: { path: ['ofertaId'], equals: oferta.id } },
+      }),
+      userId
+        ? this.prisma.reacaoDaOferta.findUnique({
+            where: {
+              ofertaId_userId_type: { ofertaId: oferta.id, userId, type: ReactionType.LIKE },
+            },
+            select: { id: true },
+          })
+        : null,
+      this.listarComentariosDaOferta(projectSlug, categoriaSlug, userId),
+    ])
+
+    /*
+      O ESTADO VEM NO MESMO FORMATO DA FAIXA E DO PERFIL, com os nomes em
+      português e com a lista dentro.
+
+      Não é gosto: `IndicadoresDaPublicacao` é o único sítio da aplicação que
+      desenha estes quatro números, e o próprio ficheiro explica porquê — já
+      houve três implementações e uma delas divergia sempre. Devolver aqui um
+      formato próprio obrigava a um quarto ramo de tradução lá dentro, que é
+      exactamente a semente dessa divergência.
+
+      O número de comentários sai da lista que segue junto, e não de uma contagem
+      à parte, pela mesma razão que na faixa: dois caminhos para o mesmo número
+      acabam a discordar, e foi assim que o card passou a dizer 78 com 76 na
+      lista.
+    */
+    return {
+      visualizacoes: views,
+      curtidas: likes,
+      comentarios: this.contagens.desenhaveis(lista),
+      compartilhamentos: shares,
+      curtidoPorMim: Boolean(minha),
+      lista,
+    }
+  }
+
+  /** O cartaz entrou no ecrã de alguém. */
+  async verOferta(
+    projectSlug: string,
+    categoriaSlug: string,
+    ctx: VisitContext,
+    userId: string | null,
+  ) {
+    const { projeto, oferta } = await this.ofertaPublicada(projectSlug, categoriaSlug)
+    const visita = await this.attribution.resolveVisit({ ...ctx, projectId: projeto.id, userId })
+    await this.events.registrar({
+      type: EventType.CONTENT_VIEW,
+      attribution: { ...visita.attribution, ...(userId ? { userId } : {}) },
+      props: { ofertaId: oferta.id, oferta: oferta.slug },
+    })
+    return { registado: true }
+  }
+
+  /** Curtir ou descurtir o cartaz. Devolve o total já recontado. */
+  async alternarCurtidaDaOferta(
+    projectSlug: string,
+    categoriaSlug: string,
+    userId: string,
+    ctx: VisitContext,
+  ) {
+    const { projeto, oferta } = await this.ofertaPublicada(projectSlug, categoriaSlug)
+    const visita = await this.attribution.resolveVisit({ ...ctx, projectId: projeto.id, userId })
+    const atribuicao = { ...visita.attribution, userId }
+
+    const existente = await this.prisma.reacaoDaOferta.findUnique({
+      where: { ofertaId_userId_type: { ofertaId: oferta.id, userId, type: ReactionType.LIKE } },
+    })
+
+    if (existente) {
+      await this.prisma.reacaoDaOferta.delete({ where: { id: existente.id } })
+      await this.events.registrar({ type: EventType.UNLIKE, attribution: atribuicao })
+    } else {
+      await this.prisma.reacaoDaOferta.create({
+        data: { ofertaId: oferta.id, userId, type: ReactionType.LIKE },
+      })
+      await this.events.registrar({ type: EventType.LIKE, attribution: atribuicao })
+    }
+
+    const estado = await this.estadoDaOferta(projectSlug, categoriaSlug, userId)
+    return { curtido: !existente, total: estado.curtidas }
+  }
+
+  async listarComentariosDaOferta(
+    projectSlug: string,
+    categoriaSlug: string,
+    leitorId: string | null = null,
+  ) {
+    const { oferta } = await this.ofertaPublicada(projectSlug, categoriaSlug)
+    const escondidos = await this.bloqueadosPor(leitorId)
+    const lista = await this.prisma.comment.findMany({
+      where: {
+        ofertaId: oferta.id,
+        status: 'PUBLISHED',
+        user: { is: { status: 'ACTIVE' } },
+        ...(escondidos.length ? { userId: { notIn: escondidos } } : {}),
+        OR: [{ parentId: null }, { parent: { is: { status: 'PUBLISHED' } } }],
+      },
+      orderBy: { createdAt: 'desc' },
+      take: 300,
+      select: this.selecaoDeComentario,
+    })
+    return this.comSinalDeCurtida(lista, leitorId)
+  }
+
+  async comentarNaOferta(
+    projectSlug: string,
+    categoriaSlug: string,
+    userId: string,
+    corpo: string,
+    ctx: VisitContext,
+    parentId?: string,
+  ) {
+    const { projeto, oferta } = await this.ofertaPublicada(projectSlug, categoriaSlug)
+    const visita = await this.attribution.resolveVisit({ ...ctx, projectId: projeto.id, userId })
+
+    /*
+      `projectId` vai preenchido de propósito, e não só `ofertaId`.
+
+      É o que põe este comentário na fila de moderação do projeto e no acumulado
+      do card — "o total de tudo o que está dentro do projeto", palavras dele em
+      21/09. A oferta está dentro do projeto.
+    */
+    const comentario = await this.prisma.comment.create({
+      data: { projectId: projeto.id, ofertaId: oferta.id, userId, body: corpo.trim(), parentId },
+      select: this.selecaoDeComentario,
+    })
+
+    await this.events.registrar({
+      type: EventType.COMMENT,
+      attribution: { ...visita.attribution, userId },
+      props: { ofertaId: oferta.id },
+    })
+
+    return comentario
+  }
+
+  /** Partilhar o cartaz: link curto que leva à página do projeto. */
+  async compartilharOferta(
+    projectSlug: string,
+    categoriaSlug: string,
+    userId: string,
+    canal: Platform,
+    ctx: VisitContext,
+  ): Promise<{ url: string; code: string }> {
+    const { projeto, oferta } = await this.ofertaPublicada(projectSlug, categoriaSlug)
+    const visita = await this.attribution.resolveVisit({ ...ctx, projectId: projeto.id, userId })
+
+    const origem =
+      visita.visitor.acquiredViaLinkId ??
+      (
+        await this.prisma.visitor.findFirst({
+          where: { userId, acquiredViaLinkId: { not: null } },
+          orderBy: { firstSeenAt: 'asc' },
+          select: { acquiredViaLinkId: true },
+        })
+      )?.acquiredViaLinkId ??
+      null
+
+    const link = await this.shortLinks.criarCompartilhamento({
+      projectId: projeto.id,
+      contentId: null,
+      userId,
+      channel: canal,
+      linkDeOrigemId: origem,
+      targetPath: `/${projeto.slug}`,
+    })
+
+    await this.prisma.share.create({ data: { userId, shortLinkId: link.id, channel: canal } })
+    await this.events.registrar({
+      type: EventType.SHARE_CREATED,
+      attribution: { ...visita.attribution, userId },
+      props: { canal, ofertaId: oferta.id, oferta: oferta.slug },
+    })
+
+    return { url: this.shortLinks.urlPublica(link.code), code: link.code }
+  }
+
   // ── O comentário como objecto social ─────────────────────────────────
   //
   // Pedido dele em 20/08: curtir, responder, editar e apagar. Responder já

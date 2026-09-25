@@ -11466,3 +11466,9 @@ body:has(.painel-karaoke) {
 /* O áudio da oferta, do lado do painel: o tocador do navegador chega, porque
    quem o ouve aqui é ele, uma vez, para conferir o que enviou. */
 .painel-audio { width: 100%; margin: 6px 0; }
+
+/* A marca invisível que conta a vista do cartaz. Ocupa o lugar de nada. */
+.vista-da-oferta { display: block; height: 0; }
+
+/* Os quatro indicadores, quando estao debaixo do cartaz. */
+.oferta-item .indicadores-publicacao { margin-top: 2px; }
