@@ -121,16 +121,29 @@ ok('sete modelos', modelos.length === 7)
 ok('os sete com arte carregada', modelos.filter((m) => m.arteUrl).length === 7)
 ok('nenhum com aviso de arte em falta', modelos.every((m) => !m.aviso))
 
-/* As medidas medidas na arte em 23/09. Se estes números mudarem sem ninguém
-   ter ido ao painel, alguma coisa lhes passou por cima. */
-const m1 = modelos.find((m) => m.dia === 1)
-ok('moldura da foto intacta',
-   m1.fotoX === 66 && m1.fotoY === 62 && m1.fotoLargura === 78 && m1.fotoAltura === 96 &&
-   m1.fotoFormato === 'RETANGULO',
-   `${m1.fotoX},${m1.fotoY} ${m1.fotoLargura}×${m1.fotoAltura} ${m1.fotoFormato}`)
-ok('caixa do nome intacta',
-   m1.nomeX === 60 && m1.nomeY === 151 && m1.nomeLargura === 90 && m1.nomeAltura === 20,
-   `${m1.nomeX},${m1.nomeY} ${m1.nomeLargura}×${m1.nomeAltura}`)
+/* As medidas tiradas da arte LIMPA em 25/09, uma por dia: cada arte tem o céu
+   e a caixa branca num sítio ligeiramente diferente. Se estes números mudarem
+   sem ninguém ter ido ao painel, alguma coisa lhes passou por cima. */
+const MEDIDAS = {
+  1: [68.7, 64.5, 73.3, 92, 72.8, 160.6, 68, 10.7],
+  2: [66.5, 65.9, 76.9, 91.7, 72.3, 161.6, 67.7, 10.7],
+  3: [66.6, 63.5, 74.8, 91.2, 71.6, 158.6, 68, 10.7],
+  4: [66.5, 67.8, 75.2, 89.6, 71.4, 161.4, 68.2, 10.7],
+  5: [68.7, 65.2, 73.3, 89.2, 71.8, 158.4, 68.2, 10.7],
+  6: [68.7, 65.8, 73.3, 90.6, 72.1, 160.4, 68.2, 10.7],
+  7: [64.9, 66.8, 81.1, 95, 72.3, 165.8, 68.2, 10.7],
+}
+const geometria = (m) => [m.fotoX, m.fotoY, m.fotoLargura, m.fotoAltura, m.nomeX, m.nomeY, m.nomeLargura, m.nomeAltura]
+const fora = modelos.filter((m) => geometria(m).join() !== (MEDIDAS[m.dia] ?? []).join() || m.fotoFormato !== 'RETANGULO')
+ok('moldura e caixa do nome intactas nos sete',
+   fora.length === 0,
+   fora.length ? fora.map((m) => `Dia ${m.dia}: ${geometria(m).join(',')}`).join(' · ') : 'medidas da arte limpa')
+
+/* A foto não pode invadir a caixa do nome — era o defeito da arte antiga. */
+const invadem = modelos.filter((m) => m.fotoY + m.fotoAltura > m.nomeY)
+ok('nenhuma foto por cima do nome',
+   invadem.length === 0,
+   invadem.map((m) => `Dia ${m.dia}`).join(' ') || 'folga em todos')
 
 const preco = await ch(`/admin/projects/${CARTOES}/preco-de-cartoes`)
 ok('preço e desconto',
