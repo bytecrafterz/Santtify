@@ -12069,10 +12069,20 @@ body:has(.painel-karaoke) {
   place-items: center;
   padding: 16px;
   touch-action: none;
+  /* Para a folha se medir pela altura que sobra, e não só pela largura. */
+  container-type: size;
 }
 
+/*
+  A 1x, A FOLHA INTEIRA CABE NO ECRÃ.
+
+  Media-se só pela largura, e num telemóvel um A4 com a largura do ecrã é mais
+  alto do que o espaço entre o topo e os botões: o fundo do cartão ficava
+  cortado (25/09). Agora é o menor dos três — a largura, 520px, ou a altura
+  disponível convertida na largura de um A4.
+*/
 .lupa-folha {
-  width: min(100%, 520px);
+  width: min(100cqw, 520px, 100cqh * 210 / 297);
   transform-origin: center center;
   /* Ampliar tem de mostrar os pixéis como eles são. Suavizar a 8× esconderia
      exactamente o grão que ela veio verificar. */
