@@ -6,7 +6,7 @@ import {
   NotFoundException,
 } from '@nestjs/common'
 import { ConfigService } from '@nestjs/config'
-import { EstadoDoPedido, MeioDePagamento, type Prisma } from '@pv/db'
+import { AlinhamentoDoNome, EstadoDoPedido, MeioDePagamento, type Prisma } from '@pv/db'
 import {
   avaliarFoto,
   calcularPreco,
@@ -286,6 +286,8 @@ export class CartoesService {
         fotoAltura: c.fotoAltura,
         ajuste: { escala: c.escala, deslocX: c.deslocX, deslocY: c.deslocY } satisfies Ajuste,
         tamanhoDoNome: c.tamanhoDoNome,
+        nomeAlinhamento: c.nomeAlinhamento,
+        nomeCorHex: c.nomeCorHex,
         dpi: c.dpi,
         nivel: c.nivel,
         aprovada: c.aprovada,
@@ -399,6 +401,8 @@ export class CartoesService {
       deslocX?: number
       deslocY?: number
       tamanhoDoNome?: number
+      nomeAlinhamento?: AlinhamentoDoNome
+      nomeCorHex?: string | null
       selecionada?: boolean
       confirmada?: boolean
     },
@@ -422,6 +426,18 @@ export class CartoesService {
     if (dados.deslocY !== undefined) alteracoes.deslocY = Math.min(1, Math.max(-1, dados.deslocY))
     if (dados.tamanhoDoNome !== undefined) {
       alteracoes.tamanhoDoNome = Math.min(1, Math.max(0, dados.tamanhoDoNome))
+    }
+    if (dados.nomeAlinhamento !== undefined) alteracoes.nomeAlinhamento = dados.nomeAlinhamento
+    if (dados.nomeCorHex !== undefined) {
+      /*
+        SÓ ENTRA UMA COR QUE SEJA MESMO UMA COR.
+
+        Isto acaba num `drawText` do PDF e numa folha que vai para a gráfica.
+        Uma cadeia qualquer aqui era, na melhor das hipóteses, um cartão com o
+        nome cinzento; validar na entrada custa uma linha.
+      */
+      const limpa = dados.nomeCorHex?.trim() ?? null
+      alteracoes.nomeCorHex = limpa && /^#[0-9a-fA-F]{6}$/.test(limpa) ? limpa.toUpperCase() : null
     }
 
     if (dados.selecionada !== undefined) {
@@ -747,6 +763,8 @@ export class CartoesService {
         moldura: molduraDoModelo,
         nome: crianca.nome,
         tamanhoDoNome: crianca.tamanhoDoNome,
+        nomeAlinhamento: crianca.nomeAlinhamento,
+        nomeCorHex: crianca.nomeCorHex,
         caixa: {
           nomeX: modelo.nomeX,
           nomeY: modelo.nomeY,

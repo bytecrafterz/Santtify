@@ -1722,6 +1722,13 @@ model PrecoDeCartoes {
   @@map("precos_de_cartoes")
 }
 
+/// Onde o nome assenta dentro da caixa do modelo.
+enum AlinhamentoDoNome {
+  ESQUERDA
+  CENTRO
+  DIREITA
+}
+
 /// Por onde o pedido passa, do rascunho ao expurgo.
 enum EstadoDoPedido {
   RASCUNHO
@@ -1823,6 +1830,20 @@ model CriancaDoPedido {
   deslocX       Float @default(0)
   deslocY       Float @default(0)
   tamanhoDoNome Float @default(0.6)
+
+  /// Onde o nome assenta dentro da caixa que o modelo reservou.
+  ///
+  /// Pedido dele em 25/09, no desenho do editor novo: tocar no nome mostra "as
+  /// ferramentas necessárias para ajustar tamanho e posição". Até aqui o nome
+  /// era sempre centrado, e centrar é quase sempre o certo — por isso continua a
+  /// ser o que nasce por omissão.
+  nomeAlinhamento AlinhamentoDoNome @default(CENTRO)
+
+  /// A cor que a família escolheu. Nulo = a que o modelo traz.
+  ///
+  /// Nulo é diferente de igual: uma arte que amanhã mude a cor do nome leva
+  /// consigo todos os cartões que não escolheram cor, e só esses.
+  nomeCorHex String?
 
   /// O veredicto da última avaliação, para o ecrã não ter de recalcular.
   dpi   Int?

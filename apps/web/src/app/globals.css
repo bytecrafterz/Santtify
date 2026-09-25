@@ -11472,3 +11472,360 @@ body:has(.painel-karaoke) {
 
 /* Os quatro indicadores, quando estao debaixo do cartaz. */
 .oferta-item .indicadores-publicacao { margin-top: 2px; }
+
+/* ═══════════════════════════════════════════════════════════════════
+   O CARTÃO COMO EDITOR
+   ═══════════════════════════════════════════════════════════════════
+
+   Pedido dele em 25/09, depois de se perder no editor anterior: "A
+   personalização precisa acontecer diretamente no próprio cartão, sem a pessoa
+   precisar procurar funções em outras partes da página, rolar a tela ou entrar
+   em outras etapas."
+
+   Tudo o que começa por `ce-` vive dentro de um cartão e desaparece com ele.
+   Nada aqui é partilhado com o resto da aplicação, de propósito: é o desenho de
+   uma peça só, e pô-lo no vocabulário comum era convidar a próxima página a
+   herdar decisões que só fazem sentido aqui.
+*/
+
+.editor-cartoes-uma-tela {
+  display: grid;
+  gap: 14px;
+}
+
+.ce {
+  display: grid;
+  gap: 12px;
+  /* Sem isto, arrastar a foto no telemóvel rola a página por baixo do dedo. */
+  touch-action: pan-y;
+  user-select: none;
+}
+
+/*
+  A FAIXA DOS SETE, COM OS VIZINHOS À ESPREITA.
+
+  "Deixe uma pequena parte do próximo cartão aparecendo na lateral" — os 8% de
+  cada lado são isso, e são o que diz que há mais cartões sem uma palavra
+  escrita. Sai das margens da página para os ganhar sem apertar o do meio.
+*/
+.ce-faixa {
+  margin-inline: -20px;
+  overflow: hidden;
+}
+
+.ce-trilho {
+  display: flex;
+  align-items: flex-start;
+  will-change: transform;
+}
+
+.ce-casa {
+  flex: 0 0 100%;
+  padding-inline: 8%;
+}
+
+/* O vizinho recua: está lá, mas não disputa a atenção com o que se edita. */
+.ce-casa[aria-hidden='true'] .ce-folha {
+  opacity: 0.45;
+  transform: scale(0.94);
+  transition:
+    opacity 0.28s ease,
+    transform 0.28s ease;
+}
+
+.ce-folha {
+  position: relative;
+  width: 100%;
+  overflow: hidden;
+  background: var(--cor-superficie);
+  border-radius: 12px;
+  box-shadow: 0 8px 28px rgb(0 0 0 / 18%);
+}
+
+.ce-arte {
+  position: absolute;
+  inset: 0;
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: fill;
+}
+
+.ce-sem-arte {
+  display: grid;
+  height: 100%;
+  padding: 24px;
+  font-size: 0.9rem;
+  color: var(--cor-texto-suave);
+  text-align: center;
+  place-items: center;
+}
+
+/*
+  OS DOIS ALVOS: a moldura da foto e a caixa do nome.
+
+  O tracejado só aparece a quem está a editar. Quem chega ao cartão vê o cartão;
+  quem toca vê o que apanhou. Um cartão coberto de caixas tracejadas assusta
+  antes de ajudar, e isto é para uma mãe que nunca usou um editor.
+*/
+.ce-alvo {
+  position: absolute;
+  cursor: pointer;
+  border: 2px dashed transparent;
+  border-radius: 6px;
+  transition: border-color 0.15s ease;
+}
+
+.ce-alvo-foto {
+  overflow: hidden;
+  background: rgb(255 255 255 / 55%);
+}
+
+.ce-alvo-foto.redonda { border-radius: 50%; }
+
+.ce-alvo-foto img {
+  position: absolute;
+  max-width: none;
+  pointer-events: none;
+}
+
+.ce-alvo.escolhido {
+  border-color: #1d6dff;
+  box-shadow: 0 0 0 3px rgb(29 109 255 / 22%);
+}
+
+/* Os punhos dos cantos, como num editor de imagem: dizem "isto pega-se". */
+.ce-alvo.escolhido::before,
+.ce-alvo.escolhido::after {
+  position: absolute;
+  width: 9px;
+  height: 9px;
+  content: '';
+  background: #fff;
+  border: 2px solid #1d6dff;
+  border-radius: 50%;
+}
+
+.ce-alvo.escolhido::before {
+  top: -6px;
+  left: -6px;
+}
+
+.ce-alvo.escolhido::after {
+  right: -6px;
+  bottom: -6px;
+}
+
+/* "Deixa a foto e o nome em branco" — o lugar vazio diz o que fazer com ele. */
+.ce-vazio {
+  display: grid;
+  gap: 2px;
+  place-content: center;
+  place-items: center;
+  height: 100%;
+  font-size: clamp(0.6rem, 2.6vw, 0.85rem);
+  font-weight: 800;
+  line-height: 1.15;
+  color: #1d6dff;
+  text-align: center;
+  text-transform: uppercase;
+}
+
+.ce-vazio-icone { font-size: 1.6em; }
+
+.ce-alvo-nome {
+  display: flex;
+  align-items: center;
+}
+
+.ce-nome,
+.ce-campo-nome {
+  display: flex;
+  align-items: center;
+  width: 100%;
+  font-family: Arial, Helvetica, sans-serif;
+  font-weight: 700;
+  line-height: 1;
+  white-space: nowrap;
+}
+
+.ce-nome { overflow: hidden; }
+
+.ce-nome-vazio {
+  justify-content: center !important;
+  color: #1d6dff;
+  text-transform: uppercase;
+  opacity: 0.75;
+}
+
+.ce-campo-nome {
+  padding: 0;
+  background: none;
+  border: 0;
+  outline: none;
+}
+
+/*
+  AS FERRAMENTAS NASCEM COLADAS AO QUE EDITAM.
+
+  A da foto pousa sobre o topo da moldura, a do nome logo por baixo da caixa do
+  nome — as duas centradas no cartão. É a regra dele: "As ferramentas aparecem
+  junto da foto." Nenhuma existe antes de se tocar no pedaço a que pertence.
+*/
+.ce-barra {
+  position: absolute;
+  z-index: 3;
+  display: grid;
+  gap: 8px;
+  justify-items: center;
+  transform: translateX(-50%);
+}
+
+/* A da foto sobe para fora da moldura, para não tapar a cara da criança. */
+.ce-barra-foto { transform: translate(-50%, calc(-100% - 8px)); }
+
+.ce-ferramentas {
+  display: flex;
+  gap: 2px;
+  padding: 5px;
+  background: rgb(17 20 27 / 92%);
+  border-radius: 12px;
+  box-shadow: 0 6px 18px rgb(0 0 0 / 35%);
+}
+
+.ce-ferramenta {
+  display: grid;
+  gap: 1px;
+  place-items: center;
+  min-width: 46px;
+  padding: 5px 6px;
+  font: inherit;
+  font-size: 0.6rem;
+  font-weight: 600;
+  color: #fff;
+  cursor: pointer;
+  background: none;
+  border: 0;
+  border-radius: 9px;
+}
+
+.ce-ferramenta .ce-simbolo { font-size: 1.05rem; line-height: 1.1; }
+.ce-ferramenta.activa { background: #1d6dff; }
+.ce-ferramenta:disabled { cursor: not-allowed; opacity: 0.35; }
+
+@media (hover: hover) {
+  .ce-ferramenta:hover:not(:disabled) { background: rgb(255 255 255 / 16%); }
+  .ce-ferramenta.activa:hover { background: #1d6dff; }
+}
+
+/* As setas do "Mover": cruz de quatro, como um comando de jogo. */
+.ce-setas {
+  display: grid;
+  grid-template-areas:
+    '. cima .'
+    'esq . dir'
+    '. baixo .';
+  gap: 3px;
+  padding: 5px;
+  background: rgb(17 20 27 / 92%);
+  border-radius: 12px;
+}
+
+.ce-setas button {
+  width: 34px;
+  height: 34px;
+  font: inherit;
+  font-size: 1rem;
+  color: #fff;
+  cursor: pointer;
+  background: rgb(255 255 255 / 12%);
+  border: 0;
+  border-radius: 8px;
+}
+
+.ce-setas button:nth-child(1) { grid-area: cima; }
+.ce-setas button:nth-child(2) { grid-area: esq; }
+.ce-setas button:nth-child(3) { grid-area: dir; }
+.ce-setas button:nth-child(4) { grid-area: baixo; }
+
+.ce-paleta {
+  display: flex;
+  gap: 6px;
+  padding: 6px;
+  background: rgb(17 20 27 / 92%);
+  border-radius: 12px;
+}
+
+.ce-paleta button {
+  width: 28px;
+  height: 28px;
+  cursor: pointer;
+  border: 2px solid rgb(255 255 255 / 45%);
+  border-radius: 50%;
+}
+
+.ce-paleta button.activa {
+  border-color: #fff;
+  box-shadow: 0 0 0 2px #1d6dff;
+}
+
+/*
+  "‹ ● ○ ○ ○ ○ ○ ○ ›  1 de 7" — desenhado como ele o escreveu.
+*/
+.ce-passos {
+  display: flex;
+  gap: 10px;
+  align-items: center;
+  justify-content: center;
+  padding: 8px 14px;
+  margin-inline: auto;
+  background: var(--cor-superficie);
+  border: 1px solid var(--cor-borda);
+  border-radius: 999px;
+}
+
+.ce-seta {
+  display: grid;
+  place-items: center;
+  width: 32px;
+  height: 32px;
+  padding: 0;
+  font: inherit;
+  font-size: 1.35rem;
+  line-height: 1;
+  color: var(--cor-texto);
+  cursor: pointer;
+  background: none;
+  border: 0;
+}
+
+.ce-seta:disabled { cursor: not-allowed; opacity: 0.25; }
+
+.ce-bolinhas { display: flex; gap: 7px; align-items: center; }
+
+.ce-bolinhas button {
+  width: 9px;
+  height: 9px;
+  padding: 0;
+  cursor: pointer;
+  background: var(--cor-borda);
+  border: 0;
+  border-radius: 50%;
+  transition:
+    background 0.15s ease,
+    transform 0.15s ease;
+}
+
+.ce-bolinhas button.activa {
+  background: var(--cor-primaria);
+  transform: scale(1.35);
+}
+
+.ce-conta {
+  font-size: 0.82rem;
+  font-variant-numeric: tabular-nums;
+  color: var(--cor-texto-suave);
+}
+
+.ce-salvar { margin-top: 0; }
+.ce-falta { margin: 0; text-align: center; }

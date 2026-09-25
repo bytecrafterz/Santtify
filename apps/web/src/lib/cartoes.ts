@@ -6,6 +6,7 @@ const API_URL = process.env.NEXT_PUBLIC_API_URL ?? 'http://localhost:3333/api'
 
 export type FormatoDaMoldura = 'CIRCULO' | 'ELIPSE' | 'RETANGULO'
 export type NivelDeQualidade = 'BOA' | 'ACEITAVEL' | 'INSUFICIENTE'
+export type AlinhamentoDoNome = 'ESQUERDA' | 'CENTRO' | 'DIREITA'
 export type EstadoDoPedido =
   | 'RASCUNHO'
   | 'AGUARDANDO_PAGAMENTO'
@@ -49,6 +50,10 @@ export interface CriancaDoPedido {
   fotoAltura: number | null
   ajuste: { escala: number; deslocX: number; deslocY: number }
   tamanhoDoNome: number
+  /** Onde o nome assenta na caixa do modelo. */
+  nomeAlinhamento: AlinhamentoDoNome
+  /** A cor escolhida por quem compra. Nula = a que o modelo traz. */
+  nomeCorHex: string | null
   dpi: number | null
   nivel: NivelDeQualidade | null
   aprovada: boolean
@@ -209,6 +214,8 @@ export const cartoes = {
       deslocX: number
       deslocY: number
       tamanhoDoNome: number
+      nomeAlinhamento: AlinhamentoDoNome
+      nomeCorHex: string | null
       selecionada: boolean
       confirmada: boolean
     }>,

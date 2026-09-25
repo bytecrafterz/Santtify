@@ -2,14 +2,6 @@
 
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import {
-  A4_MM,
-  ajusteNeutro,
-  avaliarFoto,
-  corpoDoNome,
-  enquadrar,
-  type Ajuste,
-} from '@pv/cartoes'
-import {
   cartoes,
   type Categoria,
   type CriancaDoPedido,
@@ -19,6 +11,7 @@ import {
 import { ErroDeApi } from '@/lib/auth'
 import { useAuth } from './ProvedorDeAuth'
 import { EntregaDosCartoes } from './EntregaDosCartoes'
+import { CartaoComoEditor } from './CartaoComoEditor'
 import { Voltar } from './Voltar'
 
 /**
@@ -43,9 +36,6 @@ import { Voltar } from './Voltar'
  */
 
 type Passo = 'categoria' | 'quantidade' | 'fotos' | 'selecao' | 'pagamento' | 'editor' | 'pronto'
-
-/** Quanto tempo se espera antes de mandar um ajuste ao servidor. */
-const ESPERA_ANTES_DE_GRAVAR = 400
 
 /**
  * Onde fica guardado o pedido em curso, por projeto.
@@ -106,13 +96,11 @@ export function EditorDeCartoes({
   const [passo, definirPasso] = useState<Passo>('categoria')
   const [quantidade, definirQuantidade] = useState(1)
   const [activa, definirActiva] = useState<string | null>(null)
-  const [modeloActivo, definirModeloActivo] = useState(0)
   const [erro, definirErro] = useState<string | null>(null)
   const [ocupado, definirOcupado] = useState<string | null>(null)
   const { usuario } = useAuth()
   const [email, definirEmail] = useState('')
   const [pixCopiado, definirPixCopiado] = useState(false)
-  const [ampliado, definirAmpliado] = useState(false)
   const [categorias, definirCategorias] = useState<Categoria[] | null>(null)
   const [categoria, definirCategoria] = useState<string | null>(null)
 
@@ -180,8 +168,23 @@ export function EditorDeCartoes({
         definirPedido(p)
         definirCategoria(p.categoria?.slug ?? null)
         const porConfirmar = p.criancas.find((c) => c.selecionada && !c.confirmada)
+        /*
+          UM RASCUNHO RETOMA NO CARTÃO, e não no passo das fotos nem no da
+          escolha. Desde 25/09 esses passos deixaram de existir no caminho
+          normal — o cartão é o editor — e mandar quem volta para lá era
+          ressuscitá-los.
+
+          Um pedido com mais do que uma criança ainda usa os ecrãs antigos: foram
+          feitos antes desta mudança e há pedidos assim guardados em telemóveis.
+          Quebrá-los para arrumar código seria trocar o cliente pelo repositório.
+        */
         if (p.estado === 'RASCUNHO') {
-          definirPasso(p.criancas.some((c) => c.aprovada) ? 'selecao' : 'fotos')
+          if (p.criancas.length === 1) {
+            definirActiva(p.criancas[0].id)
+            definirPasso('editor')
+          } else {
+            definirPasso(p.criancas.some((c) => c.aprovada) ? 'selecao' : 'fotos')
+          }
         } else if (porConfirmar) {
           definirActiva(porConfirmar.id)
           definirPasso('editor')
@@ -194,6 +197,41 @@ export function EditorDeCartoes({
       vivo = false
     }
   }, [projectSlug])
+
+  /**
+   * ESCOLHIDA A CATEGORIA, O CARTÃO ABRE. Não há nada a perguntar antes.
+   *
+   * Havia: "quantas crianças?", depois "envie as fotos", depois "escolha quais
+   * quer produzir", e só então o cartão. Três ecrãs de perguntas antes de se ver
+   * o que se está a comprar — e ele em 25/09: "Não quero várias telas, vários
+   * blocos ou ferramentas espalhadas. O próprio cartão deve funcionar como
+   * editor."
+   *
+   * Uma criança, porque é o que o cartaz vende: "7 cartões personalizados A4 com
+   * a foto + nome da criança", R$ 49. Quem quiser um segundo conjunto faz outro
+   * pedido no fim, que é o botão que já lá está.
+   *
+   * O rascunho nasce a pedido do dedo dela — ao abrir a página — e não é uma
+   * compra: sem foto e sem nome não segue para lado nenhum, e o expurgo leva-o.
+   */
+  const aCriar = useRef(false)
+  useEffect(() => {
+    if (pedido || !categoria || aCriar.current) return
+    if (pedidoGuardado(projectSlug)) return
+    aCriar.current = true
+    cartoes
+      .criarPedido(projectSlug, 1, categoria)
+      .then((novo) => {
+        definirPedido(novo)
+        guardarPedido(projectSlug, novo.id)
+        definirActiva(novo.criancas[0]?.id ?? null)
+        definirPasso('editor')
+      })
+      .catch((e) => {
+        aCriar.current = false
+        definirErro(e instanceof ErroDeApi ? e.message : 'Não foi possível começar o pedido.')
+      })
+  }, [projectSlug, categoria, pedido])
 
   const crianca = useMemo(
     () => pedido?.criancas.find((c) => c.id === activa) ?? null,
@@ -691,33 +729,39 @@ export function EditorDeCartoes({
 
   if (passo === 'editor' && crianca) {
     return (
-      <div className="editor-cartoes">
+      <div className="editor-cartoes editor-cartoes-uma-tela">
         <Cabecalho projectSlug={projectSlug} />
-        <Editor
+        {erro && <p className="cartoes-erro">{erro}</p>}
+        <CartaoComoEditor
           projectSlug={projectSlug}
-          pedido={pedido}
+          pedidoId={pedido.id}
           crianca={crianca}
           modelos={modelos}
-          modeloActivo={modeloActivo}
-          ampliado={ampliado}
-          erro={erro}
-          ocupado={ocupado}
-          aoMudarModelo={definirModeloActivo}
-          aoAmpliar={definirAmpliado}
-          aoMudarPedido={definirPedido}
+          aSalvar={ocupado === 'salvar'}
+          aoMudarCrianca={(nova) =>
+            definirPedido({
+              ...pedido,
+              criancas: pedido.criancas.map((c) => (c.id === nova.id ? nova : c)),
+            })
+          }
           aoErrar={definirErro}
-          aoOcupar={definirOcupado}
-          aoTerminar={() => {
-            const restantes = pedido.criancas.filter(
-              (c) => c.selecionada && !c.confirmada && c.id !== crianca.id,
-            )
-            if (restantes.length > 0) {
-              definirActiva(restantes[0].id)
-              definirModeloActivo(0)
-            } else {
-              definirPasso('pronto')
-            }
-          }}
+          /*
+            "Editou finalizou ai vem o pagamento" — 24/09.
+
+            Salvar marca a criança como escolhida e confirmada e leva ao
+            pagamento. São as duas marcas que o servidor exige para cobrar, e
+            pôr as duas aqui é o que apaga os dois ecrãs que as pediam antes.
+          */
+          aoSalvar={() =>
+            comErro('salvar', async () => {
+              const p = await cartoes.actualizar(projectSlug, pedido.id, crianca.id, {
+                selecionada: true,
+                confirmada: true,
+              })
+              definirPedido(p)
+              definirPasso('pagamento')
+            })
+          }
         />
       </div>
     )
@@ -761,7 +805,6 @@ export function EditorDeCartoes({
             guardarPedido(projectSlug, null)
             definirPedido(null)
             definirActiva(null)
-            definirModeloActivo(0)
             definirQuantidade(1)
             definirPasso(categorias && categorias.length > 1 ? 'categoria' : 'quantidade')
           }}
@@ -1037,488 +1080,5 @@ function CaixaDaCrianca({
         </p>
       )}
     </li>
-  )
-}
-
-/**
- * O editor propriamente dito: um nome, um enquadramento, sete cartões.
- *
- * Cada mexida altera o estado local de imediato e só depois vai ao servidor,
- * com uma espera. Sem a espera, arrastar a fotografia mandaria um pedido por
- * cada pixel percorrido.
- */
-function Editor({
-  projectSlug,
-  pedido,
-  crianca,
-  modelos,
-  modeloActivo,
-  ampliado,
-  erro,
-  ocupado,
-  aoMudarModelo,
-  aoAmpliar,
-  aoMudarPedido,
-  aoErrar,
-  aoOcupar,
-  aoTerminar,
-}: {
-  projectSlug: string
-  pedido: Pedido
-  crianca: CriancaDoPedido
-  modelos: ModeloDeCartao[]
-  modeloActivo: number
-  ampliado: boolean
-  erro: string | null
-  ocupado: string | null
-  aoMudarModelo: (i: number) => void
-  aoAmpliar: (v: boolean) => void
-  aoMudarPedido: (p: Pedido) => void
-  aoErrar: (v: string | null) => void
-  aoOcupar: (v: string | null) => void
-  aoTerminar: () => void
-}) {
-  const [nome, definirNome] = useState(crianca.nome)
-  const [ajuste, definirAjuste] = useState<Ajuste>(crianca.ajuste)
-  const [tamanhoDoNome, definirTamanhoDoNome] = useState(crianca.tamanhoDoNome)
-  const temporizador = useRef<ReturnType<typeof setTimeout> | null>(null)
-
-  // Trocar de criança recarrega o estado local a partir dela.
-  useEffect(() => {
-    definirNome(crianca.nome)
-    definirAjuste(crianca.ajuste)
-    definirTamanhoDoNome(crianca.tamanhoDoNome)
-  }, [crianca.id, crianca.nome, crianca.ajuste, crianca.tamanhoDoNome])
-
-  const gravar = useCallback(
-    (dados: Parameters<typeof cartoes.actualizar>[3]) => {
-      if (temporizador.current) clearTimeout(temporizador.current)
-      temporizador.current = setTimeout(async () => {
-        try {
-          aoMudarPedido(await cartoes.actualizar(projectSlug, pedido.id, crianca.id, dados))
-        } catch (e) {
-          aoErrar(e instanceof ErroDeApi ? e.message : 'Não foi possível guardar.')
-        }
-      }, ESPERA_ANTES_DE_GRAVAR)
-    },
-    [projectSlug, pedido.id, crianca.id, aoMudarPedido, aoErrar],
-  )
-
-  useEffect(() => {
-    return () => {
-      if (temporizador.current) clearTimeout(temporizador.current)
-    }
-  }, [])
-
-  const modelo = modelos[modeloActivo]
-
-  /**
-   * O veredicto recalculado a cada ajuste, aqui no navegador.
-   *
-   * É a peneira fina que o cliente pediu: sobre o recorte, depois do zoom. A
-   * conta é a mesma que o servidor corre — vem de `@pv/cartoes` — por isso o
-   * que o ecrã diz agora é o que a folha vai ser.
-   */
-  const qualidade = useMemo(() => {
-    if (!modelo || !crianca.fotoLargura || !crianca.fotoAltura) return null
-    return avaliarFoto(
-      { largura: modelo.moldura.largura, altura: modelo.moldura.altura },
-      { largura: crianca.fotoLargura, altura: crianca.fotoAltura },
-      ajuste,
-    )
-  }, [modelo, crianca.fotoLargura, crianca.fotoAltura, ajuste])
-
-  function mexer(mudanca: Partial<Ajuste>) {
-    const novo = { ...ajuste, ...mudanca }
-    novo.escala = Math.min(6, Math.max(1, novo.escala))
-    novo.deslocX = Math.min(1, Math.max(-1, novo.deslocX))
-    novo.deslocY = Math.min(1, Math.max(-1, novo.deslocY))
-    definirAjuste(novo)
-    gravar(novo)
-  }
-
-  if (!modelo) return <p className="cartoes-ajuda">A carregar os modelos…</p>
-
-  /** Pronto para imprimir: tem nome e a foto aguenta o tamanho da moldura. */
-  const pronto = Boolean(nome.trim()) && qualidade?.nivel !== 'INSUFICIENTE'
-
-  return (
-    <>
-      <section className="cartoes-passo">
-        <h2>
-          1. Escolha um modelo <span className="cartoes-conta">{modelos.length} modelos</span>
-        </h2>
-        <GaleriaDeModelos modelos={modelos} activo={modeloActivo} aoEscolher={aoMudarModelo} />
-      </section>
-
-      <div className="cartoes-editor-grelha">
-        <section className="cartoes-passo">
-          <h2>2. Personalize</h2>
-
-          <label className="cartoes-campo">
-            <span>Nome que vai no cartão</span>
-            <input
-              type="text"
-              value={nome}
-              maxLength={40}
-              onChange={(ev) => {
-                definirNome(ev.target.value)
-                gravar({ nome: ev.target.value })
-              }}
-            />
-          </label>
-
-          <label className="cartoes-campo">
-            <span>Tamanho do nome</span>
-            <input
-              type="range"
-              min={0}
-              max={1}
-              step={0.05}
-              value={tamanhoDoNome}
-              onChange={(ev) => {
-                const v = Number(ev.target.value)
-                definirTamanhoDoNome(v)
-                gravar({ tamanhoDoNome: v })
-              }}
-            />
-          </label>
-
-          <div className="cartoes-campo">
-            <span>Posição da foto</span>
-            <div className="cartoes-setas">
-              <button type="button" onClick={() => mexer({ deslocY: ajuste.deslocY - 0.04 })} aria-label="Subir">↑</button>
-              <button type="button" onClick={() => mexer({ deslocX: ajuste.deslocX - 0.04 })} aria-label="Esquerda">←</button>
-              <button type="button" onClick={() => definirAjusteNeutro()} aria-label="Centralizar">◎</button>
-              <button type="button" onClick={() => mexer({ deslocX: ajuste.deslocX + 0.04 })} aria-label="Direita">→</button>
-              <button type="button" onClick={() => mexer({ deslocY: ajuste.deslocY + 0.04 })} aria-label="Descer">↓</button>
-            </div>
-            <div className="cartoes-zoom">
-              <button type="button" onClick={() => mexer({ escala: ajuste.escala - 0.1 })} aria-label="Diminuir zoom">−</button>
-              <input
-                type="range"
-                min={1}
-                max={4}
-                step={0.05}
-                value={ajuste.escala}
-                onChange={(ev) => mexer({ escala: Number(ev.target.value) })}
-                aria-label="Zoom"
-              />
-              <button type="button" onClick={() => mexer({ escala: ajuste.escala + 0.1 })} aria-label="Aumentar zoom">＋</button>
-            </div>
-          </div>
-
-          {qualidade && (
-            <p
-              className={
-                qualidade.nivel === 'BOA'
-                  ? 'cartoes-veredicto cartoes-veredicto-boa'
-                  : qualidade.nivel === 'ACEITAVEL'
-                    ? 'cartoes-veredicto cartoes-veredicto-media'
-                    : 'cartoes-veredicto cartoes-veredicto-ma'
-              }
-            >
-              {qualidade.nivel === 'BOA' && `✓ ${qualidade.dpi} dpi — ótimo para impressão A4.`}
-              {qualidade.nivel === 'ACEITAVEL' &&
-                `⚠ ${qualidade.dpi} dpi. Imprime, mas sem a nitidez ideal.`}
-              {qualidade.nivel === 'INSUFICIENTE' &&
-                `✕ ${qualidade.dpi} dpi. Diminua o zoom até ${qualidade.zoomMaximo}× ou envie outra foto.`}
-            </p>
-          )}
-        </section>
-
-        <section className="cartoes-passo">
-          <h2>3. Editar cartão</h2>
-          <PreVisualizacao
-            projectSlug={projectSlug}
-            pedidoId={pedido.id}
-            crianca={crianca}
-            modelo={modelo}
-            ajuste={ajuste}
-            nome={nome}
-            tamanhoDoNome={tamanhoDoNome}
-            aoArrastar={mexer}
-            grande={ampliado}
-          />
-          <div className="cartoes-ferramentas">
-            <button type="button" className="cartoes-ligacao" onClick={() => aoAmpliar(!ampliado)}>
-              {ampliado ? 'Reduzir' : 'Ver em tamanho grande'}
-            </button>
-            {/* Volta ao enquadramento de fábrica. Existe porque quem arrasta a
-                foto até se perder precisa de uma saída que não seja recomeçar
-                o pedido. */}
-            <button type="button" className="cartoes-ligacao" onClick={definirAjusteNeutro}>
-              Redefinir enquadramento
-            </button>
-          </div>
-        </section>
-      </div>
-
-      <section className="cartoes-passo">
-        <h2>4. Seus cartões ({modelos.length})</h2>
-        <p className="cartoes-ajuda">
-          O nome e o enquadramento são os mesmos nos {modelos.length}. Mexer num
-          mexe em todos.
-        </p>
-        {/*
-          O VISTO VERDE É UMA AFIRMAÇÃO, E TEM DE SER VERDADE.
-          Só aparece quando o cartão está mesmo pronto: com nome escrito e com a
-          fotografia a dar resolução que imprime. Enquanto a foto estiver má, os
-          sete ficam sem visto — porque os sete saem da mesma foto, e nenhum
-          deles está pronto.
-        */}
-        <ul className="cartoes-miniaturas">
-          {modelos.map((m, i) => (
-            <li key={m.id}>
-              <button
-                type="button"
-                onClick={() => aoMudarModelo(i)}
-                className={i === modeloActivo ? 'cartoes-miniatura activa' : 'cartoes-miniatura'}
-              >
-                <PreVisualizacao
-                  projectSlug={projectSlug}
-                  pedidoId={pedido.id}
-                  crianca={crianca}
-                  modelo={m}
-                  ajuste={ajuste}
-                  nome={nome}
-                  tamanhoDoNome={tamanhoDoNome}
-                  miniatura
-                />
-                {pronto && <span className="cartoes-visto" aria-hidden="true">✓</span>}
-                <span>Dia {m.dia}</span>
-              </button>
-            </li>
-          ))}
-        </ul>
-
-        {erro && <p className="cartoes-erro">{erro}</p>}
-
-        <button
-          type="button"
-          className="cartoes-accao"
-          disabled={!nome.trim() || ocupado !== null || qualidade?.nivel === 'INSUFICIENTE'}
-          onClick={async () => {
-            aoOcupar('confirmar')
-            try {
-              if (temporizador.current) clearTimeout(temporizador.current)
-              aoMudarPedido(
-                await cartoes.actualizar(projectSlug, pedido.id, crianca.id, {
-                  nome,
-                  ...ajuste,
-                  tamanhoDoNome,
-                  confirmada: true,
-                }),
-              )
-              aoTerminar()
-            } catch (e) {
-              aoErrar(e instanceof ErroDeApi ? e.message : 'Não foi possível aprovar.')
-            } finally {
-              aoOcupar(null)
-            }
-          }}
-        >
-          {ocupado === 'confirmar' ? 'A guardar…' : 'Aprovar estes cartões'}
-        </button>
-      </section>
-    </>
-  )
-
-  function definirAjusteNeutro() {
-    const neutro = ajusteNeutro()
-    definirAjuste(neutro)
-    gravar(neutro)
-  }
-}
-
-/**
- * A prévia. É aqui que a promessa se cumpre ou se quebra.
- *
- * A moldura e a fotografia são posicionadas com `enquadrar` — a MESMA função
- * que o servidor chama para compor a folha a 300 dpi, importada do mesmo
- * ficheiro. A única diferença entre este desenho e o que sai na gráfica é a
- * régua: aqui a folha tem uns 300 pixéis de largura, lá tem 2480.
- *
- * As posições vão em `style` porque são números calculados a cada ajuste. Não
- * há forma de as pôr numa folha de estilos — e o resto do aspecto está todo em
- * classes, como no resto do projeto.
- */
-/**
- * Mede o texto na fonte que o ecrã vai mesmo usar.
- *
- * Arial-Bold é metricamente compatível com a Helvetica-Bold do PDF, por isso
- * este número e o do `widthOfTextAtSize` do servidor são o mesmo. Medido a
- * corpo 100 e dividido, porque a corpo 1 o arredondamento do canvas estraga a
- * precisão.
- *
- * O canvas é criado uma vez e reaproveitado: criar um por cada letra que ela
- * escreve daria um objecto novo por tecla.
- */
-let telaDeMedir: CanvasRenderingContext2D | null = null
-
-function medirEmArialBold(texto: string): number {
-  if (typeof document === 'undefined') return Math.max(1, texto.trim().length) * 0.62
-  if (!telaDeMedir) {
-    const tela = document.createElement('canvas')
-    telaDeMedir = tela.getContext('2d')
-    if (telaDeMedir) telaDeMedir.font = 'bold 100px Arial, Helvetica, sans-serif'
-  }
-  if (!telaDeMedir) return Math.max(1, texto.trim().length) * 0.62
-  return telaDeMedir.measureText(texto).width / 100
-}
-
-function PreVisualizacao({
-  projectSlug,
-  pedidoId,
-  crianca,
-  modelo,
-  ajuste,
-  nome,
-  tamanhoDoNome,
-  aoArrastar,
-  grande,
-  miniatura,
-}: {
-  projectSlug: string
-  pedidoId: string
-  crianca: CriancaDoPedido
-  modelo: ModeloDeCartao
-  ajuste: Ajuste
-  nome: string
-  tamanhoDoNome: number
-  aoArrastar?: (m: Partial<Ajuste>) => void
-  grande?: boolean
-  miniatura?: boolean
-}) {
-  const folha = useRef<HTMLDivElement | null>(null)
-  const arrasto = useRef<{ x: number; y: number; dx: number; dy: number } | null>(null)
-  const [largura, definirLargura] = useState(320)
-
-  useEffect(() => {
-    const elemento = folha.current
-    if (!elemento) return
-    const observador = new ResizeObserver(([entrada]) => {
-      definirLargura(entrada.contentRect.width)
-    })
-    observador.observe(elemento)
-    return () => observador.disconnect()
-  }, [])
-
-  const altura = (largura * A4_MM.altura) / A4_MM.largura
-  const emPx = (mm: number) => (mm / A4_MM.largura) * largura
-
-  const molduraLargura = emPx(modelo.moldura.largura)
-  const molduraAltura = emPx(modelo.moldura.altura)
-
-  const rect =
-    crianca.fotoLargura && crianca.fotoAltura
-      ? enquadrar(
-          { largura: molduraLargura, altura: molduraAltura },
-          { largura: crianca.fotoLargura, altura: crianca.fotoAltura },
-          ajuste,
-        )
-      : null
-
-  const corpo = corpoDoNome(
-    {
-      largura: modelo.nomeCaixa.largura,
-      altura: modelo.nomeCaixa.altura,
-      corpoMinimo: modelo.nomeCaixa.corpoMinimo,
-      corpoMaximo: modelo.nomeCaixa.corpoMaximo,
-    },
-    nome,
-    tamanhoDoNome,
-    medirEmArialBold,
-  )
-
-  const texto = modelo.nomeCaixa.maiusculas ? nome.toLocaleUpperCase('pt-BR') : nome
-
-  return (
-    <div
-      ref={folha}
-      className={
-        miniatura
-          ? 'cartoes-folha cartoes-folha-miniatura'
-          : grande
-            ? 'cartoes-folha cartoes-folha-grande'
-            : 'cartoes-folha'
-      }
-      style={{ height: `${altura}px` }}
-      onPointerDown={(ev) => {
-        if (!aoArrastar) return
-        arrasto.current = {
-          x: ev.clientX,
-          y: ev.clientY,
-          dx: ajuste.deslocX,
-          dy: ajuste.deslocY,
-        }
-        ev.currentTarget.setPointerCapture(ev.pointerId)
-      }}
-      onPointerMove={(ev) => {
-        if (!aoArrastar || !arrasto.current) return
-        const inicio = arrasto.current
-        aoArrastar({
-          deslocX: inicio.dx + (ev.clientX - inicio.x) / molduraLargura,
-          deslocY: inicio.dy + (ev.clientY - inicio.y) / molduraAltura,
-        })
-      }}
-      onPointerUp={() => {
-        arrasto.current = null
-      }}
-    >
-      {modelo.arteUrl ? (
-        // eslint-disable-next-line @next/next/no-img-element
-        <img src={modelo.arteUrl} alt="" className="cartoes-folha-arte" />
-      ) : (
-        <span className="cartoes-folha-sem-arte">
-          Arte do {modelo.nome} ainda não carregada
-        </span>
-      )}
-
-      <div
-        className={
-          modelo.moldura.formato === 'RETANGULO'
-            ? 'cartoes-moldura cartoes-moldura-recta'
-            : 'cartoes-moldura'
-        }
-        style={{
-          left: `${emPx(modelo.moldura.x)}px`,
-          top: `${emPx(modelo.moldura.y)}px`,
-          width: `${molduraLargura}px`,
-          height: `${molduraAltura}px`,
-        }}
-      >
-        {rect && (
-          // eslint-disable-next-line @next/next/no-img-element
-          <img
-            src={cartoes.urlDaFoto(projectSlug, pedidoId, crianca.id)}
-            alt=""
-            draggable={false}
-            style={{
-              left: `${rect.x}px`,
-              top: `${rect.y}px`,
-              width: `${rect.largura}px`,
-              height: `${rect.altura}px`,
-            }}
-          />
-        )}
-      </div>
-
-      {texto && (
-        <span
-          className="cartoes-folha-nome"
-          style={{
-            left: `${emPx(modelo.nomeCaixa.x)}px`,
-            top: `${emPx(modelo.nomeCaixa.y)}px`,
-            width: `${emPx(modelo.nomeCaixa.largura)}px`,
-            height: `${emPx(modelo.nomeCaixa.altura)}px`,
-            fontSize: `${emPx(corpo)}px`,
-            color: modelo.nomeCaixa.corHex,
-          }}
-        >
-          {texto}
-        </span>
-      )}
-    </div>
   )
 }

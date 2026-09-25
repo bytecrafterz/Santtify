@@ -15,7 +15,7 @@ import {
 } from '@nestjs/common'
 import { FileInterceptor } from '@nestjs/platform-express'
 import type { Request, Response } from 'express'
-import { MeioDePagamento } from '@pv/db'
+import { AlinhamentoDoNome, MeioDePagamento } from '@pv/db'
 import {
   IsEnum,
   IsInt,
@@ -50,6 +50,9 @@ class ActualizarCriancaDto {
   @IsOptional() @IsNumber() @Min(-1) @Max(1) deslocX?: number
   @IsOptional() @IsNumber() @Min(-1) @Max(1) deslocY?: number
   @IsOptional() @IsNumber() @Min(0) @Max(1) tamanhoDoNome?: number
+  @IsOptional() @IsEnum(AlinhamentoDoNome) nomeAlinhamento?: AlinhamentoDoNome
+  /** Sete dígitos: o cardinal mais seis. Nulo volta à cor do modelo. */
+  @IsOptional() @IsString() @MaxLength(7) nomeCorHex?: string | null
   @IsOptional() @IsBoolean() selecionada?: boolean
   @IsOptional() @IsBoolean() confirmada?: boolean
 }

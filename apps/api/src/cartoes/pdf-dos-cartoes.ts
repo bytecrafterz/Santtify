@@ -57,6 +57,10 @@ export interface FolhaDoPdf {
   nome: string
   /** O que a mãe escolheu no cursor do tamanho, de 0 a 1. */
   tamanhoDoNome: number
+  /** Onde o nome assenta na caixa. Centrado é o que era, e continua a sê-lo. */
+  nomeAlinhamento: 'ESQUERDA' | 'CENTRO' | 'DIREITA'
+  /** A cor escolhida por quem compra. Nula = a que o modelo traz. */
+  nomeCorHex: string | null
   caixa: CaixaDoNomeMm
 }
 
@@ -103,7 +107,25 @@ function escreverNome(pagina: PDFPage, fonte: PDFFont, folha: FolhaDoPdf) {
   const largura = fonte.widthOfTextAtSize(nome, corpo)
   const altura = fonte.heightAtSize(corpo)
 
-  const x = mmParaPt(folha.caixa.nomeX) + (caixaLargura - largura) / 2
+  /*
+    A FOLGA HORIZONTAL DIVIDE-SE CONFORME O ALINHAMENTO.
+
+    Era sempre metade para cada lado. Encostar à esquerda ou à direita é dar-lhe
+    zero ou tudo — mesma conta, mesmo ponto de partida, e por isso o nome
+    centrado sai exactamente onde sempre saiu.
+
+    A margem de 2% da caixa existe para o encostado não ficar colado ao rebordo
+    da placa branca da arte, onde parece um erro de impressão.
+  */
+  const folga = caixaLargura - largura
+  const margem = caixaLargura * 0.02
+  const deslocamento =
+    folha.nomeAlinhamento === 'ESQUERDA'
+      ? Math.min(margem, folga)
+      : folha.nomeAlinhamento === 'DIREITA'
+        ? Math.max(folga - margem, 0)
+        : folga / 2
+  const x = mmParaPt(folha.caixa.nomeX) + deslocamento
 
   /**
    * O PDF conta o Y de baixo para cima; os modelos, como toda a gente, contam
@@ -118,7 +140,7 @@ function escreverNome(pagina: PDFPage, fonte: PDFFont, folha: FolhaDoPdf) {
     y,
     size: corpo,
     font: fonte,
-    color: corDoHex(folha.caixa.nomeCorHex),
+    color: corDoHex(folha.nomeCorHex ?? folha.caixa.nomeCorHex),
   })
 }
 
