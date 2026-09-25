@@ -145,11 +145,24 @@ export function LupaDoCartao({
           dedos.current.delete(ev.pointerId)
           if (dedos.current.size === 0) inicio.current = null
         }}
-        /* O rato também aproxima, com a roda: metade de quem confere isto
-           está num computador, e um rato não faz pinça. */
+        /*
+          O rato também aproxima, com a roda: metade de quem confere isto está
+          num computador, e um rato não faz pinça.
+
+          A ESCALA NOVA SAI DA ANTERIOR PELA FORMA FUNCIONAL, e não da variável
+          `escala`. Uma roda dá dez eventos antes de o React voltar a desenhar, e
+          todos liam a mesma escala velha: dez voltas davam UMA volta. Media-se
+          1,1× onde deviam estar 3×.
+
+          O mesmo vale para a posição, que tem de ser travada contra a escala
+          nova — por isso ela é guardada aqui fora para o segundo `definirPos`.
+        */
         onWheel={(ev) => {
-          const nova = Math.min(MAXIMO, Math.max(MINIMO, escala * (ev.deltaY < 0 ? 1.12 : 0.89)))
-          definirEscala(nova)
+          let nova = escala
+          definirEscala((actual) => {
+            nova = Math.min(MAXIMO, Math.max(MINIMO, actual * (ev.deltaY < 0 ? 1.12 : 0.89)))
+            return nova
+          })
           definirPos((p) => travar(p.x, p.y, nova))
         }}
         /* Dois toques seguidos: aproxima de vez, ou volta ao princípio. */
