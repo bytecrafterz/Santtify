@@ -134,8 +134,20 @@ ok('caixa do nome intacta',
 
 const preco = await ch(`/admin/projects/${CARTOES}/preco-de-cartoes`)
 ok('preço e desconto',
-   preco.precoUnitarioCent === 3000 && preco.descontoPercentagem === 30,
+   preco.precoUnitarioCent === 4900 && preco.descontoPercentagem === 30,
    `R$ ${(preco.precoUnitarioCent / 100).toFixed(2)} · −${preco.descontoPercentagem}% a partir de ${preco.descontoAPartirDe}`)
+
+// "Coloca preço 79 por 49" — 25/09. O riscado tem de existir E de ficar ACIMA
+// do que se cobra; abaixo, o servidor engole-o, e um riscado que não aparece é
+// tão errado como um que mente.
+ok('preço riscado acima do que se cobra',
+   preco.precoDeTabelaCent === 7900 && preco.precoDeTabelaCent > preco.precoUnitarioCent,
+   preco.precoDeTabelaCent ? `de R$ ${(preco.precoDeTabelaCent / 100).toFixed(2)}` : 'sem riscado')
+
+const precoPublico = (await ch(`/projects/${CARTOES}/cartoes/categorias`))[0]?.preco
+ok('o riscado chega ao ecrã de quem compra',
+   precoPublico?.precoDeTabelaCent === 7900 && precoPublico?.precoUnitarioCent === 4900,
+   `de R$ ${((precoPublico?.precoDeTabelaCent ?? 0) / 100).toFixed(2)} por R$ ${((precoPublico?.precoUnitarioCent ?? 0) / 100).toFixed(2)}`)
 
 const publicos = await ch(`/projects/${CARTOES}/cartoes/modelos?categoria=criancas`)
 ok('o editor público vê os sete com arte',
