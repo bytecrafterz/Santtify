@@ -400,7 +400,9 @@ export class AdminCartoesService {
         // a rasterizada a 300 dpi, para conferir o texto de perto.
         arteUrl: imagemSalva.url,
         arteImpressaoUrl: pdfSalvo.url,
-        arteLupaUrl: lupaSalva.url,
+        // `salvar` reduz qualquer imagem a 1200px para a web e guarda ao lado
+        // a cópia de papel, a 2480px, com o sufixo "-impressao". É essa.
+        arteLupaUrl: lupaSalva.url.replace(/\.jpg$/, '-impressao.jpg'),
       },
     })
 
