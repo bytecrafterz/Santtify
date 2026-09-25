@@ -11586,7 +11586,7 @@ body:has(.painel-karaoke) {
   meio. O puxão do dedo soma-se em pixéis, para o cartão seguir o polegar.
 */
 .ce-trilho {
-  --largura-da-casa: 80%;
+  --largura-da-casa: 74%;
 
   display: flex;
   align-items: center;
@@ -11625,9 +11625,9 @@ body:has(.painel-karaoke) {
 .ce-casa:not(.activa) .ce-folha {
   pointer-events: none;
   filter: saturate(0.75) brightness(0.96);
-  opacity: 0.55;
+  opacity: 0.6;
   box-shadow: 0 4px 14px rgb(0 0 0 / 10%);
-  transform: scale(0.86);
+  transform: scale(0.9);
 }
 
 .ce-casa.activa .ce-folha {
@@ -11636,27 +11636,31 @@ body:has(.painel-karaoke) {
     0 2px 6px rgb(0 0 0 / 8%);
 }
 
+/* O número do dia, redondo, dentro da tira do vizinho que se vê. */
 .ce-vizinho-rotulo {
   position: absolute;
   top: 50%;
   z-index: 2;
-  padding: 5px 10px;
-  font-size: 0.72rem;
+  display: grid;
+  place-items: center;
+  width: 30px;
+  height: 30px;
+  font-size: 0.85rem;
   font-weight: 800;
+  font-variant-numeric: tabular-nums;
   color: #fff;
-  letter-spacing: 0.02em;
-  white-space: nowrap;
   pointer-events: none;
-  background: rgb(17 20 27 / 72%);
-  border-radius: 999px;
+  background: rgb(17 20 27 / 78%);
+  border: 2px solid rgb(255 255 255 / 85%);
+  border-radius: 50%;
   box-shadow: 0 4px 12px rgb(0 0 0 / 22%);
   backdrop-filter: blur(6px);
   transform: translateY(-50%);
 }
 
 /* A etiqueta fica na beira que se vê: a do vizinho da esquerda à direita dele. */
-.ce-casa.activa ~ .ce-casa .ce-vizinho-rotulo { left: 10px; }
-.ce-casa:has(~ .ce-casa.activa) .ce-vizinho-rotulo { right: 10px; }
+.ce-casa.activa ~ .ce-casa .ce-vizinho-rotulo { left: 8%; }
+.ce-casa:has(~ .ce-casa.activa) .ce-vizinho-rotulo { right: 8%; }
 
 @media (prefers-reduced-motion: reduce) {
   .ce-trilho,

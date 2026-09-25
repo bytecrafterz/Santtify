@@ -262,7 +262,7 @@ export function CartaoComoEditor({
           >
             {i !== indice && (
               <span className="ce-vizinho-rotulo" aria-hidden="true">
-                {i < indice ? '‹ ' : ''}Dia {m.dia}{i > indice ? ' ›' : ''}
+                {m.dia}
               </span>
             )}
             <CartaoDesenhado
