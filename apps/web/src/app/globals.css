@@ -11736,6 +11736,16 @@ body:has(.painel-karaoke) {
   box-shadow: 0 0 0 3px rgb(29 109 255 / 22%);
 }
 
+/*
+  A FOTO ESCOLHIDA FICA COM O DEDO TODO.
+
+  O cartão deixa o dedo vertical para a página rolar (pan-y). Na foto escolhida
+  isso roubava o arrasto: qualquer gesto com um pouco de descida era entregue
+  ao scroll, e a foto só andava na horizontal pura. Escolhida, ela é o sítio
+  onde se arrasta; o resto do cartão continua a rolar a página.
+*/
+.ce-alvo-foto.escolhido { touch-action: none; }
+
 /* Os punhos dos cantos, como num editor de imagem: dizem "isto pega-se". */
 .ce-alvo.escolhido::before,
 .ce-alvo.escolhido::after {
