@@ -542,6 +542,20 @@ function CartaoDesenhado({
         )
       : null
 
+  const texto = modelo.nomeCaixa.maiusculas ? nome.toLocaleUpperCase('pt-BR') : nome
+
+  /*
+    MEDE-SE O QUE SE DESENHA, E NÃO O QUE SE RECEBEU.
+
+    O corpo era calculado sobre `nome` e o ecrã desenhava `nome` em maiúsculas.
+    "Guilherme" mede menos que "GUILHERME" em Arial Bold — cerca de 12% menos —
+    e o resultado era um nome escolhido para caber a sair pela caixa fora. Via-se
+    no lugar vazio, onde "Seu nome aqui" saía cortado em "EU NOME AQU".
+
+    O servidor sempre fez o certo: `escreverNome` põe em maiúsculas na primeira
+    linha e só depois mede. Eram o ecrã e o papel a discordar, num ficheiro que
+    promete por escrito que concordam.
+  */
   const corpo = useMemo(
     () =>
       corpoDoNome(
@@ -551,14 +565,12 @@ function CartaoDesenhado({
           corpoMinimo: modelo.nomeCaixa.corpoMinimo,
           corpoMaximo: modelo.nomeCaixa.corpoMaximo,
         },
-        nome || 'Seu nome aqui',
+        texto || (modelo.nomeCaixa.maiusculas ? 'SEU NOME AQUI' : 'Seu nome aqui'),
         tamanho,
         medirEmArialBold,
       ),
-    [modelo.nomeCaixa, nome, tamanho],
+    [modelo.nomeCaixa, texto, tamanho],
   )
-
-  const texto = modelo.nomeCaixa.maiusculas ? nome.toLocaleUpperCase('pt-BR') : nome
 
   return (
     <div ref={folha} className="ce-folha" style={{ height: `${altura}px` }}>
@@ -703,7 +715,7 @@ function CartaoDesenhado({
             /*
               O "Seu nome aqui" mede-se como um nome de verdade.
 
-              Estava a um corpo fixo e saa cortado — "EU NOME AQ" — numa caixa
+              Estava a um corpo fixo e saía cortado — "EU NOME AQ" — numa caixa
               de 90mm. Passa pela mesma `corpoDoNome` que o nome real, com o
               tamanho no máximo: o que a pessoa vê é o espaço que tem.
             */
