@@ -21,6 +21,8 @@ export interface ModeloDeCartao {
   nome: string
   idioma: string
   arteUrl: string | null
+  /** A arte a 300 dpi, só para a lupa. Nula em artes carregadas como imagem. */
+  arteLupaUrl?: string | null
   /** Tudo em milímetros sobre a folha A4, como no servidor. */
   moldura: {
     x: number

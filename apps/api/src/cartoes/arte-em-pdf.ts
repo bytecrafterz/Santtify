@@ -27,6 +27,15 @@ const logger = new Logger('ArteEmPdf')
 /** A largura da cópia de ecrã. Chega para o editor e não pesa na ligação. */
 const LARGURA_DE_ECRA = 1240
 
+/**
+ * A resolução da cópia da lupa: a de impressão.
+ *
+ * O texto da arte é vectorial no PDF e ficava pixelado no zoom da lupa, porque
+ * a lupa ampliava a cópia de ecrã. A 300 dpi o que se vê a 8x é o que a gráfica
+ * imprime — que é exactamente o que ele pediu para poder conferir.
+ */
+export const DPI_DA_LUPA = 300
+
 export interface ArteConferida {
   /** As medidas da folha, em milímetros. */
   larguraMm: number
@@ -76,7 +85,10 @@ export async function conferirPdf(dados: Buffer): Promise<ArteConferida> {
  * estiver, esta função diz-o em português em vez de falhar com um erro de
  * processo — e o painel pede a arte também em imagem.
  */
-export async function rasterizarPrimeiraPagina(dados: Buffer): Promise<Buffer> {
+export async function rasterizarPrimeiraPagina(
+  dados: Buffer,
+  opcoes: { dpi?: number; qualidade?: number } = {},
+): Promise<Buffer> {
   const pasta = await mkdtemp(join(tmpdir(), 'arte-'))
   const entrada = join(pasta, `${randomUUID()}.pdf`)
   const saida = join(pasta, 'pagina')
@@ -85,9 +97,11 @@ export async function rasterizarPrimeiraPagina(dados: Buffer): Promise<Buffer> {
     await writeFile(entrada, dados)
     await correr('pdftoppm', [
       '-jpeg',
+      '-jpegopt',
+      `quality=${opcoes.qualidade ?? 85}`,
       '-r',
-      // A resolução que dá aproximadamente LARGURA_DE_ECRA numa folha A4.
-      String(Math.round((LARGURA_DE_ECRA / A4_MM.largura) * 25.4)),
+      // Sem dpi pedido: o que dá aproximadamente LARGURA_DE_ECRA numa folha A4.
+      String(opcoes.dpi ?? Math.round((LARGURA_DE_ECRA / A4_MM.largura) * 25.4)),
       '-f',
       '1',
       '-l',

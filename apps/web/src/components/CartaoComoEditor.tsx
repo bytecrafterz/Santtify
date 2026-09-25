@@ -427,6 +427,7 @@ export function CartaoComoEditor({
             alinhamento={alinhamento}
             cor={cor}
             editavel={false}
+            altaResolucao
             escolhido={null}
             aEnviar={false}
             aoEscolher={() => {}}
@@ -633,6 +634,7 @@ function CartaoDesenhado({
   alinhamento,
   cor,
   editavel,
+  altaResolucao,
   escolhido,
   aEnviar,
   aoEscolher,
@@ -653,6 +655,8 @@ function CartaoDesenhado({
   alinhamento: AlinhamentoDoNome
   cor: string | null
   editavel: boolean
+  /** Na lupa: por cima da arte leve, a de 300 dpi, que chega quando chegar. */
+  altaResolucao?: boolean
   escolhido: Escolhido
   aEnviar: boolean
   aoEscolher: (e: Escolhido) => void
@@ -830,7 +834,18 @@ function CartaoDesenhado({
           // Sem isto o computador arrasta a imagem em vez de deslizar o cartão.
           draggable={false}
         />
-      ) : (
+      ) : null}
+      {modelo.arteUrl && altaResolucao && modelo.arteLupaUrl ? (
+        /*
+          A LUPA MOSTRA A ARTE A 300 DPI.
+
+          Fica por cima da leve, que já está em cache: a lupa abre logo, e o
+          texto ganha nitidez assim que a pesada termina de chegar.
+        */
+        // eslint-disable-next-line @next/next/no-img-element
+        <img src={modelo.arteLupaUrl} alt="" aria-hidden="true" className="ce-arte" draggable={false} />
+      ) : null}
+      {modelo.arteUrl ? null : (
         <span className="ce-sem-arte">Arte do {modelo.nome} ainda não carregada</span>
       )}
 
@@ -865,6 +880,15 @@ function CartaoDesenhado({
           if (!editavel || escolhido !== 'foto' || !rect) return
           ev.stopPropagation()
           ev.currentTarget.setPointerCapture(ev.pointerId)
+          /*
+            O PRIMEIRO DEDO DE UM TOQUE NOVO LIMPA A LISTA.
+
+            Se o telemóvel perdesse o aviso de um dedo a sair — o iPhone perde-o
+            às vezes a meio de uma pinça —, esse dedo fantasma ficava na lista
+            para sempre, cada toque seguinte contava como pinça com ele, e a
+            foto não voltava a andar. Era o "travou" de 25/09.
+          */
+          if (ev.isPrimary) dedos.current.clear()
           dedos.current.set(ev.pointerId, { x: ev.clientX, y: ev.clientY })
           comecarGesto()
         }}
@@ -899,6 +923,10 @@ function CartaoDesenhado({
         }}
         onPointerCancel={(ev) => {
           dedos.current.delete(ev.pointerId)
+          comecarGesto()
+        }}
+        onLostPointerCapture={(ev) => {
+          if (!dedos.current.delete(ev.pointerId)) return
           comecarGesto()
         }}
         onKeyDown={(ev) => {

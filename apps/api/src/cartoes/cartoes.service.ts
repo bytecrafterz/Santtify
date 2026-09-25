@@ -82,6 +82,7 @@ export class CartoesService {
       nome: m.nome,
       idioma: m.idioma,
       arteUrl: m.arteUrl,
+      arteLupaUrl: m.arteLupaUrl,
       /**
        * A geometria vai para o navegador de propósito.
        *

@@ -1675,6 +1675,12 @@ model ModeloDeCartao {
   /// da gráfica com cerca de 124 dpi e nota-se.
   arteUrl          String?
   arteImpressaoUrl String?
+  /// A arte a 300 dpi, só para a lupa do editor — carregada quando a lupa abre.
+  ///
+  /// "No sistema o texto fica pixelado" — 25/09. A cópia de ecrã tem 1240px,
+  /// que chega para o cartão na página mas não para o zoom de 8x. Esta é a que
+  /// deixa conferir o texto como ele sai no papel.
+  arteLupaUrl      String?
 
   /// A moldura da fotografia, em mm sobre A4 (210 x 297).
   fotoX       Float

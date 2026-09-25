@@ -4,7 +4,7 @@ import { A4_MM, DPI_BOM, mmParaPx } from '@pv/cartoes'
 import { PrismaService } from '../prisma/prisma.service'
 import { CartoesService } from './cartoes.service'
 import { StorageService, type ArquivoSalvo } from '../admin/storage.service'
-import { conferirPdf, rasterizarPrimeiraPagina } from './arte-em-pdf'
+import { conferirPdf, DPI_DA_LUPA, rasterizarPrimeiraPagina } from './arte-em-pdf'
 
 /**
  * Os campos que o painel pode mexer num modelo.
@@ -372,6 +372,10 @@ export class AdminCartoesService {
 
     const conferido = await conferirPdf(ficheiro.buffer)
     const previa = await rasterizarPrimeiraPagina(ficheiro.buffer)
+    const daLupa = await rasterizarPrimeiraPagina(ficheiro.buffer, {
+      dpi: DPI_DA_LUPA,
+      qualidade: 92,
+    })
 
     const pdfSalvo = await this.storage.salvar(ficheiro)
     const imagemSalva = await this.storage.salvar({
@@ -381,13 +385,22 @@ export class AdminCartoesService {
       buffer: previa,
       size: previa.length,
     } as Express.Multer.File)
+    const lupaSalva = await this.storage.salvar({
+      ...ficheiro,
+      originalname: ficheiro.originalname.replace(/\.pdf$/i, '') + '-lupa.jpg',
+      mimetype: 'image/jpeg',
+      buffer: daLupa,
+      size: daLupa.length,
+    } as Express.Multer.File)
 
     const actualizado = await this.prisma.modeloDeCartao.update({
       where: { id },
       data: {
-        // De ecrã é a rasterizada; de impressão é o PDF original.
+        // De ecrã é a rasterizada; de impressão é o PDF original; a da lupa é
+        // a rasterizada a 300 dpi, para conferir o texto de perto.
         arteUrl: imagemSalva.url,
         arteImpressaoUrl: pdfSalvo.url,
+        arteLupaUrl: lupaSalva.url,
       },
     })
 
