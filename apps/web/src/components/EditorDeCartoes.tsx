@@ -730,7 +730,7 @@ export function EditorDeCartoes({
   if (passo === 'editor' && crianca) {
     return (
       <div className="editor-cartoes editor-cartoes-uma-tela">
-        <Cabecalho projectSlug={projectSlug} />
+        <Cabecalho projectSlug={projectSlug} enxuto />
         {erro && <p className="cartoes-erro">{erro}</p>}
         <CartaoComoEditor
           projectSlug={projectSlug}
@@ -897,19 +897,33 @@ function GaleriaDeModelos({
  * pela barra de baixo. Numa página de compra, não ter porta é o género de
  * pormenor que faz desistir sem que ninguém saiba porquê.
  */
-function Cabecalho({ projectSlug }: { projectSlug: string }) {
+/**
+ * O cabeçalho, e o que dele sobra no ecrã do cartão.
+ *
+ * "Quando o usuário abrir a personalização, o cartão já aparece grande" —
+ * 25/09. O título e o subtítulo comiam 450 dos 900 pixels de um telemóvel, e o
+ * cartão começava a meio do ecrã. Num ecrã cujo assunto é um cartão à frente
+ * dos olhos, explicar por escrito o que ele é custa metade do ecrã e não diz
+ * nada que a imagem não diga melhor.
+ *
+ * `enxuto` deixa só o Voltar. Os outros passos — pagamento, ficheiros —
+ * continuam com o título, porque aí não há nenhuma imagem a explicar-se sozinha.
+ */
+function Cabecalho({ projectSlug, enxuto }: { projectSlug: string; enxuto?: boolean }) {
   return (
     <>
       <div className="cabecalho">
         <Voltar href={`/${projectSlug}`}>Voltar</Voltar>
       </div>
-      <header className="cartoes-cabecalho">
-        <h1>Crie seu cartão personalizado</h1>
-        <p>
-          Personalize com o nome e a foto e receba seus cartões prontos para
-          imprimir.
-        </p>
-      </header>
+      {!enxuto && (
+        <header className="cartoes-cabecalho">
+          <h1>Crie seu cartão personalizado</h1>
+          <p>
+            Personalize com o nome e a foto e receba seus cartões prontos para
+            imprimir.
+          </p>
+        </header>
+      )}
     </>
   )
 }

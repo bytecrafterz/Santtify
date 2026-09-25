@@ -551,7 +551,7 @@ function CartaoDesenhado({
           corpoMinimo: modelo.nomeCaixa.corpoMinimo,
           corpoMaximo: modelo.nomeCaixa.corpoMaximo,
         },
-        nome || 'M',
+        nome || 'Seu nome aqui',
         tamanho,
         medirEmArialBold,
       ),
@@ -634,7 +634,7 @@ function CartaoDesenhado({
             O lugar vazio diz o que fazer com ele. Sem isto, a moldura vazia
             parece parte da arte e ninguém lhe toca.
           */
-          <span className="ce-vazio">
+          <span className="ce-vazio" style={{ fontSize: `${Math.max(9, molduraLargura * 0.085)}px` }}>
             <span className="ce-vazio-icone" aria-hidden="true">
               {aEnviar ? '⏳' : '📷'}
             </span>
@@ -700,8 +700,15 @@ function CartaoDesenhado({
         ) : (
           <span
             className={texto ? 'ce-nome' : 'ce-nome ce-nome-vazio'}
+            /*
+              O "Seu nome aqui" mede-se como um nome de verdade.
+
+              Estava a um corpo fixo e saa cortado — "EU NOME AQ" — numa caixa
+              de 90mm. Passa pela mesma `corpoDoNome` que o nome real, com o
+              tamanho no máximo: o que a pessoa vê é o espaço que tem.
+            */
             style={{
-              fontSize: `${emPx(texto ? corpo : Math.min(corpo, modelo.nomeCaixa.corpoMaximo * 0.7))}px`,
+              fontSize: `${emPx(corpo)}px`,
               color: texto ? (cor ?? modelo.nomeCaixa.corHex) : undefined,
               justifyContent:
                 alinhamento === 'ESQUERDA'
