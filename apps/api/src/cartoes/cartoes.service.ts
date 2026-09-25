@@ -26,6 +26,15 @@ import { MailService } from '../common/mail/mail.service'
 /** O máximo de crianças num pedido. Acima disto é gráfica, não é família. */
 const MAXIMO_DE_CRIANCAS = 10
 
+/**
+ * A frase que o cliente aceita antes de pagar, guardada tal e qual no pedido.
+ * É a mesma que o ecrã mostra; se um dia mudar, os pedidos antigos continuam a
+ * dizer o que foi aceite na altura.
+ */
+const TEXTO_DA_APROVACAO =
+  'Confirmo que revisei e aprovei o nome e a foto dos meus cartões. ' +
+  'Produto personalizado. Não há devolução após o pagamento.'
+
 @Injectable()
 export class CartoesService {
   private readonly logger = new Logger(CartoesService.name)
@@ -567,7 +576,27 @@ export class CartoesService {
   // PAGAMENTO
   // ─────────────────────────────────────────────────────────────────
 
-  async iniciarPagamento(pedidoId: string, meio: MeioDePagamento, emailDoPagador: string) {
+  async iniciarPagamento(
+    pedidoId: string,
+    meio: MeioDePagamento,
+    emailDoPagador: string,
+    aprovou: boolean,
+  ) {
+    /*
+      SEM A APROVAÇÃO, NÃO HÁ COBRANÇA.
+
+      Pedido dele em 25/09, para evitar cancelamentos depois de o cliente já ter
+      recebido um produto que só serve para aquela criança: antes de pagar, o
+      cliente confirma que revisou o nome e a foto. A verificação vive aqui, e
+      não só no ecrã, para que nenhum caminho — um ecrã antigo em cache, uma
+      chamada directa — chegue ao Mercado Pago sem ela.
+    */
+    if (!aprovou) {
+      throw new BadRequestException(
+        'Confirme que revisou e aprovou o nome e a foto antes de pagar.',
+      )
+    }
+
     const pedido = await this.prisma.pedidoDeCartoes.findUnique({
       where: { id: pedidoId },
       include: { criancas: true, project: { select: { slug: true } } },
@@ -607,6 +636,8 @@ export class CartoesService {
       data: {
         estado: EstadoDoPedido.AGUARDANDO_PAGAMENTO,
         meio,
+        aprovacaoEm: new Date(),
+        aprovacaoTexto: TEXTO_DA_APROVACAO,
         referenciaExterna: cobranca.referenciaExterna,
         pixCopiaECola: cobranca.pixCopiaECola ?? null,
         pixQrSvg: cobranca.pixQrSvg ?? null,

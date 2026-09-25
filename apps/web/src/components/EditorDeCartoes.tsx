@@ -12,6 +12,7 @@ import { ErroDeApi } from '@/lib/auth'
 import { useAuth } from './ProvedorDeAuth'
 import { EntregaDosCartoes } from './EntregaDosCartoes'
 import { CartaoComoEditor } from './CartaoComoEditor'
+import { ConfirmarPersonalizacao } from './ConfirmarPersonalizacao'
 import { Voltar } from './Voltar'
 
 /**
@@ -104,6 +105,8 @@ export function EditorDeCartoes({
    * ele descreveu em 25/09 com o exemplo do Dia 2.
    */
   const [cartaoActivo, definirCartaoActivo] = useState(0)
+  /** O meio escolhido enquanto a confirmação antes de pagar está aberta. */
+  const [aConfirmar, definirAConfirmar] = useState<'PIX' | 'CARTAO' | null>(null)
   const [erro, definirErro] = useState<string | null>(null)
   const [ocupado, definirOcupado] = useState<string | null>(null)
   const { usuario } = useAuth()
@@ -623,11 +626,8 @@ export function EditorDeCartoes({
                 type="button"
                 className="cartoes-accao"
                 disabled={ocupado !== null || !emailValido(email)}
-                onClick={() =>
-                  comErro('pix', async () => {
-                    definirPedido(await cartoes.pagar(projectSlug, pedido.id, 'PIX', email.trim()))
-                  })
-                }
+                // Não paga logo: abre primeiro a confirmação da personalização.
+                onClick={() => definirAConfirmar('PIX')}
               >
                 Pagar com Pix
               </button>
@@ -635,22 +635,39 @@ export function EditorDeCartoes({
                 type="button"
                 className="cartoes-accao-secundaria"
                 disabled={ocupado !== null || !emailValido(email)}
-                onClick={() =>
-                  comErro('cartao', async () => {
-                    const resposta = await cartoes.pagar(projectSlug, pedido.id, 'CARTAO', email.trim())
-                    definirPedido(resposta)
-                    // O cartão paga-se na página do Mercado Pago, e ela devolve
-                    // a pessoa aqui. O pedido fica guardado neste aparelho, por
-                    // isso o editor retoma onde estava.
-                    if (resposta.urlDeRedireccionamento) {
-                      window.location.assign(resposta.urlDeRedireccionamento)
-                    }
-                  })
-                }
+                onClick={() => definirAConfirmar('CARTAO')}
               >
                 Pagar com cartão
               </button>
             </div>
+          )}
+
+          {aConfirmar && (
+            <ConfirmarPersonalizacao
+              aPagar={ocupado !== null}
+              aoFechar={() => definirAConfirmar(null)}
+              // "Se quiser corrigir algo, clica em Voltar para revisar" — volta
+              // ao cartão em que estava, com tudo como deixou.
+              aoRevisar={() => {
+                definirAConfirmar(null)
+                if (crianca) definirPasso('editor')
+              }}
+              aoConfirmar={() => {
+                const meio = aConfirmar
+                // Fecha no fim, dê certo ou não: um erro escrito por trás do
+                // pop-up era um erro que ninguém lia.
+                void comErro(meio === 'PIX' ? 'pix' : 'cartao', async () => {
+                  const resposta = await cartoes.pagar(projectSlug, pedido.id, meio, email.trim(), true)
+                  definirPedido(resposta)
+                  // O cartão paga-se na página do Mercado Pago, e ela devolve
+                  // a pessoa aqui. O pedido fica guardado neste aparelho, por
+                  // isso o editor retoma onde estava.
+                  if (meio === 'CARTAO' && resposta.urlDeRedireccionamento) {
+                    window.location.assign(resposta.urlDeRedireccionamento)
+                  }
+                }).then(() => definirAConfirmar(null))
+              }}
+            />
           )}
 
           {pedido.pixQrSvg && !pago && (

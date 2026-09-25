@@ -229,10 +229,11 @@ export const cartoes = {
       { method: 'PATCH', body: JSON.stringify(dados) },
     ),
 
-  pagar: (projeto: string, pedidoId: string, meio: 'PIX' | 'CARTAO', email: string) =>
+  /** `aprovou`: a caixa da confirmação antes de pagar. O servidor recusa sem ela. */
+  pagar: (projeto: string, pedidoId: string, meio: 'PIX' | 'CARTAO', email: string, aprovou: boolean) =>
     chamarComRenovacao<Pedido & { urlDeRedireccionamento: string | null }>(
       `/projects/${projeto}/cartoes/pedidos/${pedidoId}/pagamento`,
-      { method: 'POST', body: JSON.stringify({ meio, email }) },
+      { method: 'POST', body: JSON.stringify({ meio, email, aprovou }) },
     ),
 
   /** O endereço da foto. Rota, nunca ficheiro estático — é foto de criança. */

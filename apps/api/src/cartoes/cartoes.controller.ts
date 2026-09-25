@@ -61,6 +61,8 @@ class PagarDto {
   @IsEnum(MeioDePagamento) meio!: MeioDePagamento
   /** Segue para o provedor, que o exige. O pedido não o guarda. */
   @IsEmail({}, { message: 'Escreva um e-mail válido.' }) email!: string
+  /** A caixa "Confirmo que revisei e aprovei o nome e a foto". Sem ela não se paga. */
+  @IsOptional() @IsBoolean() aprovou?: boolean
 }
 
 class EnviarPorEmailDto {
@@ -195,7 +197,7 @@ export class CartoesController {
 
   @Post('pedidos/:pedidoId/pagamento')
   pagar(@Param('pedidoId') pedidoId: string, @Body() dto: PagarDto) {
-    return this.cartoes.iniciarPagamento(pedidoId, dto.meio, dto.email)
+    return this.cartoes.iniciarPagamento(pedidoId, dto.meio, dto.email, dto.aprovou === true)
   }
 
   /**

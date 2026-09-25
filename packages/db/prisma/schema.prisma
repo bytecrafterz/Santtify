@@ -1818,6 +1818,13 @@ model PedidoDeCartoes {
   atualizadoEm DateTime  @updatedAt
   pagoEm       DateTime?
   prontoEm     DateTime?
+
+  /// Quando o cliente confirmou, antes de pagar, que revisou e aprovou o nome e
+  /// a foto — "Assim fica registrada a aprovação do cliente antes do
+  /// pagamento" (25/09). Cada tentativa de pagar volta a pedi-la e a regravá-la.
+  aprovacaoEm    DateTime?
+  /// A frase exacta que aceitou, escrita pelo servidor e não pelo navegador.
+  aprovacaoTexto String?
   /// Quando a foto e o PDF são apagados do disco.
   expiraEm     DateTime
 
