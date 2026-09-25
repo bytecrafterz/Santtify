@@ -125,13 +125,13 @@ ok('nenhum com aviso de arte em falta', modelos.every((m) => !m.aviso))
    e a caixa branca num sítio ligeiramente diferente. Se estes números mudarem
    sem ninguém ter ido ao painel, alguma coisa lhes passou por cima. */
 const MEDIDAS = {
-  1: [68.7, 64.5, 73.3, 92, 72.8, 160.6, 68, 10.7],
-  2: [66.5, 65.9, 76.9, 91.7, 72.3, 161.6, 67.7, 10.7],
-  3: [66.6, 63.5, 74.8, 91.2, 71.6, 158.6, 68, 10.7],
-  4: [66.5, 67.8, 75.2, 89.6, 71.4, 161.4, 68.2, 10.7],
-  5: [68.7, 65.2, 73.3, 89.2, 71.8, 158.4, 68.2, 10.7],
-  6: [68.7, 65.8, 73.3, 90.6, 72.1, 160.4, 68.2, 10.7],
-  7: [64.9, 66.8, 81.1, 95, 72.3, 165.8, 68.2, 10.7],
+  1: [67.7, 63.5, 75.3, 94, 72.8, 160.6, 68, 10.7],
+  2: [65.5, 64.9, 78.9, 93.7, 72.3, 161.6, 67.7, 10.7],
+  3: [65.6, 62.5, 76.8, 93.2, 71.6, 158.6, 68, 10.7],
+  4: [65.5, 66.8, 77.2, 91.6, 71.4, 161.4, 68.2, 10.7],
+  5: [67.7, 64.2, 75.3, 91.2, 71.8, 158.4, 68.2, 10.7],
+  6: [67.7, 64.8, 75.3, 92.6, 72.1, 160.4, 68.2, 10.7],
+  7: [63.9, 65.8, 83.1, 97, 72.3, 165.8, 68.2, 10.7],
 }
 const geometria = (m) => [m.fotoX, m.fotoY, m.fotoLargura, m.fotoAltura, m.nomeX, m.nomeY, m.nomeLargura, m.nomeAltura]
 const fora = modelos.filter((m) => geometria(m).join() !== (MEDIDAS[m.dia] ?? []).join() || m.fotoFormato !== 'RETANGULO')

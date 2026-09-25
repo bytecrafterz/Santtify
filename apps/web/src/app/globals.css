@@ -11720,13 +11720,26 @@ body:has(.painel-karaoke) {
   quem toca vê o que apanhou. Um cartão coberto de caixas tracejadas assusta
   antes de ajudar, e isto é para uma mãe que nunca usou um editor.
 */
+/*
+  O TRACEJADO É UM `outline` POR DENTRO, E NÃO UMA BORDA.
+
+  Era `border: 2px` transparente, e a foto ficava DENTRO dela: um aro de 2px de
+  céu à volta da fotografia, e os cantos arredondados mostravam a arte nos
+  quatro cantos. Ele viu-o em 25/09: "a foto precisa ocupar 100% da moldura,
+  encostando exactamente nas bordas". O outline não ocupa espaço e desenha-se
+  por cima da foto, onde o tracejado deve estar.
+*/
 .ce-alvo {
   position: absolute;
   cursor: pointer;
-  border: 2px dashed transparent;
   border-radius: 6px;
-  transition: border-color 0.15s ease;
+  outline: 2px dashed transparent;
+  outline-offset: -2px;
+  transition: outline-color 0.15s ease;
 }
+
+/* A moldura rectangular é recta: canto arredondado era arte à vista. */
+.ce-alvo-foto.recta { border-radius: 0; }
 
 .ce-alvo-foto { overflow: hidden; }
 
@@ -11754,7 +11767,7 @@ body:has(.painel-karaoke) {
 }
 
 .ce-alvo.escolhido {
-  border-color: #1d6dff;
+  outline-color: #1d6dff;
   box-shadow: 0 0 0 3px rgb(29 109 255 / 22%);
 }
 

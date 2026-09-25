@@ -665,9 +665,72 @@ function CartaoDesenhado({
   paleta: React.ReactNode
 }) {
   const folha = useRef<HTMLDivElement | null>(null)
-  const arrasto = useRef<{ x: number; y: number; dx: number; dy: number } | null>(null)
   const pousou = useRef<{ x: number; y: number } | null>(null)
   const ultimoToque = useRef(0)
+
+  /*
+    OS DEDOS EM CIMA DA FOTO: UM ARRASTA, DOIS APROXIMAM E ARRASTAM.
+
+    "Quando aumentei o zoom da foto, ela travou" — 25/09. Aproximar com dois
+    dedos é o gesto de qualquer telemóvel, e aqui não fazia nada: o segundo
+    dedo roubava o arrasto ao primeiro, e ao levantar um deles o outro ficava
+    sem gesto nenhum. A foto parecia presa.
+
+    Agora a pinça aproxima e arrasta ao mesmo tempo, e quando um dedo sai o que
+    fica recomeça o arrasto a partir de onde está — nunca a partir de onde a
+    pinça começou, que dava um salto.
+  */
+  const alvoDaFoto = useRef<HTMLDivElement | null>(null)
+  const dedos = useRef(new Map<number, { x: number; y: number }>())
+  const gesto = useRef<
+    | { tipo: 'um'; x: number; y: number; dx: number; dy: number }
+    | { tipo: 'dois'; dist: number; cx: number; cy: number; escala: number; dx: number; dy: number }
+    | null
+  >(null)
+  // O ajuste de AGORA, para recomeçar um gesto entre dois desenhos.
+  const ajusteAgora = useRef(ajuste)
+  ajusteAgora.current = ajuste
+  const fotoEscolhida = useRef(false)
+  fotoEscolhida.current = editavel && escolhido === 'foto'
+
+  function comecarGesto() {
+    const lista = [...dedos.current.values()]
+    const a = ajusteAgora.current
+    if (lista.length >= 2) {
+      const [p, q] = lista
+      gesto.current = {
+        tipo: 'dois',
+        dist: Math.hypot(p.x - q.x, p.y - q.y) || 1,
+        cx: (p.x + q.x) / 2,
+        cy: (p.y + q.y) / 2,
+        escala: a.escala,
+        dx: a.deslocX,
+        dy: a.deslocY,
+      }
+    } else if (lista.length === 1) {
+      gesto.current = { tipo: 'um', x: lista[0].x, y: lista[0].y, dx: a.deslocX, dy: a.deslocY }
+    } else {
+      gesto.current = null
+    }
+  }
+
+  /*
+    O IPHONE NÃO PODE ROLAR A PÁGINA POR BAIXO DA FOTO ESCOLHIDA.
+
+    O `touch-action: none` do CSS devia bastar, mas o Safari nem sempre o
+    respeita a meio de uma página que rola. Um `touchmove` que não é passivo e
+    cancela o gesto é a garantia — e só actua na foto escolhida, para o resto
+    do cartão continuar a deixar rolar e deslizar de dia.
+  */
+  useEffect(() => {
+    const el = alvoDaFoto.current
+    if (!el) return
+    const segura = (e: TouchEvent) => {
+      if (fotoEscolhida.current) e.preventDefault()
+    }
+    el.addEventListener('touchmove', segura, { passive: false })
+    return () => el.removeEventListener('touchmove', segura)
+  }, [])
   const [largura, definirLargura] = useState(320)
 
   useEffect(() => {
@@ -797,28 +860,46 @@ function CartaoDesenhado({
           moldura é metade do cartão, por isso quase todo o arrasto para o dia
           seguinte acabava a empurrar a foto. Agora o primeiro gesto é da faixa.
         */
+        ref={alvoDaFoto}
         onPointerDown={(ev) => {
           if (!editavel || escolhido !== 'foto' || !rect) return
           ev.stopPropagation()
-          arrasto.current = { x: ev.clientX, y: ev.clientY, dx: ajuste.deslocX, dy: ajuste.deslocY }
           ev.currentTarget.setPointerCapture(ev.pointerId)
+          dedos.current.set(ev.pointerId, { x: ev.clientX, y: ev.clientY })
+          comecarGesto()
         }}
         onClick={() => {
           if (editavel && escolhido !== 'foto') aoEscolher('foto')
         }}
         onPointerMove={(ev) => {
-          if (!arrasto.current) return
-          const i = arrasto.current
-          aoMexer({
-            deslocX: i.dx + (ev.clientX - i.x) / molduraLargura,
-            deslocY: i.dy + (ev.clientY - i.y) / molduraAltura,
-          })
+          if (!dedos.current.has(ev.pointerId) || !gesto.current) return
+          dedos.current.set(ev.pointerId, { x: ev.clientX, y: ev.clientY })
+          const g = gesto.current
+          if (g.tipo === 'dois' && dedos.current.size >= 2) {
+            const [p, q] = [...dedos.current.values()]
+            const cx = (p.x + q.x) / 2
+            const cy = (p.y + q.y) / 2
+            aoMexer({
+              escala: (g.escala * Math.hypot(p.x - q.x, p.y - q.y)) / g.dist,
+              deslocX: g.dx + (cx - g.cx) / molduraLargura,
+              deslocY: g.dy + (cy - g.cy) / molduraAltura,
+            })
+            return
+          }
+          if (g.tipo === 'um') {
+            aoMexer({
+              deslocX: g.dx + (ev.clientX - g.x) / molduraLargura,
+              deslocY: g.dy + (ev.clientY - g.y) / molduraAltura,
+            })
+          }
         }}
-        onPointerUp={() => {
-          arrasto.current = null
+        onPointerUp={(ev) => {
+          dedos.current.delete(ev.pointerId)
+          comecarGesto()
         }}
-        onPointerCancel={() => {
-          arrasto.current = null
+        onPointerCancel={(ev) => {
+          dedos.current.delete(ev.pointerId)
+          comecarGesto()
         }}
         onKeyDown={(ev) => {
           if (ev.key === 'Enter' || ev.key === ' ') {
