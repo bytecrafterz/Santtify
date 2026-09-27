@@ -271,9 +271,16 @@ export class MensagensService {
       throw new BadRequestException('A gravação chegou num formato que não é áudio.')
     }
 
+    // O multer lê o nome do multipart como latin1, e "relatório" chegava como
+    // "relatÃ³rio". Volta-se a UTF-8 — a não ser que o resultado estrague o
+    // nome, sinal de que já vinha certo.
+    const bruto = ficheiro.originalname || 'arquivo'
+    const emUtf8 = Buffer.from(bruto, 'latin1').toString('utf8')
+    const original = emUtf8.includes('FFFD') ? bruto : emUtf8
+
     // O nome que se mostra: sem pastas, sem caracteres de controlo, curto.
     const nome =
-      (ficheiro.originalname || 'arquivo')
+      original
         .split(/[\\/]/)
         .pop()!
         .replace(/[\u0000-\u001f\u007f"]/g, '')
