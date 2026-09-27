@@ -12715,3 +12715,33 @@ body:has(.painel-karaoke) {
   color: var(--cor-texto-suave);
   text-align: right;
 }
+
+/* ── Apagar: só para quem abriu a conversa (27/09) ───────────────────── */
+.mp-apagar-tudo {
+  display: grid;
+  flex: 0 0 auto;
+  place-items: center;
+  width: 36px;
+  height: 36px;
+  padding: 0;
+  font-size: 1rem;
+  cursor: pointer;
+  background: var(--cor-superficie);
+  border: 1px solid var(--cor-borda);
+  border-radius: 50%;
+}
+
+.mp-balao.escolhida { outline: 2px solid #e0245e; outline-offset: 2px; }
+
+.mp-apagar-uma {
+  justify-self: end;
+  padding: 4px 10px;
+  font: inherit;
+  font-size: 0.78rem;
+  font-weight: 700;
+  color: #fff;
+  cursor: pointer;
+  background: #e0245e;
+  border: 0;
+  border-radius: 999px;
+}

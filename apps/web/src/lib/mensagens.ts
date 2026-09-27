@@ -74,9 +74,19 @@ export const mensagens = {
       body: JSON.stringify({ comUserId }),
     }),
   ver: (id: string) =>
-    comRenovacao<{ id: string; outra: PessoaDaConversa; mensagens: MensagemPrivada[] }>(
-      `/me/conversas/${id}`,
-    ),
+    comRenovacao<{
+      id: string
+      outra: PessoaDaConversa
+      /** Só quem abriu a conversa pode apagar mensagens nela. */
+      podeApagar: boolean
+      mensagens: MensagemPrivada[]
+    }>(`/me/conversas/${id}`),
+  apagarMensagem: (id: string, mensagemId: string) =>
+    comRenovacao<{ apagada: string }>(`/me/conversas/${id}/mensagens/${mensagemId}`, {
+      method: 'DELETE',
+    }),
+  apagarHistorico: (id: string) =>
+    comRenovacao<{ apagadas: number }>(`/me/conversas/${id}/mensagens`, { method: 'DELETE' }),
   enviar: (id: string, texto: string) =>
     comRenovacao<MensagemPrivada>(`/me/conversas/${id}/mensagens`, {
       method: 'POST',

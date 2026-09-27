@@ -6,7 +6,7 @@ import {
 } from '@nestjs/common'
 import { ConfigService } from '@nestjs/config'
 import { randomUUID } from 'node:crypto'
-import { mkdir, writeFile } from 'node:fs/promises'
+import { mkdir, rm, writeFile } from 'node:fs/promises'
 import { join, resolve } from 'node:path'
 import { TipoDeAnexo, type MensagemPrivada } from '@pv/db'
 import { PrismaService } from '../prisma/prisma.service'
@@ -171,7 +171,8 @@ export class MensagensService {
 
     const nova = await this.prisma.conversaPrivada.upsert({
       where: { userAId_userBId: par },
-      create: par,
+      // Quem abre é o dono do histórico: o único que o pode apagar.
+      create: { ...par, criadaPorId: userId },
       update: {},
     })
     return { id: nova.id }
@@ -193,6 +194,7 @@ export class MensagensService {
     return {
       id: c.id,
       outra,
+      podeApagar: c.criadaPorId === userId,
       mensagens: recentes.reverse().map((m) => this.paraEcra(m, userId, lidaPelaOutraEm)),
     }
   }
@@ -303,6 +305,54 @@ export class MensagensService {
           ? Math.max(0, Math.min(3600, opcoes.duracaoSeg!))
           : null,
     })
+  }
+
+  /**
+   * SÓ QUEM ABRIU A CONVERSA APAGA.
+   *
+   * O outro participante recebe "proibido" e não "não encontrada": ele sabe
+   * que a conversa existe, e o ecrã dele diz-lhe porquê.
+   */
+  private exigirDono(c: { criadaPorId: string | null }, userId: string) {
+    if (c.criadaPorId !== userId) {
+      throw new ForbiddenException('Só quem abriu esta conversa pode apagar mensagens.')
+    }
+  }
+
+  /** O ficheiro de um anexo no disco, se houver, sem nunca sair da pasta. */
+  private async apagarFicheiro(relativo: string | null) {
+    if (!relativo) return
+    const caminho = resolve(this.pasta, relativo)
+    if (!caminho.startsWith(this.pasta)) return
+    await rm(caminho, { force: true })
+  }
+
+  /** Apaga UMA mensagem, e o anexo dela. Para os dois lados. */
+  async apagarMensagem(userId: string, conversaId: string, mensagemId: string) {
+    const { c } = await this.daPessoa(conversaId, userId)
+    this.exigirDono(c, userId)
+    const m = await this.prisma.mensagemPrivada.findFirst({ where: { id: mensagemId, conversaId } })
+    if (!m) throw new NotFoundException('Mensagem não encontrada.')
+    await this.prisma.mensagemPrivada.delete({ where: { id: m.id } })
+    await this.apagarFicheiro(m.anexoCaminho)
+    return { apagada: m.id }
+  }
+
+  /**
+   * Apaga TODO o histórico da conversa: mensagens e ficheiros.
+   *
+   * A conversa fica, vazia, para se poder continuar a escrever nela — apagar o
+   * histórico não é fechar a porta.
+   */
+  async apagarHistorico(userId: string, conversaId: string) {
+    const { c } = await this.daPessoa(conversaId, userId)
+    this.exigirDono(c, userId)
+    const { count } = await this.prisma.mensagemPrivada.deleteMany({ where: { conversaId } })
+    const pasta = resolve(this.pasta, conversaId)
+    if (pasta.startsWith(this.pasta) && pasta !== this.pasta) {
+      await rm(pasta, { recursive: true, force: true })
+    }
+    return { apagadas: count }
   }
 
   /** O ficheiro de uma mensagem, só para os dois da conversa. */

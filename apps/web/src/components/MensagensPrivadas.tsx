@@ -335,6 +335,9 @@ export function ConversaPrivada({ projectSlug, conversaId }: { projectSlug: stri
   const fundo = useRef<HTMLDivElement | null>(null)
   const ultimaVista = useRef<string | null>(null)
   const escolherArquivo = useRef<HTMLInputElement | null>(null)
+  const [podeApagar, definirPodeApagar] = useState(false)
+  /** A mensagem tocada, que mostra o "Apagar" — só para quem pode apagar. */
+  const [escolhida, definirEscolhida] = useState<string | null>(null)
   const enviarGravacaoRef = useRef<() => void>(() => {})
   const gravador = useGravador(() => enviarGravacaoRef.current())
 
@@ -342,6 +345,7 @@ export function ConversaPrivada({ projectSlug, conversaId }: { projectSlug: stri
     try {
       const r = await mensagens.ver(conversaId)
       definirOutra(r.outra)
+      definirPodeApagar(r.podeApagar)
       definirLista(r.mensagens)
       definirErro(null)
     } catch (e) {
@@ -379,6 +383,35 @@ export function ConversaPrivada({ projectSlug, conversaId }: { projectSlug: stri
       definirErro(e instanceof ErroDeApi ? e.message : 'Não foi possível enviar.')
     } finally {
       definirAEnviar(false)
+    }
+  }
+
+  async function apagarMensagem(id: string) {
+    if (!confirm('Apagar esta mensagem? Ela some para os dois, e não há como desfazer.')) return
+    try {
+      await mensagens.apagarMensagem(conversaId, id)
+      definirLista((l) => l.filter((m) => m.id !== id))
+      definirEscolhida(null)
+      definirErro(null)
+    } catch (e) {
+      definirErro(e instanceof ErroDeApi ? e.message : 'Não foi possível apagar.')
+    }
+  }
+
+  async function apagarHistorico() {
+    if (
+      !confirm(
+        'Apagar TODO o histórico desta conversa? As mensagens e os arquivos somem para os dois, e não há como desfazer.',
+      )
+    )
+      return
+    try {
+      await mensagens.apagarHistorico(conversaId)
+      definirLista([])
+      definirEscolhida(null)
+      definirErro(null)
+    } catch (e) {
+      definirErro(e instanceof ErroDeApi ? e.message : 'Não foi possível apagar o histórico.')
     }
   }
 
@@ -447,6 +480,18 @@ export function ConversaPrivada({ projectSlug, conversaId }: { projectSlug: stri
         <span className="mp-privada" title="Só vocês dois veem esta conversa">
           🔒 Privada
         </span>
+        {/* Só quem abriu a conversa vê este botão — e só ele o pode usar. */}
+        {podeApagar && lista.length > 0 && (
+          <button
+            type="button"
+            className="mp-apagar-tudo"
+            onClick={() => void apagarHistorico()}
+            aria-label="Apagar histórico"
+            title="Apagar histórico"
+          >
+            🗑
+          </button>
+        )}
       </header>
 
       {aviso}
@@ -459,13 +504,37 @@ export function ConversaPrivada({ projectSlug, conversaId }: { projectSlug: stri
               <p className="mp-vazio">Escreva a primeira mensagem para {outra.displayName}.</p>
             )}
             {lista.map((m) => (
-              <div key={m.id} className={m.minha ? 'mp-balao minha' : 'mp-balao'}>
+              <div
+                key={m.id}
+                className={[
+                  'mp-balao',
+                  m.minha ? 'minha' : '',
+                  escolhida === m.id ? 'escolhida' : '',
+                ]
+                  .filter(Boolean)
+                  .join(' ')}
+                onClick={(e) => {
+                  if (!podeApagar) return
+                  // Tocar num leitor de áudio ou num anexo não escolhe a mensagem.
+                  if ((e.target as HTMLElement).closest('audio, a, button')) return
+                  definirEscolhida(escolhida === m.id ? null : m.id)
+                }}
+              >
                 {m.anexo && <Anexo conversaId={conversaId} mensagemId={m.id} anexo={m.anexo} />}
                 {m.texto && <p>{m.texto}</p>}
                 <time>
                   {quando(m.em)}
                   {m.minha && (m.vista ? ' · visto' : '')}
                 </time>
+                {podeApagar && escolhida === m.id && (
+                  <button
+                    type="button"
+                    className="mp-apagar-uma"
+                    onClick={() => void apagarMensagem(m.id)}
+                  >
+                    🗑 Apagar
+                  </button>
+                )}
               </div>
             ))}
             <div ref={fundo} />

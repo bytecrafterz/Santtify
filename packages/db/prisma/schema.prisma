@@ -807,6 +807,7 @@ model User {
 
   conversasComoA     ConversaPrivada[] @relation("ConversaA")
   conversasComoB     ConversaPrivada[] @relation("ConversaB")
+  conversasCriadas   ConversaPrivada[] @relation("ConversaCriadaPor")
   mensagensPrivadas  MensagemPrivada[]
 
   @@map("users")
@@ -826,6 +827,14 @@ model ConversaPrivada {
   userA   User   @relation("ConversaA", fields: [userAId], references: [id], onDelete: Cascade)
   userBId String @db.Uuid
   userB   User   @relation("ConversaB", fields: [userBId], references: [id], onDelete: Cascade)
+
+  /// Quem abriu a conversa — e o ÚNICO que pode apagar mensagens nela.
+  ///
+  /// "Only I, Kanari, can delete my conversation history" — 27/09. O outro
+  /// lado lê e responde, mas não apaga nada, nem as próprias mensagens: o
+  /// histórico é de quem abriu a conversa. Nulo = ninguém apaga.
+  criadaPorId String? @db.Uuid
+  criadaPor   User?   @relation("ConversaCriadaPor", fields: [criadaPorId], references: [id], onDelete: SetNull)
 
   /// Até onde cada um leu. O que chegou depois disto é "não lida".
   lidaPorAEm DateTime?

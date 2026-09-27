@@ -1,6 +1,7 @@
 import {
   Body,
   Controller,
+  Delete,
   Get,
   Param,
   ParseUUIDPipe,
@@ -63,6 +64,21 @@ export class MensagensController {
   @Post(':id/mensagens')
   enviar(@Param('id', ParseUUIDPipe) id: string, @Body() dto: EnviarDto, @Req() req: Request) {
     return this.mensagens.enviar(req.usuario!.id, id, dto.texto)
+  }
+
+  /** Apagar é só para quem abriu a conversa — ver `exigirDono`. */
+  @Delete(':id/mensagens/:mensagemId')
+  apagarMensagem(
+    @Param('id', ParseUUIDPipe) id: string,
+    @Param('mensagemId', ParseUUIDPipe) mensagemId: string,
+    @Req() req: Request,
+  ) {
+    return this.mensagens.apagarMensagem(req.usuario!.id, id, mensagemId)
+  }
+
+  @Delete(':id/mensagens')
+  apagarHistorico(@Param('id', ParseUUIDPipe) id: string, @Req() req: Request) {
+    return this.mensagens.apagarHistorico(req.usuario!.id, id)
   }
 
   @Post(':id/anexos')
