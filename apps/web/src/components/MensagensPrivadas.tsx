@@ -346,6 +346,15 @@ export function ListaDeConversas({ projectSlug }: { projectSlug: string }) {
 
 /* ── A conversa ──────────────────────────────────────────────────────── */
 
+/**
+ * Até ao fim da PÁGINA, não até à última mensagem: a barra de escrever fica
+ * por cima do fundo do ecrã, e alinhar a última mensagem com ele deixava-a
+ * escondida atrás da barra.
+ */
+function irAoFim() {
+  window.scrollTo({ top: document.documentElement.scrollHeight })
+}
+
 export function ConversaPrivada({ projectSlug, conversaId }: { projectSlug: string; conversaId: string }) {
   const { usuario, aviso } = useSessao(projectSlug)
   const [outra, definirOutra] = useState<PessoaDaConversa | null>(null)
@@ -353,7 +362,9 @@ export function ConversaPrivada({ projectSlug, conversaId }: { projectSlug: stri
   const [texto, definirTexto] = useState('')
   const [aEnviar, definirAEnviar] = useState(false)
   const [erro, definirErro] = useState<string | null>(null)
-  const fundo = useRef<HTMLDivElement | null>(null)
+  const mensagensRef = useRef<HTMLDivElement | null>(null)
+  /** Se a pessoa está no fim da conversa — e por isso deve continuar lá. */
+  const colado = useRef(true)
   const ultimaVista = useRef<string | null>(null)
   const escolherArquivo = useRef<HTMLInputElement | null>(null)
   const [podeApagar, definirPodeApagar] = useState(false)
@@ -388,9 +399,33 @@ export function ConversaPrivada({ projectSlug, conversaId }: { projectSlug: stri
     const ultima = lista[lista.length - 1]?.id ?? null
     if (ultima && ultima !== ultimaVista.current) {
       ultimaVista.current = ultima
-      fundo.current?.scrollIntoView({ block: 'end' })
+      colado.current = true
+      irAoFim()
     }
   }, [lista])
+
+  // Quem está no fim continua no fim. Fotos e áudios chegam DEPOIS do texto e
+  // fazem a conversa crescer: sem isto, a conversa abria e o fim fugia para
+  // baixo do ecrã (28/09). Quem subiu para reler fica onde está.
+  useEffect(() => {
+    const medir = () => {
+      const h = document.documentElement
+      colado.current = h.scrollHeight - window.innerHeight - window.scrollY < 120
+    }
+    window.addEventListener('scroll', medir, { passive: true })
+    const caixa = mensagensRef.current
+    const observador =
+      caixa && typeof ResizeObserver !== 'undefined'
+        ? new ResizeObserver(() => {
+            if (colado.current) irAoFim()
+          })
+        : null
+    if (caixa) observador?.observe(caixa)
+    return () => {
+      window.removeEventListener('scroll', medir)
+      observador?.disconnect()
+    }
+  }, [usuario])
 
   async function enviar() {
     const t = texto.trim()
@@ -557,7 +592,7 @@ export function ConversaPrivada({ projectSlug, conversaId }: { projectSlug: stri
 
       {usuario && (
         <>
-          <div className="mp-mensagens" aria-live="polite">
+          <div className="mp-mensagens" aria-live="polite" ref={mensagensRef}>
             {lista.length === 0 && outra && (
               <p className="mp-vazio">Escreva a primeira mensagem para {outra.displayName}.</p>
             )}
@@ -587,7 +622,6 @@ export function ConversaPrivada({ projectSlug, conversaId }: { projectSlug: stri
                 </time>
               </div>
             ))}
-            <div ref={fundo} />
           </div>
 
           {gravador.aGravar ? (

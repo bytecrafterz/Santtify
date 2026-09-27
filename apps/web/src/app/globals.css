@@ -12461,20 +12461,22 @@ body:has(.painel-karaoke) {
 }
 
 /* A conversa ocupa o ecrã, com a caixa de escrever sempre em baixo. */
+/*
+  A conversa enche o ecrã e nada mais: as mensagens esticam, a barra de
+  escrever fica no fundo e não sobra página por baixo dela. Com as linhas da
+  grelha fixas, sem aviso nem erro a barra caía na linha "1fr" e esticava;
+  e os 64px do envoltório ficavam por baixo dela, por isso "ir ao fim" nunca
+  era o fim (28/09).
+*/
 .mp-conversa {
-  grid-template-rows: auto auto 1fr auto;
-  min-height: calc(100dvh - 32px);
+  display: flex;
+  flex-direction: column;
+  min-height: calc(100dvh - 24px);
 }
 
-/*
-  No telemóvel, a barra de rolagem cinzenta aparecia por cima das mensagens.
-  A conversa continua a rolar com o dedo; só a barra deixa de se ver. No
-  computador fica, porque lá há quem a arraste com o rato.
-*/
-@media (pointer: coarse) {
-  html:has(.mp-conversa) { scrollbar-width: none; }
-  html:has(.mp-conversa)::-webkit-scrollbar { display: none; }
-}
+.mp-conversa .mp-mensagens { flex: 1; }
+
+.envoltorio.envoltorio-conversa { padding-bottom: 0; }
 
 .mp-conversa-topo {
   position: sticky;

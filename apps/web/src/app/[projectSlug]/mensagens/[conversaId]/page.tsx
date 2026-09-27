@@ -9,7 +9,7 @@ export default async function PaginaDaConversa({
 }) {
   const { projectSlug, conversaId } = await params
   return (
-    <main className="envoltorio">
+    <main className="envoltorio envoltorio-conversa">
       <ConversaPrivada projectSlug={projectSlug} conversaId={conversaId} />
     </main>
   )
