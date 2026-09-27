@@ -276,7 +276,7 @@ export class MensagensService {
     // nome, sinal de que já vinha certo.
     const bruto = ficheiro.originalname || 'arquivo'
     const emUtf8 = Buffer.from(bruto, 'latin1').toString('utf8')
-    const original = emUtf8.includes('FFFD') ? bruto : emUtf8
+    const original = emUtf8.includes('�') ? bruto : emUtf8
 
     // O nome que se mostra: sem pastas, sem caracteres de controlo, curto.
     const nome =
