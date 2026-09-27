@@ -194,7 +194,7 @@ export class MensagensService {
     return {
       id: c.id,
       outra,
-      podeApagar: c.criadaPorId === userId,
+      podeApagar: (await this.donoDe(c)) === userId,
       mensagens: recentes.reverse().map((m) => this.paraEcra(m, userId, lidaPelaOutraEm)),
     }
   }
@@ -313,10 +313,30 @@ export class MensagensService {
    * O outro participante recebe "proibido" e não "não encontrada": ele sabe
    * que a conversa existe, e o ecrã dele diz-lhe porquê.
    */
-  private exigirDono(c: { criadaPorId: string | null }, userId: string) {
-    if (c.criadaPorId !== userId) {
+  private async exigirDono(
+    c: { criadaPorId: string | null; userAId: string; userBId: string },
+    userId: string,
+  ) {
+    if ((await this.donoDe(c)) !== userId) {
       throw new ForbiddenException('Só quem abriu esta conversa pode apagar mensagens.')
     }
+  }
+
+  /**
+   * Quem abriu a conversa.
+   *
+   * As abertas antes de 27/09 não o guardaram. Aí o dono é o ÚNICO
+   * administrador dos dois — só um administrador abre conversas, logo foi ele.
+   * Com dois administradores e nada guardado, não há como saber, e ninguém
+   * apaga: é o lado seguro.
+   */
+  private async donoDe(c: { criadaPorId: string | null; userAId: string; userBId: string }) {
+    if (c.criadaPorId) return c.criadaPorId
+    const admins = await this.prisma.user.findMany({
+      where: { id: { in: [c.userAId, c.userBId] }, role: 'ADMIN' },
+      select: { id: true },
+    })
+    return admins.length === 1 ? admins[0].id : null
   }
 
   /** O ficheiro de um anexo no disco, se houver, sem nunca sair da pasta. */
@@ -330,7 +350,7 @@ export class MensagensService {
   /** Apaga UMA mensagem, e o anexo dela. Para os dois lados. */
   async apagarMensagem(userId: string, conversaId: string, mensagemId: string) {
     const { c } = await this.daPessoa(conversaId, userId)
-    this.exigirDono(c, userId)
+    await this.exigirDono(c, userId)
     const m = await this.prisma.mensagemPrivada.findFirst({ where: { id: mensagemId, conversaId } })
     if (!m) throw new NotFoundException('Mensagem não encontrada.')
     await this.prisma.mensagemPrivada.delete({ where: { id: m.id } })
@@ -346,7 +366,7 @@ export class MensagensService {
    */
   async apagarHistorico(userId: string, conversaId: string) {
     const { c } = await this.daPessoa(conversaId, userId)
-    this.exigirDono(c, userId)
+    await this.exigirDono(c, userId)
     const { count } = await this.prisma.mensagemPrivada.deleteMany({ where: { conversaId } })
     const pasta = resolve(this.pasta, conversaId)
     if (pasta.startsWith(this.pasta) && pasta !== this.pasta) {
