@@ -12375,3 +12375,227 @@ body:has(.painel-karaoke) {
   .confirmar-accoes { grid-template-columns: 1fr; }
   .confirmar-topo h2 { font-size: 1.35rem; }
 }
+
+/* ═══════════════════════════════════════════════════════════════════
+   MENSAGENS PRIVADAS (27/09)
+   ═══════════════════════════════════════════════════════════════════ */
+.mp { display: grid; gap: 12px; }
+
+.mp-titulo { margin: 4px 0 0; font-size: 1.4rem; }
+
+.mp-vazio {
+  margin: 16px 0;
+  color: var(--cor-texto-suave);
+  text-align: center;
+}
+
+.mp-rosto {
+  flex: 0 0 auto;
+  object-fit: cover;
+  border-radius: 50%;
+}
+
+.mp-inicial {
+  display: grid;
+  place-items: center;
+  font-weight: 800;
+  color: #fff;
+  background: var(--cor-primaria);
+}
+
+.mp-lista {
+  display: grid;
+  gap: 2px;
+  padding: 0;
+  margin: 0;
+  list-style: none;
+  background: var(--cor-superficie);
+  border: 1px solid var(--cor-borda);
+  border-radius: 16px;
+  overflow: hidden;
+}
+
+.mp-item {
+  display: flex;
+  gap: 12px;
+  align-items: center;
+  padding: 12px 14px;
+  color: var(--cor-texto);
+  text-decoration: none;
+}
+
+.mp-lista li + li .mp-item { border-top: 1px solid var(--cor-borda); }
+
+.mp-item-corpo { display: grid; flex: 1; gap: 2px; min-width: 0; }
+
+.mp-item-topo {
+  display: flex;
+  gap: 8px;
+  align-items: baseline;
+  justify-content: space-between;
+}
+
+.mp-item-topo time { flex: 0 0 auto; font-size: 0.75rem; color: var(--cor-texto-suave); }
+
+.mp-item-texto {
+  overflow: hidden;
+  font-size: 0.88rem;
+  color: var(--cor-texto-suave);
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.mp-item-texto.por-ler { font-weight: 700; color: var(--cor-texto); }
+
+.mp-contador {
+  display: inline-grid;
+  place-items: center;
+  min-width: 22px;
+  height: 22px;
+  padding: 0 6px;
+  font-size: 0.75rem;
+  font-weight: 800;
+  color: #fff;
+  background: #e0245e;
+  border-radius: 999px;
+}
+
+/* A conversa ocupa o ecrã, com a caixa de escrever sempre em baixo. */
+.mp-conversa {
+  grid-template-rows: auto auto 1fr auto;
+  min-height: calc(100dvh - 32px);
+}
+
+.mp-conversa-topo {
+  position: sticky;
+  top: 0;
+  z-index: 2;
+  display: flex;
+  gap: 10px;
+  align-items: center;
+  padding: 8px 0;
+  background: var(--cor-fundo, #f6f7fb);
+}
+
+.mp-conversa-quem {
+  display: flex;
+  flex: 1;
+  gap: 10px;
+  align-items: center;
+  min-width: 0;
+  color: var(--cor-texto);
+  text-decoration: none;
+}
+
+.mp-conversa-quem span { display: grid; min-width: 0; line-height: 1.2; }
+.mp-conversa-quem strong { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.mp-conversa-quem small { font-size: 0.78rem; color: var(--cor-texto-suave); }
+
+.mp-privada {
+  flex: 0 0 auto;
+  padding: 4px 10px;
+  font-size: 0.72rem;
+  font-weight: 700;
+  color: #1b7a3e;
+  background: #e5f6ec;
+  border-radius: 999px;
+}
+
+.mp-mensagens {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  align-content: end;
+  justify-content: flex-end;
+  padding: 4px 0 8px;
+}
+
+.mp-balao {
+  align-self: flex-start;
+  max-width: 82%;
+  padding: 8px 12px 6px;
+  background: var(--cor-superficie);
+  border: 1px solid var(--cor-borda);
+  border-radius: 16px 16px 16px 4px;
+}
+
+.mp-balao.minha {
+  align-self: flex-end;
+  color: #fff;
+  background: #1d6dff;
+  border-color: #1d6dff;
+  border-radius: 16px 16px 4px 16px;
+}
+
+.mp-balao p {
+  margin: 0;
+  overflow-wrap: anywhere;
+  white-space: pre-wrap;
+}
+
+.mp-balao time {
+  display: block;
+  margin-top: 2px;
+  font-size: 0.68rem;
+  text-align: right;
+  opacity: 0.7;
+}
+
+.mp-escrever {
+  position: sticky;
+  bottom: 0;
+  display: flex;
+  gap: 8px;
+  align-items: flex-end;
+  padding: 8px 0 calc(8px + env(safe-area-inset-bottom));
+  background: var(--cor-fundo, #f6f7fb);
+}
+
+.mp-escrever textarea {
+  flex: 1;
+  min-height: 44px;
+  max-height: 140px;
+  padding: 11px 14px;
+  font: inherit;
+  resize: none;
+  field-sizing: content;
+  background: var(--cor-superficie);
+  border: 1px solid var(--cor-borda);
+  border-radius: 22px;
+}
+
+.mp-escrever button {
+  display: grid;
+  flex: 0 0 auto;
+  place-items: center;
+  width: 44px;
+  height: 44px;
+  padding: 0;
+  font-size: 1.1rem;
+  color: #fff;
+  cursor: pointer;
+  background: #1d6dff;
+  border: 0;
+  border-radius: 50%;
+}
+
+.mp-escrever button:disabled { cursor: not-allowed; opacity: 0.4; }
+
+/* A porta no perfil. */
+.mp-porta {
+  display: inline-flex;
+  gap: 8px;
+  align-items: center;
+  justify-self: center;
+  width: fit-content;
+  padding: 9px 18px;
+  margin: 4px auto 8px;
+  font: inherit;
+  font-weight: 700;
+  color: var(--cor-texto);
+  text-decoration: none;
+  cursor: pointer;
+  background: var(--cor-superficie);
+  border: 1px solid var(--cor-borda);
+  border-radius: 999px;
+}

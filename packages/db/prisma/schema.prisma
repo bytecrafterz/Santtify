@@ -805,7 +805,55 @@ model User {
   curtidasEmComentarios CommentReaction[] @relation("CurtidasEmComentarios")
   pedidosDeCartoes      PedidoDeCartoes[]
 
+  conversasComoA     ConversaPrivada[] @relation("ConversaA")
+  conversasComoB     ConversaPrivada[] @relation("ConversaB")
+  mensagensPrivadas  MensagemPrivada[]
+
   @@map("users")
+}
+
+/// Uma conversa privada entre DUAS contas, e só entre essas duas.
+///
+/// Pedida em 27/09 para o desenvolvedor falar com o Rossandro dentro da
+/// plataforma. Só um administrador a pode abrir: numa plataforma de crianças,
+/// mensagens privadas abertas a qualquer pessoa eram um risco que ninguém pediu.
+///
+/// O par guarda-se ordenado (userAId < userBId) e é único, para a mesma dupla
+/// ter sempre uma conversa só, venha o pedido de qual dos dois vier.
+model ConversaPrivada {
+  id      String @id @default(uuid()) @db.Uuid
+  userAId String @db.Uuid
+  userA   User   @relation("ConversaA", fields: [userAId], references: [id], onDelete: Cascade)
+  userBId String @db.Uuid
+  userB   User   @relation("ConversaB", fields: [userBId], references: [id], onDelete: Cascade)
+
+  /// Até onde cada um leu. O que chegou depois disto é "não lida".
+  lidaPorAEm DateTime?
+  lidaPorBEm DateTime?
+
+  criadaEm  DateTime @default(now())
+  /// A hora da última mensagem, para a lista vir pela conversa mais recente.
+  ultimaEm  DateTime @default(now())
+
+  mensagens MensagemPrivada[]
+
+  @@unique([userAId, userBId])
+  @@index([userAId, ultimaEm])
+  @@index([userBId, ultimaEm])
+  @@map("conversas_privadas")
+}
+
+model MensagemPrivada {
+  id         String          @id @default(uuid()) @db.Uuid
+  conversaId String          @db.Uuid
+  conversa   ConversaPrivada @relation(fields: [conversaId], references: [id], onDelete: Cascade)
+  autorId    String          @db.Uuid
+  autor      User            @relation(fields: [autorId], references: [id], onDelete: Cascade)
+  texto      String
+  criadaEm   DateTime        @default(now())
+
+  @@index([conversaId, criadaEm])
+  @@map("mensagens_privadas")
 }
 
 enum UserRole {

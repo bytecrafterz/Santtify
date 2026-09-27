@@ -12,6 +12,7 @@ import { ContentModule } from './content/content.module'
 import { IdentityModule } from './identity/identity.module'
 import { AdminModule } from './admin/admin.module'
 import { SocialModule } from './social/social.module'
+import { MensagensModule } from './mensagens/mensagens.module'
 import { AnalyticsModule } from './analytics/analytics.module'
 import { HealthModule } from './health/health.module'
 import { CartoesModule } from './cartoes/cartoes.module'
@@ -41,6 +42,7 @@ import { KaraokeModule } from './karaoke/karaoke.module'
     IdentityModule,
     AdminModule,
     SocialModule,
+    MensagensModule,
     AnalyticsModule,
     HealthModule,
     CartoesModule,

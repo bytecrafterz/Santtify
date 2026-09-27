@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from 'react'
 import type { PerfilAnfitriao } from '@/lib/api'
+import { PortaDasMensagens } from './MensagensPrivadas'
 
 /**
  * O perfil de outra pessoa, com a mesma estrutura do perfil do dono.
@@ -47,6 +48,10 @@ export function PerfilDePessoa({
 
   return (
     <>
+      {/* Mensagens privadas: a porta para as minhas, ou — para um
+          administrador, no perfil de outra pessoa — para começar uma. */}
+      <PortaDasMensagens projectSlug={projectSlug} pessoaId={pessoa.id} />
+
       {/* Os indicadores e o escudo saíram daqui: passaram a vir do mesmo
           cabeçalho que desenha o perfil do anfitrião e o de quem entra. Aqui
           fica só o que é próprio desta pessoa, que são as publicações dela. */}
