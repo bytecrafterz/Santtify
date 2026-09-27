@@ -12599,3 +12599,119 @@ body:has(.painel-karaoke) {
   border: 1px solid var(--cor-borda);
   border-radius: 999px;
 }
+
+/* ── Anexos e voz nas mensagens privadas (27/09) ─────────────────────── */
+.mp-balao { display: grid; gap: 6px; }
+
+.mp-anexo-imagem {
+  display: block;
+  width: min(240px, 60vw);
+  min-height: 80px;
+  overflow: hidden;
+  background: rgb(0 0 0 / 6%);
+  border-radius: 12px;
+}
+
+.mp-anexo-imagem img {
+  display: block;
+  width: 100%;
+  height: auto;
+  max-height: 320px;
+  object-fit: cover;
+}
+
+.mp-anexo-imagem.a-carregar { height: 160px; }
+
+.mp-anexo-voz {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+  min-width: min(260px, 64vw);
+}
+
+.mp-anexo-voz audio {
+  flex: 1;
+  min-width: 0;
+  height: 36px;
+}
+
+.mp-anexo-voz small { font-size: 0.72rem; opacity: 0.8; }
+.mp-anexo-voz-espera { flex: 1; font-size: 0.85rem; opacity: 0.8; }
+
+.mp-anexo-arquivo {
+  display: flex;
+  gap: 10px;
+  align-items: center;
+  min-width: min(240px, 60vw);
+  max-width: 100%;
+  padding: 8px 10px;
+  font: inherit;
+  color: inherit;
+  text-align: left;
+  cursor: pointer;
+  background: rgb(0 0 0 / 6%);
+  border: 0;
+  border-radius: 10px;
+}
+
+.mp-balao.minha .mp-anexo-arquivo,
+.mp-balao.minha .mp-anexo-imagem { background: rgb(255 255 255 / 18%); }
+
+.mp-anexo-icone { font-size: 1.6rem; }
+.mp-anexo-dados { display: grid; min-width: 0; }
+
+.mp-anexo-dados strong {
+  overflow: hidden;
+  font-size: 0.88rem;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.mp-anexo-dados small { font-size: 0.72rem; opacity: 0.8; }
+.mp-anexo-falhou { margin: 0; font-size: 0.85rem; opacity: 0.8; }
+
+/* O botão do clipe, à esquerda da caixa: discreto, sem fundo azul. */
+.mp-escrever .mp-botao-secundario {
+  color: var(--cor-texto);
+  background: var(--cor-superficie);
+  border: 1px solid var(--cor-borda);
+}
+
+.mp-gravando { align-items: center; }
+
+.mp-gravando-tempo {
+  display: flex;
+  flex: 1;
+  gap: 8px;
+  align-items: center;
+  min-height: 44px;
+  padding: 0 14px;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+  background: var(--cor-superficie);
+  border: 1px solid var(--cor-borda);
+  border-radius: 22px;
+}
+
+.mp-gravando-tempo small { font-weight: 500; color: var(--cor-texto-suave); }
+
+.mp-gravando-ponto {
+  width: 10px;
+  height: 10px;
+  background: #e0245e;
+  border-radius: 50%;
+  animation: mp-pisca 1s ease-in-out infinite;
+}
+
+@keyframes mp-pisca { 50% { opacity: 0.25; } }
+
+@media (prefers-reduced-motion: reduce) {
+  .mp-gravando-ponto { animation: none; }
+}
+
+.mp-enviando {
+  margin: -4px 0 0;
+  font-size: 0.78rem;
+  color: var(--cor-texto-suave);
+  text-align: right;
+}

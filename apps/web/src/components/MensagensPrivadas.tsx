@@ -7,8 +7,11 @@ import { useAuth } from './ProvedorDeAuth'
 import { Voltar } from './Voltar'
 import { ErroDeApi } from '@/lib/auth'
 import {
+  duracaoLegivel,
   mensagens,
   quando,
+  tamanhoLegivel,
+  type AnexoDaMensagem,
   type MensagemPrivada,
   type PessoaDaConversa,
   type ResumoDaConversa,
@@ -28,6 +31,209 @@ import {
 
 const INTERVALO_DA_CONVERSA = 5000
 const INTERVALO_DA_LISTA = 15000
+/** O mesmo limite do servidor, conferido antes de enviar 25 MB para nada. */
+const TAMANHO_MAXIMO_ANEXO = 25 * 1024 * 1024
+/** Cinco minutos de voz; ao chegar lá, a gravação envia-se sozinha. */
+const MAXIMO_DE_GRAVACAO_SEG = 300
+
+/**
+ * O formato da gravação, pela ordem em que o outro lado a consegue ouvir.
+ *
+ * AAC em MP4 toca em qualquer telemóvel, iPhone incluído; o Chrome recente e
+ * o Safari gravam-no. Os que não gravam caem para Opus em WebM.
+ */
+const FORMATOS_DE_VOZ = [
+  'audio/mp4;codecs=mp4a.40.2',
+  'audio/mp4',
+  'audio/webm;codecs=opus',
+  'audio/webm',
+  'audio/ogg;codecs=opus',
+]
+
+function extensaoDaVoz(mime: string) {
+  if (mime.includes('mp4')) return 'm4a'
+  if (mime.includes('ogg')) return 'ogg'
+  return 'webm'
+}
+
+/**
+ * O GRAVADOR DE VOZ.
+ *
+ * Grava no próprio navegador, com o microfone que a pessoa autorizar. Nada
+ * sai do aparelho até ela carregar em enviar; cancelar deita tudo fora.
+ */
+function useGravador(aoChegarAoLimite: () => void) {
+  const [suportado, definirSuportado] = useState(false)
+  const [aGravar, definirAGravar] = useState(false)
+  const [segundos, definirSegundos] = useState(0)
+  const gravador = useRef<MediaRecorder | null>(null)
+  const pedacos = useRef<Blob[]>([])
+  const inicio = useRef(0)
+  const relogio = useRef<ReturnType<typeof setInterval> | null>(null)
+  const limite = useRef(aoChegarAoLimite)
+  limite.current = aoChegarAoLimite
+
+  useEffect(() => {
+    definirSuportado(!!navigator.mediaDevices?.getUserMedia && typeof MediaRecorder !== 'undefined')
+  }, [])
+
+  const largarMicrofone = useCallback(() => {
+    gravador.current?.stream.getTracks().forEach((t) => t.stop())
+    if (relogio.current) clearInterval(relogio.current)
+    relogio.current = null
+  }, [])
+
+  // Sair da conversa a meio de uma gravação desliga o microfone.
+  useEffect(() => largarMicrofone, [largarMicrofone])
+
+  async function comecar() {
+    const stream = await navigator.mediaDevices.getUserMedia({
+      audio: { echoCancellation: true, noiseSuppression: true },
+    })
+    const mime = FORMATOS_DE_VOZ.find((f) => MediaRecorder.isTypeSupported(f))
+    const r = new MediaRecorder(stream, mime ? { mimeType: mime, audioBitsPerSecond: 64000 } : undefined)
+    pedacos.current = []
+    r.ondataavailable = (e) => e.data.size && pedacos.current.push(e.data)
+    r.start(250)
+    gravador.current = r
+    inicio.current = Date.now()
+    definirSegundos(0)
+    definirAGravar(true)
+    relogio.current = setInterval(() => {
+      const s = (Date.now() - inicio.current) / 1000
+      definirSegundos(s)
+      if (s >= MAXIMO_DE_GRAVACAO_SEG) limite.current()
+    }, 250)
+  }
+
+  function parar(): Promise<{ blob: Blob; mime: string; segundos: number } | null> {
+    const r = gravador.current
+    if (!r) return Promise.resolve(null)
+    const duracao = (Date.now() - inicio.current) / 1000
+    return new Promise((ok) => {
+      r.onstop = () => {
+        largarMicrofone()
+        definirAGravar(false)
+        const mime = (r.mimeType || 'audio/webm').split(';')[0]
+        const blob = new Blob(pedacos.current, { type: mime })
+        gravador.current = null
+        ok(blob.size ? { blob, mime, segundos: duracao } : null)
+      }
+      r.stop()
+    })
+  }
+
+  function cancelar() {
+    const r = gravador.current
+    if (r) {
+      r.onstop = null
+      if (r.state !== 'inactive') r.stop()
+    }
+    largarMicrofone()
+    gravador.current = null
+    pedacos.current = []
+    definirAGravar(false)
+  }
+
+  return { suportado, aGravar, segundos, comecar, parar, cancelar }
+}
+
+/**
+ * O ANEXO DE UMA MENSAGEM.
+ *
+ * Imagens e voz descarregam-se ao aparecer, para se verem e ouvirem logo;
+ * ficheiros só quando a pessoa lhes toca. Tudo passa pelo token (ver
+ * `baixarAnexo`), e o endereço local liberta-se quando a mensagem sai do ecrã.
+ */
+function Anexo({
+  conversaId,
+  mensagemId,
+  anexo,
+}: {
+  conversaId: string
+  mensagemId: string
+  anexo: AnexoDaMensagem
+}) {
+  const [url, definirUrl] = useState<string | null>(null)
+  const [aBaixar, definirABaixar] = useState(false)
+  const [falhou, definirFalhou] = useState(false)
+  const mostraLogo = anexo.tipo === 'IMAGEM' || anexo.tipo === 'AUDIO'
+
+  useEffect(() => {
+    if (!mostraLogo) return
+    let vivo = true
+    let criado: string | null = null
+    mensagens
+      .baixarAnexo(conversaId, mensagemId)
+      .then((b) => {
+        if (!vivo) return
+        criado = URL.createObjectURL(new Blob([b], { type: anexo.mime }))
+        definirUrl(criado)
+      })
+      .catch(() => vivo && definirFalhou(true))
+    return () => {
+      vivo = false
+      if (criado) URL.revokeObjectURL(criado)
+    }
+  }, [conversaId, mensagemId, anexo.mime, mostraLogo])
+
+  async function descarregar() {
+    definirABaixar(true)
+    try {
+      const b = await mensagens.baixarAnexo(conversaId, mensagemId)
+      // Sempre como descarga: um HTML aberto daqui correria no nosso domínio.
+      const local = URL.createObjectURL(new Blob([b], { type: 'application/octet-stream' }))
+      const a = document.createElement('a')
+      a.href = local
+      a.download = anexo.nome
+      document.body.appendChild(a)
+      a.click()
+      a.remove()
+      setTimeout(() => URL.revokeObjectURL(local), 10000)
+    } catch {
+      definirFalhou(true)
+    } finally {
+      definirABaixar(false)
+    }
+  }
+
+  if (falhou) return <p className="mp-anexo-falhou">Não foi possível abrir “{anexo.nome}”.</p>
+
+  if (anexo.tipo === 'IMAGEM') {
+    return url ? (
+      <a className="mp-anexo-imagem" href={url} target="_blank" rel="noopener noreferrer">
+        {/* eslint-disable-next-line @next/next/no-img-element */}
+        <img src={url} alt={anexo.nome} />
+      </a>
+    ) : (
+      <span className="mp-anexo-imagem a-carregar" aria-label="Carregando imagem" />
+    )
+  }
+
+  if (anexo.tipo === 'AUDIO') {
+    return (
+      <span className="mp-anexo-voz">
+        <span aria-hidden="true">🎤</span>
+        {url ? (
+          <audio controls preload="metadata" src={url} />
+        ) : (
+          <span className="mp-anexo-voz-espera">Carregando áudio…</span>
+        )}
+        {anexo.duracaoSeg != null && <small>{duracaoLegivel(anexo.duracaoSeg)}</small>}
+      </span>
+    )
+  }
+
+  return (
+    <button type="button" className="mp-anexo-arquivo" onClick={() => void descarregar()} disabled={aBaixar}>
+      <span className="mp-anexo-icone" aria-hidden="true">📄</span>
+      <span className="mp-anexo-dados">
+        <strong>{anexo.nome}</strong>
+        <small>{aBaixar ? 'Baixando…' : `${tamanhoLegivel(anexo.bytes)} · toque para baixar`}</small>
+      </span>
+    </button>
+  )
+}
 
 /** Enquanto a sessão se restaura, ou sem sessão, o ecrã diz o que falta. */
 function useSessao(projectSlug: string) {
@@ -128,6 +334,9 @@ export function ConversaPrivada({ projectSlug, conversaId }: { projectSlug: stri
   const [erro, definirErro] = useState<string | null>(null)
   const fundo = useRef<HTMLDivElement | null>(null)
   const ultimaVista = useRef<string | null>(null)
+  const escolherArquivo = useRef<HTMLInputElement | null>(null)
+  const enviarGravacaoRef = useRef<() => void>(() => {})
+  const gravador = useGravador(() => enviarGravacaoRef.current())
 
   const carregar = useCallback(async () => {
     try {
@@ -173,6 +382,55 @@ export function ConversaPrivada({ projectSlug, conversaId }: { projectSlug: stri
     }
   }
 
+  async function enviarArquivo(f: File) {
+    if (f.size > TAMANHO_MAXIMO_ANEXO) {
+      definirErro('O arquivo passa de 25 MB.')
+      return
+    }
+    definirAEnviar(true)
+    try {
+      const m = await mensagens.enviarAnexo(conversaId, f, f.name)
+      definirLista((l) => [...l, m])
+      definirErro(null)
+    } catch (e) {
+      definirErro(e instanceof ErroDeApi ? e.message : 'Não foi possível enviar o arquivo.')
+    } finally {
+      definirAEnviar(false)
+    }
+  }
+
+  async function comecarGravacao() {
+    definirErro(null)
+    try {
+      await gravador.comecar()
+    } catch {
+      definirErro('Não foi possível usar o microfone. Verifique a permissão do navegador.')
+    }
+  }
+
+  async function enviarGravacao() {
+    const g = await gravador.parar()
+    if (!g) return
+    if (g.segundos < 0.7) {
+      definirErro('Gravação curta demais. Mantenha a gravação por pelo menos um segundo.')
+      return
+    }
+    definirAEnviar(true)
+    try {
+      const m = await mensagens.enviarAnexo(conversaId, g.blob, `voz.${extensaoDaVoz(g.mime)}`, {
+        voz: true,
+        duracaoSeg: Math.round(g.segundos * 10) / 10,
+      })
+      definirLista((l) => [...l, m])
+      definirErro(null)
+    } catch (e) {
+      definirErro(e instanceof ErroDeApi ? e.message : 'Não foi possível enviar o áudio.')
+    } finally {
+      definirAEnviar(false)
+    }
+  }
+  enviarGravacaoRef.current = () => void enviarGravacao()
+
   return (
     <div className="mp mp-conversa">
       <header className="mp-conversa-topo">
@@ -202,7 +460,8 @@ export function ConversaPrivada({ projectSlug, conversaId }: { projectSlug: stri
             )}
             {lista.map((m) => (
               <div key={m.id} className={m.minha ? 'mp-balao minha' : 'mp-balao'}>
-                <p>{m.texto}</p>
+                {m.anexo && <Anexo conversaId={conversaId} mensagemId={m.id} anexo={m.anexo} />}
+                {m.texto && <p>{m.texto}</p>}
                 <time>
                   {quando(m.em)}
                   {m.minha && (m.vista ? ' · visto' : '')}
@@ -212,6 +471,30 @@ export function ConversaPrivada({ projectSlug, conversaId }: { projectSlug: stri
             <div ref={fundo} />
           </div>
 
+          {gravador.aGravar ? (
+            /*
+              A GRAVAR: cancelar à esquerda, o tempo ao meio, enviar à direita.
+              Como no WhatsApp, que é o que toda a gente já sabe usar.
+            */
+            <div className="mp-escrever mp-gravando">
+              <button
+                type="button"
+                className="mp-botao-secundario"
+                onClick={gravador.cancelar}
+                aria-label="Cancelar gravação"
+              >
+                ✕
+              </button>
+              <span className="mp-gravando-tempo" aria-live="polite">
+                <span className="mp-gravando-ponto" aria-hidden="true" />
+                {duracaoLegivel(gravador.segundos)}
+                <small>Gravando…</small>
+              </span>
+              <button type="button" onClick={() => void enviarGravacao()} aria-label="Enviar áudio">
+                ➤
+              </button>
+            </div>
+          ) : (
           <form
             className="mp-escrever"
             onSubmit={(e) => {
@@ -219,6 +502,27 @@ export function ConversaPrivada({ projectSlug, conversaId }: { projectSlug: stri
               void enviar()
             }}
           >
+            <input
+              ref={escolherArquivo}
+              type="file"
+              className="apenas-leitor-de-ecra"
+              tabIndex={-1}
+              onChange={(e) => {
+                const f = e.target.files?.[0]
+                if (f) void enviarArquivo(f)
+                e.target.value = ''
+              }}
+            />
+            <button
+              type="button"
+              className="mp-botao-secundario"
+              onClick={() => escolherArquivo.current?.click()}
+              disabled={aEnviar}
+              aria-label="Enviar arquivo"
+              title="Enviar arquivo"
+            >
+              📎
+            </button>
             <textarea
               value={texto}
               onChange={(e) => definirTexto(e.target.value)}
@@ -234,10 +538,25 @@ export function ConversaPrivada({ projectSlug, conversaId }: { projectSlug: stri
               maxLength={4000}
               aria-label="Mensagem"
             />
-            <button type="submit" disabled={aEnviar || !texto.trim()} aria-label="Enviar">
-              ➤
-            </button>
+            {/* Caixa vazia e microfone disponível: o botão grava. Com texto, envia. */}
+            {!texto.trim() && gravador.suportado ? (
+              <button
+                type="button"
+                onClick={() => void comecarGravacao()}
+                disabled={aEnviar}
+                aria-label="Gravar áudio"
+                title="Gravar áudio"
+              >
+                🎤
+              </button>
+            ) : (
+              <button type="submit" disabled={aEnviar || !texto.trim()} aria-label="Enviar">
+                ➤
+              </button>
+            )}
           </form>
+          )}
+          {aEnviar && <p className="mp-enviando">Enviando…</p>}
         </>
       )}
     </div>

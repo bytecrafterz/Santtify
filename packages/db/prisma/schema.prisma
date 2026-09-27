@@ -843,14 +843,31 @@ model ConversaPrivada {
   @@map("conversas_privadas")
 }
 
+enum TipoDeAnexo {
+  IMAGEM
+  AUDIO
+  ARQUIVO
+}
+
 model MensagemPrivada {
   id         String          @id @default(uuid()) @db.Uuid
   conversaId String          @db.Uuid
   conversa   ConversaPrivada @relation(fields: [conversaId], references: [id], onDelete: Cascade)
   autorId    String          @db.Uuid
   autor      User            @relation(fields: [autorId], references: [id], onDelete: Cascade)
-  texto      String
+  /// Vazio numa mensagem que é só um ficheiro ou uma gravação.
+  texto      String          @default("")
   criadaEm   DateTime        @default(now())
+
+  /// O anexo, quando há: um ficheiro, uma imagem ou uma mensagem de voz.
+  /// O caminho é relativo a MENSAGENS_DIR e nunca é público.
+  anexoTipo    TipoDeAnexo?
+  anexoCaminho String?
+  anexoNome    String?
+  anexoMime    String?
+  anexoBytes   Int?
+  /// Só nas mensagens de voz: a duração, para o ecrã a mostrar sem descarregar.
+  duracaoSeg   Float?
 
   @@index([conversaId, criadaEm])
   @@map("mensagens_privadas")

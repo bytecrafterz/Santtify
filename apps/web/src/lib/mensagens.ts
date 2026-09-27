@@ -19,12 +19,21 @@ export interface ResumoDaConversa {
   ultimaEm: string
 }
 
+export interface AnexoDaMensagem {
+  tipo: 'IMAGEM' | 'AUDIO' | 'ARQUIVO'
+  nome: string
+  mime: string
+  bytes: number
+  duracaoSeg: number | null
+}
+
 export interface MensagemPrivada {
   id: string
   texto: string
   minha: boolean
   em: string
   vista: boolean
+  anexo: AnexoDaMensagem | null
 }
 
 /** Mesma mecânica de `cartoes.ts`: token, renovação uma vez, erro tipado. */
@@ -33,7 +42,7 @@ async function chamar<T>(caminho: string, init: RequestInit = {}): Promise<T> {
     ...init,
     credentials: 'include',
     headers: {
-      'Content-Type': 'application/json',
+      ...(init.body instanceof FormData ? {} : { 'Content-Type': 'application/json' }),
       ...(tokens.access ? { Authorization: `Bearer ${tokens.access}` } : {}),
       ...init.headers,
     },
@@ -73,6 +82,57 @@ export const mensagens = {
       method: 'POST',
       body: JSON.stringify({ texto }),
     }),
+
+  /** Um ficheiro, ou uma gravação (`voz`), com texto opcional. */
+  enviarAnexo: (
+    id: string,
+    arquivo: Blob,
+    nome: string,
+    opcoes: { texto?: string; voz?: boolean; duracaoSeg?: number } = {},
+  ) => {
+    const corpo = new FormData()
+    corpo.append('arquivo', arquivo, nome)
+    if (opcoes.texto) corpo.append('texto', opcoes.texto)
+    if (opcoes.voz) corpo.append('voz', 'true')
+    if (opcoes.duracaoSeg != null) corpo.append('duracaoSeg', String(opcoes.duracaoSeg))
+    // Sem Content-Type: o navegador põe o do multipart, com a fronteira.
+    return comRenovacao<MensagemPrivada>(`/me/conversas/${id}/anexos`, {
+      method: 'POST',
+      body: corpo,
+      headers: {},
+    })
+  },
+
+  /**
+   * O ficheiro, como Blob.
+   *
+   * Não pode ser um `<img src>` directo: o token vive só em memória e um
+   * endereço solto não o leva. Descarrega-se com o token, e o ecrã mostra-o por
+   * um endereço `blob:` local.
+   */
+  baixarAnexo: async (id: string, mensagemId: string): Promise<Blob> => {
+    const pedir = () =>
+      fetch(`${API_URL}/me/conversas/${id}/anexos/${mensagemId}`, {
+        credentials: 'include',
+        headers: tokens.access ? { Authorization: `Bearer ${tokens.access}` } : {},
+      })
+    let res = await pedir()
+    if (res.status === 401 && (await renovarSessao())) res = await pedir()
+    if (!res.ok) throw new ErroDeApi(res.status, 'Não foi possível abrir o arquivo.')
+    return res.blob()
+  },
+}
+
+/** "2,4 MB", "830 KB". */
+export function tamanhoLegivel(bytes: number): string {
+  if (bytes >= 1024 * 1024) return `${(bytes / 1024 / 1024).toFixed(1).replace('.', ',')} MB`
+  return `${Math.max(1, Math.round(bytes / 1024))} KB`
+}
+
+/** "0:07", "2:15". */
+export function duracaoLegivel(seg: number): string {
+  const s = Math.max(0, Math.round(seg))
+  return `${Math.floor(s / 60)}:${String(s % 60).padStart(2, '0')}`
 }
 
 /** "14:32" hoje, "ontem 14:32", ou "25/09 14:32". */

@@ -85,6 +85,10 @@ RUN mkdir -p /app/uploads && chown -R pv:pv /app/uploads
 # de propósito: aquela é servida estaticamente e esta NUNCA pode ser.
 RUN mkdir -p /app/cartoes-temporarios && chown -R pv:pv /app/cartoes-temporarios
 
+# Os ficheiros e as mensagens de voz das conversas privadas. Também fora de
+# /app/uploads, pela mesma razão: só a API os entrega, e só aos dois da conversa.
+RUN mkdir -p /app/mensagens-privadas && chown -R pv:pv /app/mensagens-privadas
+
 USER pv
 EXPOSE 3333
 

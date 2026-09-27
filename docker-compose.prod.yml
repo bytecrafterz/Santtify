@@ -53,6 +53,9 @@ services:
       # escreve —, e o primeiro envio de foto em produção falharia. A pasta
       # certa é a que o Dockerfile cria e entrega ao `pv`.
       CARTOES_DIR: /app/cartoes-temporarios
+      # Anexos das mensagens privadas. Mesma armadilha da linha de cima: sem
+      # isto a API escreveria numa pasta onde o `pv` não tem permissão.
+      MENSAGENS_DIR: /app/mensagens-privadas
       CARTOES_DIAS_ATE_EXPURGO: ${CARTOES_DIAS_ATE_EXPURGO:-7}
       CARTOES_HORAS_ATE_ABANDONO: ${CARTOES_HORAS_ATE_ABANDONO:-48}
       GEOIP_PAIS_DB: /app/geo/dbip-country-lite.mmdb
@@ -80,6 +83,8 @@ services:
       # com prazo de expurgo, e uma cópia de segurança guardava-as para além
       # dele.
       - cartoes_temporarios:/app/cartoes-temporarios
+      # Ficheiros e áudios das conversas privadas. Nunca servidos pelo Caddy.
+      - mensagens_privadas:/app/mensagens-privadas
       # A base de países, só de leitura. Fica no servidor e não na imagem: é
       # mensal, e reconstruir a imagem a cada actualização seria absurdo.
       - ./geo:/app/geo:ro
@@ -191,6 +196,7 @@ volumes:
   uploads:
   modelos:
   cartoes_temporarios:
+  mensagens_privadas:
   backups:
   caddy_data:
   caddy_config:
