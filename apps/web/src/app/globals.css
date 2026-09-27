@@ -12466,6 +12466,16 @@ body:has(.painel-karaoke) {
   min-height: calc(100dvh - 32px);
 }
 
+/*
+  No telemóvel, a barra de rolagem cinzenta aparecia por cima das mensagens.
+  A conversa continua a rolar com o dedo; só a barra deixa de se ver. No
+  computador fica, porque lá há quem a arraste com o rato.
+*/
+@media (pointer: coarse) {
+  html:has(.mp-conversa) { scrollbar-width: none; }
+  html:has(.mp-conversa)::-webkit-scrollbar { display: none; }
+}
+
 .mp-conversa-topo {
   position: sticky;
   top: 0;
