@@ -17,14 +17,18 @@ const PESSOA = { id: true, displayName: true, username: true, avatarUrl: true } 
  * MENSAGENS PRIVADAS ENTRE DUAS CONTAS.
  *
  * Pedidas em 27/09 para o desenvolvedor e o Rossandro falarem dentro da
- * plataforma. Três regras, todas aqui e nenhuma só no ecrã:
+ * plataforma. Duas regras, todas aqui e nenhuma só no ecrã:
  *
  *   1. Só um ADMINISTRADOR abre uma conversa. É uma plataforma de crianças, e
  *      mensagens privadas abertas a qualquer pessoa eram um risco que ninguém
  *      pediu. Aberta, os dois respondem.
  *   2. Só os dois participantes vêem a conversa. Quem não é um deles recebe
  *      "não encontrada", e não "proibida": nem a existência dela se confirma.
- *   3. Um bloqueio entre os dois, em qualquer sentido, pára o envio.
+ *
+ * O bloqueio entre contas NÃO se aplica aqui, a pedido dele em 27/09: a
+ * conversa só existe porque um administrador a abriu, e bloquear o canal com o
+ * administrador não era algo que ele quisesse. O bloqueio continua a valer no
+ * resto da plataforma (comentários e perfis).
  */
 @Injectable()
 export class MensagensService {
@@ -148,23 +152,12 @@ export class MensagensService {
   }
 
   async enviar(userId: string, conversaId: string, texto: string) {
-    const { c, souA, outra } = await this.daPessoa(conversaId, userId)
+    const { c, souA } = await this.daPessoa(conversaId, userId)
     const limpo = (texto ?? '').replace(/\r\n/g, '\n').trim()
     if (!limpo) throw new BadRequestException('Escreva uma mensagem.')
     if (limpo.length > MAXIMO_DE_CARACTERES) {
       throw new BadRequestException(`A mensagem passa de ${MAXIMO_DE_CARACTERES} caracteres.`)
     }
-
-    const bloqueio = await this.prisma.userBlock.findFirst({
-      where: {
-        OR: [
-          { blockerId: userId, blockedId: outra.id },
-          { blockerId: outra.id, blockedId: userId },
-        ],
-      },
-      select: { id: true },
-    })
-    if (bloqueio) throw new ForbiddenException('Não é possível enviar mensagens a esta pessoa.')
 
     const agora = new Date()
     const [m] = await this.prisma.$transaction([
