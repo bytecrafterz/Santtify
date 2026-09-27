@@ -49,6 +49,8 @@ const PESSOA = { id: true, displayName: true, username: true, avatarUrl: true } 
 @Injectable()
 export class MensagensService {
   private readonly pasta: string
+  /** As contas que podem apagar mensagens. Ver `MENSAGENS_PODEM_APAGAR`. */
+  private readonly podemApagar: Set<string>
 
   constructor(
     private readonly prisma: PrismaService,
@@ -56,6 +58,12 @@ export class MensagensService {
   ) {
     this.pasta = resolve(
       config.get<string>('MENSAGENS_DIR') ?? join(process.cwd(), '..', '..', 'mensagens-privadas'),
+    )
+    this.podemApagar = new Set(
+      (config.get<string>('MENSAGENS_PODEM_APAGAR') ?? '')
+        .split(',')
+        .map((s) => s.trim())
+        .filter(Boolean),
     )
   }
 
@@ -122,6 +130,7 @@ export class MensagensService {
           },
         })
         const ultima = c.mensagens[0]
+        const lidaPelaOutraEm = souA ? c.lidaPorBEm : c.lidaPorAEm
         const resumo = !ultima
           ? ''
           : ultima.texto
@@ -134,7 +143,15 @@ export class MensagensService {
         return {
           id: c.id,
           outra: souA ? c.userB : c.userA,
-          ultima: ultima ? { texto: resumo, minha: ultima.autorId === userId, em: ultima.criadaEm } : null,
+          ultima: ultima
+            ? {
+                texto: resumo,
+                minha: ultima.autorId === userId,
+                em: ultima.criadaEm,
+                // O ✓✓ da lista: a outra pessoa já abriu a conversa depois dela.
+                vista: ultima.autorId === userId && !!lidaPelaOutraEm && lidaPelaOutraEm >= ultima.criadaEm,
+              }
+            : null,
           naoLidas,
           ultimaEm: c.ultimaEm,
         }
@@ -194,7 +211,7 @@ export class MensagensService {
     return {
       id: c.id,
       outra,
-      podeApagar: (await this.donoDe(c)) === userId,
+      podeApagar: this.podemApagar.has(userId),
       mensagens: recentes.reverse().map((m) => this.paraEcra(m, userId, lidaPelaOutraEm)),
     }
   }
@@ -308,35 +325,20 @@ export class MensagensService {
   }
 
   /**
-   * SÓ QUEM ABRIU A CONVERSA APAGA.
+   * SÓ O KANARI APAGA.
+   *
+   * "Only Kanari, as the administrator, has the ability to selectively delete
+   * messages" — 28/09. Não é "quem abriu a conversa" nem "qualquer
+   * administrador": o Rossandro também é administrador, e numa conversa aberta
+   * por ele ficaria a poder apagar. A lista vem de `MENSAGENS_PODEM_APAGAR`.
    *
    * O outro participante recebe "proibido" e não "não encontrada": ele sabe
-   * que a conversa existe, e o ecrã dele diz-lhe porquê.
+   * que a conversa existe, e o ecrã dele nem lhe mostra o botão.
    */
-  private async exigirDono(
-    c: { criadaPorId: string | null; userAId: string; userBId: string },
-    userId: string,
-  ) {
-    if ((await this.donoDe(c)) !== userId) {
-      throw new ForbiddenException('Só quem abriu esta conversa pode apagar mensagens.')
+  private exigirQuemPodeApagar(userId: string) {
+    if (!this.podemApagar.has(userId)) {
+      throw new ForbiddenException('Só o administrador pode apagar mensagens.')
     }
-  }
-
-  /**
-   * Quem abriu a conversa.
-   *
-   * As abertas antes de 27/09 não o guardaram. Aí o dono é o ÚNICO
-   * administrador dos dois — só um administrador abre conversas, logo foi ele.
-   * Com dois administradores e nada guardado, não há como saber, e ninguém
-   * apaga: é o lado seguro.
-   */
-  private async donoDe(c: { criadaPorId: string | null; userAId: string; userBId: string }) {
-    if (c.criadaPorId) return c.criadaPorId
-    const admins = await this.prisma.user.findMany({
-      where: { id: { in: [c.userAId, c.userBId] }, role: 'ADMIN' },
-      select: { id: true },
-    })
-    return admins.length === 1 ? admins[0].id : null
   }
 
   /** O ficheiro de um anexo no disco, se houver, sem nunca sair da pasta. */
@@ -347,15 +349,23 @@ export class MensagensService {
     await rm(caminho, { force: true })
   }
 
-  /** Apaga UMA mensagem, e o anexo dela. Para os dois lados. */
-  async apagarMensagem(userId: string, conversaId: string, mensagemId: string) {
-    const { c } = await this.daPessoa(conversaId, userId)
-    await this.exigirDono(c, userId)
-    const m = await this.prisma.mensagemPrivada.findFirst({ where: { id: mensagemId, conversaId } })
-    if (!m) throw new NotFoundException('Mensagem não encontrada.')
-    await this.prisma.mensagemPrivada.delete({ where: { id: m.id } })
-    await this.apagarFicheiro(m.anexoCaminho)
-    return { apagada: m.id }
+  /**
+   * Apaga as mensagens ESCOLHIDAS, e os anexos delas. Para os dois lados.
+   *
+   * Só as que pertencem a esta conversa: um id de outra conversa na lista é
+   * ignorado, e não apagado.
+   */
+  async apagarMensagens(userId: string, conversaId: string, ids: string[]) {
+    await this.daPessoa(conversaId, userId)
+    this.exigirQuemPodeApagar(userId)
+    const alvo = await this.prisma.mensagemPrivada.findMany({
+      where: { conversaId, id: { in: ids } },
+      select: { id: true, anexoCaminho: true },
+    })
+    if (!alvo.length) return { apagadas: 0 }
+    await this.prisma.mensagemPrivada.deleteMany({ where: { id: { in: alvo.map((m) => m.id) } } })
+    await Promise.all(alvo.map((m) => this.apagarFicheiro(m.anexoCaminho)))
+    return { apagadas: alvo.length }
   }
 
   /**
@@ -365,8 +375,8 @@ export class MensagensService {
    * histórico não é fechar a porta.
    */
   async apagarHistorico(userId: string, conversaId: string) {
-    const { c } = await this.daPessoa(conversaId, userId)
-    await this.exigirDono(c, userId)
+    await this.daPessoa(conversaId, userId)
+    this.exigirQuemPodeApagar(userId)
     const { count } = await this.prisma.mensagemPrivada.deleteMany({ where: { conversaId } })
     const pasta = resolve(this.pasta, conversaId)
     if (pasta.startsWith(this.pasta) && pasta !== this.pasta) {

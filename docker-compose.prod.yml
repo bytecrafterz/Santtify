@@ -56,6 +56,10 @@ services:
       # Anexos das mensagens privadas. Mesma armadilha da linha de cima: sem
       # isto a API escreveria numa pasta onde o `pv` não tem permissão.
       MENSAGENS_DIR: /app/mensagens-privadas
+      # Quem pode apagar mensagens privadas: ids de conta, separados por
+      # vírgula. Por omissão, só o Kanari (voce@gmail.com) — pedido dele em
+      # 28/09. Sem nenhum id, ninguém apaga.
+      MENSAGENS_PODEM_APAGAR: ${MENSAGENS_PODEM_APAGAR:-859f8044-11ec-4f8d-9588-6762d61f7a9d}
       CARTOES_DIAS_ATE_EXPURGO: ${CARTOES_DIAS_ATE_EXPURGO:-7}
       CARTOES_HORAS_ATE_ABANDONO: ${CARTOES_HORAS_ATE_ABANDONO:-48}
       GEOIP_PAIS_DB: /app/geo/dbip-country-lite.mmdb

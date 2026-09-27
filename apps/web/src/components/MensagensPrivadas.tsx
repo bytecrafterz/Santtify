@@ -260,6 +260,26 @@ function Rosto({ pessoa, tamanho = 44 }: { pessoa: PessoaDaConversa; tamanho?: n
   )
 }
 
+/**
+ * ✓ ENVIADA, ✓✓ LIDA.
+ *
+ * "Make sure a checkmark appears to indicate whether the other person has
+ * read the message" — 28/09. Os mesmos sinais do WhatsApp, que toda a gente
+ * já sabe ler: um visto quando chegou, dois e em destaque quando foi lida.
+ */
+function Vistos({ vista }: { vista: boolean }) {
+  return (
+    <span
+      className={vista ? 'mp-vistos lida' : 'mp-vistos'}
+      role="img"
+      aria-label={vista ? 'Lida' : 'Enviada'}
+      title={vista ? 'Lida' : 'Enviada'}
+    >
+      {vista ? '✓✓' : '✓'}
+    </span>
+  )
+}
+
 /* ── A lista ─────────────────────────────────────────────────────────── */
 
 export function ListaDeConversas({ projectSlug }: { projectSlug: string }) {
@@ -306,7 +326,8 @@ export function ListaDeConversas({ projectSlug }: { projectSlug: string }) {
                     <time>{quando(c.ultima?.em ?? c.ultimaEm)}</time>
                   </span>
                   <span className={c.naoLidas ? 'mp-item-texto por-ler' : 'mp-item-texto'}>
-                    {c.ultima ? `${c.ultima.minha ? 'Você: ' : ''}${c.ultima.texto}` : 'Conversa nova'}
+                    {c.ultima?.minha && <Vistos vista={c.ultima.vista} />}
+                    {c.ultima ? c.ultima.texto : 'Conversa nova'}
                   </span>
                 </span>
                 {c.naoLidas > 0 && (
@@ -336,8 +357,9 @@ export function ConversaPrivada({ projectSlug, conversaId }: { projectSlug: stri
   const ultimaVista = useRef<string | null>(null)
   const escolherArquivo = useRef<HTMLInputElement | null>(null)
   const [podeApagar, definirPodeApagar] = useState(false)
-  /** A mensagem tocada, que mostra o "Apagar" — só para quem pode apagar. */
-  const [escolhida, definirEscolhida] = useState<string | null>(null)
+  /** As mensagens escolhidas para apagar — só para quem pode apagar. */
+  const [escolhidas, definirEscolhidas] = useState<Set<string>>(new Set())
+  const aEscolher = escolhidas.size > 0
   const enviarGravacaoRef = useRef<() => void>(() => {})
   const gravador = useGravador(() => enviarGravacaoRef.current())
 
@@ -386,12 +408,23 @@ export function ConversaPrivada({ projectSlug, conversaId }: { projectSlug: stri
     }
   }
 
-  async function apagarMensagem(id: string) {
-    if (!confirm('Apagar esta mensagem? Ela some para os dois, e não há como desfazer.')) return
+  function alternarEscolha(id: string) {
+    definirEscolhidas((atual) => {
+      const nova = new Set(atual)
+      if (nova.has(id)) nova.delete(id)
+      else nova.add(id)
+      return nova
+    })
+  }
+
+  async function apagarEscolhidas() {
+    const ids = [...escolhidas]
+    const n = ids.length
+    if (!confirm(`Apagar ${n === 1 ? 'esta mensagem' : `estas ${n} mensagens`}? Some${n === 1 ? '' : 'm'} para os dois, e não há como desfazer.`)) return
     try {
-      await mensagens.apagarMensagem(conversaId, id)
-      definirLista((l) => l.filter((m) => m.id !== id))
-      definirEscolhida(null)
+      await mensagens.apagarMensagens(conversaId, ids)
+      definirLista((l) => l.filter((m) => !escolhidas.has(m.id)))
+      definirEscolhidas(new Set())
       definirErro(null)
     } catch (e) {
       definirErro(e instanceof ErroDeApi ? e.message : 'Não foi possível apagar.')
@@ -408,7 +441,7 @@ export function ConversaPrivada({ projectSlug, conversaId }: { projectSlug: stri
     try {
       await mensagens.apagarHistorico(conversaId)
       definirLista([])
-      definirEscolhida(null)
+      definirEscolhidas(new Set())
       definirErro(null)
     } catch (e) {
       definirErro(e instanceof ErroDeApi ? e.message : 'Não foi possível apagar o histórico.')
@@ -466,6 +499,30 @@ export function ConversaPrivada({ projectSlug, conversaId }: { projectSlug: stri
 
   return (
     <div className="mp mp-conversa">
+      {aEscolher ? (
+        /*
+          ESCOLHER O QUE APAGAR.
+
+          "Selectively delete messages" — 28/09. Toca-se em cada mensagem a
+          apagar, e esta barra diz quantas e apaga só essas.
+        */
+        <header className="mp-conversa-topo mp-escolha">
+          <button
+            type="button"
+            className="mp-apagar-tudo"
+            onClick={() => definirEscolhidas(new Set())}
+            aria-label="Cancelar seleção"
+          >
+            ✕
+          </button>
+          <strong className="mp-escolha-conta">
+            {escolhidas.size} {escolhidas.size === 1 ? 'selecionada' : 'selecionadas'}
+          </strong>
+          <button type="button" className="mp-apagar-uma" onClick={() => void apagarEscolhidas()}>
+            🗑 Apagar
+          </button>
+        </header>
+      ) : (
       <header className="mp-conversa-topo">
         <Voltar href={`/${projectSlug}/mensagens`} />
         {outra && (
@@ -493,6 +550,7 @@ export function ConversaPrivada({ projectSlug, conversaId }: { projectSlug: stri
           </button>
         )}
       </header>
+      )}
 
       {aviso}
       {erro && <p className="cartoes-erro">{erro}</p>}
@@ -509,32 +567,24 @@ export function ConversaPrivada({ projectSlug, conversaId }: { projectSlug: stri
                 className={[
                   'mp-balao',
                   m.minha ? 'minha' : '',
-                  escolhida === m.id ? 'escolhida' : '',
+                  escolhidas.has(m.id) ? 'escolhida' : '',
                 ]
                   .filter(Boolean)
                   .join(' ')}
+                aria-selected={podeApagar ? escolhidas.has(m.id) : undefined}
                 onClick={(e) => {
                   if (!podeApagar) return
                   // Tocar num leitor de áudio ou num anexo não escolhe a mensagem.
                   if ((e.target as HTMLElement).closest('audio, a, button')) return
-                  definirEscolhida(escolhida === m.id ? null : m.id)
+                  alternarEscolha(m.id)
                 }}
               >
                 {m.anexo && <Anexo conversaId={conversaId} mensagemId={m.id} anexo={m.anexo} />}
                 {m.texto && <p>{m.texto}</p>}
                 <time>
                   {quando(m.em)}
-                  {m.minha && (m.vista ? ' · visto' : '')}
+                  {m.minha && <Vistos vista={m.vista} />}
                 </time>
-                {podeApagar && escolhida === m.id && (
-                  <button
-                    type="button"
-                    className="mp-apagar-uma"
-                    onClick={() => void apagarMensagem(m.id)}
-                  >
-                    🗑 Apagar
-                  </button>
-                )}
               </div>
             ))}
             <div ref={fundo} />

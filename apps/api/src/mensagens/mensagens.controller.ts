@@ -13,7 +13,7 @@ import {
   UseInterceptors,
 } from '@nestjs/common'
 import { FileInterceptor } from '@nestjs/platform-express'
-import { IsOptional, IsString, IsUUID, MaxLength } from 'class-validator'
+import { ArrayMaxSize, ArrayMinSize, IsArray, IsOptional, IsString, IsUUID, MaxLength } from 'class-validator'
 import type { Request, Response } from 'express'
 import { createReadStream } from 'node:fs'
 import { stat } from 'node:fs/promises'
@@ -26,6 +26,10 @@ class AbrirDto {
 
 class EnviarDto {
   @IsString() @MaxLength(MAXIMO_DE_CARACTERES) texto!: string
+}
+
+class ApagarDto {
+  @IsArray() @ArrayMinSize(1) @ArrayMaxSize(500) @IsUUID('all', { each: true }) ids!: string[]
 }
 
 /** Os campos que acompanham o ficheiro. Chegam como texto, por ser multipart. */
@@ -66,14 +70,14 @@ export class MensagensController {
     return this.mensagens.enviar(req.usuario!.id, id, dto.texto)
   }
 
-  /** Apagar é só para quem abriu a conversa — ver `exigirDono`. */
-  @Delete(':id/mensagens/:mensagemId')
-  apagarMensagem(
+  /** Apagar é só para o Kanari — ver `exigirQuemPodeApagar`. */
+  @Post(':id/mensagens/apagar')
+  apagarMensagens(
     @Param('id', ParseUUIDPipe) id: string,
-    @Param('mensagemId', ParseUUIDPipe) mensagemId: string,
+    @Body() dto: ApagarDto,
     @Req() req: Request,
   ) {
-    return this.mensagens.apagarMensagem(req.usuario!.id, id, mensagemId)
+    return this.mensagens.apagarMensagens(req.usuario!.id, id, dto.ids)
   }
 
   @Delete(':id/mensagens')

@@ -14,7 +14,7 @@ export interface PessoaDaConversa {
 export interface ResumoDaConversa {
   id: string
   outra: PessoaDaConversa
-  ultima: { texto: string; minha: boolean; em: string } | null
+  ultima: { texto: string; minha: boolean; em: string; vista: boolean } | null
   naoLidas: number
   ultimaEm: string
 }
@@ -77,13 +77,14 @@ export const mensagens = {
     comRenovacao<{
       id: string
       outra: PessoaDaConversa
-      /** Só quem abriu a conversa pode apagar mensagens nela. */
+      /** Só o administrador designado (o Kanari) pode apagar mensagens. */
       podeApagar: boolean
       mensagens: MensagemPrivada[]
     }>(`/me/conversas/${id}`),
-  apagarMensagem: (id: string, mensagemId: string) =>
-    comRenovacao<{ apagada: string }>(`/me/conversas/${id}/mensagens/${mensagemId}`, {
-      method: 'DELETE',
+  apagarMensagens: (id: string, ids: string[]) =>
+    comRenovacao<{ apagadas: number }>(`/me/conversas/${id}/mensagens/apagar`, {
+      method: 'POST',
+      body: JSON.stringify({ ids }),
     }),
   apagarHistorico: (id: string) =>
     comRenovacao<{ apagadas: number }>(`/me/conversas/${id}/mensagens`, { method: 'DELETE' }),

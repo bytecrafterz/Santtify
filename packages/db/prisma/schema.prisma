@@ -828,11 +828,8 @@ model ConversaPrivada {
   userBId String @db.Uuid
   userB   User   @relation("ConversaB", fields: [userBId], references: [id], onDelete: Cascade)
 
-  /// Quem abriu a conversa — e o ÚNICO que pode apagar mensagens nela.
-  ///
-  /// "Only I, Kanari, can delete my conversation history" — 27/09. O outro
-  /// lado lê e responde, mas não apaga nada, nem as próprias mensagens: o
-  /// histórico é de quem abriu a conversa. Nulo = ninguém apaga.
+  /// Quem abriu a conversa. Só registo: desde 28/09 quem apaga mensagens não
+  /// é quem abriu, é a lista MENSAGENS_PODEM_APAGAR (hoje, só o Kanari).
   criadaPorId String? @db.Uuid
   criadaPor   User?   @relation("ConversaCriadaPor", fields: [criadaPorId], references: [id], onDelete: SetNull)
 

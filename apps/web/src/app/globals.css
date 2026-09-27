@@ -12745,3 +12745,27 @@ body:has(.painel-karaoke) {
   border: 0;
   border-radius: 999px;
 }
+
+/* ── ✓ / ✓✓ e seleção para apagar (28/09) ────────────────────────────── */
+.mp-vistos {
+  margin-left: 4px;
+  font-weight: 800;
+  letter-spacing: -0.18em;
+  opacity: 0.75;
+}
+
+/* Lida: mais forte e de outra cor. No balão azul, um azul não se via. */
+.mp-vistos.lida { color: #53e0a0; opacity: 1; }
+.mp-balao.minha .mp-vistos.lida { color: #b6ffd9; }
+.mp-item-texto .mp-vistos { margin: 0 4px 0 0; }
+
+.mp-escolha { justify-content: space-between; }
+.mp-escolha-conta { flex: 1; }
+
+.mp-balao[aria-selected] { cursor: pointer; }
+
+.mp-balao.escolhida {
+  outline: 3px solid #e0245e;
+  outline-offset: 2px;
+  filter: saturate(0.85);
+}
