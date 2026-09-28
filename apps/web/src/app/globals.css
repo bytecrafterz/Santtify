@@ -15028,6 +15028,19 @@ body:has(.painel-karaoke) {
     padding: 4px 8px;
     font-size: 0.7rem;
   }
+
+  /* "Comprar meu primeiro conjunto" numa linha, como no mockup: num
+     telemóvel de 390px partia-se em duas por uma dúzia de pixéis. */
+  .af-comprar {
+    gap: 8px;
+    padding: 14px 10px;
+    font-size: clamp(0.86rem, 3.9vw, 1rem);
+  }
+
+  .af-comprar svg {
+    width: 20px;
+    height: 20px;
+  }
 }
 
 @media (max-width: 340px) {
