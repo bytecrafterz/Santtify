@@ -9,8 +9,9 @@ export default async function PaginaAdmin({
 }) {
   const { projectSlug } = await params
   return (
-    <main className="envoltorio">
-      <h1>Painel</h1>
+    // Mais largo que o envoltório do site: o painel inicial é uma grade de
+    // cartões, e em 720px caberia uma coluna só.
+    <main className="pi-pagina">
       <ListaAdmin projectSlug={projectSlug} />
     </main>
   )

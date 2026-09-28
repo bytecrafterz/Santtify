@@ -985,17 +985,6 @@ h3 {
 
 /* ── Dashboard ───────────────────────────────────────────────────── */
 
-.atalho-metricas {
-  text-decoration: none;
-  color: var(--cor-texto);
-  font-weight: 700;
-}
-
-.atalho-metricas small {
-  font-weight: 400;
-  color: var(--cor-texto-suave);
-}
-
 .cabecalho select {
   font-family: inherit;
   font-size: 14px;
@@ -1358,19 +1347,6 @@ h3 {
 .moderacao-acoes button:disabled {
   opacity: 0.5;
   cursor: default;
-}
-
-/* Contador de itens esperando aprovação, no atalho do painel. */
-.contador-fila {
-  display: inline-block;
-  margin-left: 8px;
-  padding: 1px 8px;
-  border-radius: 999px;
-  background: #c0392b;
-  color: #fff;
-  font-style: normal;
-  font-size: 13px;
-  font-weight: 700;
 }
 
 /* A chave que liga e desliga a aprovação prévia, no alto da fila. */
@@ -1896,19 +1872,6 @@ h3 {
   margin-top: 18px;
   padding-top: 16px;
   border-top: 1px solid var(--cor-borda);
-}
-
-/* Link de compra, no painel. */
-.link-de-compra input {
-  width: 100%;
-  margin-top: 8px;
-  padding: 12px 14px;
-  font-size: 16px;
-  font-family: inherit;
-  border: 1px solid var(--cor-borda);
-  border-radius: 10px;
-  background: var(--cor-fundo);
-  color: var(--cor-texto);
 }
 
 /* O selo PV, no fim da fileira de indicadores da letra. */
@@ -6017,17 +5980,7 @@ button.letra-bloco {
   font-weight: 800;
 }
 
-/* ── Ajuda e suporte (23/08) ─────────────────────────────────────────
-   Vermelho porque é o único sítio do painel onde há uma pessoa parada
-   do outro lado à espera de entrar. */
-.atalho-suporte {
-  border-left: 4px solid var(--cor-alerta);
-}
-
-.atalho-suporte span {
-  font-weight: 800;
-}
-
+/* ── Ajuda e suporte (23/08) ───────────────────────────────────────── */
 .ajuda-suporte {
   display: grid;
   gap: 0.9rem;
@@ -11253,51 +11206,6 @@ body:has(.painel-karaoke) {
   }
 }
 
-/* ── Em que projeto estou, e como saio daqui (24/09) ─────────────────
-   O painel nunca disse em qual projeto estava nem tinha porta para os
-   outros. Enquanto a entrada da sequência se chamava "Alfabeto" em todos,
-   lia-se aquela palavra e sabia-se; quando passou a chamar-se pela unidade de
-   cada projeto, ficou sem pista nenhuma. */
-.painel-projeto-actual {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 4px 12px;
-  align-items: baseline;
-  padding: 12px 14px;
-  margin-bottom: 12px;
-  background: var(--cor-superficie);
-  border: 1px solid var(--cor-borda);
-  border-radius: var(--raio);
-}
-
-.painel-projeto-actual strong {
-  font-size: 1.02rem;
-  line-height: 1.2;
-}
-
-/* Empurrados para a direita: são a saída, não o assunto. */
-.painel-outros-projetos {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 6px 14px;
-  margin-left: auto;
-}
-
-.painel-outros-projetos a {
-  font-size: 0.85rem;
-  font-weight: 600;
-  color: var(--cor-primaria);
-  text-decoration: none;
-}
-
-.painel-outros-projetos a::before {
-  content: '↔ ';
-  opacity: 0.7;
-}
-
-@media (hover: hover) {
-  .painel-outros-projetos a:hover { text-decoration: underline; }
-}
 
 /*
   A OFERTA DOS CARTÕES, POR BAIXO DOS DIAS.
@@ -12800,14 +12708,6 @@ body:has(.painel-karaoke) {
    12% sobre o fundo lê-se igual no tema claro e no escuro, e assim não há
    um segundo jogo de cores para ficar esquecido no modo escuro.
    ═══════════════════════════════════════════════════════════════════ */
-
-.atalho-vendas {
-  border-left: 4px solid var(--cor-destaque);
-}
-
-.atalho-vendas span {
-  font-weight: 800;
-}
 
 /* ── A casca: menu ao lado, página ao meio ───────────────────────────── */
 
@@ -15046,5 +14946,591 @@ body:has(.painel-karaoke) {
 @media (max-width: 340px) {
   .af-metricas {
     grid-template-columns: 1fr 1fr;
+  }
+}
+
+/* ═══════════════════════════════════════════════════════════════════
+   O PAINEL INICIAL (28/09)
+
+   A página que abre o painel: o projeto e uma saudação no topo, o que pede
+   atenção logo a seguir, quatro números, e as portas arrumadas pelo que se
+   faz lá. Mesma linguagem do painel de vendas — o azul-marinho do menu, os
+   ícones em quadradinhos da cor do grupo — para as duas partes do painel
+   parecerem uma só.
+   ═══════════════════════════════════════════════════════════════════ */
+
+.pi-pagina {
+  max-width: 1180px;
+  margin: 0 auto;
+  padding: 24px 24px 72px;
+}
+
+.pi {
+  --pi-ambar: #d97706;
+  --pi-azul: #2563eb;
+  --pi-roxo: #7c3aed;
+  --pi-verde: #16a34a;
+  --pi-vermelho: #dc2626;
+  --pi-ciano: #0891b2;
+  display: grid;
+  gap: 28px;
+}
+
+@media (prefers-color-scheme: dark) {
+  .pi {
+    --pi-ambar: #fbbf24;
+    --pi-azul: #6b9bff;
+    --pi-roxo: #a78bfa;
+    --pi-verde: #22c55e;
+    --pi-vermelho: #f87171;
+    --pi-ciano: #22d3ee;
+  }
+}
+
+.pi-carregando {
+  display: flex;
+  gap: 6px;
+  justify-content: center;
+  padding: 60px 0;
+}
+
+.pi-carregando span {
+  width: 9px;
+  height: 9px;
+  background: var(--cor-texto-suave);
+  border-radius: 50%;
+  animation: vd-pulo 1s infinite ease-in-out;
+}
+
+.pi-carregando span:nth-child(2) { animation-delay: 0.15s; }
+.pi-carregando span:nth-child(3) { animation-delay: 0.3s; }
+
+/* ── O topo ──────────────────────────────────────────────────────────── */
+
+.pi-topo {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 20px;
+  align-items: flex-end;
+  justify-content: space-between;
+  padding: 32px 34px;
+  overflow: hidden;
+  color: #ffffff;
+  background:
+    radial-gradient(circle at 92% -30%, rgb(96 165 250 / 50%), transparent 48%),
+    radial-gradient(circle at 4% 140%, rgb(139 92 246 / 38%), transparent 46%),
+    linear-gradient(135deg, #0f1b3d 0%, #1e3a8a 58%, #2563eb 100%);
+  border-radius: 26px;
+  box-shadow: 0 20px 44px rgb(15 27 61 / 28%);
+}
+
+.pi-saudacao {
+  min-width: 0;
+}
+
+.pi-etiqueta {
+  font-size: 0.74rem;
+  font-weight: 800;
+  color: rgb(255 255 255 / 68%);
+  text-transform: uppercase;
+  letter-spacing: 0.14em;
+}
+
+.pi-saudacao h1 {
+  margin: 8px 0 6px;
+  font-size: clamp(1.9rem, 3.4vw, 2.6rem);
+  line-height: 1.1;
+  color: #ffffff;
+}
+
+.pi-saudacao p {
+  margin: 0;
+  color: rgb(255 255 255 / 80%);
+}
+
+.pi-saudacao p strong {
+  color: #ffffff;
+}
+
+.pi-projetos {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  align-items: center;
+  margin-top: 18px;
+}
+
+.pi-projetos span {
+  flex: 0 0 auto;
+  margin-right: 2px;
+  white-space: nowrap;
+  font-size: 0.8rem;
+  font-weight: 600;
+  color: rgb(255 255 255 / 62%);
+}
+
+.pi-projetos a {
+  flex: 0 0 auto;
+  padding: 6px 13px;
+  font-size: 0.85rem;
+  font-weight: 700;
+  color: #ffffff;
+  text-decoration: none;
+  white-space: nowrap;
+  background: rgb(255 255 255 / 12%);
+  border: 1px solid rgb(255 255 255 / 20%);
+  border-radius: 999px;
+  transition: background 0.15s;
+}
+
+.pi-projetos a:hover {
+  background: rgb(255 255 255 / 22%);
+}
+
+.pi-topo-acoes {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+
+.pi-botao {
+  display: inline-flex;
+  gap: 8px;
+  align-items: center;
+  justify-content: center;
+  padding: 11px 18px;
+  font-weight: 800;
+  color: #ffffff;
+  text-decoration: none;
+  background: rgb(255 255 255 / 14%);
+  border: 1px solid rgb(255 255 255 / 26%);
+  border-radius: 14px;
+  transition: transform 0.15s, background 0.15s;
+}
+
+.pi-botao:hover {
+  background: rgb(255 255 255 / 22%);
+  transform: translateY(-1px);
+}
+
+.pi-botao.claro {
+  color: #1e3a8a;
+  background: #ffffff;
+  border-color: #ffffff;
+}
+
+/* ── O que pede atenção ──────────────────────────────────────────────── */
+
+.pi-alertas {
+  display: grid;
+  gap: 10px;
+}
+
+.pi-alerta {
+  --tom: var(--pi-vermelho);
+  display: flex;
+  gap: 14px;
+  align-items: center;
+  padding: 14px 18px;
+  color: var(--cor-texto);
+  text-decoration: none;
+  background: var(--cor-fundo);
+  background: color-mix(in srgb, var(--tom) 9%, var(--cor-superficie));
+  border: 1px solid var(--cor-borda);
+  border: 1px solid color-mix(in srgb, var(--tom) 28%, transparent);
+  border-left: 5px solid var(--tom);
+  border-radius: 16px;
+  transition: transform 0.15s;
+}
+
+.pi-alerta:hover {
+  transform: translateY(-1px);
+}
+
+.pi-alerta.ambar { --tom: var(--pi-ambar); }
+
+.pi-alerta > svg {
+  flex: 0 0 auto;
+  color: var(--tom);
+}
+
+.pi-alerta > span {
+  display: grid;
+  flex: 1;
+  min-width: 0;
+}
+
+.pi-alerta small {
+  color: var(--cor-texto-suave);
+}
+
+/* ── Os quatro números ───────────────────────────────────────────────── */
+
+.pi-numeros {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 16px;
+}
+
+.pi-numero {
+  --tom: var(--pi-azul);
+  display: grid;
+  gap: 2px;
+  align-content: start;
+  min-width: 0;
+  padding: 18px;
+  color: var(--cor-texto);
+  text-decoration: none;
+  background: var(--cor-superficie);
+  border: 1px solid var(--cor-borda);
+  border-radius: 20px;
+  box-shadow: var(--sombra);
+  transition: transform 0.15s, box-shadow 0.15s, border-color 0.15s;
+}
+
+.pi-numero:hover,
+.pi-numero:focus-visible {
+  border-color: var(--tom);
+  border-color: color-mix(in srgb, var(--tom) 45%, var(--cor-borda));
+  box-shadow: var(--sombra-alta);
+  transform: translateY(-2px);
+  outline: none;
+}
+
+.pi-numero.verde { --tom: var(--pi-verde); }
+.pi-numero.roxo { --tom: var(--pi-roxo); }
+.pi-numero.vermelho { --tom: var(--pi-vermelho); }
+.pi-numero.ciano { --tom: var(--pi-ciano); }
+
+.pi-numero-icone {
+  display: grid;
+  place-items: center;
+  width: 42px;
+  height: 42px;
+  margin-bottom: 10px;
+  color: var(--tom);
+  background: var(--cor-fundo);
+  background: color-mix(in srgb, var(--tom) 14%, var(--cor-superficie));
+  border-radius: 13px;
+}
+
+.pi-numero strong {
+  font-size: 1.6rem;
+  line-height: 1.2;
+  white-space: nowrap;
+}
+
+.pi-numero strong em {
+  font-size: 1rem;
+  font-style: normal;
+  font-weight: 600;
+  color: var(--cor-texto-suave);
+}
+
+.pi-numero > span:not(.pi-numero-icone):not(.pi-barra) {
+  font-size: 0.9rem;
+  font-weight: 700;
+  color: var(--cor-texto-suave);
+}
+
+.pi-numero small {
+  font-size: 0.8rem;
+  color: var(--cor-texto-suave);
+}
+
+.pi-barra {
+  display: block;
+  height: 6px;
+  margin-top: 8px;
+  overflow: hidden;
+  background: var(--cor-fundo);
+  border-radius: 999px;
+}
+
+.pi-barra span {
+  display: block;
+  height: 100%;
+  background: var(--cor-fundo);
+  background: linear-gradient(90deg, var(--tom), color-mix(in srgb, var(--tom) 60%, #7c3aed));
+  border-radius: 999px;
+}
+
+/* ── Os grupos de portas ─────────────────────────────────────────────── */
+
+.pi-grupo h2 {
+  margin: 0 0 12px;
+  font-size: 0.8rem;
+  font-weight: 800;
+  color: var(--cor-texto-suave);
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+}
+
+.pi-grade {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+  gap: 14px;
+}
+
+.pi-cartao {
+  --tom: var(--pi-azul);
+  display: flex;
+  gap: 14px;
+  align-items: flex-start;
+  min-width: 0;
+  padding: 18px;
+  color: var(--cor-texto);
+  text-decoration: none;
+  background: var(--cor-superficie);
+  border: 1px solid var(--cor-borda);
+  border-radius: 20px;
+  box-shadow: var(--sombra);
+  transition: transform 0.15s, box-shadow 0.15s, border-color 0.15s;
+}
+
+.pi-cartao.ambar { --tom: var(--pi-ambar); }
+.pi-cartao.roxo { --tom: var(--pi-roxo); }
+.pi-cartao.verde { --tom: var(--pi-verde); }
+.pi-cartao.vermelho { --tom: var(--pi-vermelho); }
+.pi-cartao.ciano { --tom: var(--pi-ciano); }
+
+a.pi-cartao:hover,
+a.pi-cartao:focus-visible {
+  border-color: var(--tom);
+  border-color: color-mix(in srgb, var(--tom) 45%, var(--cor-borda));
+  box-shadow: var(--sombra-alta);
+  transform: translateY(-2px);
+  outline: none;
+}
+
+.pi-cartao-icone {
+  display: grid;
+  flex: 0 0 auto;
+  place-items: center;
+  width: 46px;
+  height: 46px;
+  color: var(--tom);
+  background: var(--cor-fundo);
+  background: color-mix(in srgb, var(--tom) 13%, var(--cor-superficie));
+  border-radius: 14px;
+}
+
+.pi-cartao-texto {
+  display: grid;
+  flex: 1;
+  gap: 3px;
+  min-width: 0;
+}
+
+.pi-cartao-texto strong {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  align-items: center;
+  font-size: 1.02rem;
+  line-height: 1.3;
+}
+
+.pi-cartao-texto small {
+  font-size: 0.86rem;
+  line-height: 1.45;
+  color: var(--cor-texto-suave);
+}
+
+.pi-cartao-seta {
+  display: grid;
+  flex: 0 0 auto;
+  align-self: center;
+  color: var(--cor-texto-suave);
+  opacity: 0.55;
+  transition: transform 0.15s, opacity 0.15s, color 0.15s;
+}
+
+a.pi-cartao:hover .pi-cartao-seta {
+  color: var(--tom);
+  opacity: 1;
+  transform: translateX(3px);
+}
+
+.pi-contador {
+  display: inline-grid;
+  place-items: center;
+  min-width: 22px;
+  height: 22px;
+  padding: 0 7px;
+  font-size: 0.75rem;
+  font-style: normal;
+  font-weight: 800;
+  color: #ffffff;
+  background: #dc2626;
+  border-radius: 999px;
+}
+
+/* O link de compra: uma linha inteira, o texto à esquerda e o campo à
+   direita — com o campo dentro de um cartão do tamanho dos outros, os
+   vizinhos esticavam-se até à altura dele e ficavam com um buraco. */
+.pi-cartao-campo {
+  grid-column: 1 / -1;
+}
+
+.pi-cartao-campo .pi-cartao-texto {
+  grid-template-columns: minmax(0, 1fr) minmax(260px, 460px);
+  column-gap: 24px;
+  align-items: center;
+}
+
+.pi-cartao-campo .pi-cartao-texto > strong,
+.pi-cartao-campo .pi-cartao-texto > small:first-of-type {
+  grid-column: 1;
+}
+
+.pi-cartao-campo .pi-cartao-texto > small:not(:first-of-type) {
+  grid-column: 2;
+}
+
+.pi-cartao-campo .pi-cartao-texto > input {
+  grid-row: 1 / span 2;
+  grid-column: 2;
+  margin-top: 0;
+}
+
+.pi-cartao-campo input {
+  width: 100%;
+  min-height: 42px;
+  padding: 8px 12px;
+  margin-top: 8px;
+  font: inherit;
+  font-size: 0.9rem;
+  color: var(--cor-texto);
+  background: var(--cor-fundo);
+  border: 1px solid var(--cor-borda);
+  border-radius: 12px;
+}
+
+.pi-cartao-campo input:focus {
+  border-color: var(--tom);
+  outline: 2px solid var(--cor-borda);
+  outline: 2px solid color-mix(in srgb, var(--tom) 30%, transparent);
+}
+
+.pi-estado {
+  padding: 1px 8px;
+  font-size: 0.68rem;
+  font-style: normal;
+  font-weight: 800;
+  color: var(--cor-texto-suave);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  background: var(--cor-fundo);
+  border-radius: 999px;
+}
+
+.pi-estado.ok {
+  color: var(--pi-verde);
+  background: var(--cor-fundo);
+  background: color-mix(in srgb, var(--pi-verde) 13%, transparent);
+}
+
+.pi-ok {
+  font-weight: 700;
+  color: var(--pi-verde) !important;
+}
+
+.pi-erro {
+  color: var(--pi-vermelho) !important;
+}
+
+/* ── Tablet e telemóvel ──────────────────────────────────────────────── */
+
+@media (max-width: 1000px) {
+  .pi-numeros {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+@media (max-width: 640px) {
+  .pi-pagina {
+    padding: 14px 14px 56px;
+  }
+
+  .pi {
+    gap: 22px;
+  }
+
+  .pi-topo {
+    align-items: stretch;
+    padding: 24px 20px;
+    border-radius: 22px;
+  }
+
+  .pi-projetos {
+    flex-wrap: nowrap;
+    padding-bottom: 2px;
+    margin-right: -20px;
+    overflow-x: auto;
+  }
+
+  .pi-topo-acoes {
+    width: 100%;
+  }
+
+  .pi-botao {
+    flex: 1;
+  }
+
+  .pi-numeros {
+    gap: 10px;
+  }
+
+  .pi-numero {
+    padding: 14px;
+    border-radius: 18px;
+  }
+
+  .pi-numero-icone {
+    width: 36px;
+    height: 36px;
+    margin-bottom: 6px;
+  }
+
+  .pi-numero strong {
+    font-size: 1.2rem;
+  }
+
+  .pi-numero strong em {
+    font-size: 0.85rem;
+  }
+
+  .pi-numero > span:not(.pi-numero-icone):not(.pi-barra) {
+    font-size: 0.8rem;
+  }
+
+  .pi-grade {
+    grid-template-columns: 1fr;
+    gap: 10px;
+  }
+
+  .pi-cartao {
+    gap: 12px;
+    padding: 14px;
+    border-radius: 18px;
+  }
+
+  .pi-cartao-icone {
+    width: 42px;
+    height: 42px;
+  }
+
+  .pi-cartao-campo .pi-cartao-texto {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .pi-cartao-campo .pi-cartao-texto > * {
+    grid-row: auto !important;
+    grid-column: 1 !important;
+  }
+
+  .pi-cartao-campo .pi-cartao-texto > input {
+    margin-top: 8px;
   }
 }
