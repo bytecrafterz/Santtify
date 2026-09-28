@@ -246,7 +246,10 @@ export function ResumoDoAfiliado({ painel }: { painel: PainelDoAfiliado }) {
  */
 export function AreaDoAfiliado({ projectSlug, pessoaId }: { projectSlug: string; pessoaId: string }) {
   const { usuario } = useAuth()
-  const meu = !!usuario && usuario.id === pessoaId
+  // Quem administra não é afiliado: gere o programa no painel de vendas. No
+  // perfil do Rossandro, em 28/09, "Torne-se um afiliado" era a única coisa da
+  // página que os outros não viam, e foi lida como a administração exposta.
+  const meu = !!usuario && usuario.id === pessoaId && usuario.role !== 'ADMIN'
   const [painel, definirPainel] = useState<PainelDoAfiliado | null>(null)
   const [erro, definirErro] = useState<string | null>(null)
   const [aberta, definirAberta] = useState(true)

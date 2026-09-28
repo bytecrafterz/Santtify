@@ -1,9 +1,7 @@
 'use client'
 
-import Link from 'next/link'
-import { useEffect, useState } from 'react'
+import { useEffect, useState, type ReactNode } from 'react'
 import type { PerfilAnfitriao } from '@/lib/api'
-import { useAuth } from './ProvedorDeAuth'
 import { PortaDasMensagens } from './MensagensPrivadas'
 import { AreaDoAfiliado } from './AreaDoAfiliado'
 
@@ -32,15 +30,16 @@ export function PerfilDePessoa({
   pessoa,
   projectId,
   projectSlug,
+  projetos,
 }: {
   pessoa: PerfilAnfitriao
   projectId: string
   projectSlug: string
+  /** Os projetos da plataforma, logo a seguir a quem a pessoa é. Só no perfil do anfitrião. */
+  projetos?: ReactNode
 }) {
   const [publicacoes, definirPublicacoes] = useState<PublicacaoDeAlguem[]>([])
   const [carregando, definirCarregando] = useState(true)
-  const { usuario } = useAuth()
-  const administraAqui = !!usuario && usuario.id === pessoa.id && usuario.role === 'ADMIN'
 
   useEffect(() => {
     const base = process.env.NEXT_PUBLIC_API_URL ?? ''
@@ -54,15 +53,16 @@ export function PerfilDePessoa({
   return (
     <>
       {/* Mensagens privadas: a porta para as minhas, ou — para um
-          administrador, no perfil de outra pessoa — para começar uma. */}
+          administrador, no perfil de outra pessoa — para começar uma.
+
+          O PAINEL NÃO VIVE AQUI. Esteve aqui umas horas em 28/09, ao lado das
+          mensagens, e o Rossandro abriu o link do próprio perfil, viu
+          "Painel de administração" e leu-o como a administração a abrir para
+          quem recebe o link. Ninguém mais o via, mas o perfil é a página que
+          ele partilha: tem de ser, para ele, a mesma que os outros recebem. O
+          painel fica a um toque no "Painel" da barra de baixo. */}
       <div className="portas-do-perfil">
         <PortaDasMensagens projectSlug={projectSlug} pessoaId={pessoa.id} />
-        {/* No próprio perfil de quem administra: o painel ao lado das mensagens. */}
-        {administraAqui && (
-          <Link className="mp-porta porta-painel" href={`/${projectSlug}/admin`}>
-            <span aria-hidden="true">⚙️</span> Painel de administração
-          </Link>
-        )}
       </div>
 
       {/* Os indicadores e o escudo saíram daqui: passaram a vir do mesmo
@@ -103,9 +103,13 @@ export function PerfilDePessoa({
         )}
       </div>
 
+      {/* Os dois projetos por baixo do perfil do anfitrião — ver a página. */}
+      {projetos}
+
       {/* A área de afiliado — só no perfil da própria pessoa, e logo a seguir a
           quem ela é, como no mockup dele. Bloqueada até à primeira compra,
-          liberada sozinha quando o pagamento é confirmado. */}
+          liberada sozinha quando o pagamento é confirmado. Nunca a quem
+          administra: ver `AreaDoAfiliado`. */}
       <AreaDoAfiliado projectSlug={projectSlug} pessoaId={pessoa.id} />
 
       <h2 className="titulo-feed">Publicações</h2>

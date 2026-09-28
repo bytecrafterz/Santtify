@@ -12600,8 +12600,7 @@ body:has(.painel-karaoke) {
 .mp-escrever button:disabled { cursor: not-allowed; opacity: 0.4; }
 
 /* A porta no perfil. */
-/* As portas do perfil — mensagens e, para quem administra, o painel — lado a
-   lado e ao centro, como a porta das mensagens estava sozinha. */
+/* As portas do perfil (hoje, a das mensagens), ao centro. */
 .portas-do-perfil {
   display: flex;
   flex-wrap: wrap;
@@ -12616,12 +12615,6 @@ body:has(.painel-karaoke) {
 
 .portas-do-perfil .mp-porta {
   margin: 0;
-}
-
-.mp-porta.porta-painel {
-  color: #ffffff;
-  background: #2563eb;
-  border-color: #2563eb;
 }
 
 .mp-porta {

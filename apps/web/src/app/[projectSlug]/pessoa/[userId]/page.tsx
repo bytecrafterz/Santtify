@@ -9,6 +9,7 @@ import { IntroducaoRecolhivel } from '@/components/IntroducaoRecolhivel'
 import { ExperienciaContinua } from '@/components/ExperienciaContinua'
 import { BarraInferior } from '@/components/BarraInferior'
 import { VisitaAoPerfil } from '@/components/VisitaAoPerfil'
+import { CarrosselDeProjetos } from '@/components/CarrosselDeProjetos'
 
 /**
  * O CARTÃO DE PARTILHA DE UM PERFIL É A PESSOA.
@@ -142,7 +143,23 @@ export default async function PaginaDePessoa({
         pessoa={pessoa}
       />
 
-      <PerfilDePessoa pessoa={pessoa} projectId={projeto.id} projectSlug={projectSlug} />
+      {/*
+        O PERFIL DO ANFITRIÃO LEVA OS PROJETOS POR BAIXO, como a entrada.
+
+        28/09, sobre o link do próprio perfil: "Antes, ao compartilhar meu
+        perfil, apareciam os dois projetos abaixo normalmente". O que ele
+        partilha é o perfil oficial da plataforma, e quem o recebe tem de
+        chegar aos projetos a partir dele — é o que a entrada (`/`) já mostra
+        por baixo do mesmo perfil. Só no dele: no perfil de qualquer outra
+        pessoa, os projetos por cima das publicações dela voltavam a ser a
+        "estrutura antiga no meio do caminho" de 31/08.
+      */}
+      <PerfilDePessoa
+        pessoa={pessoa}
+        projectId={projeto.id}
+        projectSlug={projectSlug}
+        projetos={indice?.anfitriao?.id === userId ? <CarrosselDeProjetos /> : null}
+      />
 
       {/*
         A FRONTEIRA ENTRE A PESSOA E A PLATAFORMA, ESCRITA.
