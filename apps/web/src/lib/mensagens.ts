@@ -17,6 +17,8 @@ export interface ResumoDaConversa {
   ultima: { texto: string; minha: boolean; em: string; vista: boolean } | null
   naoLidas: number
   ultimaEm: string
+  /** Só o administrador designado (o Kanari) pode tirar a conversa da lista. */
+  podeApagar: boolean
 }
 
 export interface AnexoDaMensagem {
@@ -67,7 +69,7 @@ async function comRenovacao<T>(caminho: string, init: RequestInit = {}): Promise
 
 export const mensagens = {
   listar: () => comRenovacao<ResumoDaConversa[]>('/me/conversas'),
-  naoLidas: () => comRenovacao<{ naoLidas: number }>('/me/conversas/nao-lidas'),
+  naoLidas: () => comRenovacao<{ naoLidas: number; conversas: number }>('/me/conversas/nao-lidas'),
   abrir: (comUserId: string) =>
     comRenovacao<{ id: string }>('/me/conversas', {
       method: 'POST',
@@ -88,6 +90,9 @@ export const mensagens = {
     }),
   apagarHistorico: (id: string) =>
     comRenovacao<{ apagadas: number }>(`/me/conversas/${id}/mensagens`, { method: 'DELETE' }),
+  /** A conversa inteira, para os dois: sai da lista com mensagens e arquivos. */
+  apagarConversa: (id: string) =>
+    comRenovacao<{ apagada: boolean }>(`/me/conversas/${id}`, { method: 'DELETE' }),
   enviar: (id: string, texto: string) =>
     comRenovacao<MensagemPrivada>(`/me/conversas/${id}/mensagens`, {
       method: 'POST',

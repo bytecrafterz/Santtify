@@ -85,6 +85,12 @@ export class MensagensController {
     return this.mensagens.apagarHistorico(req.usuario!.id, id)
   }
 
+  /** A conversa inteira, da lista dos dois. Também só o Kanari. */
+  @Delete(':id')
+  apagarConversa(@Param('id', ParseUUIDPipe) id: string, @Req() req: Request) {
+    return this.mensagens.apagarConversa(req.usuario!.id, id)
+  }
+
   @Post(':id/anexos')
   @UseInterceptors(FileInterceptor('arquivo', { limits: { fileSize: TAMANHO_MAXIMO_ANEXO } }))
   enviarAnexo(

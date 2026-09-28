@@ -154,15 +154,21 @@ export class MensagensService {
             : null,
           naoLidas,
           ultimaEm: c.ultimaEm,
+          // O 🗑 da linha: tirar a conversa da lista. Ver `apagarConversa`.
+          podeApagar: this.podemApagar.has(userId),
         }
       }),
     )
   }
 
-  /** Quantas mensagens por ler, em todas as conversas. Para o número no perfil. */
+  /**
+   * Quantas mensagens por ler, em todas as conversas, e quantas conversas há.
+   * Para o botão do perfil: o número, e se o botão aparece (sem conversas, só
+   * a quem administra).
+   */
   async naoLidas(userId: string) {
     const lista = await this.listar(userId)
-    return { naoLidas: lista.reduce((t, c) => t + c.naoLidas, 0) }
+    return { naoLidas: lista.reduce((t, c) => t + c.naoLidas, 0), conversas: lista.length }
   }
 
   /**
@@ -378,11 +384,35 @@ export class MensagensService {
     await this.daPessoa(conversaId, userId)
     this.exigirQuemPodeApagar(userId)
     const { count } = await this.prisma.mensagemPrivada.deleteMany({ where: { conversaId } })
+    await this.apagarPastaDaConversa(conversaId)
+    return { apagadas: count }
+  }
+
+  /**
+   * TIRA A CONVERSA DA LISTA — dos dois, com as mensagens e os ficheiros.
+   *
+   * "make i can delete users from chatting list" — 28/09. Não é esconder só
+   * do lado de quem apaga: a conversa deixa de existir, e a outra pessoa
+   * também deixa de a ver (sem mais nenhuma, deixa de ver o botão "Mensagens"
+   * no perfil). Só o Kanari, como o resto do apagar. Para voltar a falar com
+   * a pessoa, "Enviar mensagem" no perfil dela abre uma conversa nova, vazia.
+   */
+  async apagarConversa(userId: string, conversaId: string) {
+    await this.daPessoa(conversaId, userId)
+    this.exigirQuemPodeApagar(userId)
+    // As mensagens vão com ela (`onDelete: Cascade`). `deleteMany` e não
+    // `delete`: dois pedidos ao mesmo tempo não dão erro no segundo.
+    const { count } = await this.prisma.conversaPrivada.deleteMany({ where: { id: conversaId } })
+    await this.apagarPastaDaConversa(conversaId)
+    return { apagada: count > 0 }
+  }
+
+  /** A pasta dos anexos de uma conversa, sem nunca apagar a pasta de todas. */
+  private async apagarPastaDaConversa(conversaId: string) {
     const pasta = resolve(this.pasta, conversaId)
     if (pasta.startsWith(this.pasta) && pasta !== this.pasta) {
       await rm(pasta, { recursive: true, force: true })
     }
-    return { apagadas: count }
   }
 
   /** O ficheiro de uma mensagem, só para os dois da conversa. */

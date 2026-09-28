@@ -286,6 +286,10 @@ export function ListaDeConversas({ projectSlug }: { projectSlug: string }) {
   const { usuario, aviso } = useSessao(projectSlug)
   const [lista, definirLista] = useState<ResumoDaConversa[] | null>(null)
   const [erro, definirErro] = useState<string | null>(null)
+  const [aApagar, definirAApagar] = useState<string | null>(null)
+  // As que se apagaram aqui. Uma leitura da lista que já ia a caminho quando
+  // se apagou traria a conversa de volta por uns segundos.
+  const apagadas = useRef(new Set<string>())
 
   useEffect(() => {
     if (!usuario) return
@@ -293,7 +297,7 @@ export function ListaDeConversas({ projectSlug }: { projectSlug: string }) {
     const carregar = () =>
       mensagens
         .listar()
-        .then((l) => vivo && (definirLista(l), definirErro(null)))
+        .then((l) => vivo && (definirLista(l.filter((c) => !apagadas.current.has(c.id))), definirErro(null)))
         .catch((e) => vivo && definirErro(e instanceof ErroDeApi ? e.message : 'Sem ligação.'))
     void carregar()
     const t = setInterval(() => document.visibilityState === 'visible' && void carregar(), INTERVALO_DA_LISTA)
@@ -302,6 +306,32 @@ export function ListaDeConversas({ projectSlug }: { projectSlug: string }) {
       clearInterval(t)
     }
   }, [usuario])
+
+  /**
+   * TIRAR ALGUÉM DA LISTA — "make i can delete users from chatting list",
+   * 28/09. Só o Kanari vê o 🗑 (e o servidor só a ele obedece). A conversa
+   * some para os dois, com as mensagens e os arquivos; por isso pergunta
+   * antes, com o nome da pessoa.
+   */
+  async function apagarConversa(c: ResumoDaConversa) {
+    if (
+      !confirm(
+        `Apagar a conversa com ${c.outra.displayName}? Ela some da lista dos dois, com todas as mensagens e arquivos, e não há como desfazer.`,
+      )
+    )
+      return
+    definirAApagar(c.id)
+    try {
+      await mensagens.apagarConversa(c.id)
+      apagadas.current.add(c.id)
+      definirLista((l) => l && l.filter((x) => x.id !== c.id))
+      definirErro(null)
+    } catch (e) {
+      definirErro(e instanceof ErroDeApi ? e.message : 'Não foi possível apagar a conversa.')
+    } finally {
+      definirAApagar(null)
+    }
+  }
 
   return (
     <div className="mp">
@@ -336,6 +366,19 @@ export function ListaDeConversas({ projectSlug }: { projectSlug: string }) {
                   </span>
                 )}
               </Link>
+              {/* Fora do link: um botão dentro de um <a> abria a conversa. */}
+              {c.podeApagar && (
+                <button
+                  type="button"
+                  className="mp-apagar-tudo"
+                  disabled={aApagar === c.id}
+                  onClick={() => void apagarConversa(c)}
+                  aria-label={`Apagar a conversa com ${c.outra.displayName}`}
+                  title="Apagar conversa"
+                >
+                  🗑
+                </button>
+              )}
             </li>
           ))}
         </ul>
@@ -719,13 +762,18 @@ export function ConversaPrivada({ projectSlug, conversaId }: { projectSlug: stri
 /* ── A porta, no perfil ──────────────────────────────────────────────── */
 
 /**
- * No PRÓPRIO perfil: "Mensagens", com o número das que estão por ler.
+ * No PRÓPRIO perfil: "Mensagens", com o número das que estão por ler — a quem
+ * administra, sempre; às outras pessoas, só quando têm alguma conversa ("all
+ * users can see message button?" — 28/09). Elas não podem abrir nenhuma, e
+ * sem conversas o botão levava a uma página vazia.
  * No perfil de OUTRA pessoa, e só para administradores: "Enviar mensagem".
  */
 export function PortaDasMensagens({ projectSlug, pessoaId }: { projectSlug: string; pessoaId: string }) {
   const { usuario } = useAuth()
   const router = useRouter()
   const [naoLidas, definirNaoLidas] = useState(0)
+  /** Quantas conversas a pessoa tem; `null` enquanto não se sabe. */
+  const [conversas, definirConversas] = useState<number | null>(null)
   const [aAbrir, definirAAbrir] = useState(false)
   const [erro, definirErro] = useState<string | null>(null)
   const meu = !!usuario && usuario.id === pessoaId
@@ -734,13 +782,18 @@ export function PortaDasMensagens({ projectSlug, pessoaId }: { projectSlug: stri
     if (!meu) return
     mensagens
       .naoLidas()
-      .then((r) => definirNaoLidas(r.naoLidas))
+      .then((r) => {
+        definirNaoLidas(r.naoLidas)
+        definirConversas(r.conversas)
+      })
       .catch(() => {})
   }, [meu])
 
   if (!usuario) return null
 
   if (meu) {
+    // Enquanto não se sabe, também não: o botão aparecia e sumia logo a seguir.
+    if (usuario.role !== 'ADMIN' && !conversas) return null
     return (
       <Link className="mp-porta" href={`/${projectSlug}/mensagens`}>
         <span aria-hidden="true">💬</span> Mensagens

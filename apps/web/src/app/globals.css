@@ -12337,7 +12337,15 @@ body:has(.painel-karaoke) {
   text-decoration: none;
 }
 
-.mp-lista li + li .mp-item { border-top: 1px solid var(--cor-borda); }
+/* A linha: o link da conversa e, para quem pode apagar, o 🗑 ao lado. A
+   risca de separação é da linha toda, e não só do link. */
+.mp-lista li { display: flex; align-items: center; }
+
+.mp-lista li + li { border-top: 1px solid var(--cor-borda); }
+
+.mp-lista .mp-item { flex: 1; min-width: 0; }
+
+.mp-lista .mp-apagar-tudo { margin-right: 12px; }
 
 .mp-item-corpo { display: grid; flex: 1; gap: 2px; min-width: 0; }
 
@@ -12678,6 +12686,12 @@ body:has(.painel-karaoke) {
   background: var(--cor-superficie);
   border: 1px solid var(--cor-borda);
   border-radius: 50%;
+}
+
+.mp-apagar-tudo:disabled { cursor: progress; opacity: 0.5; }
+
+@media (hover: hover) {
+  .mp-apagar-tudo:not(:disabled):hover { border-color: #e0245e; }
 }
 
 .mp-balao.escolhida { outline: 2px solid #e0245e; outline-offset: 2px; }
