@@ -77,7 +77,7 @@ self.addEventListener('fetch', (evento) => {
   const url = new URL(req.url)
   // Rastreamento, redirecções e API sempre na rede: nunca servir métrica de
   // cache, nem um link curto que pode ter mudado de destino.
-  if (url.pathname.startsWith('/track') || url.pathname.startsWith('/r/')) return
+  if (url.pathname.startsWith('/track') || url.pathname.startsWith('/r/') || url.pathname.startsWith('/af/')) return
   if (url.pathname.startsWith('/api/')) return
   if (url.origin !== self.location.origin) return
 

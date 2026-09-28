@@ -29,9 +29,9 @@ export interface CobrancaPedida {
   /**
    * O e-mail de quem paga, que os provedores exigem.
    *
-   * Passa por aqui e segue para o provedor; o pedido não o guarda. Uma
-   * plataforma de crianças só guarda o que precisa, e para entregar os
-   * cartões o e-mail não é preciso.
+   * Desde 28/09 o pedido guarda-o também (`emailDoComprador`): o painel de
+   * pedidos que o cliente pediu mostra quem comprou, e uma compra sem conta
+   * sem e-mail seria uma linha sem ninguém. Sai se a pessoa apagar a conta.
    */
   emailDoPagador: string
   /** Para onde o provedor devolve a pessoa depois de pagar com cartão. */
@@ -67,7 +67,20 @@ export interface AvisoDePagamento {
   idExterno: string
   referenciaExterna: string
   tipo: string
+  /**
+   * O dinheiro entrou. Continua verdadeiro num reembolso: um pagamento só se
+   * devolve depois de ter entrado, e se o aviso da aprovação se perdeu é
+   * este que a regista.
+   */
   pago: boolean
+  /**
+   * Quanto já foi devolvido AO TODO, em cêntimos — reembolso ou contestação
+   * (chargeback). Acumulado, como o provedor o diz: dois reembolsos parciais
+   * de R$ 10 chegam como 1000 e depois 2000, e não como 1000 e 1000.
+   */
+  reembolsadoCent?: number | null
+  /** A taxa do processador, quando o aviso a traz. Sem ela, estima-se. */
+  taxaCent?: number | null
   bruto: Record<string, unknown>
 }
 

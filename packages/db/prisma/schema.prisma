@@ -578,6 +578,7 @@ model ShortLink {
   visitorsRoot     Visitor[]      @relation("VisitorRootLink")
   sessions         VisitSession[]
   shares           Share[]
+  afiliado         Afiliado?      @relation("LinkDoAfiliado")
 
   @@index([projectId, kind])
   @@index([rootShortLinkId])
@@ -595,6 +596,10 @@ enum ShortLinkKind {
   /// Link gerado quando um usuário compartilha.
   SHARE
   CUSTOM
+  /// O link de um afiliado: santtify.com/af/<código>. O código curto é
+  /// `af-<código>`, que nunca colide com os aleatórios — o alfabeto deles não
+  /// tem hífen.
+  AFILIADO
 }
 
 /// Vitrine de próximos produtos — a área "Meus Lançamentos" do perfil.
@@ -724,6 +729,10 @@ model Visitor {
   events   Event[]
   consents Consent[]
 
+  /// Os links de afiliado que esta pessoa abriu. É daqui que sai a quem
+  /// pertence a venda — ver `CliqueDeAfiliado`.
+  cliquesDeAfiliados CliqueDeAfiliado[]
+
   @@index([projectId, firstSeenAt])
   @@index([projectId, ignoradoNasMetricas])
   /// Serve a análise por país e região do painel: filtra por `countryCode` e
@@ -805,10 +814,15 @@ model User {
   curtidasEmComentarios CommentReaction[] @relation("CurtidasEmComentarios")
   pedidosDeCartoes      PedidoDeCartoes[]
 
-  conversasComoA     ConversaPrivada[] @relation("ConversaA")
-  conversasComoB     ConversaPrivada[] @relation("ConversaB")
-  conversasCriadas   ConversaPrivada[] @relation("ConversaCriadaPor")
-  mensagensPrivadas  MensagemPrivada[]
+  /// A área de afiliado, quando já foi liberada.
+  afiliado                   Afiliado?
+  /// Os pagamentos a afiliados que este administrador marcou como feitos.
+  pagamentosAAfiliadosFeitos PagamentoAoAfiliado[] @relation("PagamentoFeitoPor")
+
+  conversasComoA    ConversaPrivada[] @relation("ConversaA")
+  conversasComoB    ConversaPrivada[] @relation("ConversaB")
+  conversasCriadas  ConversaPrivada[] @relation("ConversaCriadaPor")
+  mensagensPrivadas MensagemPrivada[]
 
   @@map("users")
 }
@@ -837,9 +851,9 @@ model ConversaPrivada {
   lidaPorAEm DateTime?
   lidaPorBEm DateTime?
 
-  criadaEm  DateTime @default(now())
+  criadaEm DateTime @default(now())
   /// A hora da última mensagem, para a lista vir pela conversa mais recente.
-  ultimaEm  DateTime @default(now())
+  ultimaEm DateTime @default(now())
 
   mensagens MensagemPrivada[]
 
@@ -1255,6 +1269,8 @@ model Comment {
   @@index([contentId, createdAt])
   @@index([userId])
   @@index([parentId])
+  /// Existia na base desde a migração 20260925010000 e faltava aqui.
+  @@index([ofertaId])
   @@map("comments")
 }
 
@@ -1789,7 +1805,7 @@ model PrecoDeCartoes {
   projectId String  @id @db.Uuid
   project   Project @relation(fields: [projectId], references: [id], onDelete: Cascade)
 
-  precoUnitarioCent   Int    @default(3000)
+  precoUnitarioCent Int @default(3000)
 
   /// O PREÇO RISCADO. Nulo = não há nada riscado.
   ///
@@ -1866,7 +1882,7 @@ model PedidoDeCartoes {
   /// O preço fica COPIADO no pedido, não lido da tabela na hora de mostrar.
   /// Se o administrador mudar o preço a meio, quem já estava a comprar paga o
   /// que viu — e o histórico continua a fazer sentido daqui a um ano.
-  precoUnitarioCent   Int
+  precoUnitarioCent Int
 
   /// O preço riscado em vigor quando o pedido nasceu. Nulo = não havia.
   ///
@@ -1903,13 +1919,56 @@ model PedidoDeCartoes {
   /// A frase exacta que aceitou, escrita pelo servidor e não pelo navegador.
   aprovacaoTexto String?
   /// Quando a foto e o PDF são apagados do disco.
-  expiraEm     DateTime
+  expiraEm       DateTime
+
+  /// O número que o painel mostra: #1001, #1002...
+  ///
+  /// Só os pedidos que chegaram ao pagamento o recebem, na ordem em que lá
+  /// chegaram. Os rascunhos — cada pessoa que abre o editor cria um — ficariam
+  /// a comer números, e o painel de pedidos mostraria saltos de centenas.
+  /// Sai da sequência `pedidos_de_cartoes_numero_seq`, criada na migração.
+  numero Int? @unique
+
+  /// Quem comprou, para o painel de pedidos e para o atendimento.
+  ///
+  /// Até 28/09 o pedido não guardava o e-mail: só passava por aqui a caminho
+  /// do provedor, porque para entregar os cartões ele não era preciso. O
+  /// painel de pedidos que o cliente pediu mostra quem comprou — e sem isto
+  /// uma compra feita sem conta seria uma linha sem ninguém. Apagado se a
+  /// pessoa apagar a conta.
+  emailDoComprador String? @db.VarChar(254)
+  /// O nome da conta, quando a compra foi feita com sessão.
+  nomeDoComprador  String? @db.VarChar(120)
+
+  /// O afiliado a quem a venda pertence. Decidido quando o pedido nasce (ou,
+  /// se nessa altura não havia, quando o pagamento começa) e não mais tarde:
+  /// o pedido guarda a quem pertence, e um clique depois do pagamento não o
+  /// muda.
+  afiliadoId String?   @db.Uuid
+  afiliado   Afiliado? @relation(fields: [afiliadoId], references: [id], onDelete: SetNull)
+
+  /// A taxa do processador de pagamento, em cêntimos.
+  ///
+  /// Estimada pela percentagem do painel quando o provedor não a diz no aviso
+  /// (o Pix pela API de Orders não a diz) — e marcada como estimada, para o
+  /// painel escrever "estimada" ao lado em vez de a fazer passar por exacta.
+  taxaCent     Int?
+  taxaEstimada Boolean @default(false)
+
+  /// Reembolso ou contestação. O `estado` não serve para isto: o expurgo põe
+  /// todo o pedido velho em EXPIRADO, pago ou não, reembolsado ou não.
+  reembolsadoEm   DateTime?
+  reembolsadoCent Int       @default(0)
 
   criancas           CriancaDoPedido[]
   eventosDePagamento EventoDePagamento[]
+  comissao           ComissaoDeAfiliado?
 
   @@index([projectId, estado])
   @@index([expiraEm])
+  @@index([pagoEm])
+  @@index([afiliadoId, pagoEm])
+  @@index([emailDoComprador])
   @@map("pedidos_de_cartoes")
 }
 
@@ -2131,4 +2190,257 @@ model TranscricaoDeAudio {
 
   @@index([estado, criadoEm])
   @@map("transcricoes_de_audio")
+}
+
+// ═══════════════════════════════════════════════════════════════════
+// AFILIADOS E VENDAS
+// ═══════════════════════════════════════════════════════════════════
+//
+// A regra do cliente, escrita por ele em 25/09: nenhum passo manual no
+// funcionamento normal. A área desbloqueia sozinha quando o Mercado Pago
+// confirma a compra, o link nasce sozinho, cliques, vendas e comissões
+// registam-se sozinhos, e a comissão passa de pendente a disponível sozinha.
+// O painel serve para MONITORAR, CONFIGURAR, SUSPENDER e PAGAR.
+
+/// Se o afiliado pode ganhar comissões agora.
+enum EstadoDoAfiliado {
+  ATIVO
+  /// Suspenso pelo painel. O link continua a levar à loja — um link já
+  /// partilhado não pode dar erro a quem o abre —, mas deixa de contar
+  /// vendas, e os pagamentos ficam parados até ser reativado.
+  SUSPENSO
+}
+
+/// Como a área de afiliado foi liberada.
+enum OrigemDoAfiliado {
+  /// O Mercado Pago confirmou uma compra feita com a conta.
+  COMPRA
+  /// Já tinha comprado quando o programa começou (liberado na migração).
+  COMPRA_ANTERIOR
+  /// Liberado à mão no painel — a compra feita sem conta, por exemplo.
+  PAINEL
+}
+
+/// Onde está o dinheiro de uma comissão.
+///
+/// "Disponível" NÃO É UM ESTADO: é uma PENDENTE cuja `liberaEm` já passou.
+/// Guardá-lo obrigaria a uma tarefa a mudar linhas à meia-noite, e uma tarefa
+/// que falha uma noite deixa o saldo de alguém errado sem ninguém saber.
+/// Calculado a partir da data, está sempre certo.
+enum EstadoDaComissao {
+  PENDENTE
+  PAGA
+  /// A venda foi reembolsada antes de a comissão ser paga. Não conta.
+  CANCELADA
+  /// Reembolsada DEPOIS de paga. O `estornoCent` desconta-se no pagamento
+  /// seguinte do afiliado.
+  ESTORNADA
+}
+
+/// Um afiliado. Um por pessoa, para a plataforma inteira.
+model Afiliado {
+  id     String @id @default(uuid()) @db.Uuid
+  userId String @unique @db.Uuid
+  user   User   @relation(fields: [userId], references: [id], onDelete: Restrict)
+
+  /// O que vai no link: santtify.com/af/<codigo>.
+  ///
+  /// Nasce do @identificador da pessoa e FICA: se ela mudar de identificador,
+  /// os links que já andam pelo WhatsApp continuam a funcionar.
+  codigo String @unique @db.VarChar(40)
+
+  estado EstadoDoAfiliado @default(ATIVO)
+  origem OrigemDoAfiliado @default(COMPRA)
+
+  /// O link rastreado por onde os cliques passam. Criado com o afiliado, ou
+  /// no primeiro clique quando o afiliado nasceu na migração.
+  linkId String?    @unique @db.Uuid
+  link   ShortLink? @relation("LinkDoAfiliado", fields: [linkId], references: [id], onDelete: SetNull)
+
+  /// O pedido cuja confirmação liberou a área. Nulo quando foi o painel.
+  pedidoDeDesbloqueioId String? @db.Uuid
+
+  /// Para onde o dinheiro vai. Só a própria pessoa e o painel veem.
+  tipoDaChavePix String? @db.VarChar(20)
+  chavePix       String? @db.VarChar(140)
+  nomeDoTitular  String? @db.VarChar(120)
+
+  suspensoEm        DateTime?
+  motivoDaSuspensao String?   @db.VarChar(300)
+
+  /// A última vez que a pessoa abriu o painel. É o "desde a sua última
+  /// visita" das novidades.
+  vistoEm DateTime?
+
+  criadoEm     DateTime @default(now())
+  atualizadoEm DateTime @updatedAt
+
+  cliques    CliqueDeAfiliado[]
+  pedidos    PedidoDeCartoes[]
+  comissoes  ComissaoDeAfiliado[]
+  pagamentos PagamentoAoAfiliado[]
+
+  @@index([estado, criadoEm])
+  @@map("afiliados")
+}
+
+/// Um clique num link de afiliado: uma pessoa, um afiliado, um dia.
+///
+/// UMA LINHA POR PESSOA POR DIA, e é essa a contagem de cliques. A mesma mãe a
+/// abrir o link cinco vezes numa tarde é um clique, não cinco — senão a taxa de
+/// conversão do painel mentia a favor de quem reenvia o link a si próprio.
+///
+/// É também daqui que sai a quem pertence uma venda: o último link de afiliado
+/// que a pessoa abriu dentro da janela configurada. O `lastTouch` do visitante
+/// não serve para isso — qualquer QR lido depois apagava o afiliado.
+model CliqueDeAfiliado {
+  id         String   @id @default(uuid()) @db.Uuid
+  afiliadoId String   @db.Uuid
+  afiliado   Afiliado @relation(fields: [afiliadoId], references: [id], onDelete: Cascade)
+  visitorId  String   @db.Uuid
+  visitor    Visitor  @relation(fields: [visitorId], references: [id], onDelete: Cascade)
+
+  /// O dia do clique, em UTC.
+  dia        DateTime @db.Date
+  primeiroEm DateTime @default(now())
+  /// Actualizado a cada clique do dia: é a recência que decide a venda.
+  ultimoEm   DateTime @default(now())
+  vezes      Int      @default(1)
+
+  @@unique([afiliadoId, visitorId, dia])
+  @@index([visitorId, ultimoEm])
+  @@index([afiliadoId, dia])
+  @@map("cliques_de_afiliados")
+}
+
+/// A comissão de UMA venda. Uma por pedido, e o índice único garante-o: o
+/// Mercado Pago reenvia avisos, e uma venda nunca paga duas comissões.
+model ComissaoDeAfiliado {
+  id         String          @id @default(uuid()) @db.Uuid
+  afiliadoId String          @db.Uuid
+  afiliado   Afiliado        @relation(fields: [afiliadoId], references: [id], onDelete: Restrict)
+  pedidoId   String          @unique @db.Uuid
+  pedido     PedidoDeCartoes @relation(fields: [pedidoId], references: [id], onDelete: Restrict)
+
+  /// Sobre o que se calculou: o que o cliente pagou, menos reembolsos.
+  baseCent    Int
+  /// A percentagem em pontos-base (4000 = 40%), COPIADA da configuração no
+  /// momento da venda. Mudar a percentagem no painel vale para as vendas
+  /// seguintes; as de ontem continuam a dizer o que era verdade ontem.
+  comissaoBp  Int
+  valorCent   Int
+  /// Quanto foi devolvido depois de paga — a descontar do próximo pagamento.
+  estornoCent Int    @default(0)
+  moeda       String @default("BRL")
+
+  estado   EstadoDaComissao @default(PENDENTE)
+  /// Quando passa a disponível: pagamento + prazo de carência. Copiado também.
+  liberaEm DateTime
+
+  pagamentoId String?              @db.Uuid
+  pagamento   PagamentoAoAfiliado? @relation("ComissoesPagas", fields: [pagamentoId], references: [id], onDelete: SetNull)
+  pagaEm      DateTime?
+
+  canceladaEm          DateTime?
+  motivoDoCancelamento String?   @db.VarChar(300)
+  estornadaEm          DateTime?
+
+  /// Quanto do estorno já foi descontado em pagamentos. O que falta
+  /// descontar é `estornoCent - estornoDescontadoCent` — e não "tem data de
+  /// desconto ou não": um segundo reembolso parcial depois de um desconto
+  /// feito seria descontado outra vez por inteiro.
+  estornoDescontadoCent Int @default(0)
+
+  /// O último pagamento em que o estorno foi descontado.
+  descontoPagamentoId String?              @db.Uuid
+  descontoPagamento   PagamentoAoAfiliado? @relation("EstornosDescontados", fields: [descontoPagamentoId], references: [id], onDelete: SetNull)
+  descontadaEm        DateTime?
+
+  /// Quando se avisou o afiliado de que esta comissão ficou disponível. Serve
+  /// para o aviso diário nunca repetir a mesma.
+  avisoDisponivelEm DateTime?
+
+  criadaEm     DateTime @default(now())
+  atualizadaEm DateTime @updatedAt
+
+  @@index([afiliadoId, estado, liberaEm])
+  @@index([estado, liberaEm])
+  @@index([criadaEm])
+  @@map("comissoes_de_afiliados")
+}
+
+/// Um pagamento feito a um afiliado — pelo Pix do cliente, fora da
+/// plataforma — e registado no painel com "Marcar como pago".
+model PagamentoAoAfiliado {
+  id         String   @id @default(uuid()) @db.Uuid
+  afiliadoId String   @db.Uuid
+  afiliado   Afiliado @relation(fields: [afiliadoId], references: [id], onDelete: Restrict)
+
+  /// A soma das comissões que este pagamento liquidou.
+  comissoesCent Int
+  /// Os estornos descontados.
+  descontosCent Int    @default(0)
+  /// O que saiu de facto: comissões menos descontos.
+  valorCent     Int
+  moeda         String @default("BRL")
+
+  /// A chave e o titular no momento do pagamento. Se a pessoa mudar a chave
+  /// amanhã, o registo continua a dizer para onde foi o dinheiro.
+  chavePix      String? @db.VarChar(140)
+  nomeDoTitular String? @db.VarChar(120)
+  /// O que o administrador quiser anotar: o identificador do Pix, por exemplo.
+  observacao    String? @db.VarChar(300)
+
+  pagoPorId String?  @db.Uuid
+  pagoPor   User?    @relation("PagamentoFeitoPor", fields: [pagoPorId], references: [id], onDelete: SetNull)
+  pagoEm    DateTime @default(now())
+
+  comissoes ComissaoDeAfiliado[] @relation("ComissoesPagas")
+  descontos ComissaoDeAfiliado[] @relation("EstornosDescontados")
+
+  @@index([afiliadoId, pagoEm])
+  @@index([pagoEm])
+  @@map("pagamentos_a_afiliados")
+}
+
+/// As regras do programa, numa linha só, mudadas no painel sem código.
+///
+/// Os valores por omissão são os que ficaram propostos em 28/09 enquanto o
+/// cliente não confirma: 40% sobre o valor pago, 30 dias de carência, 30 dias
+/// de janela, pagamentos a partir de R$ 50. Tudo muda aqui.
+model ConfiguracaoDeAfiliados {
+  /// Sempre "global": o programa é um só, para a plataforma inteira.
+  id String @id @default("global")
+
+  /// Desligado, ninguém novo ganha comissão nem vê a área — mas o que já foi
+  /// ganho continua lá e continua a poder ser pago.
+  ativo Boolean @default(true)
+
+  comissaoBp              Int @default(4000)
+  diasDeCarencia          Int @default(30)
+  diasDeAtribuicao        Int @default(30)
+  minimoParaPagamentoCent Int @default(5000)
+
+  /// Para onde o link leva, como caminho do site. Nulo = a página dos
+  /// cartões do primeiro projeto que os vende.
+  destino String? @db.VarChar(300)
+
+  /// O texto que acompanha o link no WhatsApp. `{link}` é trocado pelo link.
+  mensagemDoWhatsapp String  @default("Olá! Conheça os cartões personalizados da Santtify, com a foto e o nome da criança: {link}") @db.VarChar(600)
+  /// As regras para os afiliados, mostradas na área deles.
+  regulamento        String? @db.VarChar(6000)
+
+  /// As taxas usadas para ESTIMAR o que o Mercado Pago cobra quando o aviso
+  /// não o diz. Em pontos-base: 99 = 0,99%.
+  taxaPixBp    Int @default(99)
+  taxaCartaoBp Int @default(498)
+
+  /// Quem recebe o lembrete mensal dos pagamentos a fazer. Nulo = ninguém
+  /// (o painel mostra o lembrete na mesma).
+  emailDeAvisos String? @db.VarChar(254)
+
+  atualizadoEm    DateTime @updatedAt
+  atualizadoPorId String?  @db.Uuid
+
+  @@map("configuracao_de_afiliados")
 }

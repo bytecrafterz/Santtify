@@ -37,4 +37,10 @@ export const VERSAO_DA_POLITICA = '1.0.0'
 /** Igual ao `EVENT_RETENTION_DAYS` do servidor (1095 = 3 anos). */
 export const RETENCAO_EVENTOS_DIAS = 1095
 
-export const ATUALIZADO_EM = '13 de agosto de 2026'
+/**
+ * 28/09: as compras e o programa de afiliados entraram na página. A versão
+ * fica a mesma — acompanha o `CONSENT_POLICY_VERSION` do servidor, e o que
+ * entrou não depende de consentimento: é o necessário para entregar a compra
+ * e pagar as comissões.
+ */
+export const ATUALIZADO_EM = '28 de setembro de 2026'

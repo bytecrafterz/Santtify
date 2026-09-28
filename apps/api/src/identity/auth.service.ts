@@ -439,6 +439,25 @@ export class AuthService {
         where: { userId: user.id },
         data: { emailPedido: `apagado-${user.id}@apagado.invalid`, tokenHash: null },
       }),
+      // A área de afiliado fecha, e a chave Pix e o nome do titular saem com
+      // o resto dos dados pessoais. O histórico de comissões e pagamentos
+      // fica: é contabilidade, e já não diz de quem era.
+      this.prisma.afiliado.updateMany({
+        where: { userId: user.id },
+        data: {
+          estado: 'SUSPENSO',
+          suspensoEm: new Date(),
+          motivoDaSuspensao: 'Conta apagada pela pessoa',
+          tipoDaChavePix: null,
+          chavePix: null,
+          nomeDoTitular: null,
+        },
+      }),
+      // O e-mail e o nome com que comprou saem dos pedidos; o valor fica.
+      this.prisma.pedidoDeCartoes.updateMany({
+        where: { userId: user.id },
+        data: { emailDoComprador: null, nomeDoComprador: null },
+      }),
     ])
 
     this.logger.log(`Conta apagada a pedido da pessoa: ${user.id}`)

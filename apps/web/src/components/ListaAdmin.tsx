@@ -105,6 +105,14 @@ export function ListaAdmin({ projectSlug }: { projectSlug: string }) {
         <small>quem ficou sem entrar, e o que fazer por essa pessoa</small>
       </Link>
 
+      {/* VENDAS E AFILIADOS (28/09): pedidos, clientes, afiliados, financeiro e
+          relatórios, num painel com menu próprio — o do mockup dele. Fica logo
+          a seguir ao suporte: é onde está o dinheiro. */}
+      <Link className="bloco linha atalho-vendas" href={`/${projectSlug}/admin/vendas`}>
+        <span>Vendas e afiliados</span>
+        <small>pedidos, clientes, afiliados, comissões, pagamentos e relatórios</small>
+      </Link>
+
       {/* A entrada nova fica em PRIMEIRO. É por aqui que ele vai trabalhar
           agora, e enterrá-la no meio dos atalhos antigos seria pedir-lhe que
           procurasse a coisa que acabou de pedir. */}

@@ -84,6 +84,15 @@ async function main() {
     await tx.post.deleteMany({})
     await tx.consent.deleteMany({})
     await tx.visitSession.deleteMany({})
+    // Os afiliados são operação como o resto: saem antes dos visitantes e das
+    // contas a que estão presos. Os pagamentos e as comissões primeiro, que é
+    // a ordem das chaves estrangeiras.
+    await tx.comissaoDeAfiliado.deleteMany({})
+    await tx.pagamentoAoAfiliado.deleteMany({})
+    await tx.cliqueDeAfiliado.deleteMany({})
+    await tx.pedidoDeCartoes.updateMany({ data: { afiliadoId: null } })
+    await tx.afiliado.deleteMany({})
+    await tx.shortLink.deleteMany({ where: { kind: 'AFILIADO' } })
 
     // Só os links de compartilhamento. Os QR dos conteúdos ficam: o papel
     // impresso aponta para eles.

@@ -22,6 +22,7 @@ import { montarPdf, type FolhaDoPdf } from './pdf-dos-cartoes'
 import { ProvedorDePagamento, type AvisoDePagamento } from './pagamentos/provedor'
 import { criarFicha, lerFicha } from './ligacao-de-partilha'
 import { MailService } from '../common/mail/mail.service'
+import { AfiliadosService } from '../afiliados/afiliados.service'
 
 /** O máximo de crianças num pedido. Acima disto é gráfica, não é família. */
 const MAXIMO_DE_CRIANCAS = 10
@@ -48,6 +49,7 @@ export class CartoesService {
     private readonly provedor: ProvedorDePagamento,
     private readonly mail: MailService,
     private readonly config: ConfigService,
+    private readonly afiliados: AfiliadosService,
   ) {
     this.diasAteExpurgo = this.config.get<number>('CARTOES_DIAS_ATE_EXPURGO') ?? 7
     this.horasAteAbandono = this.config.get<number>('CARTOES_HORAS_ATE_ABANDONO') ?? 48
@@ -233,6 +235,7 @@ export class CartoesService {
     userId?: string,
     categoriaSlug?: string,
     idioma = 'pt-BR',
+    anonId?: string | null,
   ) {
     if (quantidade < 1 || quantidade > MAXIMO_DE_CRIANCAS) {
       throw new BadRequestException(`Escolha entre 1 e ${MAXIMO_DE_CRIANCAS}.`)
@@ -242,12 +245,26 @@ export class CartoesService {
     const categoria = await this.categoriaEscolhida(projeto.id, categoriaSlug, idioma)
     const preco = this.precoEfetivo(categoria, await this.precoDoProjeto(projeto.id))
 
+    /*
+      A QUEM PERTENCE ESTA VENDA decide-se aqui, quando o pedido nasce: ao
+      último link de afiliado que esta pessoa abriu. Ver
+      `AfiliadosService.atribuir`. Uma falha nunca impede a compra — a venda
+      fica "direta", que é o que ela seria sem programa de afiliados.
+    */
+    const afiliadoId = await this.afiliados
+      .atribuir({ anonId: anonId ?? null, userId: userId ?? null })
+      .catch((erro) => {
+        this.logger.error(`Atribuição ao afiliado falhou: ${String(erro)}`)
+        return null
+      })
+
     const pedido = await this.prisma.pedidoDeCartoes.create({
       data: {
         projectId: projeto.id,
         categoriaId: categoria.id,
         idioma,
         userId: userId ?? null,
+        afiliadoId,
         precoUnitarioCent: preco.precoUnitarioCent,
         precoDeTabelaCent: preco.precoDeTabelaCent,
         descontoPercentagem: preco.descontoPercentagem,
@@ -305,6 +322,7 @@ export class CartoesService {
 
     return {
       id: pedido.id,
+      numero: pedido.numero,
       projectSlug: pedido.project.slug,
       categoria: pedido.categoria,
       idioma: pedido.idioma,
@@ -582,6 +600,7 @@ export class CartoesService {
     meio: MeioDePagamento,
     emailDoPagador: string,
     aprovou: boolean,
+    sessao: { userId?: string | null; anonId?: string | null } = {},
   ) {
     /*
       SEM A APROVAÇÃO, NÃO HÁ COBRANÇA.
@@ -617,13 +636,33 @@ export class CartoesService {
       where: { id: pedidoId },
     })
 
+    // O número nasce no primeiro pagamento e fica: ver `numero` no schema.
+    const numero = actualizado.numero ?? (await this.proximoNumero())
+
+    /*
+      QUEM COMPRA.
+
+      Com sessão, o pedido fica da conta — também quando foi começado antes de
+      a pessoa entrar. É a compra com conta que libera a área de afiliado, e a
+      mãe que entra só no passo de pagar não pode ficar sem ela por isso.
+    */
+    const donoId = pedido.userId ?? sessao.userId ?? null
+    const dono = donoId
+      ? await this.prisma.user.findUnique({ where: { id: donoId }, select: { displayName: true } })
+      : null
+    const afiliadoId = pedido.afiliadoId
+      ? null
+      : await this.afiliados
+          .atribuir({ anonId: sessao.anonId ?? null, userId: donoId, email: emailDoPagador })
+          .catch(() => null)
+
     const site = (this.config.get<string>('PUBLIC_WEB_URL') ?? '').replace(/\/+$/, '')
     const cobranca = await this.provedor.criarCobranca({
       pedidoId,
       totalCent: actualizado.totalCent,
       moeda: actualizado.moeda,
       meio,
-      descricao: `Cartões personalizados — ${escolhidas.length} conjunto(s)`,
+      descricao: `Cartões personalizados — pedido #${numero} — ${escolhidas.length} conjunto(s)`,
       emailDoPagador,
       // De volta ao editor, que retoma o pedido sozinho e mostra o estado dele.
       urlDeRegresso: `${site}/${pedido.project.slug}/cartoes?pedido=${pedidoId}`,
@@ -639,6 +678,11 @@ export class CartoesService {
         meio,
         aprovacaoEm: new Date(),
         aprovacaoTexto: TEXTO_DA_APROVACAO,
+        numero,
+        emailDoComprador: emailDoPagador.trim().toLowerCase().slice(0, 254),
+        ...(dono ? { nomeDoComprador: dono.displayName.slice(0, 120) } : {}),
+        ...(!pedido.userId && sessao.userId ? { userId: sessao.userId } : {}),
+        ...(afiliadoId ? { afiliadoId } : {}),
         referenciaExterna: cobranca.referenciaExterna,
         pixCopiaECola: cobranca.pixCopiaECola ?? null,
         pixQrSvg: cobranca.pixQrSvg ?? null,
@@ -682,23 +726,77 @@ export class CartoesService {
       },
     })
 
-    if (!aviso.pago) return { registado: true }
-    if (pedido.estado === EstadoDoPedido.PAGO || pedido.estado === EstadoDoPedido.PRONTO) {
-      return { repetido: true }
+    const devolvido = aviso.reembolsadoCent ?? 0
+    let pagoAgora = false
+
+    /*
+      PAGO É TER `pagoEm`, E NÃO O `estado`.
+
+      Isto perguntava pelo estado PAGO ou PRONTO. Mas o expurgo põe todo o
+      pedido velho em EXPIRADO — e um aviso atrasado da mesma compra (a order
+      depois do payment, por exemplo) voltava a pagá-lo, a gerar PDFs de
+      fotografias já apagadas e, agora, a mexer na comissão. A data não muda.
+    */
+    if (aviso.pago && !pedido.pagoEm) {
+      await this.prisma.pedidoDeCartoes.update({
+        where: { id: pedido.id },
+        data: {
+          estado: EstadoDoPedido.PAGO,
+          pagoEm: new Date(),
+          // A partir daqui vale o prazo de entrega, não o de abandono.
+          expiraEm: this.daquiADias(this.diasAteExpurgo),
+        },
+      })
+      pagoAgora = true
+
+      // Devolvido por inteiro no mesmo aviso: não há cartões a fazer.
+      if (devolvido < pedido.totalCent) await this.gerarPdfsConfirmados(pedido.id)
+
+      await this.afiliados
+        .aoConfirmarPagamento(pedido.id, { taxaCent: aviso.taxaCent ?? null })
+        .catch((erro) => this.logger.error(`Afiliados após o pagamento de ${pedido.id}: ${String(erro)}`))
+    } else if (aviso.pago && aviso.taxaCent != null) {
+      // A taxa verdadeira chegou depois de estimada.
+      await this.afiliados.registarTaxa(pedido.id, aviso.taxaCent).catch(() => undefined)
     }
+
+    const reembolsado = devolvido > 0 ? await this.registarReembolso(pedido.id, devolvido) : false
+
+    if (pagoAgora) return { pago: true, reembolsado }
+    if (reembolsado) return { reembolsado: true }
+    return aviso.pago ? { repetido: true } : { registado: true }
+  }
+
+  /**
+   * Um reembolso ou uma contestação, com o total devolvido até agora.
+   *
+   * Só sobe: um aviso atrasado de um reembolso parcial, a chegar depois do
+   * total, não faz o pedido "desdevolver" dinheiro. E só num pedido pago —
+   * não se devolve o que não entrou.
+   */
+  async registarReembolso(pedidoId: string, totalDevolvidoCent: number): Promise<boolean> {
+    const pedido = await this.prisma.pedidoDeCartoes.findUnique({ where: { id: pedidoId } })
+    if (!pedido?.pagoEm) return false
+    const novo = Math.min(pedido.totalCent, Math.max(pedido.reembolsadoCent, Math.round(totalDevolvidoCent)))
+    if (novo <= pedido.reembolsadoCent) return false
 
     await this.prisma.pedidoDeCartoes.update({
       where: { id: pedido.id },
-      data: {
-        estado: EstadoDoPedido.PAGO,
-        pagoEm: new Date(),
-        // A partir daqui vale o prazo de entrega, não o de abandono.
-        expiraEm: this.daquiADias(this.diasAteExpurgo),
-      },
+      data: { reembolsadoCent: novo, reembolsadoEm: new Date() },
     })
+    this.logger.warn(`Pedido ${pedido.numero ?? pedido.id}: reembolsado ${novo} de ${pedido.totalCent}.`)
 
-    await this.gerarPdfsConfirmados(pedido.id)
-    return { pago: true }
+    await this.afiliados
+      .aoReembolsar(pedido.id)
+      .catch((erro) => this.logger.error(`Comissão do reembolso de ${pedido.id}: ${String(erro)}`))
+    return true
+  }
+
+  /** O número seguinte da sequência dos pedidos. */
+  private async proximoNumero(): Promise<number> {
+    const [linha] = await this.prisma.$queryRaw<Array<{ n: bigint }>>`
+      SELECT nextval('pedidos_de_cartoes_numero_seq') AS n`
+    return Number(linha.n)
   }
 
   // ─────────────────────────────────────────────────────────────────

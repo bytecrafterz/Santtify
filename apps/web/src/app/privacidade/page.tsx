@@ -100,6 +100,35 @@ export default function PaginaPrivacidade() {
         <li>O que você publicou, comentou, curtiu e compartilhou na plataforma.</li>
       </ul>
 
+      <h2>Quem compra os cartões</h2>
+      <ul>
+        <li>
+          O e-mail usado no pagamento, o valor e a data do pedido, para o atendimento e para as
+          contas da loja. O pagamento é feito no Mercado Pago: nós não vemos nem guardamos os dados
+          do cartão.
+        </li>
+        <li>
+          As fotos e os arquivos dos cartões ficam guardados só até o fim do prazo de entrega e
+          depois são apagados automaticamente.
+        </li>
+      </ul>
+
+      <h2>Programa de afiliados</h2>
+      <ul>
+        <li>
+          Quem é afiliado informa uma chave Pix e o nome do titular, usados só para pagar as
+          comissões. Só a própria pessoa e a administração os veem.
+        </li>
+        <li>
+          O afiliado vê as vendas feitas pelo link dele com o primeiro nome e a inicial do sobrenome
+          de quem comprou (por exemplo, &quot;Maria S.&quot;). Nunca o e-mail, nem o nome das crianças.
+        </li>
+        <li>
+          Contamos quantas pessoas abriram cada link de afiliado, uma vez por dia por aparelho, sem
+          acesso a nenhuma conversa.
+        </li>
+      </ul>
+
       <h2>O que NÃO fazemos</h2>
       <ul>
         <li>Não vendemos nem cedemos os seus dados a terceiros.</li>
@@ -149,9 +178,10 @@ export default function PaginaPrivacidade() {
       </p>
       <p>
         <strong>Apagar a conta você mesmo, sem pedir a ninguém.</strong> No seu perfil há a opção
-        EXCLUIR MINHA CONTA. Ao confirmar com a sua senha, o seu nome, a sua foto, o seu e-mail e o
-        nome do responsável são apagados na hora, o perfil deixa de existir para as outras pessoas e
-        os seus comentários e curtidas deixam de aparecer. Não tem volta.
+        EXCLUIR MINHA CONTA. Ao confirmar com a sua senha, o seu nome, a sua foto, o seu e-mail, o
+        nome do responsável e, se você for afiliado, a sua chave Pix são apagados na hora, o perfil
+        deixa de existir para as outras pessoas e os seus comentários e curtidas deixam de aparecer.
+        Não tem volta.
       </p>
       <p>
         Para qualquer um desses pedidos, escreva para{' '}

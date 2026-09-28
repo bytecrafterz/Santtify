@@ -3,6 +3,7 @@
 import { useEffect, useState } from 'react'
 import type { PerfilAnfitriao } from '@/lib/api'
 import { PortaDasMensagens } from './MensagensPrivadas'
+import { AreaDoAfiliado } from './AreaDoAfiliado'
 
 /**
  * O perfil de outra pessoa, com a mesma estrutura do perfil do dono.
@@ -89,6 +90,11 @@ export function PerfilDePessoa({
           </p>
         )}
       </div>
+
+      {/* A área de afiliado — só no perfil da própria pessoa, e logo a seguir a
+          quem ela é, como no mockup dele. Bloqueada até à primeira compra,
+          liberada sozinha quando o pagamento é confirmado. */}
+      <AreaDoAfiliado projectSlug={projectSlug} pessoaId={pessoa.id} />
 
       <h2 className="titulo-feed">Publicações</h2>
       {carregando && <p className="nota">A carregar...</p>}

@@ -18,11 +18,13 @@ import { ContagensService } from '../social/contagens.service'
 import { IdentityModule } from '../identity/identity.module'
 import { MailModule } from '../common/mail/mail.module'
 import { ShortLinksModule } from '../short-links/short-links.module'
+import { AfiliadosModule } from '../afiliados/afiliados.module'
 
 @Module({
   // O AuthGuard precisa do JwtService, que vive no IdentityModule.
   // O MailModule é o que manda a ligação dos cartões por e-mail.
-  imports: [IdentityModule, MailModule, ShortLinksModule],
+  // O AfiliadosModule decide a quem pertence cada venda e regista a comissão.
+  imports: [IdentityModule, MailModule, ShortLinksModule, AfiliadosModule],
   controllers: [
     CartoesController,
     AdminCartoesController,

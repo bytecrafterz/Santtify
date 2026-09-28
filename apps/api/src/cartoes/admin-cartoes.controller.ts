@@ -7,11 +7,13 @@ import {
   Param,
   Patch,
   Post,
+  Req,
   UploadedFile,
   UseGuards,
   UseInterceptors,
 } from '@nestjs/common'
 import { FileInterceptor } from '@nestjs/platform-express'
+import type { Request } from 'express'
 import sharp from 'sharp'
 import { DestaqueDoCarrossel, FormatoDaMoldura } from '@pv/db'
 import {
@@ -123,6 +125,12 @@ class NovoProjetoDto {
 
 class ConfirmarPagamentoDto {
   @IsString() @MaxLength(120) referencia!: string
+}
+
+class ReembolsoDto {
+  /** O total devolvido ao cliente. Vazio = o pedido inteiro. */
+  @IsOptional() @IsInt() @Min(1) valorCent?: number
+  @IsOptional() @IsString() @MaxLength(300) motivo?: string
 }
 
 /**
@@ -335,6 +343,22 @@ export class AdminCartoesController {
     @Body() dto: ConfirmarPagamentoDto,
   ) {
     return this.admin.confirmarPagamentoManual(pedidoId, dto.referencia)
+  }
+
+  /**
+   * O reembolso lançado à mão, pela mesma porta do webhook.
+   *
+   * O caminho normal é o aviso do Mercado Pago, que já trata reembolsos e
+   * contestações sozinho. Este é para o que ele não diz: o Pix devolvido em
+   * parte sem o valor no aviso, ou a devolução combinada fora da plataforma.
+   */
+  @Post('pedidos-de-cartoes/:pedidoId/reembolso')
+  reembolsar(
+    @Param('pedidoId') pedidoId: string,
+    @Body() dto: ReembolsoDto,
+    @Req() req: Request,
+  ) {
+    return this.admin.registarReembolsoManual(pedidoId, dto.valorCent ?? null, dto.motivo ?? null, req.usuario!.id)
   }
 
   /** Corre o expurgo agora, sem esperar pela hora certa. */

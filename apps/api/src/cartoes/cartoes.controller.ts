@@ -31,6 +31,7 @@ import {
 import { CartoesService } from './cartoes.service'
 import { TAMANHO_MAXIMO_FOTO } from './armazenamento-de-cartoes.service'
 import { AuthGuard, AuthOpcional } from '../identity/auth.guard'
+import { ANON_COOKIE } from '../common/http.util'
 
 class CriarPedidoDto {
   /**
@@ -59,7 +60,7 @@ class ActualizarCriancaDto {
 
 class PagarDto {
   @IsEnum(MeioDePagamento) meio!: MeioDePagamento
-  /** Segue para o provedor, que o exige. O pedido não o guarda. */
+  /** Segue para o provedor, que o exige, e fica no pedido: é quem comprou. */
   @IsEmail({}, { message: 'Escreva um e-mail válido.' }) email!: string
   /** A caixa "Confirmo que revisei e aprovei o nome e a foto". Sem ela não se paga. */
   @IsOptional() @IsBoolean() aprovou?: boolean
@@ -121,6 +122,8 @@ export class CartoesController {
       req.usuario?.id,
       dto.categoria,
       dto.idioma || 'pt-BR',
+      // O cookie da visita: é por ele que se sabe que link de afiliado a trouxe.
+      req.cookies?.[ANON_COOKIE] ?? null,
     )
   }
 
@@ -196,8 +199,11 @@ export class CartoesController {
   }
 
   @Post('pedidos/:pedidoId/pagamento')
-  pagar(@Param('pedidoId') pedidoId: string, @Body() dto: PagarDto) {
-    return this.cartoes.iniciarPagamento(pedidoId, dto.meio, dto.email, dto.aprovou === true)
+  pagar(@Param('pedidoId') pedidoId: string, @Body() dto: PagarDto, @Req() req: Request) {
+    return this.cartoes.iniciarPagamento(pedidoId, dto.meio, dto.email, dto.aprovou === true, {
+      userId: req.usuario?.id ?? null,
+      anonId: req.cookies?.[ANON_COOKIE] ?? null,
+    })
   }
 
   /**

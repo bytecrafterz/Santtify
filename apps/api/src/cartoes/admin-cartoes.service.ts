@@ -500,6 +500,43 @@ export class AdminCartoesService {
     })
   }
 
+  /**
+   * Um reembolso lançado no painel. `valorCent` é o total devolvido até agora
+   * (vazio = tudo), e entra como um aviso do provedor: mesma idempotência, a
+   * mesma conta da comissão, o mesmo registo no histórico do pedido.
+   */
+  async registarReembolsoManual(pedidoId: string, valorCent: number | null, motivo: string | null, adminId: string) {
+    const pedido = await this.prisma.pedidoDeCartoes.findUnique({ where: { id: pedidoId } })
+    if (!pedido) throw new NotFoundException('Pedido não encontrado.')
+    if (!pedido.pagoEm || !pedido.referenciaExterna) {
+      throw new BadRequestException('Só um pedido pago pode ser reembolsado.')
+    }
+    const total = Math.min(pedido.totalCent, valorCent ?? pedido.totalCent)
+    if (total <= pedido.reembolsadoCent) {
+      throw new BadRequestException('Este valor já está registrado como devolvido.')
+    }
+
+    const resultado = await this.cartoes.registarAviso({
+      idExterno: `painel_reembolso_${pedido.id}_${total}`,
+      referenciaExterna: pedido.referenciaExterna,
+      tipo: 'reembolso_manual',
+      pago: true,
+      reembolsadoCent: total,
+      bruto: { origem: 'painel', totalDevolvidoCent: total, motivo },
+    })
+    await this.prisma.adminAuditLog.create({
+      data: {
+        userId: adminId,
+        projectId: pedido.projectId,
+        action: 'pedido.reembolso',
+        entityType: 'PedidoDeCartoes',
+        entityId: pedido.id,
+        changes: { totalDevolvidoCent: total, motivo },
+      },
+    })
+    return resultado
+  }
+
   // ── Auxiliares ────────────────────────────────────────────────────
 
   private async projeto(slug: string) {
