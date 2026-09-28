@@ -4,6 +4,7 @@ import Link from 'next/link'
 import { useEffect, useRef } from 'react'
 import { usePathname } from 'next/navigation'
 import { useAuth } from '@/components/ProvedorDeAuth'
+import { usePorLer } from '@/lib/mensagens'
 
 /**
  * A barra fixa de baixo, com os quatro acessos.
@@ -34,6 +35,9 @@ export function BarraInferior({
   const suporte = process.env.NEXT_PUBLIC_SUPORTE_WHATSAPP
   const barra = useRef<HTMLElement | null>(null)
   const { usuario } = useAuth()
+  const porLer = usePorLer(usuario?.id ?? null)
+  // Com cinco botões ou mais, a barra aperta as folgas — ver `.barra-inferior.cheia`.
+  const botoes = 3 + (linkPdf ? 1 : 0) + (suporte ? 1 : 0) + (usuario?.role === 'ADMIN' ? 1 : 0)
 
   /**
    * A BARRA NÃO PODE FICAR PRESA A MEIO DO ECRÃ.
@@ -123,7 +127,11 @@ export function BarraInferior({
   }, [caminho])
 
   return (
-    <nav ref={barra} className="barra-inferior" aria-label="Acessos principais">
+    <nav
+      ref={barra}
+      className={botoes >= 5 ? 'barra-inferior cheia' : 'barra-inferior'}
+      aria-label="Acessos principais"
+    >
       {/*
         A CASINHA LEVA A CASA.
 
@@ -163,14 +171,14 @@ export function BarraInferior({
             <path d="M5.5 9.5V20h13V9.5" />
           </svg>
         </span>
-        Início
+        <span className="rotulo-barra">Início</span>
       </Link>
 
       <Link href={`/${projectSlug}/produto-vivo`} className="item-barra">
         <span className="icone marca-pv-barra" aria-hidden>
           PV
         </span>
-        Produto Vivo
+        <span className="rotulo-barra">Produto Vivo</span>
       </Link>
 
       {/*
@@ -186,8 +194,21 @@ export function BarraInferior({
         volta aqui, que é o que essa página já faz — e é melhor do que esconder
         o botão, porque um botão que aparece e desaparece conforme o estado da
         sessão ensina a não confiar na barra.
+
+        O SINAL VERMELHO NO ÍCONE são as mensagens por ler (28/09). É o botão
+        do perfil que o leva porque é lá que as mensagens moram. O número vai
+        também no nome do botão, para quem usa leitor de ecrã: o ícone está
+        escondido dele.
       */}
-      <Link href={`/${projectSlug}/perfil`} className="item-barra">
+      <Link
+        href={`/${projectSlug}/perfil`}
+        className="item-barra"
+        aria-label={
+          porLer > 0
+            ? `Meu Perfil, ${porLer} ${porLer === 1 ? 'mensagem' : 'mensagens'} por ler`
+            : undefined
+        }
+      >
         <span className="icone" aria-hidden>
           <svg
             viewBox="0 0 24 24"
@@ -202,8 +223,9 @@ export function BarraInferior({
             <circle cx="12" cy="8" r="3.6" />
             <path d="M4.8 20a7.2 7.2 0 0 1 14.4 0" />
           </svg>
+          {porLer > 0 && <span className="sinal-da-barra">{porLer > 99 ? '99+' : porLer}</span>}
         </span>
-        Meu Perfil
+        <span className="rotulo-barra">Meu Perfil</span>
       </Link>
 
       {linkPdf && (
@@ -224,7 +246,7 @@ export function BarraInferior({
               <path d="M9.5 17v-4h1.6a1.4 1.4 0 0 1 0 2.8H9.5" />
             </svg>
           </span>
-          PDF
+          <span className="rotulo-barra">PDF</span>
         </a>
       )}
 
@@ -240,7 +262,7 @@ export function BarraInferior({
               <path d="M12.04 2C6.6 2 2.2 6.4 2.2 11.84c0 1.94.53 3.75 1.45 5.3L2 22l4.99-1.6a9.8 9.8 0 0 0 5.05 1.38h.01c5.43 0 9.84-4.4 9.84-9.84C21.89 6.4 17.48 2 12.04 2Zm0 17.97c-1.6 0-3.09-.43-4.37-1.18l-.31-.19-3.24 1.04 1.06-3.16-.2-.32a8.1 8.1 0 0 1-1.25-4.32c0-4.5 3.66-8.16 8.16-8.16 4.51 0 8.17 3.66 8.17 8.16 0 4.51-3.66 8.17-8.17 8.17Zm4.48-6.12c-.25-.12-1.45-.72-1.68-.8-.22-.08-.39-.12-.55.13-.16.24-.63.79-.77.95-.14.16-.28.18-.53.06-.25-.13-1.04-.38-1.98-1.22-.73-.65-1.23-1.46-1.37-1.7-.14-.25-.02-.38.11-.5.11-.11.25-.29.37-.44.12-.14.16-.24.25-.41.08-.16.04-.31-.02-.43-.06-.13-.55-1.33-.76-1.82-.2-.48-.4-.41-.55-.42h-.47c-.16 0-.43.06-.65.31-.22.25-.86.84-.86 2.05s.88 2.38 1 2.54c.12.16 1.72 2.63 4.17 3.69.58.25 1.04.4 1.39.51.59.19 1.12.16 1.54.1.47-.07 1.45-.59 1.65-1.17.2-.57.2-1.06.14-1.16-.06-.1-.22-.16-.47-.28Z" />
             </svg>
           </span>
-          Suporte
+          <span className="rotulo-barra">Suporte</span>
         </a>
       )}
 
@@ -274,7 +296,7 @@ export function BarraInferior({
               <rect x="3.5" y="15.5" width="7" height="5" rx="1.8" />
             </svg>
           </span>
-          Painel
+          <span className="rotulo-barra">Painel</span>
         </Link>
       )}
     </nav>

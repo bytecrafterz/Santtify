@@ -1,5 +1,6 @@
 'use client'
 
+import { useEffect, useState } from 'react'
 import { tokens, ErroDeApi, renovarSessao } from '@/lib/auth'
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL ?? 'http://localhost:3333/api'
@@ -67,22 +68,42 @@ async function comRenovacao<T>(caminho: string, init: RequestInit = {}): Promise
   }
 }
 
+/**
+ * O último número de por ler que se soube, e de quem — para o sinal da barra
+ * de baixo (ver `usePorLer`). `null` quando deixou de valer.
+ */
+let porLerGuardado: number | null = null
+let porLerDe: string | null = null
+
 export const mensagens = {
-  listar: () => comRenovacao<ResumoDaConversa[]>('/me/conversas'),
-  naoLidas: () => comRenovacao<{ naoLidas: number; conversas: number }>('/me/conversas/nao-lidas'),
+  listar: async () => {
+    const lista = await comRenovacao<ResumoDaConversa[]>('/me/conversas')
+    // A lista traz o número de cada conversa: o total fica certo.
+    porLerGuardado = lista.reduce((t, c) => t + c.naoLidas, 0)
+    return lista
+  },
+  naoLidas: async () => {
+    const r = await comRenovacao<{ naoLidas: number; conversas: number }>('/me/conversas/nao-lidas')
+    porLerGuardado = r.naoLidas
+    return r
+  },
   abrir: (comUserId: string) =>
     comRenovacao<{ id: string }>('/me/conversas', {
       method: 'POST',
       body: JSON.stringify({ comUserId }),
     }),
-  ver: (id: string) =>
-    comRenovacao<{
+  ver: async (id: string) => {
+    const r = await comRenovacao<{
       id: string
       outra: PessoaDaConversa
       /** Só o administrador designado (o Kanari) pode apagar mensagens. */
       podeApagar: boolean
       mensagens: MensagemPrivada[]
-    }>(`/me/conversas/${id}`),
+    }>(`/me/conversas/${id}`)
+    // Abrir a conversa lê-a: o número guardado deixa de valer.
+    porLerGuardado = null
+    return r
+  },
   apagarMensagens: (id: string, ids: string[]) =>
     comRenovacao<{ apagadas: number }>(`/me/conversas/${id}/mensagens/apagar`, {
       method: 'POST',
@@ -137,6 +158,57 @@ export const mensagens = {
     if (!res.ok) throw new ErroDeApi(res.status, 'Não foi possível abrir o arquivo.')
     return res.blob()
   },
+}
+
+/* ── O sinal na barra de baixo (28/09) ───────────────────────────────── */
+
+/** De quanto em quanto tempo a barra pergunta, enquanto a página está à vista. */
+const INTERVALO_DO_SINAL = 30000
+
+/**
+ * QUANTAS POR LER, PARA O SINAL EM "MEU PERFIL".
+ *
+ * "if there is unread message, make the tag appear over the profile of
+ * bottom tool bar" — 28/09. As mensagens moram no perfil; sem o sinal, só se
+ * sabia delas indo lá.
+ *
+ * Pergunta ao abrir a página, de 30 em 30 segundos enquanto ela está à vista,
+ * e ao voltar a ela. Sem sessão não pergunta nada. Começa pelo último número
+ * que se soube: a barra é desenhada de novo em cada página, e a partir do
+ * zero o sinal piscava a cada toque nela.
+ */
+export function usePorLer(userId: string | null): number {
+  const [n, definirN] = useState(() => (userId && userId === porLerDe ? (porLerGuardado ?? 0) : 0))
+
+  useEffect(() => {
+    if (porLerDe !== userId) {
+      // Outra pessoa, ou ninguém: o número guardado não é desta.
+      porLerGuardado = null
+      porLerDe = userId
+      definirN(0)
+    }
+    if (!userId) return
+    let vivo = true
+    const perguntar = () => {
+      if (document.visibilityState !== 'visible') return
+      mensagens
+        .naoLidas()
+        .then((r) => {
+          if (vivo) definirN(r.naoLidas)
+        })
+        .catch(() => {})
+    }
+    perguntar()
+    const t = setInterval(perguntar, INTERVALO_DO_SINAL)
+    document.addEventListener('visibilitychange', perguntar)
+    return () => {
+      vivo = false
+      clearInterval(t)
+      document.removeEventListener('visibilitychange', perguntar)
+    }
+  }, [userId])
+
+  return userId ? n : 0
 }
 
 /** "2,4 MB", "830 KB". */
