@@ -15,7 +15,8 @@ import {
   type CriancaDoPedido,
   type ModeloDeCartao,
 } from '@/lib/cartoes'
-import { LupaDoCartao } from './LupaDoCartao'
+import { LupaDoCartao, type FocoDaLupa } from './LupaDoCartao'
+import { ArteEmPdf } from './ArteEmPdf'
 
 /**
  * O CARTÃO É O EDITOR.
@@ -117,6 +118,8 @@ export function CartaoComoEditor({
 }) {
   const definirIndice = aoMudarIndice
   const [lupaAberta, definirLupaAberta] = useState(false)
+  /** Onde a lupa abre já ampliada: o ponto do toque duplo no cartão. */
+  const [focoDaLupa, definirFocoDaLupa] = useState<FocoDaLupa | null>(null)
   const [escolhido, definirEscolhido] = useState<Escolhido>(null)
   const [paletaAberta, definirPaletaAberta] = useState(false)
   const [setasAbertas, definirSetasAbertas] = useState(false)
@@ -276,7 +279,10 @@ export function CartaoComoEditor({
               alinhamento={alinhamento}
               cor={cor}
               editavel={i === indice}
-              aoAmpliar={() => definirLupaAberta(true)}
+              aoAmpliar={(foco) => {
+                definirFocoDaLupa(foco)
+                definirLupaAberta(true)
+              }}
               escolhido={i === indice ? escolhido : null}
               aEnviar={aEnviar}
               aoEscolher={definirEscolhido}
@@ -415,6 +421,7 @@ export function CartaoComoEditor({
         <LupaDoCartao
           titulo={`Dia ${modelo.dia} — ${modelo.nome}`}
           aoFechar={() => definirLupaAberta(false)}
+          foco={focoDaLupa}
         >
           <CartaoDesenhado
             projectSlug={projectSlug}
@@ -492,7 +499,10 @@ export function CartaoComoEditor({
       <button
         type="button"
         className="cartoes-ligacao ce-ver-grande"
-        onClick={() => definirLupaAberta(true)}
+        onClick={() => {
+          definirFocoDaLupa(null)
+          definirLupaAberta(true)
+        }}
       >
         🔍 Ver em tamanho grande
       </button>
@@ -662,8 +672,11 @@ function CartaoDesenhado({
   aoEscolher: (e: Escolhido) => void
   aoMexer: (m: Partial<Ajuste>) => void
   aoEscrever: (t: string) => void
-  /** Ausente dentro da própria lupa: ali não há nada para ampliar outra vez. */
-  aoAmpliar?: () => void
+  /**
+   * Ausente dentro da própria lupa: ali não há nada para ampliar outra vez.
+   * Recebe o ponto tocado, para a lupa abrir já nessa caixa.
+   */
+  aoAmpliar?: (foco: FocoDaLupa) => void
   barraDaFoto: React.ReactNode
   barraDoNome: React.ReactNode
   paleta: React.ReactNode
@@ -819,7 +832,10 @@ function CartaoDesenhado({
         const agora = Date.now()
         if (agora - ultimoToque.current < TOQUE_DUPLO_MS) {
           ultimoToque.current = 0
-          aoAmpliar()
+          // "Quando eu clico na caixa 1 para ampliar, ela precisa abrir
+          // centralizada exatamente na caixa 1" — 28/09. Vai o sítio do toque.
+          const r = ev.currentTarget.getBoundingClientRect()
+          aoAmpliar({ fx: (ev.clientX - r.left) / r.width, fy: (ev.clientY - r.top) / r.height })
         } else {
           ultimoToque.current = agora
         }
@@ -835,7 +851,7 @@ function CartaoDesenhado({
           draggable={false}
         />
       ) : null}
-      {modelo.arteUrl && altaResolucao && modelo.arteLupaUrl ? (
+      {modelo.arteUrl && altaResolucao && modelo.arteLupaUrl && !modelo.artePdfUrl ? (
         /*
           A LUPA MOSTRA A ARTE A 300 DPI.
 
@@ -845,6 +861,16 @@ function CartaoDesenhado({
         // eslint-disable-next-line @next/next/no-img-element
         <img src={modelo.arteLupaUrl} alt="" aria-hidden="true" className="ce-arte" draggable={false} />
       ) : null}
+      {/*
+        O PDF DO DESIGNER, POR CIMA DA IMAGEM LEVE — ver `ArteEmPdf`.
+
+        "a qualidade das artes precisa ser exatamente a qualidade original
+        enviada pelo designer" — 28/09. No editor, só no cartão da vez: os
+        vizinhos à espreita ficam com a imagem leve, e sete PDFs de uma vez
+        eram 13 MB num telemóvel. Na lupa, sempre (e aí a JPEG de 300 dpi, que
+        era a melhor aproximação, deixa de ser precisa).
+      */}
+      {modelo.artePdfUrl && (editavel || altaResolucao) ? <ArteEmPdf url={modelo.artePdfUrl} /> : null}
       {modelo.arteUrl ? null : (
         <span className="ce-sem-arte">Arte do {modelo.nome} ainda não carregada</span>
       )}

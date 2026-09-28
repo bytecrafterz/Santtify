@@ -86,6 +86,12 @@ export class CartoesService {
       arteUrl: m.arteUrl,
       arteLupaUrl: m.arteLupaUrl,
       /**
+       * O PDF do designer, para o ecrã o desenhar tal como é (ver `ArteEmPdf`
+       * no site). Só quando a arte veio em PDF: nas carregadas como imagem, a
+       * "de impressão" é a própria imagem, e já está em `arteUrl`.
+       */
+      artePdfUrl: m.arteImpressaoUrl && /\.pdf$/i.test(m.arteImpressaoUrl) ? m.arteImpressaoUrl : null,
+      /**
        * A geometria vai para o navegador de propósito.
        *
        * É com ela que a prévia desenha a moldura no sítio exacto e avalia a

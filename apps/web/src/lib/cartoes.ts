@@ -23,6 +23,11 @@ export interface ModeloDeCartao {
   arteUrl: string | null
   /** A arte a 300 dpi, só para a lupa. Nula em artes carregadas como imagem. */
   arteLupaUrl?: string | null
+  /**
+   * O PDF que o designer entregou. Quando existe, é ele que o ecrã desenha
+   * (ver `ArteEmPdf`); as imagens ficam para o primeiro instante.
+   */
+  artePdfUrl?: string | null
   /** Tudo em milímetros sobre a folha A4, como no servidor. */
   moldura: {
     x: number

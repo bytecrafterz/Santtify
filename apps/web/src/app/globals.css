@@ -11701,6 +11701,28 @@ body:has(.painel-karaoke) {
   object-fit: fill;
 }
 
+/* O PDF do designer, por cima da imagem leve (28/09). Transparente até estar
+   desenhado: até lá, vê-se a imagem que está por baixo. */
+.ce-arte-pdf {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+}
+
+.ce-arte-pdf .ce-arte-pdf-base {
+  position: absolute;
+  inset: 0;
+  display: block;
+  width: 100%;
+  height: 100%;
+}
+
+/* O pormenor da lupa: posto sobre a parte à vista quando fica pronto. */
+.ce-arte-pdf .ce-arte-pdf-detalhe {
+  position: absolute;
+  display: none;
+}
+
 .ce-sem-arte {
   display: grid;
   height: 100%;
@@ -12015,6 +12037,13 @@ body:has(.painel-karaoke) {
   display: grid;
   grid-template-rows: auto 1fr auto;
   background: #0b0d12;
+  /* Em TODA a lupa, e não só na folha: uma pinça no título ou nos botões
+     aproximava a página inteira do navegador, e depois não havia como voltar
+     (28/09, "não consigo voltar normalmente e fica travando"). */
+  touch-action: none;
+  overscroll-behavior: none;
+  user-select: none;
+  -webkit-user-select: none;
 }
 
 .lupa-topo,
@@ -12062,6 +12091,8 @@ body:has(.painel-karaoke) {
   cartão — e o gesto nunca chega ao `onPointerMove`.
 */
 .lupa-palco {
+  /* A folha mede a sua posição a partir daqui (ver `LupaDoCartao`). */
+  position: relative;
   display: grid;
   overflow: hidden;
   place-items: center;
@@ -12081,11 +12112,13 @@ body:has(.painel-karaoke) {
 */
 .lupa-folha {
   width: min(100cqw, 520px, 100cqh * 210 / 297);
-  transform-origin: center center;
-  /* Ampliar tem de mostrar os pixéis como eles são. Suavizar a 8× esconderia
-     exactamente o grão que ela veio verificar. */
-  image-rendering: -webkit-optimize-contrast;
+  /* As contas do zoom (ver `LupaDoCartao`) partem do canto de cima. */
+  transform-origin: 0 0;
 }
+
+/* Só durante o gesto. Sempre ligado, o navegador guardava a folha desenhada a
+   1× e esticava esses pixéis, em vez de a voltar a desenhar ampliada. */
+.lupa-folha.a-mexer { will-change: transform; }
 
 .lupa-folha .ce-folha { box-shadow: none; }
 
