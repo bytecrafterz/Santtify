@@ -1,7 +1,9 @@
 'use client'
 
+import Link from 'next/link'
 import { useEffect, useState } from 'react'
 import type { PerfilAnfitriao } from '@/lib/api'
+import { useAuth } from './ProvedorDeAuth'
 import { PortaDasMensagens } from './MensagensPrivadas'
 import { AreaDoAfiliado } from './AreaDoAfiliado'
 
@@ -37,6 +39,8 @@ export function PerfilDePessoa({
 }) {
   const [publicacoes, definirPublicacoes] = useState<PublicacaoDeAlguem[]>([])
   const [carregando, definirCarregando] = useState(true)
+  const { usuario } = useAuth()
+  const administraAqui = !!usuario && usuario.id === pessoa.id && usuario.role === 'ADMIN'
 
   useEffect(() => {
     const base = process.env.NEXT_PUBLIC_API_URL ?? ''
@@ -51,7 +55,15 @@ export function PerfilDePessoa({
     <>
       {/* Mensagens privadas: a porta para as minhas, ou — para um
           administrador, no perfil de outra pessoa — para começar uma. */}
-      <PortaDasMensagens projectSlug={projectSlug} pessoaId={pessoa.id} />
+      <div className="portas-do-perfil">
+        <PortaDasMensagens projectSlug={projectSlug} pessoaId={pessoa.id} />
+        {/* No próprio perfil de quem administra: o painel ao lado das mensagens. */}
+        {administraAqui && (
+          <Link className="mp-porta porta-painel" href={`/${projectSlug}/admin`}>
+            <span aria-hidden="true">⚙️</span> Painel de administração
+          </Link>
+        )}
+      </div>
 
       {/* Os indicadores e o escudo saíram daqui: passaram a vir do mesmo
           cabeçalho que desenha o perfil do anfitrião e o de quem entra. Aqui

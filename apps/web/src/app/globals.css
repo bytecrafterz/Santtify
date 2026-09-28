@@ -6381,6 +6381,11 @@ button.menu-player {
   height: 24px;
 }
 
+/* O Painel, que só quem administra vê: na cor do painel. */
+.item-barra.item-painel {
+  color: var(--cor-primaria);
+}
+
 .item-barra .marca-pv-barra {
   width: 24px;
   height: 24px;
@@ -12502,6 +12507,30 @@ body:has(.painel-karaoke) {
 .mp-escrever button:disabled { cursor: not-allowed; opacity: 0.4; }
 
 /* A porta no perfil. */
+/* As portas do perfil — mensagens e, para quem administra, o painel — lado a
+   lado e ao centro, como a porta das mensagens estava sozinha. */
+.portas-do-perfil {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  justify-content: center;
+  margin: 4px 0 8px;
+}
+
+.portas-do-perfil:empty {
+  display: none;
+}
+
+.portas-do-perfil .mp-porta {
+  margin: 0;
+}
+
+.mp-porta.porta-painel {
+  color: #ffffff;
+  background: #2563eb;
+  border-color: #2563eb;
+}
+
 .mp-porta {
   display: inline-flex;
   gap: 8px;

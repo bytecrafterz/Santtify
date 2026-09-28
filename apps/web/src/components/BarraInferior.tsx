@@ -3,6 +3,7 @@
 import Link from 'next/link'
 import { useEffect, useRef } from 'react'
 import { usePathname } from 'next/navigation'
+import { useAuth } from '@/components/ProvedorDeAuth'
 
 /**
  * A barra fixa de baixo, com os quatro acessos.
@@ -32,6 +33,7 @@ export function BarraInferior({
 }) {
   const suporte = process.env.NEXT_PUBLIC_SUPORTE_WHATSAPP
   const barra = useRef<HTMLElement | null>(null)
+  const { usuario } = useAuth()
 
   /**
    * A BARRA NÃO PODE FICAR PRESA A MEIO DO ECRÃ.
@@ -240,6 +242,40 @@ export function BarraInferior({
           </span>
           Suporte
         </a>
+      )}
+
+      {/*
+        O PAINEL, A UM TOQUE — só para quem o administra.
+
+        "Como é que eu chego ao painel com um clique?" — 28/09. Não chegava: o
+        painel só abria escrevendo o endereço. Fica aqui, na barra que está em
+        todas as páginas do site, e abre o painel do projeto que se está a
+        ver. Para as outras pessoas este botão não existe — o servidor recusava
+        na mesma, e um botão que dá "acesso restrito" é uma porta fechada na
+        cara. A cor é a do painel, para se ver que não é da barra de toda a
+        gente.
+      */}
+      {usuario?.role === 'ADMIN' && (
+        <Link href={`/${projectSlug}/admin`} className="item-barra item-painel">
+          <span className="icone" aria-hidden>
+            <svg
+              viewBox="0 0 24 24"
+              width="22"
+              height="22"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="1.9"
+              strokeLinecap="round"
+              strokeLinejoin="round"
+            >
+              <rect x="3.5" y="3.5" width="7" height="9" rx="1.8" />
+              <rect x="13.5" y="3.5" width="7" height="5" rx="1.8" />
+              <rect x="13.5" y="11.5" width="7" height="9" rx="1.8" />
+              <rect x="3.5" y="15.5" width="7" height="5" rx="1.8" />
+            </svg>
+          </span>
+          Painel
+        </Link>
       )}
     </nav>
   )
