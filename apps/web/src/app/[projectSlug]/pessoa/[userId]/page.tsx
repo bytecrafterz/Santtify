@@ -1,7 +1,7 @@
 import { Voltar } from '@/components/Voltar'
 import type { Metadata } from 'next'
 import { notFound } from 'next/navigation'
-import { api, type PerfilAnfitriao } from '@/lib/api'
+import { api, introducaoDe, type PerfilAnfitriao } from '@/lib/api'
 import { PerfilDePessoa } from '@/components/PerfilDePessoa'
 import { CabecalhoDePerfil } from '@/components/CabecalhoDePerfil'
 import { IntroducaoEmCartoes } from '@/components/IntroducaoEmCartoes'
@@ -85,7 +85,7 @@ export default async function PaginaDePessoa({
 
   // A plataforma inteira, para o perfil não ser um beco.
   const indice = await api.indice(projectSlug)
-  const semLetra = indice?.contents.find((c) => !c.letra && c.publicado)
+  const semLetra = introducaoDe(indice?.contents)
   const introducao = semLetra
     ? await api.conteudo(projectSlug, semLetra.slug).catch(() => null)
     : null

@@ -129,6 +129,21 @@ export interface ItemIndice {
   stats: { views: number; likes: number; comments: number; shares: number } | null
 }
 
+/**
+ * A INTRODUÇÃO DE UM PROJETO: o conteúdo publicado que não está em casa nenhuma
+ * da grade e não é o Produto Vivo — a mesma regra do painel (`estruturaRaiz`).
+ *
+ * Era só "sem letra". Num projeto numerado nenhum dia tem letra, e a página do
+ * Minha Identidade abria com o Dia 1 no lugar da introdução. Em 29/09 ele
+ * pediu o Jesus Alfabeto como referência para todos: "introduções primeiro e
+ * blocos depois".
+ */
+export function introducaoDe(contents: ItemIndice[] | undefined): ItemIndice | undefined {
+  return contents?.find(
+    (c) => c.publicado && !c.letra && c.ordinal == null && c.slug !== 'produto-vivo',
+  )
+}
+
 /** O perfil que hospeda a experiência: o rosto do projeto. */
 export interface PerfilAnfitriao {
   id: string

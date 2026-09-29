@@ -1,5 +1,7 @@
 import { notFound } from 'next/navigation'
-import { api } from '@/lib/api'
+import { api, introducaoDe } from '@/lib/api'
+import { projetosDoCarrossel } from '@/lib/carrossel'
+import { TopoDosProjetos } from '@/components/TopoDosProjetos'
 import { RastreadorDeVisita } from '@/components/RastreadorDeVisita'
 import { VisualizacoesDasPublicacoes } from '@/components/VisualizacoesDasPublicacoes'
 import { BannerDeConsentimento } from '@/components/BannerDeConsentimento'
@@ -18,7 +20,6 @@ import { BarraInferior } from '@/components/BarraInferior'
  * fica lá.
  */
 import type { Metadata } from 'next'
-import { Voltar } from '@/components/Voltar'
 
 /**
  * A prévia que aparece no WhatsApp quando alguém partilha a página inicial.
@@ -161,7 +162,7 @@ export default async function IndiceDoProjeto({
    * Se falhar, a página abre à mesma sem introdução. Uma introdução é bom ter;
    * não é motivo para deixar 26 letras fora do ar.
    */
-  const semLetra = contents.find((c) => !c.letra && c.publicado)
+  const semLetra = introducaoDe(contents)
   const introducao = semLetra
     ? await api.conteudo(projectSlug, semLetra.slug).catch(() => null)
     : null
@@ -169,12 +170,16 @@ export default async function IndiceDoProjeto({
   // As categorias que ele criou no painel, para o filtro do tocador.
   const cats = await api.categorias(projectSlug).catch(() => null)
 
+  // Todos os projetos, para a faixa do topo. Se a API falhar, a faixa fica só
+  // com este, e a saída continua lá.
+  const projetos = await projetosDoCarrossel()
+
   // E as categorias de CARTÕES, que são outra coisa: a oferta por baixo da
   // grade. Vem nula quando a API falha, e aí a página abre sem oferta.
   const ofertas = await api.cartoesDoProjeto(projectSlug).catch(() => null)
 
   return (
-    <main className="envoltorio com-barra">
+    <main className="envoltorio com-barra com-topo-de-projetos">
       {/* A BARRA PRETA DO TOPO SAIU.
           Ele desenhou-a em 23/08 e, a usar, concluiu que roubava altura à
           fotografia de perfil sem dar nada em troca — e tinha razão: as saídas
@@ -199,16 +204,15 @@ export default async function IndiceDoProjeto({
         página fica com a introdução e a grade — "100% daquele conteúdo", nas
         palavras dele.
 
-        FICA UM CABEÇALHO MÍNIMO, e isso é deliberado contra o "limpa" dele:
-        quem chega por um link partilhado precisa de saber onde está e de ter
-        como ir ao resto. É o nome do projeto e uma seta para a entrada, sem
-        avatar, sem contadores e sem a fila social — que era o que fazia esta
-        página parecer a inicial.
+        FICA UM CABEÇALHO, e isso é deliberado contra o "limpa" dele: quem chega
+        por um link partilhado precisa de saber onde está e de ter como ir ao
+        resto. Até 29/09 era o nome do projeto e uma seta para a entrada; agora
+        é a seta no canto e a faixa com todos os projetos, fixa no topo — ver
+        `TopoDosProjetos`. O nome continua a ser o título da página para quem a
+        ouve; à vista, di-lo o projeto realçado na faixa.
       */}
-      <div className="cabecalho-do-projeto">
-        <Voltar href="/" rotulo="Voltar ao início" />
-        <h1>{project.name}</h1>
-      </div>
+      <TopoDosProjetos projetos={projetos} atual={projectSlug} nomeAtual={project.name} />
+      <h1 className="apenas-leitor-de-ecra">{project.name}</h1>
 
       {/*
         2, 3 e 4. A INTRODUÇÃO DO PROJETO, SEMPRE ABERTA.

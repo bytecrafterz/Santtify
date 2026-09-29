@@ -2599,29 +2599,281 @@ button.voltar-elegante {
 }
 
 /*
-  O cabeçalho mínimo da página de um projeto.
+  ── O TOPO DOS PROJETOS (29/09) ─────────────────────────────────────
 
-  Substitui o perfil e o carrossel que aqui estavam. É só o nome e a saída para
-  a entrada: quem chega por um link partilhado sabe onde está e tem como ir ao
-  resto, sem que a página volte a parecer a inicial — que era a queixa dele.
+  A saída no canto e todos os projetos numa faixa que rola para o lado, fixa no
+  topo da página de um projeto — ver `TopoDosProjetos`. Substitui o cabeçalho
+  mínimo (nome e seta) que deixava a pessoa presa no projeto em que entrou.
+
+  VIDRO FOSCO, E NÃO UMA BARRA: meio transparente com desfoque, como o topo das
+  aplicações do iPhone. O conteúdo continua a ver-se a passar por baixo, e é
+  isso que faz uma barra fixa parecer leve em vez de roubar o ecrã. Depois de
+  rolar ganha um pouco mais de fundo e uma sombra longa e muito aberta.
 */
-.cabecalho-do-projeto {
+:root {
+  --altura-do-topo: 64px;
+}
+
+.topo-projetos {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  z-index: 40;
+  padding-top: env(safe-area-inset-top);
+  background: rgba(246, 247, 251, 0.66);
+  -webkit-backdrop-filter: saturate(180%) blur(20px);
+  backdrop-filter: saturate(180%) blur(20px);
+  border-bottom: 1px solid rgba(23, 26, 34, 0.05);
+  transition:
+    background-color 260ms ease,
+    border-color 260ms ease,
+    box-shadow 260ms ease;
+}
+
+.topo-projetos.rolado {
+  background: rgba(246, 247, 251, 0.78);
+  border-bottom-color: rgba(23, 26, 34, 0.08);
+  box-shadow: 0 14px 34px -22px rgba(16, 24, 40, 0.38);
+}
+
+/* Sem desfoque (navegadores antigos), quase opaco: texto a passar por baixo de
+   um véu limpo não deixa ler nem uma coisa nem a outra. */
+@supports not ((backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px))) {
+  .topo-projetos,
+  .topo-projetos.rolado {
+    background: rgba(246, 247, 251, 0.97);
+  }
+}
+
+.topo-projetos-dentro {
   display: flex;
   align-items: center;
-  gap: 0.6rem;
-  margin: 0.25rem 0 0.75rem;
+  gap: 6px;
+  max-width: var(--largura);
+  height: var(--altura-do-topo);
+  margin: 0 auto;
+  /* Só à esquerda: à direita a faixa vai até à borda e esbate-se nela. */
+  padding-left: 16px;
+}
+
+/* A seta no canto: a pastilha de sempre, em vidro como a barra. */
+.topo-projetos .voltar-elegante {
+  flex: none;
+  border-color: rgba(23, 26, 34, 0.07);
+  background: rgba(255, 255, 255, 0.82);
+  box-shadow:
+    0 1px 2px rgba(16, 24, 40, 0.05),
+    0 8px 20px -12px rgba(16, 24, 40, 0.3);
+}
+
+.topo-projetos-faixa {
+  position: relative;
+  flex: 1;
+  min-width: 0;
+  align-self: stretch;
+  display: flex;
+  align-items: center;
+  overflow-x: auto;
+  overflow-y: hidden;
+  overscroll-behavior-x: contain;
+  scroll-snap-type: x proximity;
+  scroll-padding-inline: 10px;
+  scrollbar-width: none;
+  /* As pontas esbatidas dizem que há mais para o lado, sem seta nenhuma. */
+  -webkit-mask-image: linear-gradient(90deg, transparent 0, #000 10px, #000 calc(100% - 36px), transparent 100%);
+  mask-image: linear-gradient(90deg, transparent 0, #000 10px, #000 calc(100% - 36px), transparent 100%);
+}
+
+.topo-projetos-faixa::-webkit-scrollbar {
+  display: none;
+}
+
+.topo-projetos-faixa ul {
+  display: flex;
+  gap: 8px;
+  margin: 0;
+  padding: 0 36px 0 10px;
+  list-style: none;
+}
+
+.topo-projetos-faixa li {
+  flex: none;
+  scroll-snap-align: start;
 }
 
 /*
-  A seta aqui desenhava-se nesta folha, e ficou a competir com `.voltar-elegante`
-  assim que o botão passou a ser um componente. Esta regra era mais específica
-  (0,1,1 contra 0,1,0) e ganhava: forçava o botão a um quadrado de 2rem e
-  desfazia a pastilha. O desenho do botão vive num sítio só — ver `Voltar`.
+  UM PROJETO: a capa em miniatura e o nome, numa pastilha.
+
+  A capa vai na proporção dela (16:9) e não num círculo: são artes cheias de
+  cor com as crianças a meio, e é pela cor que uma criança que ainda não lê
+  reconhece o projeto. O nome cabe em duas linhas, equilibradas.
+
+  Os cantos são concêntricos — 16 fora, 4 de folga, 12 na capa. É o pormenor
+  que distingue uma peça desenhada de uma montada.
 */
-.cabecalho-do-projeto h1 {
-  margin: 0;
-  font-size: 1.25rem;
-  line-height: 1.2;
+.topo-projeto {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  height: 46px;
+  padding: 4px 14px 4px 4px;
+  border: 1.5px solid rgba(23, 26, 34, 0.06);
+  border-radius: 16px;
+  background: rgba(255, 255, 255, 0.55);
+  box-shadow: 0 1px 2px rgba(16, 24, 40, 0.04);
+  color: var(--cor-texto-suave);
+  text-decoration: none;
+  -webkit-tap-highlight-color: transparent;
+  transition:
+    background-color 200ms ease,
+    color 200ms ease,
+    box-shadow 200ms ease,
+    transform 200ms cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+.topo-projeto-capa {
+  display: grid;
+  place-items: center;
+  flex: none;
+  width: 64px;
+  height: 36px;
+  overflow: hidden;
+  border-radius: 12px;
+  background: linear-gradient(135deg, #2563eb 0%, #7c3aed 100%);
+  color: #fff;
+  font-size: 1rem;
+  font-weight: 800;
+}
+
+.topo-projeto-capa img {
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.topo-projeto-nome {
+  display: -webkit-box;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
+  max-width: 9.5rem;
+  overflow: hidden;
+  font-size: 0.8rem;
+  font-weight: 650;
+  line-height: 1.18;
+  letter-spacing: -0.01em;
+  text-wrap: balance;
+}
+
+/*
+  O ABERTO: branco sólido com um fio em degradê — o azul e o roxo da casa e o
+  âmbar do destaque — e uma sombra colorida por baixo. Os outros ficam em
+  vidro, um passo atrás.
+*/
+.topo-projeto[aria-current='page'] {
+  border-color: transparent;
+  background:
+    linear-gradient(#fff, #fff) padding-box,
+    linear-gradient(135deg, #2563eb 0%, #7c3aed 55%, #f59e0b 100%) border-box;
+  color: var(--cor-texto);
+  box-shadow:
+    0 1px 2px rgba(16, 24, 40, 0.06),
+    0 10px 24px -12px rgba(91, 60, 237, 0.55);
+}
+
+@media (hover: hover) {
+  .topo-projeto:not([aria-current='page']):hover {
+    background: rgba(255, 255, 255, 0.92);
+    color: var(--cor-texto);
+    box-shadow:
+      0 1px 2px rgba(16, 24, 40, 0.05),
+      0 8px 20px -12px rgba(16, 24, 40, 0.28);
+  }
+}
+
+.topo-projeto:active {
+  transform: scale(0.97);
+}
+
+.topo-projeto:focus-visible {
+  outline: 2px solid var(--cor-primaria);
+  outline-offset: 2px;
+}
+
+/* A página começa por baixo do topo, e os saltos para âncoras também. */
+.envoltorio.com-topo-de-projetos {
+  padding-top: calc(var(--altura-do-topo) + env(safe-area-inset-top) + 16px);
+}
+
+html:has(.topo-projetos) {
+  scroll-padding-top: calc(var(--altura-do-topo) + env(safe-area-inset-top) + 8px);
+}
+
+/* A folga própria do `#alfabeto` era para um topo fixo que esta página não
+   tinha; com este, somava-se à de cima e o contador aterrava longe dele. */
+html:has(.topo-projetos) .progresso-letras {
+  scroll-margin-top: 0.5rem;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .topo-projetos,
+  .topo-projeto {
+    transition: none;
+  }
+  .topo-projeto:active {
+    transform: none;
+  }
+}
+
+@media (prefers-color-scheme: dark) {
+  .topo-projetos {
+    background: rgba(20, 22, 28, 0.62);
+    border-bottom-color: rgba(255, 255, 255, 0.06);
+  }
+
+  .topo-projetos.rolado {
+    background: rgba(20, 22, 28, 0.78);
+    border-bottom-color: rgba(255, 255, 255, 0.08);
+    box-shadow: 0 14px 34px -20px rgba(0, 0, 0, 0.75);
+  }
+
+  @supports not ((backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px))) {
+    .topo-projetos,
+    .topo-projetos.rolado {
+      background: rgba(20, 22, 28, 0.97);
+    }
+  }
+
+  .topo-projetos .voltar-elegante {
+    border-color: rgba(255, 255, 255, 0.1);
+    background: rgba(255, 255, 255, 0.07);
+    box-shadow: 0 1px 2px rgba(0, 0, 0, 0.3);
+  }
+
+  .topo-projeto {
+    border-color: rgba(255, 255, 255, 0.07);
+    background: rgba(255, 255, 255, 0.05);
+    box-shadow: none;
+    color: rgba(242, 244, 248, 0.7);
+  }
+
+  .topo-projeto[aria-current='page'] {
+    border-color: transparent;
+    background:
+      linear-gradient(#232734, #1c1f27) padding-box,
+      linear-gradient(135deg, #6b9bff 0%, #a78bfa 55%, #fbbf24 100%) border-box;
+    color: #fff;
+    box-shadow: 0 10px 24px -12px rgba(124, 58, 237, 0.6);
+  }
+
+  @media (hover: hover) {
+    .topo-projeto:not([aria-current='page']):hover {
+      background: rgba(255, 255, 255, 0.1);
+      color: #fff;
+      box-shadow: none;
+    }
+  }
 }
 
 .progresso-letras {
