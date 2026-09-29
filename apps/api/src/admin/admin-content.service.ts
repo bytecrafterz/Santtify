@@ -1160,12 +1160,7 @@ export class AdminContentService {
   async estruturaRaiz(projectSlug: string) {
     const project = await this.projetoPorSlug(projectSlug)
 
-    const [anfitriao, introducao, letras] = await Promise.all([
-      this.prisma.user.findFirst({
-        where: { role: 'ADMIN', status: 'ACTIVE' },
-        orderBy: { createdAt: 'asc' },
-        select: { id: true, displayName: true, avatarUrl: true, bio: true },
-      }),
+    const buscarIntroducao = () =>
       this.prisma.content.findFirst({
         // A introdução é o conteúdo que não está em casa nenhuma da grade E que
         // não é o Produto Vivo. Os dois vivem fora da sequência, e sem esta
@@ -1174,11 +1169,20 @@ export class AdminContentService {
         //
         // `ordinal: null` também, desde 19/09: num projeto numerado, todos os
         // blocos são conteúdos sem letra, e o bloco 1 passaria por introdução.
+        //
+        // E NÃO É A PÁGINA DE UM DIA DE OUTRA CATEGORIA DE CARTÕES (30/09). O
+        // Minha Identidade tem, além dos sete dias da grade, as sete páginas
+        // "Adultos — Dia N" para onde vão os QR dos cartões de adulto (ver
+        // `qr-dos-cartoes.ts`, que as cria como `<categoria>-dia-<n>`). Também
+        // estão fora da grade, e a primeira passava por introdução: o painel
+        // abria a "Adultos — Dia 1" no lugar dela, e não havia como criar outra.
+        // A mesma regra vive no site, em `introducaoDe`.
         where: {
           projectId: project.id,
           letra: null,
           ordinal: null,
           slug: { not: 'produto-vivo' },
+          NOT: { slug: { contains: '-dia-' } },
         },
         orderBy: { position: 'asc' },
         select: {
@@ -1205,7 +1209,15 @@ export class AdminContentService {
             },
           },
         },
+      })
+
+    const [anfitriao, introducaoAchada, letras] = await Promise.all([
+      this.prisma.user.findFirst({
+        where: { role: 'ADMIN', status: 'ACTIVE' },
+        orderBy: { createdAt: 'asc' },
+        select: { id: true, displayName: true, avatarUrl: true, bio: true },
       }),
+      buscarIntroducao(),
       // As casas da grade, para o resumo do topo: no alfabeto são as letras,
       // nos outros projetos são os blocos numerados.
       this.prisma.content.findMany({
@@ -1217,6 +1229,55 @@ export class AdminContentService {
         select: { letra: true, status: true },
       }),
     ])
+
+    /**
+     * A INTRODUÇÃO TAMBÉM NASCE QUANDO FOR PRECISO (30/09), como o Produto Vivo
+     * logo abaixo.
+     *
+     * "Introduções primeiro e blocos depois", para todos os projetos, com o
+     * Jesus Alfabeto como referência — pediu-o em 29/09. O Minha Identidade
+     * nunca teve introdução, e o painel não tinha como a criar: com nenhuma, o
+     * `Duplicar` não aparece. Nasce aqui vazia, publicada e com um cartão por
+     * preencher; o site não a mostra enquanto nenhum cartão tiver foto ou som
+     * (`IntroducaoEmCartoes`). A posição 0 põe-na antes de tudo o que já há.
+     */
+    let introducao = introducaoAchada
+    if (!introducao) {
+      try {
+        const criada = await this.prisma.content.create({
+          data: {
+            projectId: project.id,
+            slug: 'introducao',
+            title: 'Introdução',
+            status: ContentStatus.PUBLISHED,
+            position: 0,
+          },
+          select: { id: true },
+        })
+        await this.prisma.contentBlock.create({
+          data: {
+            contentId: criada.id,
+            type: BlockType.AUDIO,
+            papel: CardPapel.CARTAO,
+            estado: CardEstado.RASCUNHO,
+            slot: null,
+            label: 'Introdução',
+            position: 1,
+          },
+        })
+        // O QR, como em qualquer conteúdo que nasce (ver a nota do Produto Vivo).
+        await this.shortLinks.criarQrDeConteudo({
+          projectId: project.id,
+          contentId: criada.id,
+          projectSlug: project.slug,
+          contentSlug: 'introducao',
+        })
+      } catch (erro) {
+        // Dois painéis abertos ao mesmo tempo: o outro já a criou. Lê-se a dele.
+        if ((erro as { code?: string })?.code !== 'P2002') throw erro
+      }
+      introducao = await buscarIntroducao()
+    }
 
     /**
      * O PRODUTO VIVO NASCE QUANDO FOR PRECISO, e não numa migração.

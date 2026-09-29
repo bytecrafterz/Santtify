@@ -137,10 +137,18 @@ export interface ItemIndice {
  * Minha Identidade abria com o Dia 1 no lugar da introdução. Em 29/09 ele
  * pediu o Jesus Alfabeto como referência para todos: "introduções primeiro e
  * blocos depois".
+ *
+ * Nem as páginas "Adultos — Dia N" (`<categoria>-dia-<n>`), para onde vão os QR
+ * dos cartões de adulto: também estão fora da grade, e não são introdução.
  */
 export function introducaoDe(contents: ItemIndice[] | undefined): ItemIndice | undefined {
   return contents?.find(
-    (c) => c.publicado && !c.letra && c.ordinal == null && c.slug !== 'produto-vivo',
+    (c) =>
+      c.publicado &&
+      !c.letra &&
+      c.ordinal == null &&
+      c.slug !== 'produto-vivo' &&
+      !c.slug.includes('-dia-'),
   )
 }
 
