@@ -121,6 +121,10 @@ class NovoProjetoDto {
   @IsString() @MaxLength(120) nome!: string
   @IsInt() @Min(1) @Max(200) blocos!: number
   @IsOptional() @IsString() @MaxLength(120) tagline?: string
+  /** "Dia", "Atributo" — o nome de cada bloco. */
+  @IsOptional() @IsString() @MaxLength(30) unidade?: string
+  /** O número do primeiro bloco (a Escola de Sabedoria começa no Dia 8). */
+  @IsOptional() @IsInt() @Min(1) @Max(1000) primeiroNumero?: number
 }
 
 class ConfirmarPagamentoDto {

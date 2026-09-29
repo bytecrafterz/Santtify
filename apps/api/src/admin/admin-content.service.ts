@@ -669,6 +669,7 @@ export class AdminContentService {
         unidade: true,
         sequencia: true,
         blocos: true,
+        primeiroNumero: true,
       },
     })
     if (!project) throw new NotFoundException('Projeto não encontrado')
@@ -1015,7 +1016,15 @@ export class AdminContentService {
   async alfabeto(projectSlug: string) {
     const project = await this.prisma.project.findUnique({
       where: { slug: projectSlug },
-      select: { id: true, slug: true, name: true, sequencia: true, blocos: true, unidade: true },
+      select: {
+        id: true,
+        slug: true,
+        name: true,
+        sequencia: true,
+        blocos: true,
+        unidade: true,
+        primeiroNumero: true,
+      },
     })
     if (!project) throw new NotFoundException('Projeto não encontrado')
 
@@ -1077,8 +1086,9 @@ export class AdminContentService {
             .map((letra) => ({ letra, numero: null, rotulo: `${project.unidade} ${letra}` }))
         : Array.from({ length: project.blocos }, (_, i) => ({
             letra: null,
-            numero: i + 1,
-            rotulo: `${project.unidade} ${i + 1}`,
+            // Do primeiro número em diante: a Escola de Sabedoria vai do Dia 8.
+            numero: project.primeiroNumero + i,
+            rotulo: `${project.unidade} ${project.primeiroNumero + i}`,
           }))
 
     const porCasa = new Map(conteudos.map((c) => [porLetras ? c.letra! : String(c.ordinal), c]))
@@ -2020,7 +2030,15 @@ export class AdminContentService {
       where: { slug },
       // A sequência vem junto: quem monta a estrutura precisa de saber se as
       // casas deste projeto são letras ou números, e como se chama uma delas.
-      select: { id: true, slug: true, name: true, sequencia: true, blocos: true, unidade: true },
+      select: {
+        id: true,
+        slug: true,
+        name: true,
+        sequencia: true,
+        blocos: true,
+        unidade: true,
+        primeiroNumero: true,
+      },
     })
     if (!p) throw new NotFoundException('Projeto não encontrado')
     return p

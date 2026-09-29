@@ -14,6 +14,8 @@ export interface Projeto {
   sequencia?: 'LETRAS' | 'NUMEROS'
   /** Quantas casas tem a grade deste projeto. Nos alfabetos, 26. */
   blocos?: number
+  /** O número da primeira casa: quase sempre 1; a Escola de Sabedoria começa no 8. */
+  primeiroNumero?: number
   /**
    * Como se chama UMA casa deste projeto: "Letra", "Dia", "Atributo".
    *

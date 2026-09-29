@@ -263,10 +263,26 @@ function NovoProjeto({
   aoCriar,
 }: {
   ocupado: boolean
-  aoCriar: (dados: { slug: string; nome: string; blocos: number }) => void
+  aoCriar: (dados: {
+    slug: string
+    nome: string
+    blocos: number
+    unidade: string
+    primeiroNumero: number
+  }) => void
 }) {
   const [nome, definirNome] = useState('')
   const [blocos, definirBlocos] = useState(7)
+  /*
+    COMO SE CHAMA CADA BLOCO E ONDE COMEÇA A CONTAGEM (30/09).
+
+    Um projeto novo saía sempre com "Bloco 1, Bloco 2…", e mudar para "Dia" não
+    tinha sítio no painel. E a Escola de Sabedoria continua o Minha Identidade:
+    o primeiro dia dela é o Dia 8, como está impresso na arte.
+  */
+  const [unidade, definirUnidade] = useState('Bloco')
+  const [primeiro, definirPrimeiro] = useState(1)
+  const nomeDoBloco = unidade.trim() || 'Bloco'
 
   /**
    * O endereço sai do nome, e mostra-se antes de criar.
@@ -311,6 +327,40 @@ function NovoProjeto({
         />
       </label>
 
+      <label className="cartoes-campo">
+        <span>Nome de cada bloco</span>
+        <input
+          type="text"
+          value={unidade}
+          maxLength={30}
+          placeholder="Dia, Atributo, Bloco"
+          onChange={(e) => definirUnidade(e.target.value)}
+        />
+      </label>
+
+      <label className="cartoes-campo">
+        <span>Começa no número</span>
+        <input
+          type="number"
+          min={1}
+          max={1000}
+          value={primeiro}
+          onChange={(e) => definirPrimeiro(Math.max(1, Number(e.target.value) || 1))}
+        />
+      </label>
+
+      {blocos >= 1 && (
+        <p className="painel-exemplo">
+          Os blocos vão ser: <strong>{nomeDoBloco} {primeiro}</strong>
+          {blocos > 1 && (
+            <>
+              {' '}até <strong>{nomeDoBloco} {primeiro + blocos - 1}</strong>
+            </>
+          )}
+          .
+        </p>
+      )}
+
       {slug && (
         <p className="painel-exemplo">
           Endereço: <strong>/{slug}</strong> — fica dentro dos QR Codes impressos, por
@@ -322,7 +372,9 @@ function NovoProjeto({
         type="button"
         className="cartoes-accao"
         disabled={ocupado || !slug || blocos < 1}
-        onClick={() => aoCriar({ slug, nome: nome.trim(), blocos })}
+        onClick={() =>
+          aoCriar({ slug, nome: nome.trim(), blocos, unidade: nomeDoBloco, primeiroNumero: primeiro })
+        }
       >
         {ocupado ? 'A criar…' : `Criar projeto com ${blocos} bloco${blocos === 1 ? '' : 's'}`}
       </button>

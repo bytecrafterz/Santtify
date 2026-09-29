@@ -276,6 +276,7 @@ export default async function IndiceDoProjeto({
           // como se chama uma casa — "Letra", "Dia", "Atributo".
           sequencia={project.sequencia ?? 'LETRAS'}
           blocos={project.blocos ?? 26}
+          primeiroNumero={project.primeiroNumero ?? 1}
           unidade={project.unidade ?? 'Letra'}
         />
       )}

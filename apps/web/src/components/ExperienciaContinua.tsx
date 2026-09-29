@@ -69,6 +69,7 @@ export function ExperienciaContinua({
   categorias = [],
   sequencia = 'LETRAS',
   blocos = 26,
+  primeiroNumero = 1,
   unidade = 'Letra',
 }: {
   projectSlug: string
@@ -86,6 +87,8 @@ export function ExperienciaContinua({
    */
   sequencia?: 'LETRAS' | 'NUMEROS'
   blocos?: number
+  /** O número da primeira casa: a Escola de Sabedoria começa no Dia 8. */
+  primeiroNumero?: number
   /**
    * Como se chama uma casa: "Letra", "Dia", "Atributo".
    *
@@ -99,7 +102,7 @@ export function ExperienciaContinua({
   /** As casas desta grade, na ordem em que aparecem. */
   const casas: Array<string | number> = porLetras
     ? ALFABETO
-    : Array.from({ length: Math.max(0, blocos) }, (_, i) => i + 1)
+    : Array.from({ length: Math.max(0, blocos) }, (_, i) => primeiroNumero + i)
   const colunas = colunasDaGrade(casas.length)
   const sozinhaEm = colunaDaSozinha(casas.length, colunas)
   /** O conteúdo que mora numa casa, ou nada se ela ainda estiver vazia. */
@@ -412,7 +415,7 @@ export function ExperienciaContinua({
            * casa do A é do A mesmo que nada esteja publicado nela.
            */
           const dela = conteudoDaCasa(casa)
-          const nomeDaCasa = `${unidade} ${casa}`
+          const nomeCurto = `${unidade} ${casa}`
 
           if (!dela) {
             return (
@@ -420,7 +423,7 @@ export function ExperienciaContinua({
                 className="letra-bloco trancada"
                 key={casa}
                 style={aoMeio}
-                aria-label={`${nomeDaCasa}, ainda bloqueada`}
+                aria-label={`${nomeCurto}, ainda bloqueada`}
               >
                 {casa}
                 <span className="cadeado" aria-hidden>
@@ -448,7 +451,8 @@ export function ExperienciaContinua({
               key={casa}
               style={aoMeio}
               href={`/${projectSlug}/${dela.slug}`}
-              aria-label={`${nomeDaCasa} — ${dela.title}`}
+              // Sem dobrar quando o título ainda é o nome da casa ("Dia 8 — Dia 8").
+              aria-label={nomeDaCasa(unidade, casa, dela.title)}
             >
               {dela.coverUrl ? (
                 // eslint-disable-next-line @next/next/no-img-element
@@ -535,7 +539,12 @@ export function ExperienciaContinua({
 
           {/* Só depois da impressão é que se anuncia a próxima. */}
           {(() => {
-            const seguinte = proximaCasaDepoisDe(aberta.content, contents, porLetras, blocos)
+            const seguinte = proximaCasaDepoisDe(
+              aberta.content,
+              contents,
+              porLetras,
+              primeiroNumero + blocos - 1,
+            )
             if (!seguinte) return null
             return (
               <div className="proxima-letra">
@@ -585,11 +594,12 @@ function proximaCasaDepoisDe(
   atual: { letra: string | null; ordinal?: number | null },
   contents: ItemIndice[],
   porLetras: boolean,
-  blocos: number,
+  /** O número da última casa: `blocos` quando se começa no 1. */
+  ultima: number,
 ) {
   if (!porLetras) {
     const n = atual.ordinal
-    if (!n || n + 1 > blocos) return null
+    if (!n || n + 1 > ultima) return null
     const dela = contents.find((c) => c.ordinal === n + 1)
     if (dela) return dela
     return vazia({ ordinal: n + 1 })

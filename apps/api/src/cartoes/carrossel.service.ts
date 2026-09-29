@@ -265,7 +265,7 @@ export class CarrosselService {
     }
     const projeto = await this.prisma.project.findUnique({
       where: { slug: projectSlug },
-      select: { id: true, sequencia: true, blocos: true },
+      select: { id: true, sequencia: true, blocos: true, primeiroNumero: true, unidade: true },
     })
     if (!projeto) throw new NotFoundException('Projeto não encontrado.')
     if (projeto.sequencia === SequenciaDoProjeto.LETRAS) {
@@ -280,13 +280,15 @@ export class CarrosselService {
 
     const novos: { id: string; slug: string }[] = []
     await this.prisma.$transaction(async (tx) => {
-      for (let n = 1; n <= quantidade; n++) {
+      // Do primeiro número em diante: na Escola de Sabedoria, do Dia 8.
+      const ultimo = projeto.primeiroNumero + quantidade - 1
+      for (let n = projeto.primeiroNumero; n <= ultimo; n++) {
         if (porNumero.has(n)) continue
         const criado = await tx.content.create({
           data: {
             projectId: projeto.id,
             slug: String(n),
-            title: `Bloco ${n}`,
+            title: `${projeto.unidade} ${n}`,
             position: n,
             ordinal: n,
             blocks: { create: casasEmBranco() },
@@ -318,7 +320,16 @@ export class CarrosselService {
    * a mesma engrenagem das vinte e seis letras, sem uma linha de código nova —
    * e é por isso que o próximo projeto dele não me vai precisar.
    */
-  async criarProjeto(dados: { slug: string; nome: string; blocos: number; tagline?: string }) {
+  async criarProjeto(dados: {
+    slug: string
+    nome: string
+    blocos: number
+    tagline?: string
+    /** Como se chama cada bloco: "Dia", "Atributo". Por omissão, "Bloco". */
+    unidade?: string
+    /** O número do primeiro bloco. Por omissão, 1; a Escola de Sabedoria começa no 8. */
+    primeiroNumero?: number
+  }) {
     const slug = dados.slug
       .trim()
       .toLowerCase()
@@ -330,6 +341,11 @@ export class CarrosselService {
     if (!slug) throw new BadRequestException('O endereço do projeto ficou vazio.')
     if (dados.blocos < 1 || dados.blocos > 200) {
       throw new BadRequestException('A quantidade de blocos tem de ficar entre 1 e 200.')
+    }
+    const unidade = dados.unidade?.trim() || 'Bloco'
+    const primeiro = dados.primeiroNumero ?? 1
+    if (!Number.isInteger(primeiro) || primeiro < 1 || primeiro > 1000) {
+      throw new BadRequestException('O primeiro número tem de ficar entre 1 e 1000.')
     }
 
     const jaExiste = await this.prisma.project.findUnique({ where: { slug } })
@@ -349,13 +365,17 @@ export class CarrosselService {
         ordemNoCarrossel: (ultimo?.ordemNoCarrossel ?? 0) + 1,
         sequencia: SequenciaDoProjeto.NUMEROS,
         blocos: dados.blocos,
+        unidade,
+        primeiroNumero: primeiro,
         contents: {
           create: Array.from({ length: dados.blocos }, (_, i) => ({
-            slug: String(i + 1),
-            title: `Bloco ${i + 1}`,
-            position: i + 1,
+            // Guardado com o número que se vê: o Dia 8 é o 8, no rótulo, no
+            // endereço e no QR.
+            slug: String(primeiro + i),
+            title: `${unidade} ${primeiro + i}`,
+            position: primeiro + i,
             // A casa da grade. É o que a `letra` é no alfabeto.
-            ordinal: i + 1,
+            ordinal: primeiro + i,
             blocks: { create: casasEmBranco() },
           })),
         },

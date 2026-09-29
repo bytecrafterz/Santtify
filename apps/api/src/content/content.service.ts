@@ -47,6 +47,8 @@ export class ContentService {
          */
         sequencia: true,
         blocos: true,
+        // E o número do primeiro: a Escola de Sabedoria começa no Dia 8.
+        primeiroNumero: true,
         /**
          * E COMO SE CHAMA UMA CASA: "Letra", "Dia", "Atributo".
          *
@@ -558,7 +560,7 @@ export class ContentService {
    * lista — por isso seria erro escrever isto duas vezes.
    */
   private async casaVizinha(
-    project: { id: string; sequencia: string; blocos: number },
+    project: { id: string; sequencia: string; blocos: number; primeiroNumero: number },
     atual: { letra: string | null; ordinal: number | null },
     passo: 1 | -1,
   ) {
@@ -573,7 +575,9 @@ export class ContentService {
       letra = ALFABETO[i + passo]
     } else {
       const n = atual.ordinal
-      if (!n || n + passo < 1 || n + passo > project.blocos) return null
+      // Os blocos vão do primeiro número em diante — 8 a 15 na Escola de Sabedoria.
+      const ultimo = project.primeiroNumero + project.blocos - 1
+      if (!n || n + passo < project.primeiroNumero || n + passo > ultimo) return null
       ordinal = n + passo
     }
 

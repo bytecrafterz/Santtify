@@ -829,7 +829,14 @@ export const painelDeCartoes = {
       body: JSON.stringify({ slugs }),
     }),
 
-  criarProjeto: (dados: { slug: string; nome: string; blocos: number; tagline?: string }) =>
+  criarProjeto: (dados: {
+    slug: string
+    nome: string
+    blocos: number
+    tagline?: string
+    unidade?: string
+    primeiroNumero?: number
+  }) =>
     chamarAdmin<{ slug: string; nome: string; blocos: number }>('/admin/projetos', {
       method: 'POST',
       body: JSON.stringify(dados),

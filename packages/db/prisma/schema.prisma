@@ -117,6 +117,15 @@ model Project {
   /// vazia. Sem isto, a grade encolhia enquanto ele preenchia.
   blocos Int @default(0)
 
+  /// O NÚMERO DO PRIMEIRO BLOCO (30/09). Quase sempre 1.
+  ///
+  /// A Escola de Sabedoria continua a contagem do Minha Identidade: o primeiro
+  /// dia dela é o "Dia 8", e é isso que está impresso na arte. Os blocos são
+  /// guardados com o número que se vê (`ordinal` 8, 9, 10…), e por isso o
+  /// rótulo, o endereço e o QR dizem todos o mesmo; o que conta de 1 a N — a
+  /// grade, a navegação, o painel — começa aqui.
+  primeiroNumero Int @default(1)
+
   /// COMO SE CHAMA UMA CASA DESTE PROJETO: "Letra", "Dia", "Atributo".
   ///
   /// Ele escreveu-o em 21/09, a explicar o que quer que se reaproveite e o que
