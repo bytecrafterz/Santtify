@@ -433,7 +433,9 @@ export function LupaDoCartao({
             {escala.toFixed(1)}×
           </span>
           <button type="button" className="lupa-fechar" onClick={() => fechar.current()} aria-label="Fechar">
-            ✕
+            <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" aria-hidden="true">
+              <path d="M6 6l12 12M18 6L6 18" />
+            </svg>
           </button>
         </header>
 
@@ -501,7 +503,9 @@ export function LupaDoCartao({
               else centrar(s, m.pw / 2, m.ph / 2)
             }}
           >
-            −
+            <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" aria-hidden="true">
+              <path d="M6 12h12" />
+            </svg>
           </button>
           <span>
             {ampliada ? 'Toque duas vezes para ver o cartão inteiro' : 'Toque duas vezes numa caixa para a ampliar'}
@@ -516,7 +520,9 @@ export function LupaDoCartao({
               centrar(Math.min(MAXIMO, vista.current.s * PASSO_DOS_BOTOES), m.pw / 2, m.ph / 2)
             }}
           >
-            ＋
+            <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" aria-hidden="true">
+              <path d="M12 6v12M6 12h12" />
+            </svg>
           </button>
         </footer>
       </div>

@@ -12010,35 +12010,92 @@ body:has(.painel-karaoke) {
 .ce-salvar { margin-top: 0; }
 .ce-falta { margin: 0; text-align: center; }
 
-/* O botão que abre a lupa, por baixo das bolinhas. */
-.ce-ver-grande {
-  width: auto;
-  margin: 0 auto;
-  font-weight: 700;
-}
+/*
+  AS ACÇÕES DA FOLHA: AMPLIAR E REMOVER A FOTO (29/09).
 
-/* As acções por baixo da folha, lado a lado (29/09: "Remover a foto"). */
+  Pílulas claras com um medalhão de cor à esquerda — azul para ampliar,
+  rubi para remover —, sombra em duas camadas e um levantar de um pixel ao
+  passar. No escuro a pílula acompanha a superfície.
+*/
 .ce-accoes-da-folha {
   display: flex;
   flex-wrap: wrap;
-  gap: 0 18px;
+  gap: 10px;
   justify-content: center;
-  margin-top: 8px;
+  margin-top: 14px;
 }
 
-.ce-accoes-da-folha .cartoes-ligacao {
-  width: auto;
-  margin: 0;
-}
-
-.ce-remover-foto {
+.ce-botao-accao {
+  display: inline-flex;
+  gap: 10px;
+  align-items: center;
+  padding: 5px 18px 5px 5px;
+  font: inherit;
+  font-size: 0.92rem;
   font-weight: 700;
-  color: #c62828;
+  letter-spacing: 0.01em;
+  color: var(--cor-texto);
+  white-space: nowrap;
+  cursor: pointer;
+  background: var(--cor-superficie);
+  border: 1px solid var(--cor-borda);
+  border-radius: 999px;
+  box-shadow:
+    0 1px 2px rgb(15 23 42 / 6%),
+    0 12px 26px -16px rgb(15 23 42 / 55%);
+  transition:
+    transform 0.18s ease,
+    box-shadow 0.18s ease;
+  -webkit-tap-highlight-color: transparent;
 }
 
-.ce-remover-foto:disabled {
+.ce-botao-medalha {
+  display: grid;
+  flex: 0 0 auto;
+  place-items: center;
+  width: 36px;
+  height: 36px;
+  color: #fff;
+  background: radial-gradient(120% 120% at 30% 18%, #7aa2ff 0%, #2563eb 48%, #1e3a8a 100%);
+  border-radius: 50%;
+  box-shadow:
+    inset 0 1px 0 rgb(255 255 255 / 40%),
+    0 6px 14px -6px rgb(37 99 235 / 65%);
+}
+
+.ce-botao-accao.perigo { color: #be123c; }
+
+.ce-botao-accao.perigo .ce-botao-medalha {
+  background: radial-gradient(120% 120% at 30% 18%, #ff94a3 0%, #e11d48 50%, #9f1239 100%);
+  box-shadow:
+    inset 0 1px 0 rgb(255 255 255 / 40%),
+    0 6px 14px -6px rgb(225 29 72 / 60%);
+}
+
+@media (prefers-color-scheme: dark) {
+  .ce-botao-accao { box-shadow: 0 12px 26px -16px rgb(0 0 0 / 80%); }
+  .ce-botao-accao.perigo { color: #fb7185; }
+}
+
+@media (hover: hover) {
+  .ce-botao-accao:hover:not(:disabled) {
+    transform: translateY(-1px);
+    box-shadow:
+      0 1px 2px rgb(15 23 42 / 8%),
+      0 16px 30px -16px rgb(15 23 42 / 65%);
+  }
+}
+
+.ce-botao-accao:active:not(:disabled) { transform: scale(0.97); }
+
+.ce-botao-accao:focus-visible {
+  outline: 2px solid var(--cor-primaria);
+  outline-offset: 3px;
+}
+
+.ce-botao-accao:disabled {
   cursor: progress;
-  opacity: 0.5;
+  opacity: 0.55;
 }
 
 /* O preço riscado, ao lado do que se vai pagar. */
@@ -12062,6 +12119,15 @@ body:has(.painel-karaoke) {
   inset: 0;
   z-index: 80;
   display: grid;
+  /*
+    A COLUNA DA LUPA É DO TAMANHO DO ECRÃ, E NÃO DO TÍTULO.
+
+    Sem isto a grelha dava à coluna a largura do título inteiro, que não
+    quebra: nos dias 5 e 7 ("Jesus Está Formando o Meu Caráter") o título é
+    mais largo do que o telemóvel, e a lupa toda esticava para a direita — o ✕
+    fora do ecrã e o + cortado ao meio (29/09). O título encurta com "…".
+  */
+  grid-template-columns: minmax(0, 1fr);
   grid-template-rows: auto 1fr auto;
   background: #0b0d12;
   /* Em TODA a lupa, e não só na folha: uma pinça no título ou nos botões
@@ -12085,6 +12151,7 @@ body:has(.painel-karaoke) {
 
 .lupa-topo strong {
   flex: 1;
+  min-width: 0;
   overflow: hidden;
   font-size: 0.95rem;
   text-overflow: ellipsis;
@@ -12099,16 +12166,17 @@ body:has(.painel-karaoke) {
 
 .lupa-fechar {
   display: grid;
+  flex: 0 0 auto;
   place-items: center;
-  width: 38px;
-  height: 38px;
+  width: 40px;
+  height: 40px;
   padding: 0;
-  font-size: 1.1rem;
   color: #fff;
   cursor: pointer;
-  background: rgb(255 255 255 / 12%);
-  border: 0;
+  background: linear-gradient(180deg, rgb(255 255 255 / 18%), rgb(255 255 255 / 7%));
+  border: 1px solid rgb(255 255 255 / 16%);
   border-radius: 50%;
+  box-shadow: inset 0 1px 0 rgb(255 255 255 / 18%), 0 6px 16px -8px rgb(0 0 0 / 70%);
 }
 
 /*
@@ -12161,19 +12229,31 @@ body:has(.painel-karaoke) {
 
 .lupa-fundo button {
   display: grid;
+  flex: 0 0 auto;
   place-items: center;
-  width: 42px;
-  height: 42px;
+  width: 46px;
+  height: 46px;
   padding: 0;
-  font-size: 1.2rem;
   color: #fff;
   cursor: pointer;
-  background: rgb(255 255 255 / 12%);
-  border: 0;
+  background: linear-gradient(180deg, rgb(255 255 255 / 18%), rgb(255 255 255 / 7%));
+  border: 1px solid rgb(255 255 255 / 16%);
   border-radius: 50%;
+  box-shadow: inset 0 1px 0 rgb(255 255 255 / 18%), 0 8px 20px -10px rgb(0 0 0 / 75%);
+  transition: transform 0.15s ease, background 0.15s ease;
 }
 
+.lupa-fundo button:active:not(:disabled),
+.lupa-fechar:active { transform: scale(0.92); }
+
 .lupa-fundo button:disabled { cursor: not-allowed; opacity: 0.3; }
+
+/* A frase entre os botões encolhe e quebra; os botões nunca. */
+.lupa-fundo span {
+  flex: 1;
+  min-width: 0;
+  text-align: center;
+}
 
 /* ═══════════════════════════════════════════════════════════════════
    AS ACÇÕES DO DIA, NA MESMA GRELHA DOS CARTÕES (25/09)

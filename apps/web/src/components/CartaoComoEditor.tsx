@@ -536,16 +536,33 @@ export function CartaoComoEditor({
         foto e o nome, e ninguém adivinha que o resto do cartão faz outra coisa.
         Um botão com o nome escrito resolve-o para quem não experimentar.
       */}
+      {/*
+        AS DUAS ACÇÕES DA FOLHA, COM OUTRO ACABAMENTO (29/09).
+
+        "make zoom and remove of photo button more modern and luxury": eram
+        links de texto com emoji. Passam a pílulas com um medalhão de cor e o
+        ícone desenhado, sombra suave e um pequeno levantar ao tocar. Os nomes
+        encurtam ("Ampliar", "Remover foto") para caberem os dois numa linha
+        num ecrã de 360px; o nome completo vai para quem usa leitor de ecrã.
+      */}
       <div className="ce-accoes-da-folha">
         <button
           type="button"
-          className="cartoes-ligacao ce-ver-grande"
+          className="ce-botao-accao ce-ver-grande"
+          aria-label="Ver o cartão em tamanho grande"
           onClick={() => {
             definirFocoDaLupa(null)
             definirLupaAberta(true)
           }}
         >
-          🔍 Ver em tamanho grande
+          <span className="ce-botao-medalha" aria-hidden="true">
+            <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
+              <circle cx="10.5" cy="10.5" r="6.5" />
+              <path d="M20 20l-4.6-4.6" />
+              <path d="M10.5 7.8v5.4M7.8 10.5h5.4" />
+            </svg>
+          </span>
+          Ampliar
         </button>
         {/*
           TIRAR A FOTO, À VISTA — e não dentro da barra da foto.
@@ -558,11 +575,20 @@ export function CartaoComoEditor({
         {temFoto ? (
           <button
             type="button"
-            className="cartoes-ligacao ce-remover-foto"
+            className="ce-botao-accao perigo ce-remover-foto"
+            aria-label="Remover a foto"
             disabled={aEnviar}
             onClick={() => void removerFoto()}
           >
-            🗑 Remover a foto
+            <span className="ce-botao-medalha" aria-hidden="true">
+              <svg viewBox="0 0 24 24" width="17" height="17" fill="none" stroke="currentColor" strokeWidth="2.1" strokeLinecap="round" strokeLinejoin="round">
+                <path d="M4.5 7h15" />
+                <path d="M9.5 7V4.8h5V7" />
+                <path d="M6.6 7l.9 12.2h9l.9-12.2" />
+                <path d="M10.2 10.8v5M13.8 10.8v5" />
+              </svg>
+            </span>
+            Remover foto
           </button>
         ) : null}
       </div>
