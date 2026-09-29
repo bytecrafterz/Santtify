@@ -193,9 +193,16 @@ export function LupaDoCartao({
     irPara({ s: 1, x: 0, y: 0 })
   }
 
+  /**
+   * Um ponto do ecrã em medidas do palco. Com a página ampliada pelo navegador
+   * a lupa está encolhida (ver abaixo), e um pixel do ecrã não é um do palco.
+   */
   const noPalco = (e: { clientX: number; clientY: number }) => {
-    const r = palco.current?.getBoundingClientRect()
-    return { x: e.clientX - (r?.left ?? 0), y: e.clientY - (r?.top ?? 0) }
+    const p = palco.current
+    const r = p?.getBoundingClientRect()
+    if (!p || !r || !r.width) return { x: 0, y: 0 }
+    const f = p.clientWidth / r.width
+    return { x: (e.clientX - r.left) * f, y: (e.clientY - r.top) * f }
   }
 
   /** Com um dedo a mais ou a menos, o gesto recomeça de onde a folha está. */
@@ -317,6 +324,45 @@ export function LupaDoCartao({
     }
   }, [])
 
+  /*
+    A LUPA COBRE O QUE SE VÊ, MESMO COM A PÁGINA AMPLIADA.
+
+    "fixed" com "inset: 0" é do tamanho da página, e não do ecrã: com a página
+    ampliada pelo Safari (a pinça, ou o zoom automático ao escrever num campo
+    pequeno), a lupa ficava maior do que o ecrã, com o lado direito e o ✕ de
+    fora — e, com os gestos da página bloqueados aqui dentro, sem maneira de
+    sair (29/09). Encaixa-se na área visível e desfaz-se o zoom da página só
+    na lupa, para ela se ver ao tamanho de sempre.
+  */
+  const raiz = useRef<HTMLDivElement | null>(null)
+  useLayoutEffect(() => {
+    const vv = window.visualViewport
+    const el = raiz.current
+    if (!vv || !el) return
+    const encaixar = () => {
+      const s = vv.scale || 1
+      if (Math.abs(s - 1) < 0.01 && Math.abs(vv.offsetLeft) < 0.5 && Math.abs(vv.offsetTop) < 0.5) {
+        el.style.cssText = ''
+        return
+      }
+      el.style.left = `${vv.offsetLeft}px`
+      el.style.top = `${vv.offsetTop}px`
+      el.style.right = 'auto'
+      el.style.bottom = 'auto'
+      el.style.width = `${vv.width * s}px`
+      el.style.height = `${vv.height * s}px`
+      el.style.transform = `scale(${1 / s})`
+      el.style.transformOrigin = '0 0'
+    }
+    encaixar()
+    vv.addEventListener('resize', encaixar)
+    vv.addEventListener('scroll', encaixar)
+    return () => {
+      vv.removeEventListener('resize', encaixar)
+      vv.removeEventListener('scroll', encaixar)
+    }
+  }, [])
+
   // Aberta com um toque duplo no cartão: vai já ampliada para esse ponto.
   useEffect(() => {
     if (!foco) return
@@ -374,7 +420,13 @@ export function LupaDoCartao({
 
   return (
     <LupaContexto.Provider value={contexto}>
-      <div className="lupa" role="dialog" aria-modal="true" aria-label={`${titulo} — em tamanho grande`}>
+      <div
+        ref={raiz}
+        className="lupa"
+        role="dialog"
+        aria-modal="true"
+        aria-label={`${titulo} — em tamanho grande`}
+      >
         <header className="lupa-topo">
           <strong>{titulo}</strong>
           <span className="lupa-escala" aria-live="polite">

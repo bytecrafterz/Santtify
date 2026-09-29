@@ -120,6 +120,23 @@ export function CartaoComoEditor({
   const [lupaAberta, definirLupaAberta] = useState(false)
   /** Onde a lupa abre já ampliada: o ponto do toque duplo no cartão. */
   const [focoDaLupa, definirFocoDaLupa] = useState<FocoDaLupa | null>(null)
+  /*
+    A JPEG DE 300 DPI DO CARTÃO DA VEZ, JÁ EM CACHE QUANDO A LUPA ABRIR.
+
+    É ela que se vê na lupa enquanto o PDF desenha a parte ampliada. Pedida
+    só ao abrir a lupa, chegava tarde; pedida aqui, com um pouco de atraso
+    para não disputar a rede com o PDF do próprio cartão, já lá está.
+  */
+  useEffect(() => {
+    const url = modelos[indice]?.arteLupaUrl
+    if (!url) return
+    const t = window.setTimeout(() => {
+      const img = new Image()
+      img.decoding = 'async'
+      img.src = url
+    }, 1200)
+    return () => window.clearTimeout(t)
+  }, [modelos, indice])
   const [escolhido, definirEscolhido] = useState<Escolhido>(null)
   const [paletaAberta, definirPaletaAberta] = useState(false)
   const [setasAbertas, definirSetasAbertas] = useState(false)
@@ -210,6 +227,29 @@ export function CartaoComoEditor({
       if (nova) aoMudarCrianca(nova)
     } catch (e) {
       aoErrar(e instanceof Error ? e.message : 'Não foi possível enviar a foto.')
+    } finally {
+      definirAEnviar(false)
+    }
+  }
+
+  /**
+   * TIRAR A FOTO — "Não existe botão de deletar a foto", 29/09.
+   *
+   * A foto é da criança, e não de um cartão: sai de todos de uma vez. Por isso
+   * pergunta antes. Depois fica o lugar vazio, pronto para outra.
+   */
+  async function removerFoto() {
+    if (!confirm('Remover a foto? Ela sai de todos os cartões, e depois pode enviar outra.')) return
+    definirAEnviar(true)
+    aoErrar(null)
+    try {
+      const p = await cartoes.removerFoto(projectSlug, pedidoId, crianca.id)
+      const nova = p.criancas.find((c) => c.id === crianca.id)
+      if (nova) aoMudarCrianca(nova)
+      definirSetasAbertas(false)
+      definirEscolhido(null)
+    } catch (e) {
+      aoErrar(e instanceof Error ? e.message : 'Não foi possível remover a foto.')
     } finally {
       definirAEnviar(false)
     }
@@ -496,16 +536,36 @@ export function CartaoComoEditor({
         foto e o nome, e ninguém adivinha que o resto do cartão faz outra coisa.
         Um botão com o nome escrito resolve-o para quem não experimentar.
       */}
-      <button
-        type="button"
-        className="cartoes-ligacao ce-ver-grande"
-        onClick={() => {
-          definirFocoDaLupa(null)
-          definirLupaAberta(true)
-        }}
-      >
-        🔍 Ver em tamanho grande
-      </button>
+      <div className="ce-accoes-da-folha">
+        <button
+          type="button"
+          className="cartoes-ligacao ce-ver-grande"
+          onClick={() => {
+            definirFocoDaLupa(null)
+            definirLupaAberta(true)
+          }}
+        >
+          🔍 Ver em tamanho grande
+        </button>
+        {/*
+          TIRAR A FOTO, À VISTA — e não dentro da barra da foto.
+
+          Na barra era o sexto botão, e a barra ficava mais larga do que o
+          cartão: o cartão cortava-a nas pontas, e o "Remover" era o que se
+          perdia. Aqui, por baixo da folha e com o nome escrito, só enquanto
+          houver foto.
+        */}
+        {temFoto ? (
+          <button
+            type="button"
+            className="cartoes-ligacao ce-remover-foto"
+            disabled={aEnviar}
+            onClick={() => void removerFoto()}
+          >
+            🗑 Remover a foto
+          </button>
+        ) : null}
+      </div>
 
       {/*
         SALVAR É O ÚNICO BOTÃO FORA DO CARTÃO, e fica cá em baixo no telemóvel,
@@ -851,7 +911,7 @@ function CartaoDesenhado({
           draggable={false}
         />
       ) : null}
-      {modelo.arteUrl && altaResolucao && modelo.arteLupaUrl && !modelo.artePdfUrl ? (
+      {modelo.arteUrl && altaResolucao && modelo.arteLupaUrl ? (
         /*
           A LUPA MOSTRA A ARTE A 300 DPI.
 
@@ -867,8 +927,9 @@ function CartaoDesenhado({
         "a qualidade das artes precisa ser exatamente a qualidade original
         enviada pelo designer" — 28/09. No editor, só no cartão da vez: os
         vizinhos à espreita ficam com a imagem leve, e sete PDFs de uma vez
-        eram 13 MB num telemóvel. Na lupa, sempre (e aí a JPEG de 300 dpi, que
-        era a melhor aproximação, deixa de ser precisa).
+        eram 13 MB num telemóvel. Na lupa, sempre, e por cima da JPEG de 300
+        dpi: é ela que se vê nos instantes em que o PDF ainda desenha a parte
+        ampliada, em vez da imagem leve esticada.
       */}
       {modelo.artePdfUrl && (editavel || altaResolucao) ? <ArteEmPdf url={modelo.artePdfUrl} /> : null}
       {modelo.arteUrl ? null : (
@@ -1040,8 +1101,24 @@ function CartaoDesenhado({
             maxLength={40}
             placeholder="Seu nome aqui"
             aria-label="Nome que vai no cartão"
+            /*
+              O IPHONE AMPLIA A PÁGINA INTEIRA ao escrever num campo com letra
+              abaixo de 16px, e não a volta a afastar. Com a página ampliada, a
+              lupa abria maior do que o ecrã: o lado direito do cartão e o ✕
+              ficavam fora (29/09). A letra do campo passa a ter pelo menos
+              16px, e o campo encolhe por escala até ao tamanho do nome no
+              cartão: o mesmo desenho, sem o zoom do Safari.
+            */
             style={{
-              fontSize: `${emPx(corpo)}px`,
+              fontSize: `${Math.max(16, emPx(corpo))}px`,
+              ...(emPx(corpo) < 16
+                ? {
+                    flex: 'none',
+                    width: `${(100 * 16) / emPx(corpo)}%`,
+                    transform: `scale(${emPx(corpo) / 16})`,
+                    transformOrigin: 'left center',
+                  }
+                : null),
               color: cor ?? modelo.nomeCaixa.corHex,
               textAlign:
                 alinhamento === 'ESQUERDA' ? 'left' : alinhamento === 'DIREITA' ? 'right' : 'center',

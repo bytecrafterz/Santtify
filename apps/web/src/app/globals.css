@@ -11709,18 +11709,11 @@ body:has(.painel-karaoke) {
   pointer-events: none;
 }
 
-.ce-arte-pdf .ce-arte-pdf-base {
+/* Uma camada só: a folha inteira no editor; na lupa, a parte à vista. A
+   posição e o tamanho vêm de `ArteEmPdf`, na medida da folha sem zoom. */
+.ce-arte-pdf .ce-arte-pdf-camada {
   position: absolute;
-  inset: 0;
   display: block;
-  width: 100%;
-  height: 100%;
-}
-
-/* O pormenor da lupa: posto sobre a parte à vista quando fica pronto. */
-.ce-arte-pdf .ce-arte-pdf-detalhe {
-  position: absolute;
-  display: none;
 }
 
 .ce-sem-arte {
@@ -11917,6 +11910,16 @@ body:has(.painel-karaoke) {
 }
 
 .ce-ferramenta .ce-simbolo { font-size: 1.05rem; line-height: 1.1; }
+
+/* Num telemóvel de 360px o cartão tem uns 254px, e a barra da foto passava-lhe
+   das pontas: o cartão cortava o primeiro e o último botão (29/09). */
+@media (max-width: 380px) {
+  .ce-ferramenta {
+    min-width: 40px;
+    padding: 5px 3px;
+    font-size: 0.56rem;
+  }
+}
 .ce-ferramenta.activa { background: #1d6dff; }
 .ce-ferramenta:disabled { cursor: not-allowed; opacity: 0.35; }
 
@@ -12012,6 +12015,30 @@ body:has(.painel-karaoke) {
   width: auto;
   margin: 0 auto;
   font-weight: 700;
+}
+
+/* As acções por baixo da folha, lado a lado (29/09: "Remover a foto"). */
+.ce-accoes-da-folha {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0 18px;
+  justify-content: center;
+  margin-top: 8px;
+}
+
+.ce-accoes-da-folha .cartoes-ligacao {
+  width: auto;
+  margin: 0;
+}
+
+.ce-remover-foto {
+  font-weight: 700;
+  color: #c62828;
+}
+
+.ce-remover-foto:disabled {
+  cursor: progress;
+  opacity: 0.5;
 }
 
 /* O preço riscado, ao lado do que se vai pagar. */

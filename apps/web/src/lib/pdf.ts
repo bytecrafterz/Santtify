@@ -54,8 +54,22 @@ export function paginaDoPdf(url: string): Promise<PDFPageProxy> {
   return pagina
 }
 
+/** iPhone e iPad (o iPad recente diz-se Mac, mas tem ecrã de toque). */
+export function ehIOS(): boolean {
+  if (typeof navigator === 'undefined') return false
+  const ua = navigator.userAgent
+  return /iP(hone|ad|od)/.test(ua) || (/Macintosh/.test(ua) && navigator.maxTouchPoints > 1)
+}
+
 /**
- * Até onde se deixa ir um canvas. O Safari do iPhone recusa acima de 16,7
- * milhões de pixéis — e recusa em silêncio, com um canvas vazio.
+ * Quantos pixéis cabem num canvas deste aparelho.
+ *
+ * O Safari do iPhone tem um tecto para a memória de todos os canvas da página
+ * juntos, e passado ele desenha em branco sem dizer nada (29/09: a lupa em
+ * branco no iPhone). O leitor de PDF do próprio PDF.js fica nos 5,2 milhões
+ * por canvas no iOS; aqui, 4 milhões, porque ao lado vivem os canvas que o
+ * PDF.js cria para as transparências da arte.
  */
-export const MAXIMO_DE_PIXEIS_POR_CANVAS = 12_000_000
+export function pixeisPorCanvas(): number {
+  return ehIOS() ? 4_000_000 : 8_000_000
+}
