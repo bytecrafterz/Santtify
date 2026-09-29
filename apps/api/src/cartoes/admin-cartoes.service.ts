@@ -5,6 +5,7 @@ import { PrismaService } from '../prisma/prisma.service'
 import { CartoesService } from './cartoes.service'
 import { StorageService, type ArquivoSalvo } from '../admin/storage.service'
 import { conferirPdf, DPI_DA_LUPA, rasterizarPrimeiraPagina } from './arte-em-pdf'
+import { MosaicoDaArteService } from './mosaico-da-arte.service'
 
 /**
  * Os campos que o painel pode mexer num modelo.
@@ -82,6 +83,7 @@ export class AdminCartoesService {
     private readonly prisma: PrismaService,
     private readonly cartoes: CartoesService,
     private readonly storage: StorageService,
+    private readonly mosaicos: MosaicoDaArteService,
   ) {}
 
   // ── Categorias ────────────────────────────────────────────────────
@@ -405,6 +407,8 @@ export class AdminCartoesService {
         arteLupaUrl: lupaSalva.url.replace(/\.jpg$/, '-impressao.jpg'),
       },
     })
+    // Os ladrilhos da lupa levam cerca de um minuto; ficam a fazer-se por trás.
+    this.mosaicos.pedir(pdfSalvo.url)
 
     const avisos: string[] = []
     if (!conferido.ehA4) {

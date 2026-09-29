@@ -14,6 +14,17 @@ export type EstadoDoPedido =
   | 'PRONTO'
   | 'EXPIRADO'
 
+/** Os ladrilhos de uma arte: cada um em `{url}/{dpi}/{coluna}_{linha}.jpeg`. */
+export interface MosaicoDaArte {
+  url: string
+  /** O lado de cada ladrilho, em pixéis, sem a sobreposição. */
+  lado: number
+  /** Os pixéis de cada ladrilho repetidos no vizinho, de cada lado. */
+  sobreposicao: number
+  /** Do mais leve ao mais pesado. */
+  niveis: { dpi: number; largura: number; altura: number }[]
+}
+
 export interface ModeloDeCartao {
   id: string
   slug: string
@@ -28,6 +39,8 @@ export interface ModeloDeCartao {
    * (ver `ArteEmPdf`); as imagens ficam para o primeiro instante.
    */
   artePdfUrl?: string | null
+  /** O mesmo PDF em ladrilhos desenhados no servidor, para a lupa (ver `ArteEmMosaico`). */
+  arteMosaico?: MosaicoDaArte | null
   /** Tudo em milímetros sobre a folha A4, como no servidor. */
   moldura: {
     x: number

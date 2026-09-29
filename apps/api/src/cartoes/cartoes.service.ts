@@ -23,6 +23,7 @@ import { ProvedorDePagamento, type AvisoDePagamento } from './pagamentos/provedo
 import { criarFicha, lerFicha } from './ligacao-de-partilha'
 import { MailService } from '../common/mail/mail.service'
 import { AfiliadosService } from '../afiliados/afiliados.service'
+import { MosaicoDaArteService } from './mosaico-da-arte.service'
 
 /** O máximo de crianças num pedido. Acima disto é gráfica, não é família. */
 const MAXIMO_DE_CRIANCAS = 10
@@ -50,6 +51,7 @@ export class CartoesService {
     private readonly mail: MailService,
     private readonly config: ConfigService,
     private readonly afiliados: AfiliadosService,
+    private readonly mosaicos: MosaicoDaArteService,
   ) {
     this.diasAteExpurgo = this.config.get<number>('CARTOES_DIAS_ATE_EXPURGO') ?? 7
     this.horasAteAbandono = this.config.get<number>('CARTOES_HORAS_ATE_ABANDONO') ?? 48
@@ -91,6 +93,11 @@ export class CartoesService {
        * "de impressão" é a própria imagem, e já está em `arteUrl`.
        */
       artePdfUrl: m.arteImpressaoUrl && /\.pdf$/i.test(m.arteImpressaoUrl) ? m.arteImpressaoUrl : null,
+      /**
+       * O mesmo PDF desenhado no servidor, em ladrilhos, para a lupa (ver
+       * `MosaicoDaArteService`). Nulo até estarem prontos.
+       */
+      arteMosaico: this.mosaicos.de(m.arteImpressaoUrl),
       /**
        * A geometria vai para o navegador de propósito.
        *

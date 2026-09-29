@@ -8,6 +8,7 @@ import { CarrosselController } from './carrossel.controller'
 import { PartilhaDeCartoesController } from './partilha.controller'
 import { ArmazenamentoDeCartoesService } from './armazenamento-de-cartoes.service'
 import { ExpurgoDeCartoesService } from './expurgo.service'
+import { MosaicoDaArteService } from './mosaico-da-arte.service'
 import { ProvedorDePagamento } from './pagamentos/provedor'
 import { ProvedorManual } from './pagamentos/provedor-manual'
 import { ProvedorMercadoPago } from './pagamentos/provedor-mercadopago'
@@ -38,6 +39,7 @@ import { AfiliadosModule } from '../afiliados/afiliados.module'
     CarrosselService,
     ArmazenamentoDeCartoesService,
     ExpurgoDeCartoesService,
+    MosaicoDaArteService,
     StorageService,
     ContagensService,
     /**

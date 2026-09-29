@@ -230,6 +230,17 @@ export class StorageService {
    * qualquer ficheiro do servidor.
    */
   async lerPelaUrl(url: string | null | undefined): Promise<Buffer | null> {
+    const caminho = this.caminhoDaUrl(url)
+    if (!caminho) return null
+    try {
+      return await readFile(caminho)
+    } catch {
+      return null
+    }
+  }
+
+  /** O caminho em disco de um endereço público, com as mesmas cautelas. */
+  caminhoDaUrl(url: string | null | undefined): string | null {
     if (!url) return null
     const marca = '/uploads/'
     const i = url.indexOf(marca)
@@ -241,11 +252,7 @@ export class StorageService {
       this.logger.warn(`Caminho fora da pasta de uploads recusado: ${relativo}`)
       return null
     }
-    try {
-      return await readFile(caminho)
-    } catch {
-      return null
-    }
+    return caminho
   }
 
   /**

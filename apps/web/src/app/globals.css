@@ -11716,6 +11716,28 @@ body:has(.painel-karaoke) {
   display: block;
 }
 
+/* Os ladrilhos da lupa (ver `ArteEmMosaico`): nas medidas da folha, em %, e
+   só visíveis depois de descodificados. */
+.ce-arte-mosaico {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+}
+
+.ce-arte-mosaico .ce-arte-ladrilho {
+  position: absolute;
+  display: block;
+  max-width: none;
+  opacity: 0;
+  transition: opacity 0.18s ease-out;
+  user-select: none;
+  -webkit-user-drag: none;
+}
+
+.ce-arte-mosaico .ce-arte-ladrilho.pronto {
+  opacity: 1;
+}
+
 .ce-sem-arte {
   display: grid;
   height: 100%;

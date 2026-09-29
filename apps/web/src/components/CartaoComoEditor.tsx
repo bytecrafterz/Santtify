@@ -17,6 +17,7 @@ import {
 } from '@/lib/cartoes'
 import { LupaDoCartao, type FocoDaLupa } from './LupaDoCartao'
 import { ArteEmPdf } from './ArteEmPdf'
+import { ArteEmMosaico } from './ArteEmMosaico'
 
 /**
  * O CARTÃO É O EDITOR.
@@ -948,16 +949,23 @@ function CartaoDesenhado({
         <img src={modelo.arteLupaUrl} alt="" aria-hidden="true" className="ce-arte" draggable={false} />
       ) : null}
       {/*
-        O PDF DO DESIGNER, POR CIMA DA IMAGEM LEVE — ver `ArteEmPdf`.
+        O PDF DO DESIGNER, DE PERTO.
 
         "a qualidade das artes precisa ser exatamente a qualidade original
-        enviada pelo designer" — 28/09. No editor, só no cartão da vez: os
-        vizinhos à espreita ficam com a imagem leve, e sete PDFs de uma vez
-        eram 13 MB num telemóvel. Na lupa, sempre, e por cima da JPEG de 300
-        dpi: é ela que se vê nos instantes em que o PDF ainda desenha a parte
-        ampliada, em vez da imagem leve esticada.
+        enviada pelo designer" — 28/09. Na lupa, os ladrilhos que o servidor
+        desenhou do PDF (ver `ArteEmMosaico`), por cima da JPEG de 300 dpi: a
+        1000 dpi, e em fracções de segundo mesmo no iPhone.
+
+        No editor a folha é pequena, e a imagem leve (1200 pixéis) já tem mais
+        do que o ecrã mostra. O PDF desenhado no navegador (`ArteEmPdf`) fica
+        só para os minutos em que uma arte acabada de carregar ainda não tem
+        ladrilhos — e fora do iPhone, onde desenhá-lo demora 10 segundos.
       */}
-      {modelo.artePdfUrl && (editavel || altaResolucao) ? <ArteEmPdf url={modelo.artePdfUrl} /> : null}
+      {modelo.arteMosaico && altaResolucao ? (
+        <ArteEmMosaico mosaico={modelo.arteMosaico} larguraDaBase={modelo.arteLupaUrl ? 2480 : 1200} />
+      ) : !modelo.arteMosaico && modelo.artePdfUrl && (editavel || altaResolucao) ? (
+        <ArteEmPdf url={modelo.artePdfUrl} />
+      ) : null}
       {modelo.arteUrl ? null : (
         <span className="ce-sem-arte">Arte do {modelo.nome} ainda não carregada</span>
       )}

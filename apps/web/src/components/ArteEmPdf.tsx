@@ -2,7 +2,7 @@
 
 import { createContext, useContext, useEffect, useRef, useState } from 'react'
 import type { PDFPageProxy, RenderTask } from 'pdfjs-dist/legacy/build/pdf.mjs'
-import { paginaDoPdf, pixeisPorCanvas } from '@/lib/pdf'
+import { ehIOS, paginaDoPdf, pixeisPorCanvas } from '@/lib/pdf'
 
 /**
  * O que a lupa conta aos PDFs que tem dentro. `versao` muda quando um gesto
@@ -32,6 +32,9 @@ function largar(c: HTMLCanvasElement | null) {
 
 /**
  * A ARTE DESENHADA A PARTIR DO PDF, POR CIMA DAS IMAGENS.
+ *
+ * Desde 29/09 é só o recurso para uma arte que ainda não tem ladrilhos (ver
+ * `ArteEmMosaico`), e nunca no iPhone.
  *
  * As imagens continuam por baixo e são o que se vê no primeiro instante; o
  * PDF cobre-as quando fica pronto. Se o PDF não chegar (rede, telemóvel sem
@@ -78,6 +81,9 @@ export function ArteEmPdf({ url }: { url: string }) {
   }, [])
 
   useEffect(() => {
+    // No iPhone, não: são 7 a 10 segundos por desenho no Safari, e a lupa já
+    // tem os ladrilhos do servidor (ver `ArteEmMosaico`). Fica a imagem.
+    if (ehIOS()) return
     let vivo = true
     paginaDoPdf(url)
       .then((p) => vivo && definirPagina(p))
