@@ -2771,7 +2771,7 @@ button.voltar-elegante {
   âmbar do destaque — e uma sombra colorida por baixo. Os outros ficam em
   vidro, um passo atrás.
 */
-.topo-projeto[aria-current='page'] {
+.topo-projeto[aria-current] {
   border-color: transparent;
   background:
     linear-gradient(#fff, #fff) padding-box,
@@ -2783,7 +2783,7 @@ button.voltar-elegante {
 }
 
 @media (hover: hover) {
-  .topo-projeto:not([aria-current='page']):hover {
+  .topo-projeto:not([aria-current]):hover {
     background: rgba(255, 255, 255, 0.92);
     color: var(--cor-texto);
     box-shadow:
@@ -2858,7 +2858,7 @@ html:has(.topo-projetos) .progresso-letras {
     color: rgba(242, 244, 248, 0.7);
   }
 
-  .topo-projeto[aria-current='page'] {
+  .topo-projeto[aria-current] {
     border-color: transparent;
     background:
       linear-gradient(#232734, #1c1f27) padding-box,
@@ -2868,7 +2868,7 @@ html:has(.topo-projetos) .progresso-letras {
   }
 
   @media (hover: hover) {
-    .topo-projeto:not([aria-current='page']):hover {
+    .topo-projeto:not([aria-current]):hover {
       background: rgba(255, 255, 255, 0.1);
       color: #fff;
       box-shadow: none;
@@ -5185,126 +5185,294 @@ button.letra-bloco {
   justify-content: center;
 }
 
-/* ── As duas vizinhas, no fim da página de conteúdo (24/09) ──────────
-   Dois alvos do mesmo tamanho, cada um com a arte em miniatura. Substituem a
-   arte grande da seguinte, que num ecrã de computador enchia a largura toda e
-   não deixava caminho para trás. A grelha é de duas colunas iguais; quando só
-   há um lado, ele ocupa a sua coluna e a outra fica vazia — o anterior à
-   esquerda, o seguinte à direita, sempre nos mesmos sítios. */
+/* ── As duas vizinhas, no fim da página de conteúdo ──────────────────
+   24/09: dois alvos do mesmo tamanho, cada um com a arte em miniatura, no
+   lugar da arte grande da seguinte, que num computador enchia a largura toda
+   e não deixava caminho para trás.
+
+   29/09: LADO A LADO SEMPRE, E A ARTE GRANDE. No telemóvel empilhavam-se, e a
+   miniatura de 48px não deixava ver para onde se ia. Agora cada vizinha é um
+   cartão com a arte à largura dele, inteira (ver `CasaAoLado`), o nome por
+   baixo e a seta num botão de vidro por cima da arte, do lado para onde vai.
+
+   O anterior à esquerda, o seguinte à direita, sempre nos mesmos sítios;
+   quando só há um lado, a outra coluna fica vazia. */
 .vizinhas {
   display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 10px;
-  margin: 24px 0 1.5rem;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 12px;
+  /* No computador, dois cartazes de meia coluna voltavam a ser o fim de página
+     em cartaz de 24/09; ao meio e com tecto, ficam do tamanho de um telemóvel
+     grande. */
+  max-width: 560px;
+  margin: 28px auto 1.75rem;
 }
 
 .vizinha-anterior { grid-column: 1; }
 .vizinha-proximo { grid-column: 2; }
 
 .vizinha {
+  position: relative;
   display: flex;
+  flex-direction: column;
   gap: 10px;
-  align-items: center;
-  min-height: 64px;
-  padding: 8px;
+  min-width: 0;
+  padding: 7px 7px 13px;
   color: var(--cor-texto);
   text-decoration: none;
   background: var(--cor-superficie);
-  border: 1px solid var(--cor-borda);
-  border-radius: 12px;
+  border: 1.5px solid rgba(23, 26, 34, 0.07);
+  border-radius: 22px;
+  box-shadow:
+    0 1px 2px rgba(16, 24, 40, 0.05),
+    0 14px 32px -18px rgba(16, 24, 40, 0.3);
+  -webkit-tap-highlight-color: transparent;
   transition:
-    border-color 180ms ease,
-    box-shadow 180ms ease;
+    transform 280ms cubic-bezier(0.22, 1, 0.36, 1),
+    box-shadow 280ms ease;
 }
 
-/* A seguinte é a que se segue: fica com a cor de acção, a anterior fica
-   discreta. Os dois caminhos existem, mas não pesam o mesmo. */
-.vizinha-proximo { border-color: var(--cor-acao); }
-
-@media (hover: hover) {
-  a.vizinha:hover {
-    border-color: var(--cor-primaria);
-    box-shadow: var(--sombra);
-  }
+/* A seguinte é a que se segue: o mesmo fio em degradê do projeto aberto no
+   topo, e uma sombra da cor dele. A anterior fica sóbria. Os dois caminhos
+   existem, mas não pesam o mesmo. */
+.vizinha-proximo:not(.trancada) {
+  border-color: transparent;
+  background:
+    linear-gradient(var(--cor-superficie), var(--cor-superficie)) padding-box,
+    linear-gradient(135deg, #2563eb 0%, #7c3aed 55%, #f59e0b 100%) border-box;
+  box-shadow:
+    0 1px 2px rgba(16, 24, 40, 0.06),
+    0 18px 36px -18px rgba(91, 60, 237, 0.5);
 }
 
 .vizinha.trancada {
   color: var(--cor-texto-suave);
-  background: var(--cor-fundo);
+  background: rgba(255, 255, 255, 0.55);
   border-style: dashed;
+  border-color: rgba(23, 26, 34, 0.14);
+  box-shadow: none;
 }
 
+/*
+  A ARTE, INTEIRA: contida na caixa, com ela própria desfocada por trás a
+  encher o que sobra. Os cantos são concêntricos com os do cartão (22 fora,
+  7 de folga, 15 aqui).
+*/
 .vizinha-arte {
+  position: relative;
   display: grid;
-  flex: none;
-  width: 48px;
-  height: 48px;
-  overflow: hidden;
-  background: var(--cor-fundo);
-  border-radius: 8px;
   place-items: center;
+  aspect-ratio: 4 / 5;
+  overflow: hidden;
+  isolation: isolate;
+  border-radius: 15px;
+  background: linear-gradient(145deg, #eef1f8 0%, #e2e7f1 100%);
 }
 
-.vizinha-arte img {
+.vizinha-fundo {
+  position: absolute;
+  top: -12%;
+  left: -12%;
+  width: 124%;
+  height: 124%;
+  object-fit: cover;
+  filter: blur(18px) saturate(1.4);
+  opacity: 0.85;
+}
+
+.vizinha-imagem {
+  position: relative;
+  display: block;
   width: 100%;
   height: 100%;
-  object-fit: cover;
-  object-position: top;
+  object-fit: contain;
+  filter: drop-shadow(0 10px 18px rgba(0, 0, 0, 0.22));
+  transition: transform 450ms cubic-bezier(0.22, 1, 0.36, 1);
 }
 
-.vizinha-cadeado { font-size: 1.1rem; }
+/* Sem arte: a letra ou o número, grande, no degradê da casa. */
+.vizinha-marca {
+  font-size: clamp(3rem, 15vw, 4.5rem);
+  font-weight: 900;
+  line-height: 1;
+  letter-spacing: -0.04em;
+  background: linear-gradient(135deg, #2563eb 0%, #7c3aed 60%, #f59e0b 100%);
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+}
 
+.vizinha.trancada .vizinha-marca {
+  background-image: linear-gradient(135deg, #c5ccda 0%, #a9b2c4 100%);
+}
+
+.vizinha-cadeado,
+.vizinha-seta {
+  position: absolute;
+  z-index: 1;
+  display: grid;
+  place-items: center;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.82);
+  -webkit-backdrop-filter: blur(10px) saturate(160%);
+  backdrop-filter: blur(10px) saturate(160%);
+  box-shadow:
+    0 1px 2px rgba(0, 0, 0, 0.1),
+    0 6px 16px -6px rgba(0, 0, 0, 0.35);
+}
+
+.vizinha-cadeado {
+  top: 10px;
+  right: 10px;
+  width: 32px;
+  height: 32px;
+  color: var(--cor-texto-suave);
+}
+
+.vizinha-seta {
+  bottom: 10px;
+  width: 34px;
+  height: 34px;
+  color: var(--cor-texto);
+  transition: transform 280ms cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+.vizinha-anterior .vizinha-seta { left: 10px; }
+.vizinha-proximo .vizinha-seta { right: 10px; }
+
+.vizinha-proximo:not(.trancada) .vizinha-seta {
+  background: linear-gradient(135deg, #2563eb 0%, #7c3aed 100%);
+  color: #fff;
+}
+
+/* Fechada não leva a lado nenhum, e uma seta prometeria o contrário. */
+.vizinha.trancada .vizinha-seta { display: none; }
+
+/* O texto espelha o cartão: o anterior encosta à esquerda, o seguinte à
+   direita, cada um do lado da sua seta. */
 .vizinha-texto {
   display: grid;
-  gap: 1px;
+  gap: 3px;
   min-width: 0;
+  padding: 0 6px;
+}
+
+.vizinha-proximo .vizinha-texto {
+  justify-items: end;
+  text-align: right;
 }
 
 .vizinha-texto small {
-  font-size: 0.7rem;
+  font-size: 0.64rem;
   font-weight: 700;
-  letter-spacing: 0.04em;
+  letter-spacing: 0.09em;
   text-transform: uppercase;
   color: var(--cor-texto-suave);
 }
 
-/* Um título comprido encolhe em vez de partir a caixa em três linhas. */
+.vizinha-proximo:not(.trancada) .vizinha-texto small {
+  color: #5b3ced;
+}
+
+/* Duas linhas, e não reticências a meio da primeira: é o nome do dia que diz
+   para onde se vai. */
 .vizinha-texto strong {
+  display: -webkit-box;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
   overflow: hidden;
-  font-size: 0.92rem;
-  line-height: 1.2;
-  text-overflow: ellipsis;
-  white-space: nowrap;
+  font-size: 0.9rem;
+  font-weight: 700;
+  line-height: 1.25;
+  letter-spacing: -0.012em;
 }
 
 .vizinha-texto em {
-  font-size: 0.72rem;
+  margin-top: 4px;
+  padding: 3px 9px;
+  border-radius: 999px;
+  background: rgba(23, 26, 34, 0.06);
+  font-size: 0.68rem;
   font-style: normal;
-  color: var(--cor-texto-suave);
+  font-weight: 600;
+  justify-self: start;
 }
 
-/* A seta diz o sentido sem precisar de ser lida, e fica do lado para onde
-   aponta: o anterior tem a dele antes da arte, o seguinte depois do texto. */
-.vizinha-anterior::before,
-.vizinha-proximo::after {
-  flex: none;
-  font-size: 1rem;
-  font-weight: 800;
-  color: var(--cor-texto-suave);
-}
+.vizinha-proximo .vizinha-texto em { justify-self: end; }
 
-.vizinha-anterior::before { content: '‹'; }
-.vizinha-proximo::after { content: '›'; margin-left: auto; }
-
-/* Num telemóvel estreito as duas colunas deixam ~110px para o título, e um
-   nome de casa não cabe em 110px sem virar reticências. Empilham-se, e cada
-   uma fica com a largura toda. */
-@media (max-width: 480px) {
-  .vizinhas { grid-template-columns: 1fr; }
-  .vizinha-anterior,
-  .vizinha-proximo {
-    grid-column: 1;
+@media (hover: hover) {
+  a.vizinha:hover {
+    transform: translateY(-3px);
+    box-shadow:
+      0 2px 4px rgba(16, 24, 40, 0.06),
+      0 22px 40px -18px rgba(16, 24, 40, 0.36);
   }
+
+  a.vizinha-proximo:hover {
+    box-shadow:
+      0 2px 4px rgba(16, 24, 40, 0.06),
+      0 24px 44px -18px rgba(91, 60, 237, 0.6);
+  }
+
+  a.vizinha:hover .vizinha-imagem { transform: scale(1.035); }
+  a.vizinha-anterior:hover .vizinha-seta { transform: translateX(-2px); }
+  a.vizinha-proximo:hover .vizinha-seta { transform: translateX(2px); }
+}
+
+a.vizinha:active { transform: scale(0.98); }
+
+a.vizinha:focus-visible {
+  outline: 2px solid var(--cor-primaria);
+  outline-offset: 3px;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .vizinha,
+  .vizinha-imagem,
+  .vizinha-seta {
+    transition: none;
+  }
+  a.vizinha:hover,
+  a.vizinha:active,
+  a.vizinha:hover .vizinha-imagem,
+  a.vizinha:hover .vizinha-seta {
+    transform: none;
+  }
+}
+
+@media (prefers-color-scheme: dark) {
+  .vizinha {
+    border-color: rgba(255, 255, 255, 0.08);
+    box-shadow: 0 14px 32px -18px rgba(0, 0, 0, 0.75);
+  }
+
+  .vizinha-proximo:not(.trancada) {
+    border-color: transparent;
+    background:
+      linear-gradient(var(--cor-superficie), var(--cor-superficie)) padding-box,
+      linear-gradient(135deg, #6b9bff 0%, #a78bfa 55%, #fbbf24 100%) border-box;
+    box-shadow: 0 18px 36px -18px rgba(124, 58, 237, 0.6);
+  }
+
+  .vizinha.trancada {
+    background: rgba(255, 255, 255, 0.03);
+    border-color: rgba(255, 255, 255, 0.14);
+  }
+
+  .vizinha-arte { background: linear-gradient(145deg, #262a35 0%, #1f2330 100%); }
+
+  .vizinha.trancada .vizinha-marca {
+    background-image: linear-gradient(135deg, #454c5c 0%, #363c49 100%);
+  }
+
+  .vizinha-cadeado,
+  .vizinha-seta {
+    background: rgba(28, 31, 39, 0.72);
+    color: rgba(255, 255, 255, 0.92);
+  }
+
+  .vizinha-proximo:not(.trancada) .vizinha-texto small { color: #b8a6ff; }
+  .vizinha-texto em { background: rgba(255, 255, 255, 0.08); }
 }
 
 /* ── A letra seguinte, depois da impressão ──────────────────────────── */

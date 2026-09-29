@@ -10,7 +10,8 @@ import { SeloProdutoVivo } from '@/components/SeloProdutoVivo'
 import { BannerDeConsentimento } from '@/components/BannerDeConsentimento'
 import { OfertaDaLetra } from '@/components/OfertaDaLetra'
 import { BarraInferior } from '@/components/BarraInferior'
-import { Voltar } from '@/components/Voltar'
+import { TopoDosProjetos } from '@/components/TopoDosProjetos'
+import { projetosDoCarrossel } from '@/lib/carrossel'
 import { artigoDefinido, nomeDaCasa } from '@/lib/unidade'
 import type { CasaVizinha } from '@/lib/api'
 
@@ -30,6 +31,17 @@ import type { CasaVizinha } from '@/lib/api'
  * O LADO VAZIO NÃO SE DESENHA. Na primeira casa não há anterior, e um botão
  * apagado a dizer que não há nada antes ocupa espaço para não informar nada.
  * A grelha aguenta: quem fica sozinho encosta ao seu lado.
+ *
+ * ── LADO A LADO, E A ARTE GRANDE OUTRA VEZ (29/09) ───────────────────
+ *
+ * No telemóvel empilhavam-se, cada um com uma miniatura de 48px onde não se
+ * via o que lá estava. Agora ficam os dois na mesma linha, em qualquer ecrã, e
+ * cada um é um cartão com a arte à largura dele.
+ *
+ * A ARTE APARECE INTEIRA. As das letras são retrato e as dos dias são
+ * quadradas; numa caixa de proporção fixa, uma delas saía sempre cortada. Fica
+ * contida na caixa, e o espaço que sobra é a própria arte desfocada por trás
+ * — o fundo é da cor dela, e nenhuma fica com barras vazias.
  */
 function CasaAoLado({
   casa,
@@ -70,16 +82,32 @@ function CasaAoLado({
         arte nenhuma fica um quadrado vazio, que é verdade e não assusta.
       */}
       <span className="vizinha-arte">
-        {!casa.publicado ? (
-          <span className="vizinha-cadeado" aria-hidden="true">
-            🔒
-          </span>
+        {casa.publicado && casa.coverUrl ? (
+          <>
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img className="vizinha-fundo" src={casa.coverUrl} alt="" loading="lazy" aria-hidden="true" />
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img className="vizinha-imagem" src={casa.coverUrl} alt="" loading="lazy" />
+          </>
         ) : (
-          casa.coverUrl && (
-            // eslint-disable-next-line @next/next/no-img-element
-            <img src={casa.coverUrl} alt="" loading="lazy" />
-          )
+          // Sem arte, a letra ou o número da casa, grande — nunca uma caixa vazia.
+          <span className="vizinha-marca" aria-hidden="true">
+            {casa.letra ?? casa.ordinal}
+          </span>
         )}
+        {!casa.publicado && (
+          <span className="vizinha-cadeado" aria-hidden="true">
+            <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+              <rect x="5" y="11" width="14" height="10" rx="2.5" />
+              <path d="M8 11V8a4 4 0 0 1 8 0v3" />
+            </svg>
+          </span>
+        )}
+        <span className="vizinha-seta" aria-hidden="true">
+          <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round">
+            <path d={lado === 'anterior' ? 'M14.5 5.5 8 12l6.5 6.5' : 'M9.5 5.5 16 12l-6.5 6.5'} />
+          </svg>
+        </span>
       </span>
       <span className="vizinha-texto">
         <small>{rotulo}</small>
@@ -171,6 +199,9 @@ export default async function PaginaDeConteudo({
      aparecer. */
   const cats = await api.categorias(projectSlug).catch(() => null)
 
+  // Todos os projetos, para a faixa do topo — ver `TopoDosProjetos`.
+  const projetos = await projetosDoCarrossel()
+
   const { project, content, navegacao } = dados
   /** "Letra", "Dia", "Atributo" — para anunciar a seguinte pelo nome certo. */
   const unidade = project.unidade ?? 'Letra'
@@ -180,7 +211,7 @@ export default async function PaginaDeConteudo({
   const publicacoes = publicacoesDe(dados)
 
   return (
-    <main className="envoltorio com-barra">
+    <main className="envoltorio com-barra com-topo-de-projetos">
       <RastreadorDeVisita projectId={project.id} contentId={content.id} type="CONTENT_VIEW" />
 
       {/* E uma por cartão. Quem chega pelo QR Code impresso abre esta página e
@@ -192,9 +223,18 @@ export default async function PaginaDeConteudo({
         blocos={content.blocks.filter((b) => b.type === 'AUDIO').map((b) => b.id)}
       />
 
-      <div className="cabecalho">
-        <Voltar href={`/${projectSlug}`}>{project.name}</Voltar>
-      </div>
+      {/*
+        O MESMO TOPO DA PÁGINA DO PROJETO (29/09): a seta no canto, que aqui
+        volta ao projeto, e todos os projetos na faixa. Era uma pastilha com o
+        nome do projeto, cortado a meio no telemóvel.
+      */}
+      <TopoDosProjetos
+        projetos={projetos}
+        atual={projectSlug}
+        nomeAtual={project.name}
+        voltarPara={`/${projectSlug}`}
+        rotuloDeVolta={`Voltar a ${project.name}`}
+      />
 
       <h1>{content.title}</h1>
       {content.subtitle && <p className="subtitulo">{content.subtitle}</p>}

@@ -1,6 +1,7 @@
 'use client'
 
 import Link from 'next/link'
+import { usePathname } from 'next/navigation'
 import { useEffect, useRef, useState } from 'react'
 import type { ProjetoNoCarrossel } from '@/lib/carrossel'
 import { Voltar } from './Voltar'
@@ -17,7 +18,11 @@ import { Voltar } from './Voltar'
  * Agora os projetos vivem numa faixa que rola para o lado, presa ao topo e
  * sempre à vista. Com dois projetos cabem os dois; com dez continuam todos na
  * mesma faixa, e o aberto fica sempre à vista, realçado. Tocar noutro troca de
- * projeto logo; tocar no aberto sobe ao princípio dele.
+ * projeto logo; tocar no aberto leva ao princípio dele (na página do projeto,
+ * sobe até lá sem recarregar).
+ *
+ * O mesmo topo em cada página de letra ou de dia, desde 29/09 — aí a seta volta
+ * ao projeto, e não à entrada.
  *
  * É meio transparente, com o vidro fosco do iPhone: o conteúdo passa por baixo
  * e a página não perde altura para uma barra opaca. Ganha corpo (mais fundo e
@@ -27,12 +32,18 @@ export function TopoDosProjetos({
   projetos,
   atual,
   nomeAtual,
+  voltarPara = '/',
+  rotuloDeVolta = 'Voltar ao início',
 }: {
   projetos: Pick<ProjetoNoCarrossel, 'slug' | 'nome' | 'capa'>[]
   atual: string
   /** Para o caso de o aberto não estar na lista (um projeto ainda por publicar). */
   nomeAtual: string
+  /** Para onde vai a seta do canto: a entrada, ou o projeto numa página de letra. */
+  voltarPara?: string
+  rotuloDeVolta?: string
 }) {
+  const naPaginaDoProjeto = usePathname() === `/${atual}`
   const faixa = useRef<HTMLElement | null>(null)
   const [rolado, definirRolado] = useState(false)
 
@@ -50,7 +61,7 @@ export function TopoDosProjetos({
   // O projeto aberto ao meio da faixa, mesmo que seja o décimo.
   useEffect(() => {
     const f = faixa.current
-    const aberto = f?.querySelector<HTMLElement>('[aria-current="page"]')
+    const aberto = f?.querySelector<HTMLElement>('[aria-current]')
     if (!f || !aberto) return
     f.scrollLeft = aberto.offsetLeft - (f.clientWidth - aberto.offsetWidth) / 2
   }, [atual])
@@ -58,7 +69,7 @@ export function TopoDosProjetos({
   return (
     <header className={rolado ? 'topo-projetos rolado' : 'topo-projetos'}>
       <div className="topo-projetos-dentro">
-        <Voltar href="/" rotulo="Voltar ao início" />
+        <Voltar href={voltarPara} rotulo={rotuloDeVolta} />
         <nav ref={faixa} className="topo-projetos-faixa" aria-label="Projetos">
           <ul>
             {lista.map((p) => {
@@ -68,9 +79,9 @@ export function TopoDosProjetos({
                   <Link
                     href={`/${p.slug}`}
                     className="topo-projeto"
-                    aria-current={aqui ? 'page' : undefined}
+                    aria-current={aqui ? (naPaginaDoProjeto ? 'page' : 'true') : undefined}
                     onClick={(ev) => {
-                      if (!aqui) return
+                      if (!aqui || !naPaginaDoProjeto) return
                       ev.preventDefault()
                       window.scrollTo({ top: 0, behavior: 'smooth' })
                     }}
