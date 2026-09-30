@@ -1804,9 +1804,10 @@ export class AdminContentService {
     })
     if (!content) throw new NotFoundException('Publicação não encontrada')
 
-    if (casa === undefined && content.letra !== null) {
-      throw new BadRequestException('As letras têm quatro cartões fixos e não se acrescentam.')
-    }
+    // As letras aceitam publicações além das quatro casas desde 30/09: o
+    // "Duplicar letra A" do desenho dele acrescenta uma, como o "Duplicar
+    // introdução". As quatro casas continuam fixas; isto entra depois delas,
+    // como as cópias que ele já fazia cartão a cartão.
 
     if (casa !== undefined) {
       if (!Number.isInteger(casa) || casa < 1 || casa > CASAS_POR_PUBLICACAO) {

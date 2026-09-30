@@ -1,9 +1,9 @@
 'use client'
 
-import { useCallback, useEffect, useState } from 'react'
+import { useCallback, useEffect, useState, type CSSProperties } from 'react'
 import Link from 'next/link'
-import { admin, type CartaoAdmin, type VagaoAdmin } from '@/lib/admin'
-import { artigoDefinido, capitalizar, plural, todosOsPlural } from '@/lib/unidade'
+import { admin, painelDeCartoes, type CartaoAdmin, type VagaoAdmin } from '@/lib/admin'
+import { artigoDefinido, capitalizar } from '@/lib/unidade'
 import { CabecalhoFixo } from './CabecalhoFixo'
 import { useAuth } from './ProvedorDeAuth'
 import { EditorDeCartao } from './EditorDeCartao'
@@ -47,6 +47,18 @@ export function SequenciaDoAlfabeto({ projectSlug }: { projectSlug: string }) {
   /** "Letra", "Dia", "Atributo" — vem do projeto. Ver `Project.unidade`. */
   const [unidade, definirUnidade] = useState('Letra')
   const [onde, definirOnde] = useState<Onde>({ tela: 'sequencia' })
+  /** A introdução do projeto, que passou a viver no topo desta sequência (30/09). */
+  const [introducao, definirIntroducao] = useState<{ contentId: string; cartoes: CartaoAdmin[] } | null>(
+    null,
+  )
+  const [projeto, definirProjeto] = useState<{
+    nome: string
+    letras: boolean
+    blocos: number
+    primeiro: number
+  } | null>(null)
+  /** O que está a ser criado agora, para o "A criar..." aparecer no sítio em que ele tocou. */
+  const [aCriar, definirACriar] = useState<string | null>(null)
   const [carregando, definirCarregando] = useState(true)
   const [erro, definirErro] = useState<string | null>(null)
   const [menuAberto, definirMenuAberto] = useState<string | null>(null)
@@ -96,8 +108,22 @@ export function SequenciaDoAlfabeto({ projectSlug }: { projectSlug: string }) {
 
   const recarregar = useCallback(async () => {
     try {
-      const r = await admin.alfabeto(projectSlug)
+      const [r, raiz] = await Promise.all([
+        admin.alfabeto(projectSlug),
+        admin.estruturaRaiz(projectSlug).catch(() => null),
+      ])
       definirVagoes(r.vagoes)
+      definirProjeto({
+        nome: r.project?.name ?? '',
+        letras: r.project?.sequencia === 'LETRAS' || r.vagoes.some((v) => v.letra !== null),
+        blocos: r.project?.blocos ?? r.vagoes.length,
+        primeiro: r.project?.primeiroNumero ?? 1,
+      })
+      definirIntroducao(
+        raiz?.introducao
+          ? { contentId: raiz.introducao.contentId, cartoes: raiz.introducao.cartoes }
+          : null,
+      )
       /*
         COMO SE CHAMA UMA CASA NESTE PROJETO.
 
@@ -131,9 +157,66 @@ export function SequenciaDoAlfabeto({ projectSlug }: { projectSlug: string }) {
     void recarregar()
   }, [recarregar, aRestaurarSessao, usuario?.id])
 
+  /*
+    VOLTAR É UM PASSO ATRÁS, E NÃO O PAINEL (30/09).
+
+    "O botão Voltar também precisa voltar somente para a tela anterior. Hoje,
+    quando estou postando dentro de um bloco e volto, ele me joga lá para o
+    início novamente." O Voltar do topo do cartão e dos quadrados era um link
+    para o painel, e o gesto de voltar do telemóvel saía da página.
+
+    Cada ecrã passa a ser uma entrada no histórico do navegador: o Voltar do
+    topo, o do ecrã e o gesto do telemóvel fazem todos o mesmo, um passo
+    atrás. E a sequência guarda a casa de onde se saiu, para voltar a ela.
+  */
+  const ir = useCallback((novo: Onde) => {
+    window.history.pushState({ ...(window.history.state ?? {}), painelDoProjeto: novo }, '')
+    definirOnde(novo)
+  }, [])
+  const voltar = useCallback(() => window.history.back(), [])
+  /** Da sequência para dentro: primeiro guarda a casa, para o voltar a trazer até ela. */
+  const entrar = (casa: string, novo: Onde) => {
+    window.history.replaceState(
+      { ...(window.history.state ?? {}), painelDoProjeto: { tela: 'sequencia', casa } },
+      '',
+    )
+    ir(novo)
+  }
+  useEffect(() => {
+    // Recarregar a página a meio de um cartão volta ao mesmo cartão.
+    const guardado = window.history.state?.painelDoProjeto as Onde | undefined
+    if (guardado) definirOnde(guardado)
+    const aoVoltar = (e: PopStateEvent) =>
+      definirOnde((e.state?.painelDoProjeto as Onde | undefined) ?? { tela: 'sequencia' })
+    window.addEventListener('popstate', aoVoltar)
+    return () => window.removeEventListener('popstate', aoVoltar)
+  }, [])
+
   const vagao = 'casa' in onde ? vagoes.find((v) => v.casa === onde.casa) : undefined
 
   // ── Tela 3: o cartão ──────────────────────────────────────────────
+  // Da introdução: o mesmo editor, com a introdução como sítio de onde se veio.
+  if (onde.tela === 'cartao' && onde.casa === 'introducao') {
+    const cartao = introducao?.cartoes.find((c) => c.id === onde.cartaoId)
+    if (cartao) {
+      return (
+        <>
+          <CabecalhoFixo projectSlug={projectSlug} onde="Introdução" aoVoltar={voltar} />
+          <EditorDeCartao
+            key={cartao.id}
+            cartao={cartao}
+            projectSlug={projectSlug}
+            aoGuardar={async () => {
+              await recarregar()
+              voltar()
+            }}
+            aoMudar={recarregar}
+            aoCancelar={voltar}
+          />
+        </>
+      )
+    }
+  }
   if (onde.tela === 'cartao' && vagao) {
     const cartao = vagao.cartoes.find((c) => c.id === onde.cartaoId)
     if (cartao?.papel === 'IMPRESSAO') {
@@ -144,7 +227,7 @@ export function SequenciaDoAlfabeto({ projectSlug }: { projectSlug: string }) {
           <CabecalhoFixo
             projectSlug={projectSlug}
             onde={vagao.rotulo}
-            voltarPara={`/${projectSlug}/admin`}
+            aoVoltar={voltar}
           />
           <EditorDoCartaoDeImpressao
             key={cartao.id}
@@ -155,13 +238,13 @@ export function SequenciaDoAlfabeto({ projectSlug }: { projectSlug: string }) {
             contentSlug={vagao.slug}
             aoApagar={async () => {
               await recarregar()
-              definirOnde({ tela: 'quadrados', casa: vagao.casa })
+              voltar()
             }}
             aoGuardar={async () => {
               await recarregar()
-              definirOnde({ tela: 'quadrados', casa: vagao.casa })
+              voltar()
             }}
-            aoCancelar={() => definirOnde({ tela: 'quadrados', casa: vagao.casa })}
+            aoCancelar={voltar}
           />
         </>
       )
@@ -172,7 +255,7 @@ export function SequenciaDoAlfabeto({ projectSlug }: { projectSlug: string }) {
           <CabecalhoFixo
             projectSlug={projectSlug}
             onde={vagao.rotulo}
-            voltarPara={`/${projectSlug}/admin`}
+            aoVoltar={voltar}
           />
           <EditorDeCartao
             key={cartao.id}
@@ -180,12 +263,11 @@ export function SequenciaDoAlfabeto({ projectSlug }: { projectSlug: string }) {
             projectSlug={projectSlug}
             aoGuardar={async () => {
               await recarregar()
-              // Volta aos quatro quadrados, como ele pediu: guardar um cartão
-              // não é sair do trabalho, é passar ao seguinte.
-              definirOnde({ tela: 'quadrados', casa: vagao.casa })
+              // Volta ao ecrã de onde veio — a sequência, ou os quadrados.
+              voltar()
             }}
             aoMudar={recarregar}
-            aoCancelar={() => definirOnde({ tela: 'quadrados', casa: vagao.casa })}
+            aoCancelar={voltar}
           />
         </>
       )
@@ -258,7 +340,7 @@ export function SequenciaDoAlfabeto({ projectSlug }: { projectSlug: string }) {
         <CabecalhoFixo
           projectSlug={projectSlug}
           onde={vagao.rotulo}
-          voltarPara={`/${projectSlug}/admin`}
+          aoVoltar={voltar}
         />
         <div className="painel-quadrados">
           {/*
@@ -267,8 +349,8 @@ export function SequenciaDoAlfabeto({ projectSlug }: { projectSlug: string }) {
             telemóvel desenha à sua maneira. Escapou à passagem de 22/09 porque
             este ecrã só se vê com sessão iniciada.
           */}
-          <Voltar aoClicar={() => definirOnde({ tela: 'sequencia', casa: vagao.casa })} emLinha>
-            {plural(unidade)}
+          <Voltar aoClicar={voltar} emLinha>
+            Voltar
           </Voltar>
           <h1>Conteúdos: {vagao.rotulo}</h1>
           <p className="nota">Toque para editar • Toque nos três pontos para ver opções</p>
@@ -302,7 +384,7 @@ export function SequenciaDoAlfabeto({ projectSlug }: { projectSlug: string }) {
                 aoAbrirMenu={() => definirMenuAberto(menuAberto === c.id ? null : c.id)}
                 aoEditar={() => {
                   definirMenuAberto(null)
-                  definirOnde({ tela: 'cartao', casa: vagao.casa, cartaoId: c.id })
+                  ir({ tela: 'cartao', casa: vagao.casa, cartaoId: c.id })
                 }}
                 aDuplicar={aDuplicar === c.id}
                 acabadaDeCriar={copiaNova === c.id}
@@ -448,7 +530,7 @@ export function SequenciaDoAlfabeto({ projectSlug }: { projectSlug: string }) {
                     try {
                       const novo = await admin.acrescentarCartao(vagao.contentId!, casa)
                       await recarregar()
-                      definirOnde({ tela: 'cartao', casa: vagao.casa, cartaoId: novo.id })
+                      ir({ tela: 'cartao', casa: vagao.casa, cartaoId: novo.id })
                     } catch (e) {
                       definirErro(
                         e instanceof Error ? e.message : 'Não foi possível criar este quadrado.',
@@ -488,7 +570,7 @@ export function SequenciaDoAlfabeto({ projectSlug }: { projectSlug: string }) {
                   try {
                     const novo = await admin.acrescentarCartao(vagao.contentId!)
                     await recarregar()
-                    definirOnde({ tela: 'cartao', casa: vagao.casa, cartaoId: novo.id })
+                    ir({ tela: 'cartao', casa: vagao.casa, cartaoId: novo.id })
                   } catch (e) {
                     definirErro(
                       e instanceof Error ? e.message : 'Não foi possível acrescentar o cartão.',
@@ -513,7 +595,7 @@ export function SequenciaDoAlfabeto({ projectSlug }: { projectSlug: string }) {
                 type="button"
                 className="quadrado-impressao pronto"
                 onClick={() =>
-                  definirOnde({ tela: 'cartao', casa: vagao.casa, cartaoId: impressao.id })
+                  ir({ tela: 'cartao', casa: vagao.casa, cartaoId: impressao.id })
                 }
               >
                 <span className="icone" aria-hidden>
@@ -547,7 +629,7 @@ export function SequenciaDoAlfabeto({ projectSlug }: { projectSlug: string }) {
                     await recarregar()
                     // Abre já o editor: criar e ficar no mesmo sítio seria pedir-lhe
                     // que descobrisse o passo seguinte sozinho outra vez.
-                    definirOnde({ tela: 'cartao', casa: vagao.casa, cartaoId: novo.id })
+                    ir({ tela: 'cartao', casa: vagao.casa, cartaoId: novo.id })
                   } finally {
                     definirACriarImpressao(false)
                   }
@@ -596,95 +678,263 @@ export function SequenciaDoAlfabeto({ projectSlug }: { projectSlug: string }) {
     )
   }
 
-  // ── Tela 1: a composição ──────────────────────────────────────────
+  // ── Tela 1: o projeto inteiro, numa sequência só ──────────────────
+  /*
+    A INTRODUÇÃO EM CIMA E OS BLOCOS POR BAIXO, NUMA LINHA SÓ (30/09).
+
+    "Eu fui postar agora a introdução de Minha Identidade e Poder em Jesus e
+    simplesmente não consegui encontrar a introdução, porque ela está
+    separada e chamada de 'raiz'. Está tudo muito fragmentado. Quero
+    padronizar como no mockup: Introdução sempre em cima → Bloco 1 → Bloco 2
+    → Bloco 3…, tudo junto e na mesma sequência."
+
+    A introdução vivia na Estrutura raiz e as casas aqui: dois ecrãs para uma
+    página só. Agora são uma sequência numerada, como no desenho dele, com os
+    cartões de cada etapa à vista, e um toque num cartão abre-o logo — os
+    quatro quadrados deixaram de ser um ecrã no caminho. O que se usa menos
+    em cada casa (a ordem, a arte da casa, o cartão de impressão, o QR) fica
+    nos três pontos.
+  */
+  const nome = projeto?.nome ?? ''
+  const ultimo = projeto ? projeto.primeiro + projeto.blocos - 1 : 0
+  const desvio = introducao ? 2 : 1
+
+  /** Cria um cartão e abre-o logo: criar e ficar parado seria obrigá-lo a procurar o que pediu. */
+  async function criarEAbrir(chave: string, casa: string, criar: () => Promise<{ id: string }>) {
+    definirACriar(chave)
+    definirErro(null)
+    try {
+      const novo = await criar()
+      await recarregar()
+      entrar(casa, { tela: 'cartao', casa, cartaoId: novo.id })
+    } catch (e) {
+      definirErro(e instanceof Error ? e.message : 'Não foi possível criar o cartão.')
+    } finally {
+      definirACriar(null)
+    }
+  }
+
+  /** O bloco seguinte da sequência: Dia 16 depois do Dia 15. */
+  async function adicionarBloco() {
+    if (!projeto) return
+    definirACriar('bloco')
+    definirErro(null)
+    try {
+      await painelDeCartoes.definirBlocos(projectSlug, projeto.blocos + 1)
+      await recarregar()
+      requestAnimationFrame(() =>
+        document
+          .getElementById(`vagao-${ultimo + 1}`)
+          ?.scrollIntoView({ block: 'center', behavior: 'smooth' }),
+      )
+    } catch (e) {
+      definirErro(e instanceof Error ? e.message : 'Não foi possível acrescentar o bloco.')
+    } finally {
+      definirACriar(null)
+    }
+  }
+
   return (
     <>
       <CabecalhoFixo
         projectSlug={projectSlug}
-        onde="Gerenciar conteúdo"
+        onde={nome || 'Conteúdo do projeto'}
         voltarPara={`/${projectSlug}/admin`}
+        rotuloDeVolta="Painel"
       />
-      <div className="painel-sequencia">
-        {/*
-          O TÍTULO É DO PROJETO, e não "Alfabeto" para todos.
-
-          Dizia "Alfabeto — sequência infinita" em qualquer projeto, e por baixo
-          "todas as letras". No Minha Identidade, que são sete dias, isto era o
-          painel a anunciar outro projeto — e foi o que ele encontrou quando lá
-          foi publicar.
-        */}
-        <h1>{`${plural(unidade)} — sequência infinita`}</h1>
-        <p className="nota">{`Deslize para baixo para ver ${todosOsPlural(unidade)}`}</p>
+      <div className="editor-projeto">
+        <div className="ep-topo">
+          <h1>{nome}</h1>
+          <span className="ep-selo">Em edição</span>
+          <Link className="ep-config" href={`/${projectSlug}/admin/carrossel`}>
+            <IconeEngrenagem />
+            Configurações do projeto
+          </Link>
+        </div>
 
         {erro && !aRestaurarSessao && <p className="erro">{erro}</p>}
         {(carregando || aRestaurarSessao) && <p className="nota">A carregar...</p>}
 
-        {/* A LINHA NÃO SE INTERROMPE. É o desenho dele, e diz uma coisa
-            verdadeira sobre a estrutura: as letras não são 26 páginas soltas,
-            são uma composição só. Está desenhada com uma borda contínua e não
-            com um traço por letra — assim não há como aparecer uma falha entre
-            dois vagões quando um deles ainda está vazio. */}
-        <ol className="composicao">
-          {vagoes.map((v) => (
-            <li key={v.casa} id={`vagao-${v.casa}`} className="vagao">
-              <button
-                type="button"
-                className="cabeca-vagao"
-                onClick={() => definirOnde({ tela: 'quadrados', casa: v.casa })}
-              >
-                <span className="bola-letra" style={{ background: corDaCasa(v.casa) }}>
-                  {v.casa}
-                </span>
-                <span className="dados-vagao">
-                  <strong>{v.rotulo.toUpperCase()}</strong>
-                  {/* AS CASAS E O QUE ELE CRIOU SÃO DUAS CONTAS, E DIZEM-SE AS
-                      DUAS. Dizer só "1 de 4" numa letra onde ele acabou de
-                      publicar é, do lado dele, dizer que o trabalho sumiu. */}
-                  <small>
-                    {v.prontos} de 4 preenchidos
-                    {v.extras > 0 && (
-                      <>
-                        {' · '}
-                        <b>
-                          +{v.extras} {v.extras === 1 ? 'publicação sua' : 'publicações suas'}
-                        </b>
-                      </>
-                    )}
-                  </small>
-                </span>
-              </button>
-
-              <div className="quadradinhos">
-                {CASAS.map((nome, i) => {
-                  const c = v.cartoes.find((x) => x.slot === i + 1)
-                  return <Quadradinho key={nome} cartao={c} etiqueta={String(i + 1)} nome={nome} />
-                })}
-                {/* AS PUBLICAÇÕES DELE ENTRAM NO ÍNDICE A SEGUIR ÀS CASAS.
-                    Sem isto, tudo o que ele cria existe na letra, existe na
-                    página pública, e não existe no ecrã onde ele confere. */}
-                {v.cartoes
-                  .filter((c) => c.slot === null && c.papel !== 'IMPRESSAO')
-                  .map((c) => (
-                    <Quadradinho
+        <ol className="ep-linha">
+          {introducao && (
+            <li id="vagao-introducao" className="ep-etapa">
+              <span className="ep-passo" style={{ background: COR_DA_INTRODUCAO }}>
+                1
+              </span>
+              <section className="ep-bloco">
+                <header className="ep-cabeca">
+                  <span className="ep-marca" style={{ background: COR_DA_INTRODUCAO }}>
+                    1
+                  </span>
+                  <span className="ep-titulo">
+                    <strong>INTRODUÇÃO</strong>
+                    <small>{resumoDaIntroducao(introducao.cartoes)}</small>
+                  </span>
+                  <button
+                    type="button"
+                    className="ep-duplicar"
+                    style={{ '--cor': COR_DA_INTRODUCAO } as CSSProperties}
+                    disabled={aCriar !== null}
+                    onClick={() =>
+                      void criarEAbrir('introducao', 'introducao', () =>
+                        admin.duplicarIntroducao(introducao.contentId),
+                      )
+                    }
+                  >
+                    <IconeDuplicar />
+                    {aCriar === 'introducao' ? 'A criar...' : 'Duplicar introdução'}
+                  </button>
+                </header>
+                {introducao.cartoes.length === 0 ? (
+                  <p className="nota">Ainda não há introdução.</p>
+                ) : (
+                  introducao.cartoes.map((c) => (
+                    <LinhaDaIntroducao
                       key={c.id}
                       cartao={c}
-                      etiqueta="+"
-                      nome={c.titulo || c.nomeInterno || 'Publicação'}
+                      menuAberto={menuAberto === c.id}
+                      aoAbrirMenu={() => definirMenuAberto(menuAberto === c.id ? null : c.id)}
+                      aoEditar={() => {
+                        definirMenuAberto(null)
+                        entrar('introducao', { tela: 'cartao', casa: 'introducao', cartaoId: c.id })
+                      }}
+                      aoMudar={async () => {
+                        definirMenuAberto(null)
+                        await recarregar()
+                      }}
                     />
-                  ))}
-              </div>
+                  ))
+                )}
+              </section>
             </li>
-          ))}
+          )}
+
+          {vagoes.map((v, i) => {
+            const cor = corDaCasa(v.casa)
+            const cartoes = v.cartoes.filter((c) => c.papel === 'CARTAO')
+            /*
+              As letras mostram as quatro casas, mesmo as que ainda não têm
+              cartão (tocar cria-o), e depois as publicações dele. Os dias não
+              têm casas fixas: mostram os cartões que há, ou um para começar.
+            */
+            const ladrilhos: Array<{ chave: string; cartao?: CartaoAdmin; casa?: number }> =
+              v.letra !== null
+                ? [
+                    ...CASAS.map((_, k) => {
+                      const c = cartoes.find((x) => x.slot === k + 1)
+                      return { chave: c?.id ?? `casa-${k + 1}`, cartao: c, casa: k + 1 }
+                    }),
+                    ...cartoes.filter((c) => c.slot === null).map((c) => ({ chave: c.id, cartao: c })),
+                  ]
+                : cartoes.length
+                  ? cartoes.map((c) => ({ chave: c.id, cartao: c }))
+                  : [{ chave: 'novo' }]
+            const noAr = cartoes.filter((c) => c.estado === 'PUBLICADO').length
+            const resumo =
+              v.letra !== null
+                ? `${v.prontos} de 4 preenchidos${
+                    v.extras > 0
+                      ? ` · +${v.extras} ${v.extras === 1 ? 'publicação sua' : 'publicações suas'}`
+                      : ''
+                  }`
+                : cartoes.length
+                  ? `${noAr} de ${cartoes.length} no ar`
+                  : 'Ainda sem publicações'
+            return (
+              <li key={v.casa} id={`vagao-${v.casa}`} className="ep-etapa">
+                <span className="ep-passo" style={{ background: cor }}>
+                  {i + desvio}
+                </span>
+                <section className="ep-bloco">
+                  <header className="ep-cabeca">
+                    <span className="ep-marca" style={{ background: cor }}>
+                      {v.casa}
+                    </span>
+                    <span className="ep-titulo">
+                      <strong>{v.rotulo.toUpperCase()}</strong>
+                      <small>{resumo}</small>
+                    </span>
+                    {v.contentId && (
+                      <button
+                        type="button"
+                        className="ep-duplicar"
+                        style={{ '--cor': cor } as CSSProperties}
+                        disabled={aCriar !== null}
+                        onClick={() =>
+                          void criarEAbrir(`duplicar-${v.casa}`, v.casa, () =>
+                            admin.acrescentarCartao(v.contentId!),
+                          )
+                        }
+                      >
+                        <IconeDuplicar />
+                        {aCriar === `duplicar-${v.casa}`
+                          ? 'A criar...'
+                          : `Duplicar ${unidade.toLowerCase()} ${v.casa}`}
+                      </button>
+                    )}
+                    <button
+                      type="button"
+                      className="ep-mais"
+                      aria-label={`Mais opções: ${v.rotulo}`}
+                      onClick={() => entrar(v.casa, { tela: 'quadrados', casa: v.casa })}
+                    >
+                      ⋯
+                    </button>
+                  </header>
+                  <div className="ep-cartoes">
+                    {ladrilhos.map((l, k) => (
+                      <Ladrilho
+                        key={l.chave}
+                        numero={k + 1}
+                        cartao={l.cartao}
+                        aCriar={aCriar === `${v.casa}-${l.chave}`}
+                        desactivado={!l.cartao && (!v.contentId || aCriar !== null)}
+                        aoTocar={() => {
+                          if (l.cartao) {
+                            entrar(v.casa, { tela: 'cartao', casa: v.casa, cartaoId: l.cartao.id })
+                            return
+                          }
+                          if (!v.contentId) return
+                          void criarEAbrir(`${v.casa}-${l.chave}`, v.casa, () =>
+                            admin.acrescentarCartao(v.contentId!, l.casa),
+                          )
+                        }}
+                      />
+                    ))}
+                  </div>
+                </section>
+              </li>
+            )
+          })}
+
+          {/* Um bloco a seguir ao último, nos projetos numerados. O alfabeto
+              tem sempre 26 letras, e por isso aí não há mais nenhum. */}
+          {projeto && !projeto.letras && (
+            <li className="ep-etapa">
+              <span className="ep-passo ep-passo-mais">+</span>
+              <button
+                type="button"
+                className="ep-adicionar"
+                disabled={aCriar !== null}
+                onClick={() => void adicionarBloco()}
+              >
+                <span className="ep-adicionar-mais" aria-hidden>
+                  +
+                </span>
+                <span>
+                  <strong>
+                    {aCriar === 'bloco'
+                      ? 'A criar...'
+                      : `Adicionar ${unidade.toLowerCase()} (próximo bloco)`}
+                  </strong>
+                  <small>{`Seguir sequência: ${unidade} ${ultimo + 1}`}</small>
+                </span>
+              </button>
+            </li>
+          )}
         </ol>
 
-        {/*
-          O FIM DA COMPOSIÇÃO É O FIM DESTE PROJETO.
-
-          Dizia "CONTINUA ATÉ A LETRA Z", que num projeto de sete dias é uma
-          promessa de dezanove casas que não existem. Agora diz onde acaba
-          mesmo: a última casa que este projeto tem.
-        */}
-        {vagoes.length > 0 && (
+        {projeto?.letras && vagoes.length > 0 && (
           <p className="fim-composicao">
             {`CONTINUA ATÉ ${capitalizar(artigoDefinido(unidade))} ${vagoes[vagoes.length - 1].rotulo}`.toUpperCase()}
           </p>
@@ -694,42 +944,199 @@ export function SequenciaDoAlfabeto({ projectSlug }: { projectSlug: string }) {
   )
 }
 
+/** A cor da introdução, a primeira etapa: o azul da casa. */
+const COR_DA_INTRODUCAO = '#2563eb'
+
+function resumoDaIntroducao(cartoes: CartaoAdmin[]) {
+  if (cartoes.length === 0) return 'Ainda sem publicações'
+  const noAr = cartoes.filter((c) => c.estado === 'PUBLICADO').length
+  return `${noAr} de ${cartoes.length} no ar`
+}
+
 /**
- * Um quadradinho do índice.
- *
- * TRÊS ESTADOS E NÃO DOIS. Dizia PRONTO ou VAZIO, e por isso um cartão com
- * foto, áudio e título a que faltasse a descrição aparecia como VAZIO. Em
- * 31/08 ele viu isso na Letra E e escreveu "como se os outros conteúdos
- * tivessem desaparecido" — e tinha razão, porque era o que estava escrito.
- * VAZIO é agora só quando não há lá nada mesmo.
+ * Um cartão da introdução, como no desenho: a foto à esquerda, o título e a
+ * descrição à direita. Um toque abre o editor.
  */
-function Quadradinho({
+function LinhaDaIntroducao({
   cartao,
-  etiqueta,
-  nome,
+  menuAberto,
+  aoAbrirMenu,
+  aoEditar,
+  aoMudar,
 }: {
-  cartao?: { estado?: string; imagem?: string | null; titulo?: string | null; text?: string | null }
-  etiqueta: string
-  nome: string
+  cartao: CartaoAdmin
+  menuAberto: boolean
+  aoAbrirMenu: () => void
+  aoEditar: () => void
+  aoMudar: () => Promise<void>
+}) {
+  const noAr = cartao.estado === 'PUBLICADO'
+  return (
+    <div className="ep-intro">
+      <button type="button" className="ep-intro-corpo" onClick={aoEditar}>
+        <span className="ep-intro-foto">
+          {cartao.imagem ? (
+            // eslint-disable-next-line @next/next/no-img-element
+            <img src={cartao.imagem} alt="" />
+          ) : (
+            <>
+              <IconeImagem />
+              <b>FOTO</b>
+              <em>Tocar para trocar</em>
+            </>
+          )}
+          <span className={cartao.audio ? 'ep-som tem' : 'ep-som'} aria-hidden>
+            <IconeSom />
+          </span>
+        </span>
+        <span className="ep-intro-campos">
+          <small>Título</small>
+          <span className="ep-campo">{cartao.titulo?.trim() || 'Sem título'}</span>
+          <small>Descrição</small>
+          <span className="ep-campo varias">{cartao.descricao?.trim() || 'Sem descrição'}</span>
+          <span className={noAr ? 'ep-selo-estado pronto' : 'ep-selo-estado'}>
+            {noAr ? 'PRONTO' : 'RASCUNHO'}
+          </span>
+        </span>
+      </button>
+      <button type="button" className="ep-mais ep-intro-menu" aria-label="Opções deste cartão" onClick={aoAbrirMenu}>
+        ⋯
+      </button>
+      {menuAberto && (
+        <div className="menu-quadrado" role="menu">
+          <button type="button" onClick={aoEditar}>
+            ✎ Editar
+          </button>
+          {noAr ? (
+            <button
+              type="button"
+              onClick={async () => {
+                await admin.tirarCartaoDoAr(cartao.id)
+                await aoMudar()
+              }}
+            >
+              🚫 Tirar do ar
+            </button>
+          ) : (
+            <button
+              type="button"
+              onClick={async () => {
+                try {
+                  await admin.porCartaoNoAr(cartao.id)
+                } catch (e) {
+                  alert(e instanceof Error ? e.message : 'Não foi possível pôr no ar.')
+                }
+                await aoMudar()
+              }}
+            >
+              ⬆ Pôr no ar
+            </button>
+          )}
+          <button
+            type="button"
+            className="perigo"
+            onClick={async () => {
+              const nome = cartao.titulo || cartao.audio?.title || 'esta publicação'
+              if (!confirm(`Excluir "${nome}"? Isto não se desfaz.`)) return
+              await admin.apagarCartaoDeVez(cartao.id)
+              await aoMudar()
+            }}
+          >
+            🗑 Excluir
+          </button>
+        </div>
+      )}
+    </div>
+  )
+}
+
+/**
+ * Um cartão de uma casa, como no desenho: o número, o áudio, a foto (ou
+ * "Toque para adicionar") e o estado por baixo. Três estados e não dois —
+ * ver a nota que estava no antigo quadradinho: RASCUNHO quando já há alguma
+ * coisa, VAZIO só quando não há nada.
+ */
+function Ladrilho({
+  numero,
+  cartao,
+  aCriar,
+  desactivado,
+  aoTocar,
+}: {
+  numero: number
+  cartao?: CartaoAdmin
+  aCriar: boolean
+  desactivado: boolean
+  aoTocar: () => void
 }) {
   const noAr = cartao?.estado === 'PUBLICADO'
-  const temAlgo = Boolean(cartao && (cartao.imagem || cartao.titulo?.trim() || noAr))
+  const temAlgo = Boolean(
+    cartao && (cartao.imagem || cartao.audio || cartao.titulo?.trim() || noAr),
+  )
+  const estado = noAr ? 'pronto' : temAlgo ? 'rascunho' : 'vazio'
   return (
-    <span
-      className={noAr ? 'quadradinho cheio' : temAlgo ? 'quadradinho meio' : 'quadradinho'}
-      title={nome}
+    <button
+      type="button"
+      className={`ep-ladrilho ${estado}`}
+      onClick={aoTocar}
+      disabled={desactivado}
+      aria-label={`Cartão ${numero}: ${estado === 'pronto' ? 'pronto' : estado === 'rascunho' ? 'rascunho' : 'vazio'}`}
     >
-      <em>{etiqueta}</em>
-      {cartao?.imagem ? (
+      {cartao?.imagem && (
         // eslint-disable-next-line @next/next/no-img-element
-        <img src={cartao.imagem} alt="" aria-hidden />
-      ) : (
-        <span className="marca" aria-hidden>
-          ▤
+        <img className="ep-ladrilho-foto" src={cartao.imagem} alt="" />
+      )}
+      <span className="ep-num">{numero}</span>
+      <span className={cartao?.audio ? 'ep-som tem' : 'ep-som'} aria-hidden>
+        <IconeSom />
+      </span>
+      {!cartao?.imagem && (
+        <span className="ep-vazio" aria-hidden>
+          <IconeImagem />
+          <em>{aCriar ? 'A criar...' : 'Toque para adicionar'}</em>
         </span>
       )}
-      <small>{noAr ? 'PRONTO' : temAlgo ? 'RASCUNHO' : 'VAZIO'}</small>
-    </span>
+      <span className="ep-estado">
+        {estado === 'pronto' ? 'PRONTO' : estado === 'rascunho' ? 'RASCUNHO' : 'VAZIO'}
+      </span>
+    </button>
+  )
+}
+
+function IconeImagem() {
+  return (
+    <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
+      <rect x="3" y="4" width="18" height="16" rx="2.5" />
+      <circle cx="8.5" cy="9.5" r="1.6" />
+      <path d="m21 16-5.2-5.2L6 20" />
+    </svg>
+  )
+}
+
+function IconeSom() {
+  return (
+    <svg viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
+      <path d="M11 5 6 9H3v6h3l5 4V5Z" fill="currentColor" />
+      <path d="M15.5 8.5a5 5 0 0 1 0 7M18.5 5.5a9 9 0 0 1 0 13" />
+    </svg>
+  )
+}
+
+function IconeDuplicar() {
+  return (
+    <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
+      <rect x="8" y="8" width="12" height="12" rx="2.5" />
+      <path d="M16 8V6.5A2.5 2.5 0 0 0 13.5 4h-7A2.5 2.5 0 0 0 4 6.5v7A2.5 2.5 0 0 0 6.5 16H8" />
+    </svg>
+  )
+}
+
+function IconeEngrenagem() {
+  return (
+    <svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
+      <circle cx="12" cy="12" r="3" />
+      <path d="M19.4 15a1.7 1.7 0 0 0 .3 1.8l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.7 1.7 0 0 0-1.8-.3 1.7 1.7 0 0 0-1 1.5V21a2 2 0 1 1-4 0v-.1a1.7 1.7 0 0 0-1.1-1.5 1.7 1.7 0 0 0-1.8.3l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1a1.7 1.7 0 0 0 .3-1.8 1.7 1.7 0 0 0-1.5-1H3a2 2 0 1 1 0-4h.1a1.7 1.7 0 0 0 1.5-1.1 1.7 1.7 0 0 0-.3-1.8l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1a1.7 1.7 0 0 0 1.8.3H9a1.7 1.7 0 0 0 1-1.5V3a2 2 0 1 1 4 0v.1a1.7 1.7 0 0 0 1 1.5 1.7 1.7 0 0 0 1.8-.3l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1a1.7 1.7 0 0 0-.3 1.8V9a1.7 1.7 0 0 0 1.5 1H21a2 2 0 1 1 0 4h-.1a1.7 1.7 0 0 0-1.5 1Z" />
+    </svg>
   )
 }
 

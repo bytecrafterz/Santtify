@@ -5726,6 +5726,490 @@ a.vizinha:focus-visible {
    quadrados — se fossem três endereços, cada gravação era uma ida ao
    servidor e a pessoa perdia o sítio a meio de preencher 26 letras.
    ═══════════════════════════════════════════════════════════════════ */
+/* ── O projeto numa sequência só: introdução em cima, blocos por baixo ──
+   30/09, desenho dele: "Introdução sempre em cima → Bloco 1 → Bloco 2 →
+   Bloco 3…, tudo junto e na mesma sequência". Ver `SequenciaDoAlfabeto`.
+   A linha numerada à esquerda liga as etapas; cada etapa é um cartão com o
+   seu cabeçalho (marca, nome, contagem, Duplicar, três pontos) e os cartões
+   de dentro à vista. */
+.editor-projeto {
+  display: grid;
+  gap: 16px;
+  padding: 14px 0 90px;
+}
+
+.ep-topo {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px 10px;
+}
+
+.ep-topo h1 {
+  margin: 0;
+  font-size: clamp(1.25rem, 5vw, 1.75rem);
+  line-height: 1.15;
+}
+
+.ep-selo {
+  padding: 3px 10px;
+  border-radius: 999px;
+  background: #2563eb;
+  color: #fff;
+  font-size: 0.72rem;
+  font-weight: 700;
+}
+
+.ep-config {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  margin-left: auto;
+  padding: 7px 12px;
+  border: 1px solid var(--cor-borda);
+  border-radius: 10px;
+  background: var(--cor-superficie);
+  color: var(--cor-texto);
+  font-size: 0.78rem;
+  font-weight: 600;
+  text-decoration: none;
+}
+
+.ep-linha {
+  position: relative;
+  display: grid;
+  gap: 14px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+/* A linha que liga as etapas, por trás dos números. */
+.ep-linha::before {
+  content: "";
+  position: absolute;
+  top: 20px;
+  bottom: 20px;
+  left: 14px;
+  width: 3px;
+  border-radius: 3px;
+  background: linear-gradient(180deg, #2563eb 0%, #7c3aed 100%);
+  opacity: 0.55;
+}
+
+.ep-etapa {
+  position: relative;
+  display: grid;
+  grid-template-columns: 31px minmax(0, 1fr);
+  gap: 10px;
+  align-items: start;
+  /* Voltar de um cartão traz a etapa ao meio do ecrã, e não por baixo do topo. */
+  scroll-margin-top: 80px;
+}
+
+.ep-passo {
+  position: relative;
+  z-index: 1;
+  display: grid;
+  place-items: center;
+  width: 31px;
+  height: 31px;
+  margin-top: 16px;
+  border-radius: 50%;
+  background: #2563eb;
+  color: #fff;
+  font-size: 0.82rem;
+  font-weight: 800;
+  box-shadow: 0 0 0 4px var(--cor-fundo);
+}
+
+.ep-passo-mais {
+  border: 2px solid var(--cor-borda);
+  background: var(--cor-superficie);
+  color: var(--cor-texto);
+}
+
+.ep-bloco {
+  min-width: 0;
+  padding: 14px;
+  border: 1px solid var(--cor-borda);
+  border-radius: 18px;
+  background: var(--cor-superficie);
+  box-shadow:
+    0 1px 2px rgba(16, 24, 40, 0.05),
+    0 10px 26px -18px rgba(16, 24, 40, 0.35);
+}
+
+/* No telemóvel, o Duplicar desce para baixo do nome e os três pontos ficam
+   no canto; com espaço, fica tudo numa linha, como no desenho. */
+.ep-cabeca {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr) auto;
+  grid-template-areas:
+    'marca titulo mais'
+    'marca acao acao';
+  align-items: center;
+  gap: 8px 10px;
+}
+
+.ep-cabeca .ep-marca { grid-area: marca; align-self: start; }
+.ep-cabeca .ep-titulo { grid-area: titulo; }
+.ep-cabeca .ep-duplicar { grid-area: acao; justify-self: start; }
+.ep-cabeca .ep-mais { grid-area: mais; }
+
+@media (min-width: 600px) {
+  .ep-cabeca {
+    grid-template-columns: auto minmax(0, 1fr) auto auto;
+    grid-template-areas: 'marca titulo acao mais';
+  }
+
+  .ep-cabeca .ep-marca { align-self: center; }
+}
+
+.ep-marca {
+  display: grid;
+  flex: none;
+  place-items: center;
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  color: #fff;
+  font-size: 1.15rem;
+  font-weight: 900;
+}
+
+.ep-titulo {
+  display: grid;
+  min-width: 0;
+}
+
+.ep-titulo strong {
+  font-size: 1rem;
+  letter-spacing: 0.02em;
+}
+
+.ep-titulo small {
+  color: var(--cor-texto-suave);
+  font-size: 0.75rem;
+}
+
+.ep-duplicar {
+  --cor: #2563eb;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 8px 12px;
+  border: 0;
+  border-radius: 10px;
+  background: var(--cor);
+  color: #fff;
+  font: inherit;
+  font-size: 0.76rem;
+  font-weight: 700;
+  cursor: pointer;
+  box-shadow: 0 8px 18px -12px var(--cor);
+}
+
+.ep-duplicar:disabled {
+  opacity: 0.6;
+  cursor: wait;
+}
+
+.ep-mais {
+  display: grid;
+  flex: none;
+  place-items: center;
+  width: 36px;
+  height: 36px;
+  padding: 0;
+  border: 1px solid var(--cor-borda);
+  border-radius: 10px;
+  background: transparent;
+  color: var(--cor-texto);
+  font-size: 1.1rem;
+  cursor: pointer;
+}
+
+.ep-cartoes {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 8px;
+  margin-top: 12px;
+}
+
+/* Um cartão da casa: número, áudio, foto e estado por baixo. */
+.ep-ladrilho {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-end;
+  min-height: 108px;
+  padding: 0;
+  overflow: hidden;
+  border: 1.5px solid var(--cor-borda);
+  border-radius: 12px;
+  background: var(--cor-fundo);
+  color: var(--cor-texto-suave);
+  font: inherit;
+  cursor: pointer;
+}
+
+.ep-ladrilho.pronto {
+  border-color: #16a34a;
+}
+
+.ep-ladrilho.rascunho {
+  border: 1.5px dashed #ea580c;
+}
+
+.ep-ladrilho-foto {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.ep-num {
+  position: absolute;
+  top: 5px;
+  left: 7px;
+  z-index: 1;
+  color: var(--cor-texto);
+  font-size: 0.78rem;
+  font-weight: 800;
+  text-shadow: 0 0 6px var(--cor-fundo);
+}
+
+.ep-som {
+  position: absolute;
+  top: 5px;
+  right: 5px;
+  z-index: 1;
+  display: grid;
+  place-items: center;
+  width: 22px;
+  height: 22px;
+  border-radius: 50%;
+  background: var(--cor-superficie);
+  color: var(--cor-texto-suave);
+  box-shadow: 0 0 0 1px var(--cor-borda);
+}
+
+.ep-som.tem {
+  background: #16a34a;
+  color: #fff;
+  box-shadow: none;
+}
+
+.ep-vazio {
+  display: grid;
+  flex: 1;
+  place-items: center;
+  align-content: center;
+  gap: 4px;
+  padding: 26px 4px 6px;
+}
+
+.ep-vazio em {
+  font-size: 0.58rem;
+  font-style: normal;
+  line-height: 1.2;
+}
+
+.ep-estado {
+  position: relative;
+  z-index: 1;
+  padding: 4px 0;
+  background: var(--cor-borda);
+  color: var(--cor-texto-suave);
+  font-size: 0.6rem;
+  font-weight: 800;
+  letter-spacing: 0.06em;
+  text-align: center;
+}
+
+.ep-ladrilho.pronto .ep-estado {
+  background: #16a34a;
+  color: #fff;
+}
+
+.ep-ladrilho.rascunho .ep-estado {
+  background: #ea580c;
+  color: #fff;
+}
+
+/* Um cartão da introdução: a foto à esquerda, o título e a descrição ao lado. */
+.ep-intro {
+  position: relative;
+  margin-top: 12px;
+}
+
+.ep-intro + .ep-intro {
+  padding-top: 12px;
+  border-top: 1px solid var(--cor-borda);
+}
+
+.ep-intro-corpo {
+  display: grid;
+  grid-template-columns: minmax(96px, 30%) minmax(0, 1fr);
+  gap: 12px;
+  width: 100%;
+  padding: 0;
+  border: 0;
+  background: none;
+  color: inherit;
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+
+.ep-intro-foto {
+  position: relative;
+  display: grid;
+  place-items: center;
+  align-content: center;
+  gap: 2px;
+  aspect-ratio: 1;
+  overflow: hidden;
+  border: 1.5px dashed var(--cor-borda);
+  border-radius: 12px;
+  background: var(--cor-fundo);
+  color: var(--cor-texto-suave);
+}
+
+.ep-intro-foto img {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.ep-intro-foto b {
+  font-size: 0.72rem;
+}
+
+.ep-intro-foto em {
+  font-size: 0.62rem;
+  font-style: normal;
+}
+
+.ep-intro-campos {
+  display: grid;
+  align-content: start;
+  gap: 4px;
+  min-width: 0;
+  padding-right: 42px;
+}
+
+.ep-intro-campos small {
+  color: var(--cor-texto-suave);
+  font-size: 0.64rem;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+
+.ep-campo {
+  overflow: hidden;
+  padding: 7px 9px;
+  border: 1px solid var(--cor-borda);
+  border-radius: 8px;
+  background: var(--cor-fundo);
+  font-size: 0.84rem;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.ep-campo.varias {
+  display: -webkit-box;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 3;
+  white-space: normal;
+}
+
+.ep-selo-estado {
+  justify-self: start;
+  margin-top: 2px;
+  padding: 2px 8px;
+  border-radius: 999px;
+  background: #ea580c;
+  color: #fff;
+  font-size: 0.6rem;
+  font-weight: 800;
+  letter-spacing: 0.06em;
+}
+
+.ep-selo-estado.pronto {
+  background: #16a34a;
+}
+
+.ep-intro-menu {
+  position: absolute;
+  top: 0;
+  right: 0;
+}
+
+.ep-intro .menu-quadrado {
+  top: 40px;
+  right: 0;
+}
+
+/* O bloco seguinte, no fim da sequência. */
+.ep-adicionar {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  width: 100%;
+  margin-top: 6px;
+  padding: 16px;
+  border: 1.5px dashed var(--cor-borda);
+  border-radius: 18px;
+  background: transparent;
+  color: var(--cor-texto);
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+
+.ep-adicionar span:last-child {
+  display: grid;
+}
+
+.ep-adicionar small {
+  color: var(--cor-texto-suave);
+  font-size: 0.75rem;
+}
+
+.ep-adicionar-mais {
+  display: grid;
+  flex: none;
+  place-items: center;
+  width: 38px;
+  height: 38px;
+  border-radius: 50%;
+  background: #2563eb;
+  color: #fff;
+  font-size: 1.3rem;
+  font-weight: 700;
+}
+
+@media (max-width: 420px) {
+  .ep-bloco {
+    padding: 12px;
+  }
+
+  .ep-cartoes {
+    gap: 6px;
+  }
+
+  .ep-duplicar {
+    padding: 7px 10px;
+    font-size: 0.72rem;
+  }
+}
+
 .painel-sequencia h1,
 .painel-quadrados h1 {
   margin: 0.2rem 0 0.15rem;

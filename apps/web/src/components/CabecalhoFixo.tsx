@@ -25,6 +25,7 @@ export function CabecalhoFixo({
   projectSlug,
   onde,
   voltarPara,
+  aoVoltar,
   rotuloDeVolta = 'Voltar',
 }: {
   projectSlug: string
@@ -41,6 +42,12 @@ export function CabecalhoFixo({
    * trabalhar por trás não quer sair pela porta da frente.
    */
   voltarPara?: string
+  /**
+   * Voltar ao ecrã anterior DENTRO da mesma página (30/09): do cartão ao
+   * projeto, e não ao painel. "O botão Voltar precisa voltar somente para a
+   * tela anterior."
+   */
+  aoVoltar?: () => void
 }) {
   return (
     <header className="cabecalho-fixo">
@@ -55,7 +62,11 @@ export function CabecalhoFixo({
         "Voltar" é verdade nos dois casos — vai sempre um nível acima de onde a
         pessoa está — e quem quiser dizer outra coisa passa `rotuloDeVolta`.
       */}
-      <Voltar href={voltarPara ?? `/${projectSlug}`}>{rotuloDeVolta}</Voltar>
+      {aoVoltar ? (
+        <Voltar aoClicar={aoVoltar}>{rotuloDeVolta}</Voltar>
+      ) : (
+        <Voltar href={voltarPara ?? `/${projectSlug}`}>{rotuloDeVolta}</Voltar>
+      )}
 
       {/*
         Só o nome do sítio, sem o retrato ao lado.

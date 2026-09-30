@@ -394,6 +394,10 @@ export const admin = {
         name: string
         /** Como se chama uma casa aqui: "Letra", "Dia", "Atributo". */
         unidade?: string
+        sequencia?: 'LETRAS' | 'NUMEROS'
+        blocos?: number
+        /** O número da primeira casa: a Escola de Sabedoria começa no 8. */
+        primeiroNumero?: number
       }
       vagoes: VagaoAdmin[]
     }>(`/projects/${projectSlug}/alfabeto`),

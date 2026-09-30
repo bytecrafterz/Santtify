@@ -1,6 +1,6 @@
 import { SequenciaDoAlfabeto } from '@/components/SequenciaDoAlfabeto'
 
-export const metadata = { title: 'Alfabeto — sequência infinita' }
+export const metadata = { title: 'Conteúdo do projeto' }
 
 export default async function PaginaDoAlfabeto({
   params,

@@ -417,19 +417,16 @@ export function ListaAdmin({ projectSlug }: { projectSlug: string }) {
       </Grupo>
 
       <Grupo titulo="Conteúdo">
-        <Cartao
-          href={`${base}/estrutura`}
-          icone="estrutura"
-          cor="azul"
-          titulo="Estrutura raiz"
-          descricao={`Perfil, introdução e ${unidades.toLowerCase()} — as três partes da página, numa só raiz`}
-        />
+        {/* UMA ENTRADA SÓ PARA PUBLICAR (30/09). A introdução estava na
+            "Estrutura raiz" e as casas noutra entrada, e ele não encontrou a
+            introdução do Minha Identidade. Agora é um ecrã, numa sequência:
+            a introdução em cima e os blocos por baixo. */}
         <Cartao
           href={`${base}/alfabeto`}
           icone="sequencia"
           cor="azul"
-          titulo={`${unidades} — sequência infinita`}
-          descricao={`${casas} ${unidades.toLowerCase()}, quatro cartões em cada: foto, áudio, título e texto numa peça só`}
+          titulo={`Introdução e ${unidades.toLowerCase()}`}
+          descricao={`Tudo numa sequência: a introdução em cima e ${casas} ${unidades.toLowerCase()} por baixo, cada um com os seus cartões de foto, áudio, título e texto`}
         />
         <Cartao
           href={`${base}/produto-vivo`}
