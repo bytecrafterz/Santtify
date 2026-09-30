@@ -85,12 +85,17 @@ export function PerfilDePessoa({
         dentro da gaveta que se puxa por cima da fotografia. Uma gaveta é uma
         espreitadela; a página é o registo. Quem abre o perfil de alguém quer
         saber quem é sem ter de descobrir que há ali uma pega para arrastar.
+
+        A DESCRIÇÃO FICA SÓ NA GAVETA (30/09). "Quando abri aparece esta
+        mensagem aberta, retire. Deixa no lugar do perfil, não quero ela
+        aberta." A descrição dele é longa e enchia o primeiro ecrã de texto no
+        link que ele partilha. Continua na gaveta da fotografia, fechada, como
+        na página inicial; aqui ficam o nome, o @ e a data.
       */}
       <div className="identidade-da-pessoa">
         <h2>{pessoa.displayName}</h2>
         {pessoa.username && <p className="identificador-perfil">@{pessoa.username}</p>}
         {pessoa.guardianName && <p className="responsavel-perfil">{pessoa.guardianName}</p>}
-        {pessoa.bio && <p className="bio-perfil">{pessoa.bio}</p>}
         {pessoa.createdAt && (
           <p className="nota">
             Na plataforma desde{' '}
