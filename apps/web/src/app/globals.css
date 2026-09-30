@@ -12648,9 +12648,20 @@ body:has(.painel-karaoke) {
   disponível convertida na largura de um A4.
 */
 .lupa-folha {
+  position: relative;
   width: min(100cqw, 520px, 100cqh * 210 / 297);
+  /* A4. A altura já não vem do conteúdo: ele é posto por cima, com o seu
+     próprio zoom, e a caixa tem de medir sempre o mesmo para as contas. */
+  aspect-ratio: 210 / 297;
   /* As contas do zoom (ver `LupaDoCartao`) partem do canto de cima. */
   transform-origin: 0 0;
+}
+
+/* O cartão, com o zoom assente (ver `zoomAssente`). A largura vem em px. */
+.lupa-folha-conteudo {
+  position: absolute;
+  top: 0;
+  left: 0;
 }
 
 /* Só durante o gesto. Sempre ligado, o navegador guardava a folha desenhada a

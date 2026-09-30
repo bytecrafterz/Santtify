@@ -81,6 +81,31 @@ export function LupaDoCartao({
 }) {
   const palco = useRef<HTMLDivElement | null>(null)
   const folha = useRef<HTMLDivElement | null>(null)
+  /*
+    O ZOOM ASSENTE É DE PAGINAÇÃO, NÃO DE TRANSFORMAÇÃO (30/09).
+
+    "Ainda está sem qualidade" — 30/09, no iPhone, a 8×, com os ladrilhos de
+    1000 dpi JÁ descarregados (o registo do servidor mostra-os todos a 200).
+    O Safari desenhava-os e depois esticava: a folha move-se com
+    `translate3d`, e uma transformação 3D faz dela uma camada própria, que o
+    WebKit rasteriza ao tamanho SEM zoom e amplia na placa gráfica — a parte
+    que a voltaria a desenhar ao tamanho ampliado está desligada no código do
+    WebKit ("For now we disable this logic altogether"). A 8× era 1 pixel
+    esticado para 8. O WebKit do Windows, onde eu testava, compõe de outra
+    maneira e não mostrava isto.
+
+    Então, quando o gesto assenta, o zoom passa para a PAGINAÇÃO: o `zoom` do
+    CSS no conteúdo (a folha é desenhada de facto com 2808px de largura a 8×),
+    e a transformação fica só com a deslocação. Durante o gesto continua a
+    ser a transformação, que é o que mantém a pinça fluida; só que agora ela
+    escala a partir do zoom já assente (`zoomAssente`). A caixa da folha não
+    muda de tamanho — as contas de `medidas` e `travar` continuam as mesmas.
+
+    Sem `zoom` no navegador (o Firefox antes da 126), fica como era.
+  */
+  const conteudo = useRef<HTMLDivElement | null>(null)
+  const zoomAssente = useRef(1)
+  const temZoom = useRef(typeof CSS !== 'undefined' && CSS.supports('zoom', '2'))
 
   // A vista de AGORA vive fora do React: muda a cada quadro de um gesto.
   const vista = useRef<Vista>({ s: 1, x: 0, y: 0 })
@@ -141,7 +166,19 @@ export function LupaDoCartao({
     const f = folha.current
     if (!f) return
     f.style.transition = animar ? `transform ${ANIMACAO_MS}ms cubic-bezier(0.2, 0.8, 0.2, 1)` : 'none'
-    f.style.transform = `translate3d(${v.x}px, ${v.y}px, 0) scale(${v.s})`
+    f.style.transform = `translate3d(${v.x}px, ${v.y}px, 0) scale(${v.s / zoomAssente.current})`
+  }
+
+  /** O zoom do gesto que acabou passa para a paginação (ver `zoomAssente`). */
+  function assentarZoom() {
+    const c = conteudo.current
+    if (!c || !temZoom.current) return
+    const s = vista.current.s
+    if (Math.abs(s - zoomAssente.current) < 0.001) return
+    zoomAssente.current = s
+    // As duas mudanças no mesmo instante: a folha fica exactamente onde estava.
+    c.style.zoom = String(s)
+    pintar(vista.current)
   }
 
   /** Um desenho por quadro, por muitos eventos que o dedo mande. */
@@ -164,6 +201,7 @@ export function LupaDoCartao({
   }
 
   function assentar() {
+    assentarZoom()
     mexendo.current = false
     definirAMexer(false)
     definirEscala(vista.current.s)
@@ -272,6 +310,21 @@ export function LupaDoCartao({
   // ter de onde partir.
   useLayoutEffect(() => {
     pintar({ s: 1, x: 0, y: 0 })
+  }, [])
+
+  // O conteúdo mede o mesmo que a caixa da folha, em pixéis e não em %: com
+  // `zoom`, uma percentagem encolheria por dentro o que o zoom amplia por fora.
+  useLayoutEffect(() => {
+    const f = folha.current
+    const c = conteudo.current
+    if (!f || !c) return
+    const medir = () => {
+      c.style.width = `${f.offsetWidth}px`
+    }
+    medir()
+    const observador = new ResizeObserver(medir)
+    observador.observe(f)
+    return () => observador.disconnect()
   }, [])
 
   useEffect(() => {
@@ -486,7 +539,9 @@ export function LupaDoCartao({
           onPointerCancel={(ev) => soltar(ev.pointerId, 0, 0, false)}
         >
           <div ref={folha} className={aMexer ? 'lupa-folha a-mexer' : 'lupa-folha'}>
-            {children}
+            <div ref={conteudo} className="lupa-folha-conteudo">
+              {children}
+            </div>
           </div>
         </div>
 
