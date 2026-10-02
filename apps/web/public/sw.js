@@ -21,7 +21,7 @@
 /* A data da compilação entra no nome. Cada publicação estreia um cache limpo e
  * manda os antigos fora — que era o que faltava. */
 const CACHE = 'pv-' + (self.__VERSAO__ || 'dev')
-const ESSENCIAIS = ['/', '/manifest.json', '/icone.svg']
+const ESSENCIAIS = ['/', '/manifest.json', '/icone-192.png']
 
 self.addEventListener('install', (evento) => {
   evento.waitUntil(
