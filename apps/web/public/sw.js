@@ -21,7 +21,7 @@
 /* A data da compilação entra no nome. Cada publicação estreia um cache limpo e
  * manda os antigos fora — que era o que faltava. */
 const CACHE = 'pv-' + (self.__VERSAO__ || 'dev')
-const ESSENCIAIS = ['/', '/manifest.json', '/icone-192.png']
+const ESSENCIAIS = ['/']
 
 self.addEventListener('install', (evento) => {
   evento.waitUntil(
@@ -80,6 +80,11 @@ self.addEventListener('fetch', (evento) => {
   if (url.pathname.startsWith('/track') || url.pathname.startsWith('/r/') || url.pathname.startsWith('/af/')) return
   if (url.pathname.startsWith('/api/')) return
   if (url.origin !== self.location.origin) return
+  // O ícone e o manifesto vão sempre à rede, sem passar por aqui. O iPhone lê-os
+  // no momento de "Adicionar à Tela de Início", e uma cópia guardada por este
+  // service worker podia ser a que ele usava (03/10: o atalho saía com uma letra
+  // em vez do coração da Santtify).
+  if (/^\/(manifest\.json|apple-touch-icon|icone-|favicon)/.test(url.pathname)) return
 
   const ehMidia = /\.(mp3|m4a|ogg|wav|mp4|webm|png|jpg|jpeg|svg|webp|woff2?)$/i.test(url.pathname)
 

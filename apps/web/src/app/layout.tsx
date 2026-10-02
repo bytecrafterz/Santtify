@@ -7,16 +7,16 @@ import { UmSomDeCadaVez } from '@/components/UmSomDeCadaVez'
 export const metadata: Metadata = {
   title: 'Santtify',
   description: 'Aprenda o alfabeto com música, áudio e conteúdo educativo.',
-  manifest: '/manifest.json',
+  manifest: '/manifest.json?v=20261003',
   // Sem esta declaração o navegador vai sozinho procurar /favicon.ico, não
   // encontra, e escreve um erro no console de todo visitante. O ícone já
   // existia; faltava dizer onde ele está.
   icons: {
       icon: [
-        { url: '/icone-192.png', sizes: '192x192', type: 'image/png' },
-        { url: '/icone-512.png', sizes: '512x512', type: 'image/png' },
+        { url: '/icone-192.png?v=20261003', sizes: '192x192', type: 'image/png' },
+        { url: '/icone-512.png?v=20261003', sizes: '512x512', type: 'image/png' },
       ],
-      apple: [{ url: '/apple-touch-icon.png', sizes: '180x180' }],
+      apple: [{ url: '/apple-touch-icon.png?v=20261003', sizes: '180x180' }],
       shortcut: ['/favicon.ico'],
     },
   /*
