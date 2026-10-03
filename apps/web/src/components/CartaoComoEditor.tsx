@@ -9,12 +9,9 @@ import {
   limitesDoDesloc,
   type Ajuste,
 } from '@pv/cartoes'
-import {
-  cartoes,
-  type AlinhamentoDoNome,
-  type CriancaDoPedido,
-  type ModeloDeCartao,
-} from '@/lib/cartoes'
+import type { AlinhamentoDoNome, ModeloDeCartao } from '@/lib/cartoes'
+import { escalaMaxima, qualidade, type FotoNoAparelho } from '@/lib/foto-no-aparelho'
+import { medidorDoNome, nomeImprimivel, type Personalizacao } from '@/lib/pdf-no-aparelho'
 import { LupaDoCartao, type FocoDaLupa } from './LupaDoCartao'
 import { ArteEmPdf } from './ArteEmPdf'
 import { ArteEmMosaico } from './ArteEmMosaico'
@@ -30,27 +27,26 @@ import { ArteEmMosaico } from './ArteEmMosaico'
  *    funções em outras partes da página, rolar a tela ou entrar em outras
  *    etapas. (…) clicou na área da foto → edita a foto ali mesmo."
  *
- * E tinha razão. O que havia era um formulário ao lado de uma prévia: campo de
- * nome numa secção, cursor do tamanho noutra, botões de zoom noutra, e a
- * fotografia num passo anterior. Quem desenhou aquilo — eu — sabia onde estava
- * tudo. Mais ninguém.
- *
  * A REGRA, em quatro frases dele:
  *   tocou na foto  → edita a foto
  *   tocou no nome  → edita o nome
  *   arrastou ao lado → troca de cartão
- *   terminou → Salvar
+ *   terminou → Continuar
  *
  * As ferramentas nascem COLADAS ao que editam e só quando esse pedaço está
  * escolhido. Nenhuma fica no ecrã à espera de ser descoberta.
+ *
+ * DESDE 03/10, NADA DAQUI VAI AO SERVIDOR. A foto é a que está na memória do
+ * telemóvel (`FotoNoAparelho`), e o nome, o enquadramento, o tamanho, o
+ * alinhamento e a cor vivem no ecrã de quem está a editar — o componente
+ * recebe-os e devolve as mudanças, e mais nada. Gravar a cada mexida, como se
+ * fazia, era mandar o nome da criança para o servidor a cada letra.
  */
 
-/** Um passo de zoom por toque. Dez toques levam de 1 a 6, que é o limite. */
+/** Um passo de zoom por toque. */
 const PASSO_DE_ZOOM = 0.25
 /** Quanto uma seta do "Mover" empurra a foto, em fracção da moldura. */
 const PASSO_DE_EMPURRAO = 0.04
-/** Meio segundo parado antes de gravar. Arrastar dispara dezenas de mudanças. */
-const ESPERA_ANTES_DE_GRAVAR = 500
 /** Arrasto horizontal, em pixéis, a partir do qual se troca de cartão. */
 const ARRASTO_QUE_TROCA = 50
 /** Abaixo disto, um dedo que pousou e saiu foi um toque, e não um arrasto. */
@@ -74,7 +70,7 @@ const CORES_DO_NOME = [
   { hex: '#111111', nome: 'Preto' },
 ] as const
 
-/** O que o navegador mede, para o nome ter no ecrã o corpo que terá no papel. */
+/** A medida de reserva, enquanto a régua do PDF não chega (é carregada à parte). */
 function medirEmArialBold(texto: string): number {
   if (typeof document === 'undefined') return texto.length * 0.6
   const tela = document.createElement('canvas')
@@ -87,20 +83,28 @@ function medirEmArialBold(texto: string): number {
 type Escolhido = 'foto' | 'nome' | null
 
 export function CartaoComoEditor({
-  projectSlug,
-  pedidoId,
-  crianca,
+  foto,
+  personalizacao,
+  aoMudar,
+  aoEscolherFoto,
+  aoRemoverFoto,
+  aAbrirFoto,
   modelos,
   indice,
   aoMudarIndice,
-  aoMudarCrianca,
   aoErrar,
   aoSalvar,
   aSalvar,
+  rotuloDeSalvar = 'Continuar',
 }: {
-  projectSlug: string
-  pedidoId: string
-  crianca: CriancaDoPedido
+  /** A foto em memória, ou nada enquanto não foi escolhida. */
+  foto: FotoNoAparelho | null
+  personalizacao: Personalizacao
+  aoMudar: (mudanca: Partial<Personalizacao>) => void
+  aoEscolherFoto: (ficheiro: File) => void
+  aoRemoverFoto: () => void
+  /** A foto está a ser aberta e medida — leva um instante numa foto grande. */
+  aAbrirFoto: boolean
   modelos: ModeloDeCartao[]
   /**
    * Em que cartão ela está — e o estado vive FORA deste componente.
@@ -112,10 +116,10 @@ export function CartaoComoEditor({
    */
   indice: number
   aoMudarIndice: (i: number) => void
-  aoMudarCrianca: (c: CriancaDoPedido) => void
   aoErrar: (m: string | null) => void
   aoSalvar: () => void
   aSalvar: boolean
+  rotuloDeSalvar?: string
 }) {
   const definirIndice = aoMudarIndice
   const [lupaAberta, definirLupaAberta] = useState(false)
@@ -141,49 +145,41 @@ export function CartaoComoEditor({
   const [escolhido, definirEscolhido] = useState<Escolhido>(null)
   const [paletaAberta, definirPaletaAberta] = useState(false)
   const [setasAbertas, definirSetasAbertas] = useState(false)
-  const [aEnviar, definirAEnviar] = useState(false)
 
-  // O estado local manda enquanto o dedo está em cima; o servidor confirma
-  // depois. Esperar pela resposta a cada arrasto dava um cartão a tremer.
-  const [nome, definirNome] = useState(crianca.nome)
-  const [ajuste, definirAjuste] = useState<Ajuste>(crianca.ajuste)
-  const [tamanho, definirTamanho] = useState(crianca.tamanhoDoNome)
-  const [alinhamento, definirAlinhamento] = useState<AlinhamentoDoNome>(crianca.nomeAlinhamento)
-  const [cor, definirCor] = useState<string | null>(crianca.nomeCorHex)
+  const { nome, ajuste, tamanhoDoNome: tamanho, nomeAlinhamento: alinhamento, nomeCorHex: cor } = personalizacao
 
-  const ficheiro = useRef<HTMLInputElement | null>(null)
-  const temporizador = useRef<ReturnType<typeof setTimeout> | null>(null)
+  /*
+    A RÉGUA DO NOME É A DO PDF.
 
+    O ecrã media em Arial e o papel escreve em Helvetica Bold: quase iguais, e
+    "quase" era o nome que cabia no ecrã e saía mais pequeno no papel. A régua
+    do PDF carrega-se à parte (é a mesma biblioteca que monta o PDF no fim) e,
+    até chegar, mede-se em Arial como antes.
+  */
+  const [medir, definirMedir] = useState<(texto: string) => number>(() => medirEmArialBold)
   useEffect(() => {
-    definirNome(crianca.nome)
-    definirAjuste(crianca.ajuste)
-    definirTamanho(crianca.tamanhoDoNome)
-    definirAlinhamento(crianca.nomeAlinhamento)
-    definirCor(crianca.nomeCorHex)
-  }, [crianca.id, crianca.nome, crianca.ajuste, crianca.tamanhoDoNome, crianca.nomeAlinhamento, crianca.nomeCorHex])
-
-  useEffect(() => () => {
-    if (temporizador.current) clearTimeout(temporizador.current)
+    let vivo = true
+    medidorDoNome()
+      .then((m) => vivo && definirMedir(() => m))
+      .catch(() => {})
+    return () => {
+      vivo = false
+    }
   }, [])
 
-  const gravar = useCallback(
-    (dados: Parameters<typeof cartoes.actualizar>[3]) => {
-      if (temporizador.current) clearTimeout(temporizador.current)
-      temporizador.current = setTimeout(async () => {
-        try {
-          const p = await cartoes.actualizar(projectSlug, pedidoId, crianca.id, dados)
-          const nova = p.criancas.find((c) => c.id === crianca.id)
-          if (nova) aoMudarCrianca(nova)
-          aoErrar(null)
-        } catch {
-          aoErrar('Não foi possível guardar. Verifique a ligação.')
-        }
-      }, ESPERA_ANTES_DE_GRAVAR)
-    },
-    [projectSlug, pedidoId, crianca.id, aoMudarCrianca, aoErrar],
-  )
-
+  const ficheiro = useRef<HTMLInputElement | null>(null)
   const modeloActual = modelos[indice]
+
+  /*
+    O ZOOM PÁRA ONDE A FOTO AINDA DÁ 200 DPI EM TODOS OS CARTÕES.
+
+    "Medir os pixels depois do corte (…) mínimo 200 dpi. Abaixo disso,
+    recusar." Aproximar usa menos pixéis da foto. Em vez de a deixar aproximar
+    e recusar depois, o zoom não passa do ponto em que o recorte ainda chega
+    aos 200 dpi no cartão que pede mais.
+  */
+  const zoomMaximo = useMemo(() => (foto ? escalaMaxima(modelos, foto) : 6), [foto, modelos])
+  const qualidadeAgora = useMemo(() => (foto ? qualidade(modelos, foto, ajuste) : null), [foto, modelos, ajuste])
 
   /*
     O DESLOCAMENTO FICA DENTRO DO QUE A FOTO TEM PARA DAR.
@@ -198,40 +194,25 @@ export function CartaoComoEditor({
   */
   const mexer = useCallback(
     (mudanca: Partial<Ajuste>) => {
-      const escala = Math.min(6, Math.max(1, mudanca.escala ?? ajuste.escala))
+      const escala = Math.min(zoomMaximo, Math.max(1, mudanca.escala ?? ajuste.escala))
       const lim =
-        modeloActual && crianca.fotoLargura && crianca.fotoAltura
+        modeloActual && foto
           ? limitesDoDesloc(
               { largura: modeloActual.moldura.largura, altura: modeloActual.moldura.altura },
-              { largura: crianca.fotoLargura, altura: crianca.fotoAltura },
+              { largura: foto.largura, altura: foto.altura },
               escala,
             )
           : { x: 1, y: 1 }
-      const novo = {
-        escala,
-        deslocX: Math.min(lim.x, Math.max(-lim.x, mudanca.deslocX ?? ajuste.deslocX)),
-        deslocY: Math.min(lim.y, Math.max(-lim.y, mudanca.deslocY ?? ajuste.deslocY)),
-      }
-      definirAjuste(novo)
-      gravar(novo)
+      aoMudar({
+        ajuste: {
+          escala,
+          deslocX: Math.min(lim.x, Math.max(-lim.x, mudanca.deslocX ?? ajuste.deslocX)),
+          deslocY: Math.min(lim.y, Math.max(-lim.y, mudanca.deslocY ?? ajuste.deslocY)),
+        },
+      })
     },
-    [ajuste, gravar, modeloActual, crianca.fotoLargura, crianca.fotoAltura],
+    [ajuste, aoMudar, modeloActual, foto, zoomMaximo],
   )
-
-  async function enviarFoto(f: File) {
-    definirAEnviar(true)
-    aoErrar(null)
-    try {
-      await cartoes.enviarFoto(projectSlug, pedidoId, crianca.id, f)
-      const p = await cartoes.verPedido(projectSlug, pedidoId)
-      const nova = p.criancas.find((c) => c.id === crianca.id)
-      if (nova) aoMudarCrianca(nova)
-    } catch (e) {
-      aoErrar(e instanceof Error ? e.message : 'Não foi possível enviar a foto.')
-    } finally {
-      definirAEnviar(false)
-    }
-  }
 
   /**
    * TIRAR A FOTO — "Não existe botão de deletar a foto", 29/09.
@@ -239,31 +220,35 @@ export function CartaoComoEditor({
    * A foto é da criança, e não de um cartão: sai de todos de uma vez. Por isso
    * pergunta antes. Depois fica o lugar vazio, pronto para outra.
    */
-  async function removerFoto() {
-    if (!confirm('Remover a foto? Ela sai de todos os cartões, e depois pode enviar outra.')) return
-    definirAEnviar(true)
-    aoErrar(null)
-    try {
-      const p = await cartoes.removerFoto(projectSlug, pedidoId, crianca.id)
-      const nova = p.criancas.find((c) => c.id === crianca.id)
-      if (nova) aoMudarCrianca(nova)
-      definirSetasAbertas(false)
-      definirEscolhido(null)
-    } catch (e) {
-      aoErrar(e instanceof Error ? e.message : 'Não foi possível remover a foto.')
-    } finally {
-      definirAEnviar(false)
-    }
+  function removerFoto() {
+    if (!confirm('Remover a foto? Ela sai de todos os cartões, e depois pode escolher outra.')) return
+    aoRemoverFoto()
+    definirSetasAbertas(false)
+    definirEscolhido(null)
+  }
+
+  /** O nome só com letras que o PDF sabe escrever; avisa quando tira alguma. */
+  function escrever(texto: string) {
+    const limpo = nomeImprimivel(texto)
+    aoErrar(limpo !== texto ? 'Emojis e símbolos especiais não podem ser impressos no cartão.' : null)
+    aoMudar({ nome: limpo })
   }
 
   const modelo = modelos[indice]
   const total = modelos.length
-  const temFoto = crianca.temFoto && crianca.fotoLargura && crianca.fotoAltura
+  const temFoto = Boolean(foto)
 
-  if (!modelo) return <p className="cartoes-ajuda">A carregar os cartões…</p>
+  if (!modelo) return <p className="cartoes-ajuda">Carregando os cartões…</p>
 
   return (
     <div className="ce" onPointerDown={() => definirEscolhido(null)}>
+      {/*
+        A FOTO ABRE-SE AQUI E FICA AQUI.
+
+        Este campo entrega o ficheiro ao `aoEscolherFoto`, que o abre em memória
+        (ver `abrirFoto`). Não há envio: ver a rede enquanto se escolhe a foto
+        mostra zero pedidos.
+      */}
       <input
         ref={ficheiro}
         type="file"
@@ -271,7 +256,7 @@ export function CartaoComoEditor({
         className="apenas-leitor-de-ecra"
         onChange={(ev) => {
           const f = ev.target.files?.[0]
-          if (f) void enviarFoto(f)
+          if (f) aoEscolherFoto(f)
           ev.target.value = ''
         }}
       />
@@ -310,37 +295,28 @@ export function CartaoComoEditor({
               </span>
             )}
             <CartaoDesenhado
-              projectSlug={projectSlug}
-              pedidoId={pedidoId}
-              crianca={crianca}
+              foto={foto}
               modelo={m}
               ajuste={ajuste}
               nome={nome}
               tamanho={tamanho}
               alinhamento={alinhamento}
               cor={cor}
+              medir={medir}
               editavel={i === indice}
               aoAmpliar={(foco) => {
                 definirFocoDaLupa(foco)
                 definirLupaAberta(true)
               }}
               escolhido={i === indice ? escolhido : null}
-              aEnviar={aEnviar}
+              aEnviar={aAbrirFoto}
               aoEscolher={definirEscolhido}
               aoMexer={mexer}
-              aoEscrever={(t) => {
-                definirNome(t)
-                gravar({ nome: t })
-              }}
+              aoEscrever={escrever}
               barraDaFoto={
                 setasAbertas && temFoto ? (
                   /*
                     O "MOVER" TROCA A BARRA POR UMA FILA DE SETAS.
-
-                    As setas eram uma cruz de três andares por cima da barra, e
-                    a barra já sobe acima da moldura: no telemóvel a cruz saía
-                    pelo topo do cartão e ficava cortada. Numa fila só, ocupa a
-                    altura da própria barra e não há onde se esconder.
 
                     Arrastar continua a ser o gesto principal. As setas são para
                     quem quer acertar um milímetro, ou não consegue arrastar.
@@ -358,7 +334,7 @@ export function CartaoComoEditor({
                   <Botao
                     rotulo="Aumentar"
                     simbolo="＋"
-                    desactivado={!temFoto || ajuste.escala >= 6}
+                    desactivado={!temFoto || ajuste.escala >= zoomMaximo - 0.001}
                     aoTocar={() => mexer({ escala: ajuste.escala + PASSO_DE_ZOOM })}
                   />
                   <Botao
@@ -389,21 +365,13 @@ export function CartaoComoEditor({
                     rotulo="Menor"
                     simbolo="A-"
                     desactivado={tamanho <= 0}
-                    aoTocar={() => {
-                      const v = Math.max(0, Number((tamanho - 0.1).toFixed(2)))
-                      definirTamanho(v)
-                      gravar({ tamanhoDoNome: v })
-                    }}
+                    aoTocar={() => aoMudar({ tamanhoDoNome: Math.max(0, Number((tamanho - 0.1).toFixed(2))) })}
                   />
                   <Botao
                     rotulo="Maior"
                     simbolo="A+"
                     desactivado={tamanho >= 1}
-                    aoTocar={() => {
-                      const v = Math.min(1, Number((tamanho + 0.1).toFixed(2)))
-                      definirTamanho(v)
-                      gravar({ tamanhoDoNome: v })
-                    }}
+                    aoTocar={() => aoMudar({ tamanhoDoNome: Math.min(1, Number((tamanho + 0.1).toFixed(2))) })}
                   />
                   {(['ESQUERDA', 'CENTRO', 'DIREITA'] as const).map((a) => (
                     <Botao
@@ -411,10 +379,7 @@ export function CartaoComoEditor({
                       rotulo={a === 'ESQUERDA' ? 'Esquerda' : a === 'CENTRO' ? 'Centro' : 'Direita'}
                       simbolo={a === 'ESQUERDA' ? '⬱' : a === 'CENTRO' ? '⬍' : '⬲'}
                       activo={alinhamento === a}
-                      aoTocar={() => {
-                        definirAlinhamento(a)
-                        gravar({ nomeAlinhamento: a })
-                      }}
+                      aoTocar={() => aoMudar({ nomeAlinhamento: a })}
                     />
                   ))}
                   <Botao
@@ -437,9 +402,8 @@ export function CartaoComoEditor({
                         title={c.nome}
                         style={{ background: c.hex ?? modelo.nomeCaixa.corHex }}
                         onClick={() => {
-                          definirCor(c.hex)
                           definirPaletaAberta(false)
-                          gravar({ nomeCorHex: c.hex })
+                          aoMudar({ nomeCorHex: c.hex })
                         }}
                       />
                     ))}
@@ -465,15 +429,14 @@ export function CartaoComoEditor({
           foco={focoDaLupa}
         >
           <CartaoDesenhado
-            projectSlug={projectSlug}
-            pedidoId={pedidoId}
-            crianca={crianca}
+            foto={foto}
             modelo={modelo}
             ajuste={ajuste}
             nome={nome}
             tamanho={tamanho}
             alinhamento={alinhamento}
             cor={cor}
+            medir={medir}
             editavel={false}
             altaResolucao
             escolhido={null}
@@ -531,21 +494,33 @@ export function CartaoComoEditor({
       </nav>
 
       {/*
-        A LUPA TAMBÉM TEM BOTÃO.
+        A QUALIDADE DE IMPRESSÃO, DEPOIS DO CORTE (03/10).
 
-        Tocar no cartão abre-a — mas tocar no cartão é também o gesto de editar a
-        foto e o nome, e ninguém adivinha que o resto do cartão faz outra coisa.
-        Um botão com o nome escrito resolve-o para quem não experimentar.
+        "Qualidade para A4: medir os pixels depois do corte. Ideal 300 dpi (…),
+        mínimo 200 dpi." Medida a cada mexida, no cartão que pede mais, e dita
+        em palavras — com o número ao lado para quem o quiser conferir.
       */}
-      {/*
-        AS DUAS ACÇÕES DA FOLHA, COM OUTRO ACABAMENTO (29/09).
+      {foto && qualidadeAgora && (
+        <p className={`ce-qualidade ${qualidadeAgora.nivel === 'BOA' ? 'boa' : 'aceitavel'}`}>
+          <span className="ce-qualidade-ponto" aria-hidden="true" />
+          {qualidadeAgora.nivel === 'BOA'
+            ? 'Qualidade de impressão: ótima'
+            : 'Qualidade de impressão: boa'}{' '}
+          <small>({qualidadeAgora.dpi} dpi)</small>
+          {ajuste.escala >= zoomMaximo - 0.001 && zoomMaximo < 6 && (
+            <span className="ce-qualidade-nota">
+              Este é o zoom máximo para a foto continuar nítida no papel.
+            </span>
+          )}
+        </p>
+      )}
+      {foto?.nitidez.nivel === 'DUVIDOSA' && (
+        <p className="ce-aviso-nitidez">
+          A foto parece um pouco desfocada. Se tiver outra com o rosto mais nítido, use-a: no papel, a
+          diferença aparece.
+        </p>
+      )}
 
-        "make zoom and remove of photo button more modern and luxury": eram
-        links de texto com emoji. Passam a pílulas com um medalhão de cor e o
-        ícone desenhado, sombra suave e um pequeno levantar ao tocar. Os nomes
-        encurtam ("Ampliar", "Remover foto") para caberem os dois numa linha
-        num ecrã de 360px; o nome completo vai para quem usa leitor de ecrã.
-      */}
       <div className="ce-accoes-da-folha">
         <button
           type="button"
@@ -565,21 +540,13 @@ export function CartaoComoEditor({
           </span>
           Ampliar
         </button>
-        {/*
-          TIRAR A FOTO, À VISTA — e não dentro da barra da foto.
-
-          Na barra era o sexto botão, e a barra ficava mais larga do que o
-          cartão: o cartão cortava-a nas pontas, e o "Remover" era o que se
-          perdia. Aqui, por baixo da folha e com o nome escrito, só enquanto
-          houver foto.
-        */}
         {temFoto ? (
           <button
             type="button"
             className="ce-botao-accao perigo ce-remover-foto"
             aria-label="Remover a foto"
-            disabled={aEnviar}
-            onClick={() => void removerFoto()}
+            disabled={aAbrirFoto}
+            onClick={removerFoto}
           >
             <span className="ce-botao-medalha" aria-hidden="true">
               <svg viewBox="0 0 24 24" width="17" height="17" fill="none" stroke="currentColor" strokeWidth="2.1" strokeLinecap="round" strokeLinejoin="round">
@@ -595,28 +562,30 @@ export function CartaoComoEditor({
       </div>
 
       {/*
-        SALVAR É O ÚNICO BOTÃO FORA DO CARTÃO, e fica cá em baixo no telemóvel,
-        onde o polegar chega. No mockup dele está no canto do cartão; ali, a
-        meio de um ecrã de 630px de altura, ficava fora de alcance e por cima da
-        arte que ele quer que se veja.
+        A PROMESSA, À VISTA ENQUANTO SE ESCOLHE A FOTO (03/10).
 
-        O que ele pediu foi que Salvar exista e encerre — "Terminou → Salvar" —
-        e não uma coordenada.
+        É a frase que ele pediu, e é verdade a partir deste ecrã: a foto abre-se
+        neste aparelho e não sai dele.
       */}
+      <p className="ce-privacidade">
+        <span aria-hidden="true">🔒</span> A foto não é enviada nem guardada: fica só neste aparelho
+        enquanto você personaliza.
+      </p>
+
       <button
         type="button"
         className="cartoes-accao ce-salvar"
         disabled={aSalvar || !temFoto || !nome.trim()}
         onClick={aoSalvar}
       >
-        {aSalvar ? 'A guardar…' : 'Salvar'}
+        {aSalvar ? 'Aguarde…' : rotuloDeSalvar}
       </button>
       {(!temFoto || !nome.trim()) && (
         <p className="cartoes-ajuda ce-falta">
           {!temFoto && !nome.trim()
-            ? 'Toque na foto para enviar uma, e no nome para o escrever.'
+            ? 'Toque na foto para escolher uma, e no nome para o escrever.'
             : !temFoto
-              ? 'Toque na área da foto para enviar a fotografia.'
+              ? 'Toque na área da foto para escolher a fotografia.'
               : 'Toque em “Seu nome aqui” para escrever o nome.'}
         </p>
       )}
@@ -721,15 +690,14 @@ function Faixa({
 /* ── O cartão, desenhado e editável ──────────────────────────────────── */
 
 function CartaoDesenhado({
-  projectSlug,
-  pedidoId,
-  crianca,
+  foto,
   modelo,
   ajuste,
   nome,
   tamanho,
   alinhamento,
   cor,
+  medir,
   editavel,
   altaResolucao,
   escolhido,
@@ -742,15 +710,15 @@ function CartaoDesenhado({
   barraDoNome,
   paleta,
 }: {
-  projectSlug: string
-  pedidoId: string
-  crianca: CriancaDoPedido
+  foto: FotoNoAparelho | null
   modelo: ModeloDeCartao
   ajuste: Ajuste
   nome: string
   tamanho: number
   alinhamento: AlinhamentoDoNome
   cor: string | null
+  /** A régua do nome: a do PDF, ou a de reserva enquanto ela não chega. */
+  medir: (texto: string) => number
   editavel: boolean
   /** Na lupa: por cima da arte leve, a de 300 dpi, que chega quando chegar. */
   altaResolucao?: boolean
@@ -770,7 +738,7 @@ function CartaoDesenhado({
 }) {
   const folha = useRef<HTMLDivElement | null>(null)
   const pousou = useRef<{ x: number; y: number } | null>(null)
-  const ultimoToque = useRef(0)
+  const ultimoToque = useRef<{ t: number; x: number; y: number }>({ t: 0, x: 0, y: 0 })
 
   /*
     OS DEDOS EM CIMA DA FOTO: UM ARRASTA, DOIS APROXIMAM E ARRASTAM.
@@ -851,14 +819,9 @@ function CartaoDesenhado({
   const molduraLargura = emPx(modelo.moldura.largura)
   const molduraAltura = emPx(modelo.moldura.altura)
 
-  const rect =
-    crianca.temFoto && crianca.fotoLargura && crianca.fotoAltura
-      ? enquadrar(
-          { largura: molduraLargura, altura: molduraAltura },
-          { largura: crianca.fotoLargura, altura: crianca.fotoAltura },
-          ajuste,
-        )
-      : null
+  const rect = foto
+    ? enquadrar({ largura: molduraLargura, altura: molduraAltura }, { largura: foto.largura, altura: foto.altura }, ajuste)
+    : null
 
   const texto = modelo.nomeCaixa.maiusculas ? nome.toLocaleUpperCase('pt-BR') : nome
 
@@ -885,9 +848,9 @@ function CartaoDesenhado({
         },
         texto || (modelo.nomeCaixa.maiusculas ? 'SEU NOME AQUI' : 'Seu nome aqui'),
         tamanho,
-        medirEmArialBold,
+        medir,
       ),
-    [modelo.nomeCaixa, texto, tamanho],
+    [modelo.nomeCaixa, texto, tamanho, medir],
   )
 
   return (
@@ -917,14 +880,18 @@ function CartaoDesenhado({
         const p = pousou.current
         if (p && Math.hypot(ev.clientX - p.x, ev.clientY - p.y) > TOQUE_MAXIMO) return
         const agora = Date.now()
-        if (agora - ultimoToque.current < TOQUE_DUPLO_MS) {
-          ultimoToque.current = 0
+        // Um toque duplo é no MESMO sítio: tocar no nome e logo a seguir na foto
+        // são dois toques, e abriam a lupa por engano.
+        const anterior = ultimoToque.current
+        const perto = Math.hypot(ev.clientX - anterior.x, ev.clientY - anterior.y) < 40
+        if (agora - anterior.t < TOQUE_DUPLO_MS && perto) {
+          ultimoToque.current = { t: 0, x: 0, y: 0 }
           // "Quando eu clico na caixa 1 para ampliar, ela precisa abrir
           // centralizada exatamente na caixa 1" — 28/09. Vai o sítio do toque.
           const r = ev.currentTarget.getBoundingClientRect()
           aoAmpliar({ fx: (ev.clientX - r.left) / r.width, fy: (ev.clientY - r.top) / r.height })
         } else {
-          ultimoToque.current = agora
+          ultimoToque.current = { t: agora, x: ev.clientX, y: ev.clientY }
         }
       }}
     >
@@ -1060,7 +1027,7 @@ function CartaoDesenhado({
         {rect ? (
           // eslint-disable-next-line @next/next/no-img-element
           <img
-            src={cartoes.urlDaFoto(projectSlug, pedidoId, crianca.id)}
+            src={foto?.url}
             alt=""
             draggable={false}
             style={{
@@ -1081,7 +1048,7 @@ function CartaoDesenhado({
             <span className="ce-vazio-icone" aria-hidden="true">
               {aEnviar ? '⏳' : '📷'}
             </span>
-            {aEnviar ? 'A enviar…' : 'Sua foto aqui'}
+            {aEnviar ? 'Abrindo…' : 'Sua foto aqui'}
           </span>
         )}
       </div>

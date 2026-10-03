@@ -85,6 +85,10 @@ self.addEventListener('fetch', (evento) => {
   // service worker podia ser a que ele usava (03/10: o atalho saía com uma letra
   // em vez do coração da Santtify).
   if (/^\/(manifest\.json|apple-touch-icon|icone-|favicon)/.test(url.pathname)) return
+  // Os PDF (as artes que o telemóvel descarrega para montar os cartões) também
+  // não ficam aqui: são pesados, servem uma vez, e a regra dos cartões desde
+  // 03/10 é que o aparelho não guarde nada além do que tem de guardar.
+  if (/\.pdf$/i.test(url.pathname)) return
 
   const ehMidia = /\.(mp3|m4a|ogg|wav|mp4|webm|png|jpg|jpeg|svg|webp|woff2?)$/i.test(url.pathname)
 

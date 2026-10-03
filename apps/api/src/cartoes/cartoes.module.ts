@@ -5,7 +5,6 @@ import { AdminCartoesService } from './admin-cartoes.service'
 import { AdminCartoesController } from './admin-cartoes.controller'
 import { CarrosselService } from './carrossel.service'
 import { CarrosselController } from './carrossel.controller'
-import { PartilhaDeCartoesController } from './partilha.controller'
 import { ArmazenamentoDeCartoesService } from './armazenamento-de-cartoes.service'
 import { ExpurgoDeCartoesService } from './expurgo.service'
 import { MosaicoDaArteService } from './mosaico-da-arte.service'
@@ -23,14 +22,13 @@ import { AfiliadosModule } from '../afiliados/afiliados.module'
 
 @Module({
   // O AuthGuard precisa do JwtService, que vive no IdentityModule.
-  // O MailModule é o que manda a ligação dos cartões por e-mail.
+  // O MailModule manda o código de liberação quando o pagamento entra.
   // O AfiliadosModule decide a quem pertence cada venda e regista a comissão.
   imports: [IdentityModule, MailModule, ShortLinksModule, AfiliadosModule],
   controllers: [
     CartoesController,
     AdminCartoesController,
     CarrosselController,
-    PartilhaDeCartoesController,
     AvisosDePagamentoController,
   ],
   providers: [

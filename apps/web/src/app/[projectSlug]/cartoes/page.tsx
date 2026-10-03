@@ -35,6 +35,21 @@ export default async function PaginaDeCartoes({
   */
   const q = await searchParams
   const categoria = typeof q.categoria === 'string' ? q.categoria : null
+  /*
+    `?pedido=` e `?codigo=`: a volta do Mercado Pago depois do cartão, e a
+    ligação do e-mail de pagamento confirmado. Com os dois, o pedido abre já
+    pago noutro aparelho — e a foto escolhe-se ali, porque não está em lado
+    nenhum para ser trazida.
+  */
+  const pedido = typeof q.pedido === 'string' ? q.pedido : null
+  const codigo = typeof q.codigo === 'string' ? q.codigo : null
 
-  return <EditorDeCartoes projectSlug={projectSlug} categoriaInicial={categoria} />
+  return (
+    <EditorDeCartoes
+      projectSlug={projectSlug}
+      categoriaInicial={categoria}
+      pedidoInicial={pedido}
+      codigoInicial={codigo}
+    />
+  )
 }

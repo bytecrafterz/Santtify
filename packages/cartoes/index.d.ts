@@ -125,3 +125,13 @@ export declare function calcularPreco(
   tabela: TabelaDePrecos,
 ): Preco
 export declare function abreviarKM(n: number): string
+
+/**
+ * A nitidez de uma imagem: a média das três maiores variâncias do laplaciano
+ * numa grelha 4×4. `rgba` são os pixéis de um canvas, 4 bytes por pixel.
+ */
+export declare function nitidezDosPixeis(
+  rgba: ArrayLike<number>,
+  largura: number,
+  altura: number,
+): number

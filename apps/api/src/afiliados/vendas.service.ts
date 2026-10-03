@@ -314,7 +314,9 @@ export class VendasService {
         rotuloSingular: p.categoria?.rotuloSingular ?? 'criança',
         rotuloPlural: p.categoria?.rotuloPlural ?? 'crianças',
         conjuntos: escolhidas.length,
-        prontos: escolhidas.filter((c) => c.pdfPath).length,
+        // Desde 03/10 o PDF é gerado no aparelho de quem compra, e o servidor só
+        // sabe que foi (`prontoEm`). Os pedidos de antes contavam ficheiros.
+        prontos: p.prontoEm ? escolhidas.length : escolhidas.filter((c) => c.pdfPath).length,
         nomes: escolhidas.map((c) => c.nome).filter(Boolean),
       },
       pagamento: {

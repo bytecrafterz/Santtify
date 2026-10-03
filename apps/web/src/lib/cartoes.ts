@@ -61,25 +61,18 @@ export interface ModeloDeCartao {
   }
 }
 
+/**
+ * Uma criança do pedido, como o servidor a conhece: um lugar a pagar, e nada
+ * mais.
+ *
+ * DESDE 03/10 O SERVIDOR NÃO SABE O NOME NEM VÊ A FOTO. O cliente pediu
+ * "zero armazenamento": a foto fica só na memória do telemóvel, o PDF é
+ * montado lá, e o servidor guarda o pagamento e o código de liberação. O nome
+ * e o enquadramento vivem no ecrã (ver `EditorDeCartoes`).
+ */
 export interface CriancaDoPedido {
   id: string
   ordem: number
-  nome: string
-  temFoto: boolean
-  fotoLargura: number | null
-  fotoAltura: number | null
-  ajuste: { escala: number; deslocX: number; deslocY: number }
-  tamanhoDoNome: number
-  /** Onde o nome assenta na caixa do modelo. */
-  nomeAlinhamento: AlinhamentoDoNome
-  /** A cor escolhida por quem compra. Nula = a que o modelo traz. */
-  nomeCorHex: string | null
-  dpi: number | null
-  nivel: NivelDeQualidade | null
-  aprovada: boolean
-  selecionada: boolean
-  confirmada: boolean
-  temPdf: boolean
 }
 
 /**
@@ -137,18 +130,21 @@ export interface Pedido {
   pixQrSvg: string | null
   pagoEm: string | null
   expiraEm: string
+  /**
+   * O código de liberação: existe a partir do pagamento confirmado, e é ele que
+   * deixa o telemóvel buscar as artes de impressão e montar o PDF. Serve também
+   * para voltar a gerar noutro aparelho, até ao prazo.
+   */
+  codigoDeLiberacao: string | null
+  /** Se o PDF já foi gerado num aparelho (o servidor só sabe que sim, não o vê). */
+  gerado: boolean
   criancas: CriancaDoPedido[]
 }
 
-export interface Veredicto {
-  nivel: NivelDeQualidade
-  dpi: number
-  dpiSemZoom: number
-  zoomMaximo: number
-  aprovada: boolean
-  mensagem: string
-  minimo: { largura: number; altura: number }
-  crianca: CriancaDoPedido
+/** A arte de impressão de cada modelo, entregue depois do pagamento. */
+export interface ArteLiberada {
+  modeloId: string
+  arte: { tipo: 'pdf' | 'imagem'; url: string } | null
 }
 
 export interface TabelaDePrecos {
@@ -213,73 +209,38 @@ export const cartoes = {
   verPedido: (projeto: string, pedidoId: string) =>
     chamarComRenovacao<Pedido>(`/projects/${projeto}/cartoes/pedidos/${pedidoId}`),
 
-  enviarFoto: (projeto: string, pedidoId: string, criancaId: string, ficheiro: File) => {
-    const corpo = new FormData()
-    corpo.append('foto', ficheiro)
-    return chamarComRenovacao<Veredicto>(
-      `/projects/${projeto}/cartoes/pedidos/${pedidoId}/criancas/${criancaId}/foto`,
-      { method: 'POST', body: corpo },
-    )
-  },
-
-  removerFoto: (projeto: string, pedidoId: string, criancaId: string) =>
-    chamarComRenovacao<Pedido>(
-      `/projects/${projeto}/cartoes/pedidos/${pedidoId}/criancas/${criancaId}/foto`,
-      { method: 'DELETE' },
-    ),
-
-  actualizar: (
+  /**
+   * `aprovou`: a caixa da confirmação antes de pagar. `consentiu`: a do
+   * responsável pela criança. O servidor recusa sem as duas.
+   */
+  pagar: (
     projeto: string,
     pedidoId: string,
-    criancaId: string,
-    dados: Partial<{
-      nome: string
-      escala: number
-      deslocX: number
-      deslocY: number
-      tamanhoDoNome: number
-      nomeAlinhamento: AlinhamentoDoNome
-      nomeCorHex: string | null
-      selecionada: boolean
-      confirmada: boolean
-    }>,
+    meio: 'PIX' | 'CARTAO',
+    email: string,
+    aprovou: boolean,
+    consentiu: boolean,
   ) =>
-    chamarComRenovacao<Pedido>(
-      `/projects/${projeto}/cartoes/pedidos/${pedidoId}/criancas/${criancaId}`,
-      { method: 'PATCH', body: JSON.stringify(dados) },
-    ),
-
-  /** `aprovou`: a caixa da confirmação antes de pagar. O servidor recusa sem ela. */
-  pagar: (projeto: string, pedidoId: string, meio: 'PIX' | 'CARTAO', email: string, aprovou: boolean) =>
     chamarComRenovacao<Pedido & { urlDeRedireccionamento: string | null }>(
       `/projects/${projeto}/cartoes/pedidos/${pedidoId}/pagamento`,
-      { method: 'POST', body: JSON.stringify({ meio, email, aprovou }) },
+      { method: 'POST', body: JSON.stringify({ meio, email, aprovou, consentiu }) },
     ),
-
-  /** O endereço da foto. Rota, nunca ficheiro estático — é foto de criança. */
-  urlDaFoto: (projeto: string, pedidoId: string, criancaId: string) =>
-    `${API_URL}/projects/${projeto}/cartoes/pedidos/${pedidoId}/criancas/${criancaId}/foto`,
-
-  urlDoPdf: (projeto: string, pedidoId: string, criancaId: string) =>
-    `${API_URL}/projects/${projeto}/cartoes/pedidos/${pedidoId}/criancas/${criancaId}/cartoes.pdf`,
 
   /**
-   * A ligação assinada vem do servidor; o ecrã não a fabrica.
+   * As artes de impressão do pedido pago, com o código de liberação.
    *
-   * Se fosse montada aqui, o prazo e a assinatura estariam do lado que
-   * qualquer pessoa consegue abrir e mexer.
+   * É o único passo em que o telemóvel pede alguma coisa ao servidor para
+   * gerar o PDF — e o que vai no pedido é o código, nunca a foto.
    */
-  partilha: (projeto: string, pedidoId: string, criancaId: string) =>
-    chamarComRenovacao<{
-      url: string
-      expiraEm: string
-      nome: string
-      textoParaWhatsApp: string
-    }>(`/projects/${projeto}/cartoes/pedidos/${pedidoId}/criancas/${criancaId}/partilha`),
-
-  enviarPorEmail: (projeto: string, pedidoId: string, criancaId: string, email: string) =>
-    chamarComRenovacao<{ enviado: boolean; url: string; motivo?: string }>(
-      `/projects/${projeto}/cartoes/pedidos/${pedidoId}/criancas/${criancaId}/email`,
-      { method: 'POST', body: JSON.stringify({ email }) },
+  liberacao: (projeto: string, pedidoId: string, codigo: string) =>
+    chamarComRenovacao<{ expiraEm: string; artes: ArteLiberada[] }>(
+      `/projects/${projeto}/cartoes/pedidos/${pedidoId}/liberacao?codigo=${encodeURIComponent(codigo)}`,
     ),
+
+  /** Avisa que o PDF foi gerado no aparelho. Leva só o código: nem foto, nem nome. */
+  marcarGerado: (projeto: string, pedidoId: string, codigo: string) =>
+    chamarComRenovacao<void>(`/projects/${projeto}/cartoes/pedidos/${pedidoId}/gerado`, {
+      method: 'POST',
+      body: JSON.stringify({ codigo }),
+    }),
 }

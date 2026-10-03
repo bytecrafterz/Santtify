@@ -55,7 +55,10 @@ export class ExpurgoDeCartoesService {
 
         await this.prisma.criancaDoPedido.updateMany({
           where: { pedidoId: pedido.id },
-          data: { fotoPath: null, pdfPath: null, fotoLargura: null, fotoAltura: null },
+          // O nome da criança também sai (03/10): ficava depois do prazo, e o
+          // servidor passou a não ter nada da criança. A linha do pedido fica,
+          // porque é ela que diz que houve uma venda e por quanto.
+          data: { nome: '', fotoPath: null, pdfPath: null, fotoLargura: null, fotoAltura: null },
         })
 
         await this.prisma.pedidoDeCartoes.update({

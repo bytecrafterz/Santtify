@@ -361,8 +361,11 @@ export function DetalheDoPedidoNaGaveta({
           <div className={`vd-estado-do-pedido s-${p.status.toLowerCase()}`}>
             <strong>{NOME_DO_STATUS[p.status]}</strong>
             <span>
-              {p.status === 'CONCLUIDO' && (p.arquivosExpirados ? 'Entregue — os arquivos já expiraram' : 'Pedido entregue com sucesso')}
-              {p.status === 'EM_PRODUCAO' && `Pago — ${p.produto.prontos} de ${p.produto.conjuntos} PDFs prontos`}
+              {p.status === 'CONCLUIDO' &&
+                (p.arquivosExpirados
+                  ? 'Entregue — o prazo para gerar de novo terminou'
+                  : 'Entregue — o PDF foi gerado no aparelho do cliente')}
+              {p.status === 'EM_PRODUCAO' && 'Pago — aguardando o cliente gerar o PDF no aparelho'}
               {p.status === 'AGUARDANDO' && 'Aguardando o pagamento'}
               {p.status === 'CANCELADO' && 'O pagamento não foi concluído'}
               {p.status === 'REEMBOLSADO' && 'O valor foi devolvido ao cliente'}

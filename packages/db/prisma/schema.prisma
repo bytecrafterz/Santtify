@@ -1938,6 +1938,15 @@ model PedidoDeCartoes {
   /// Sai da sequência `pedidos_de_cartoes_numero_seq`, criada na migração.
   numero Int? @unique
 
+  /// O código de liberação (03/10): nasce quando o pagamento entra.
+  ///
+  /// Desde 03/10 a foto não vem ao servidor e o PDF é montado no telemóvel —
+  /// "o servidor guarda só pagamento e código de liberação". É com este código
+  /// que o aparelho pede as artes de impressão para montar o PDF, e é ele que
+  /// deixa gerar outra vez, noutro aparelho, até ao prazo (`expiraEm`).
+  /// Oito caracteres sem os que se confundem (0/O, 1/I/L), em dois grupos.
+  codigoDeLiberacao String? @unique
+
   /// Quem comprou, para o painel de pedidos e para o atendimento.
   ///
   /// Até 28/09 o pedido não guardava o e-mail: só passava por aqui a caminho

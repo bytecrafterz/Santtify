@@ -1,35 +1,8 @@
-import {
-  Body,
-  Controller,
-  Delete,
-  Get,
-  Param,
-  Patch,
-  Post,
-  Query,
-  Req,
-  Res,
-  UploadedFile,
-  UseGuards,
-  UseInterceptors,
-} from '@nestjs/common'
-import { FileInterceptor } from '@nestjs/platform-express'
-import type { Request, Response } from 'express'
-import { AlinhamentoDoNome, MeioDePagamento } from '@pv/db'
-import {
-  IsEnum,
-  IsInt,
-  IsNumber,
-  IsOptional,
-  IsString,
-  Max,
-  MaxLength,
-  Min,
-  IsBoolean,
-  IsEmail,
-} from 'class-validator'
+import { Body, Controller, Get, HttpCode, Param, Post, Query, Req, UseGuards } from '@nestjs/common'
+import type { Request } from 'express'
+import { MeioDePagamento } from '@pv/db'
+import { IsBoolean, IsEmail, IsEnum, IsInt, IsOptional, IsString, Max, MaxLength, Min } from 'class-validator'
 import { CartoesService } from './cartoes.service'
-import { TAMANHO_MAXIMO_FOTO } from './armazenamento-de-cartoes.service'
 import { AuthGuard, AuthOpcional } from '../identity/auth.guard'
 import { ANON_COOKIE } from '../common/http.util'
 
@@ -45,29 +18,18 @@ class CriarPedidoDto {
   @IsOptional() @IsString() @MaxLength(10) idioma?: string
 }
 
-class ActualizarCriancaDto {
-  @IsOptional() @IsString() @MaxLength(40) nome?: string
-  @IsOptional() @IsNumber() @Min(1) @Max(6) escala?: number
-  @IsOptional() @IsNumber() @Min(-1) @Max(1) deslocX?: number
-  @IsOptional() @IsNumber() @Min(-1) @Max(1) deslocY?: number
-  @IsOptional() @IsNumber() @Min(0) @Max(1) tamanhoDoNome?: number
-  @IsOptional() @IsEnum(AlinhamentoDoNome) nomeAlinhamento?: AlinhamentoDoNome
-  /** Sete dígitos: o cardinal mais seis. Nulo volta à cor do modelo. */
-  @IsOptional() @IsString() @MaxLength(7) nomeCorHex?: string | null
-  @IsOptional() @IsBoolean() selecionada?: boolean
-  @IsOptional() @IsBoolean() confirmada?: boolean
-}
-
 class PagarDto {
   @IsEnum(MeioDePagamento) meio!: MeioDePagamento
   /** Segue para o provedor, que o exige, e fica no pedido: é quem comprou. */
   @IsEmail({}, { message: 'Escreva um e-mail válido.' }) email!: string
   /** A caixa "Confirmo que revisei e aprovei o nome e a foto". Sem ela não se paga. */
   @IsOptional() @IsBoolean() aprovou?: boolean
+  /** A caixa do responsável pela criança (LGPD, art. 14). Sem ela também não. */
+  @IsOptional() @IsBoolean() consentiu?: boolean
 }
 
-class EnviarPorEmailDto {
-  @IsEmail({}, { message: 'Escreva um e-mail válido.' }) email!: string
+class CodigoDto {
+  @IsString() @MaxLength(20) codigo!: string
 }
 
 /**
@@ -132,116 +94,36 @@ export class CartoesController {
     return this.cartoes.paraEcra(pedidoId)
   }
 
-  /**
-   * A fotografia da criança. A resposta traz o veredicto já feito.
-   *
-   * O limite do multer é a primeira barreira e existe para o ficheiro enorme
-   * nem chegar a entrar em memória; o serviço volta a conferir, porque uma
-   * verificação que vive só no transporte não protege quem chamar por outro
-   * caminho.
-   */
-  @Post('pedidos/:pedidoId/criancas/:criancaId/foto')
-  @UseInterceptors(FileInterceptor('foto', { limits: { fileSize: TAMANHO_MAXIMO_FOTO } }))
-  enviarFoto(
-    @Param('pedidoId') pedidoId: string,
-    @Param('criancaId') criancaId: string,
-    @UploadedFile() foto: Express.Multer.File,
-  ) {
-    return this.cartoes.enviarFoto(pedidoId, criancaId, foto)
-  }
-
-  @Delete('pedidos/:pedidoId/criancas/:criancaId/foto')
-  removerFoto(@Param('pedidoId') pedidoId: string, @Param('criancaId') criancaId: string) {
-    return this.cartoes.removerFoto(pedidoId, criancaId)
-  }
-
-  @Patch('pedidos/:pedidoId/criancas/:criancaId')
-  actualizar(
-    @Param('pedidoId') pedidoId: string,
-    @Param('criancaId') criancaId: string,
-    @Body() dto: ActualizarCriancaDto,
-  ) {
-    return this.cartoes.actualizarCrianca(pedidoId, criancaId, dto)
-  }
-
-  /**
-   * A fotografia, servida por rota e nunca por ficheiro estático.
-   *
-   * `no-store` porque é a fotografia de uma criança: não fica no disco de
-   * nenhum intermediário nem no do próprio navegador depois de a página
-   * fechar. O expurgo apaga a origem, e este cabeçalho evita que fiquem cópias
-   * a sobreviver-lhe pelo caminho.
-   */
-  @Get('pedidos/:pedidoId/criancas/:criancaId/foto')
-  async foto(
-    @Param('pedidoId') pedidoId: string,
-    @Param('criancaId') criancaId: string,
-    @Res() res: Response,
-  ) {
-    const conteudo = await this.cartoes.fotoDaCrianca(pedidoId, criancaId)
-    res.setHeader('Content-Type', 'image/jpeg')
-    res.setHeader('Cache-Control', 'no-store, private')
-    res.send(conteudo)
-  }
-
-  /** A conferência: a mesma composição, feita pelo servidor, em baixa resolução. */
-  @Get('pedidos/:pedidoId/criancas/:criancaId/previa/:modeloId.jpg')
-  async previa(
-    @Param('pedidoId') pedidoId: string,
-    @Param('criancaId') criancaId: string,
-    @Param('modeloId') modeloId: string,
-    @Res() res: Response,
-  ) {
-    const conteudo = await this.cartoes.previa(pedidoId, criancaId, modeloId)
-    res.setHeader('Content-Type', 'image/jpeg')
-    res.setHeader('Cache-Control', 'no-store, private')
-    res.send(conteudo)
-  }
-
   @Post('pedidos/:pedidoId/pagamento')
   pagar(@Param('pedidoId') pedidoId: string, @Body() dto: PagarDto, @Req() req: Request) {
-    return this.cartoes.iniciarPagamento(pedidoId, dto.meio, dto.email, dto.aprovou === true, {
-      userId: req.usuario?.id ?? null,
-      anonId: req.cookies?.[ANON_COOKIE] ?? null,
-    })
+    return this.cartoes.iniciarPagamento(
+      pedidoId,
+      dto.meio,
+      dto.email,
+      dto.aprovou === true,
+      dto.consentiu === true,
+      { userId: req.usuario?.id ?? null, anonId: req.cookies?.[ANON_COOKIE] ?? null },
+    )
   }
 
   /**
-   * A ligação assinada, para o WhatsApp e para quem mais ela quiser.
+   * As artes de impressão, para o aparelho montar o PDF — com o código de
+   * liberação, num pedido pago.
    *
-   * O ecrã não fabrica endereços: pede um. Assim o prazo e a assinatura ficam
-   * do lado de cá, onde não se contornam.
+   * DESDE 03/10 NÃO HÁ ROTAS DE FOTO NEM DE PDF. Recebiam a foto da criança,
+   * serviam-na, e serviam o PDF montado aqui; o cliente pediu que a foto não
+   * saísse do telemóvel e que o servidor guardasse só o pagamento e o código.
+   * Quem as chamar recebe 404, que é a verdade: já não existem.
    */
-  @Get('pedidos/:pedidoId/criancas/:criancaId/partilha')
-  partilha(@Param('pedidoId') pedidoId: string, @Param('criancaId') criancaId: string) {
-    return this.cartoes.ligacaoDePartilha(pedidoId, criancaId)
+  @Get('pedidos/:pedidoId/liberacao')
+  liberacao(@Param('pedidoId') pedidoId: string, @Query('codigo') codigo = '') {
+    return this.cartoes.liberacao(pedidoId, codigo)
   }
 
-  @Post('pedidos/:pedidoId/criancas/:criancaId/email')
-  enviarPorEmail(
-    @Param('pedidoId') pedidoId: string,
-    @Param('criancaId') criancaId: string,
-    @Body() dto: EnviarPorEmailDto,
-  ) {
-    return this.cartoes.enviarPorEmail(pedidoId, criancaId, dto.email)
-  }
-
-  /**
-   * O PDF dos 7 cartões. Só sai depois do pagamento confirmado.
-   *
-   * `attachment` para o telemóvel guardar o ficheiro em vez de o abrir num
-   * leitor embutido, que é de onde a mãe não o consegue reenviar à gráfica.
-   */
-  @Get('pedidos/:pedidoId/criancas/:criancaId/cartoes.pdf')
-  async pdf(
-    @Param('pedidoId') pedidoId: string,
-    @Param('criancaId') criancaId: string,
-    @Res() res: Response,
-  ) {
-    const { nome, conteudo } = await this.cartoes.pdfDaCrianca(pedidoId, criancaId)
-    res.setHeader('Content-Type', 'application/pdf')
-    res.setHeader('Content-Disposition', `attachment; filename="${nome}"`)
-    res.setHeader('Cache-Control', 'no-store, private')
-    res.send(conteudo)
+  /** O aparelho gerou o PDF. Vai o código, e nada mais. */
+  @Post('pedidos/:pedidoId/gerado')
+  @HttpCode(204)
+  async gerado(@Param('pedidoId') pedidoId: string, @Body() dto: CodigoDto) {
+    await this.cartoes.marcarGerado(pedidoId, dto.codigo)
   }
 }

@@ -289,6 +289,57 @@ function abreviarKM(n) {
   return escrever(n / 1_000_000, 'M')
 }
 
+/**
+ * A NITIDEZ DE UMA FOTOGRAFIA, medida nos pixéis — pedido do cliente em 03/10:
+ * "Testar nitidez".
+ *
+ * A medida é a variância do laplaciano: o laplaciano é forte nas arestas e
+ * quase nulo nas zonas lisas, e uma fotografia desfocada não tem arestas. É a
+ * medida clássica e barata, e corre no telemóvel em milésimos de segundo.
+ *
+ * POR LADRILHOS, E A MÉDIA DOS MAIS NÍTIDOS. Um retrato bem focado tem muitas
+ * vezes o fundo desfocado de propósito; a variância da imagem inteira
+ * castigava-o. Divide-se em 4×4 e fica a média dos três ladrilhos mais
+ * nítidos: se nem o rosto tem arestas, a fotografia está desfocada.
+ *
+ * `rgba` são os pixéis de um canvas (4 bytes por pixel). Quem chama decide a
+ * resolução — o editor mede o recorte da moldura à resolução de impressão,
+ * que é onde o desfocado se vai ver.
+ */
+function nitidezDosPixeis(rgba, largura, altura) {
+  const w = Math.max(0, Math.trunc(largura))
+  const h = Math.max(0, Math.trunc(altura))
+  if (w < 8 || h < 8) return 0
+  const cinza = new Float32Array(w * h)
+  for (let i = 0, p = 0; i < cinza.length; i++, p += 4) {
+    cinza[i] = 0.299 * rgba[p] + 0.587 * rgba[p + 1] + 0.114 * rgba[p + 2]
+  }
+  const LADO = 4
+  const soma = new Float64Array(LADO * LADO)
+  const somaQ = new Float64Array(LADO * LADO)
+  const conta = new Uint32Array(LADO * LADO)
+  for (let y = 1; y < h - 1; y++) {
+    const ty = Math.min(LADO - 1, Math.floor((y * LADO) / h))
+    for (let x = 1; x < w - 1; x++) {
+      const i = y * w + x
+      const l = cinza[i - 1] + cinza[i + 1] + cinza[i - w] + cinza[i + w] - 4 * cinza[i]
+      const t = ty * LADO + Math.min(LADO - 1, Math.floor((x * LADO) / w))
+      soma[t] += l
+      somaQ[t] += l * l
+      conta[t]++
+    }
+  }
+  const variancias = []
+  for (let t = 0; t < soma.length; t++) {
+    if (!conta[t]) continue
+    const media = soma[t] / conta[t]
+    variancias.push(somaQ[t] / conta[t] - media * media)
+  }
+  variancias.sort((a, b) => b - a)
+  const melhores = variancias.slice(0, 3)
+  return melhores.reduce((a, b) => a + b, 0) / Math.max(1, melhores.length)
+}
+
 module.exports = {
   MM_POR_POLEGADA,
   A4_MM,
@@ -309,4 +360,5 @@ module.exports = {
   FOLGA_DO_NOME,
   calcularPreco,
   abreviarKM,
+  nitidezDosPixeis,
 }

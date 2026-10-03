@@ -13,7 +13,46 @@ import { useEffect, useId, useState } from 'react'
  * "Confirmar e pagar" só acende com a caixa marcada. O servidor recusa a
  * cobrança sem ela e grava no pedido quando foi dada e a frase que se aceitou:
  * é isso que "fica registrada a aprovação" quer dizer.
+ *
+ * E, desde 03/10, A DO RESPONSÁVEL: "são dados de criança (LGPD, art. 14).
+ * Caixa de confirmação do responsável antes de gerar, e aviso na tela: 'A foto
+ * não é enviada nem guardada. Guarde seu PDF.'" O PDF é gerado logo a seguir
+ * ao pagamento, por isso a caixa está aqui — e volta a aparecer no passo de
+ * gerar se a página tiver sido recarregada entretanto (ver `EditorDeCartoes`).
  */
+export const TEXTO_DO_CONSENTIMENTO =
+  'Sou o pai, a mãe ou o responsável legal pela criança e autorizo usar a foto dela apenas para gerar este PDF, neste aparelho.'
+
+/** A caixa do responsável, igual aqui e no passo de gerar. */
+export function CaixaDoResponsavel({
+  marcada,
+  aoMudar,
+}: {
+  marcada: boolean
+  aoMudar: (v: boolean) => void
+}) {
+  return (
+    <label className={marcada ? 'confirmar-caixa marcada' : 'confirmar-caixa'}>
+      <input type="checkbox" checked={marcada} onChange={(e) => aoMudar(e.target.checked)} />
+      <span className="confirmar-visto" aria-hidden="true">
+        ✓
+      </span>
+      <span>
+        {TEXTO_DO_CONSENTIMENTO} <small className="confirmar-lei">(LGPD, art. 14)</small>
+      </span>
+    </label>
+  )
+}
+
+/** O aviso que ele escreveu, palavra por palavra. */
+export function AvisoDaFoto() {
+  return (
+    <p className="confirmar-privacidade">
+      <span aria-hidden="true">🔒</span>
+      <strong>A foto não é enviada nem guardada. Guarde seu PDF.</strong>
+    </p>
+  )
+}
 export function ConfirmarPersonalizacao({
   aPagar,
   aoConfirmar,
@@ -26,6 +65,7 @@ export function ConfirmarPersonalizacao({
   aoFechar: () => void
 }) {
   const [aprovou, definirAprovou] = useState(false)
+  const [consentiu, definirConsentiu] = useState(false)
   const titulo = useId()
 
   useEffect(() => {
@@ -82,6 +122,9 @@ export function ConfirmarPersonalizacao({
           <span>Confirmo que revisei e aprovei o nome e a foto dos meus cartões.</span>
         </label>
 
+        <CaixaDoResponsavel marcada={consentiu} aoMudar={definirConsentiu} />
+        <AvisoDaFoto />
+
         <div className="confirmar-aviso">
           <span className="confirmar-exclamacao" aria-hidden="true">
             !
@@ -99,7 +142,7 @@ export function ConfirmarPersonalizacao({
           <button
             type="button"
             className="confirmar-pagar"
-            disabled={!aprovou || aPagar}
+            disabled={!aprovou || !consentiu || aPagar}
             onClick={aoConfirmar}
           >
             <span aria-hidden="true">🔒</span> {aPagar ? 'Abrindo o pagamento…' : 'Confirmar e pagar'}
