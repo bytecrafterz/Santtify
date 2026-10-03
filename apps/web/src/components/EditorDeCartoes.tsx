@@ -11,6 +11,7 @@ import { EntregaDosCartoes } from './EntregaDosCartoes'
 import { CartaoComoEditor } from './CartaoComoEditor'
 import { AvisoDaFoto, CaixaDoResponsavel, ConfirmarPersonalizacao } from './ConfirmarPersonalizacao'
 import { Voltar } from './Voltar'
+import { LimiteDeErro } from './LimiteDeErro'
 
 /**
  * O editor dos cartões personalizados.
@@ -474,6 +475,15 @@ export function EditorDeCartoes({
           aoVoltar={jaPago ? () => definirPasso('gerar') : undefined}
         />
         {erro && <p className="cartoes-erro">{erro}</p>}
+        {/* Se o editor cair num aparelho, cai só ele: a explicação, um botão para
+            recomeçar sem a foto, e o erro no registo (03/10). */}
+        <LimiteDeErro
+          mensagem="Algo deu errado com a foto. Já recebemos o aviso; escolha a foto de novo."
+          aoRecomecar={() => {
+            descartar(foto)
+            definirFoto(null)
+          }}
+        >
         <CartaoComoEditor
           foto={foto}
           personalizacao={personalizacao}
@@ -496,6 +506,7 @@ export function EditorDeCartoes({
             definirPasso(jaPago ? 'gerar' : 'pagamento')
           }}
         />
+        </LimiteDeErro>
       </div>
     )
   }

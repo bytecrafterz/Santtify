@@ -33,8 +33,16 @@ import type { ModeloDeCartao } from './cartoes'
  * actuais desenham a imagem já direita e dão as medidas já rodadas.
  */
 export interface FotoNoAparelho {
-  /** `blob:` — memória deste separador, e só dela. */
+  /** `blob:` — memória deste separador, e só dela. A foto inteira: lupa e PDF. */
   url: string
+  /**
+   * Uma cópia mais leve (até 2400px), para o cartão no ecrã.
+   *
+   * O editor desenha a foto em cada um dos cartões da faixa; com a foto de 24 ou
+   * 48 megapixéis de um iPhone, eram várias imagens enormes na memória de um
+   * telemóvel. A lupa e o PDF continuam a usar a inteira.
+   */
+  urlDaPrevia: string
   imagem: HTMLImageElement
   /** Já com a rotação do EXIF aplicada. */
   largura: number
@@ -209,7 +217,30 @@ export async function abrirFoto(ficheiro: File, modelos: ModeloDeCartao[]): Prom
     )
   }
 
-  return { url, imagem, largura, altura, nitidez }
+  return { url, urlDaPrevia: await copiaLeve(imagem, largura, altura, url), imagem, largura, altura, nitidez }
+}
+
+/** A cópia leve para o ecrã; se o aparelho não a conseguir fazer, usa-se a inteira. */
+async function copiaLeve(imagem: HTMLImageElement, largura: number, altura: number, original: string): Promise<string> {
+  const LADO = 2400
+  if (Math.max(largura, altura) <= LADO) return original
+  try {
+    const f = LADO / Math.max(largura, altura)
+    const tela = document.createElement('canvas')
+    tela.width = Math.round(largura * f)
+    tela.height = Math.round(altura * f)
+    const ctx = tela.getContext('2d')
+    if (!ctx) return original
+    ctx.imageSmoothingEnabled = true
+    ctx.imageSmoothingQuality = 'high'
+    ctx.drawImage(imagem, 0, 0, tela.width, tela.height)
+    const blob = await new Promise<Blob | null>((r) => tela.toBlob(r, 'image/jpeg', 0.9))
+    tela.width = 0
+    tela.height = 0
+    return blob ? URL.createObjectURL(blob) : original
+  } catch {
+    return original
+  }
 }
 
 /**
@@ -219,5 +250,6 @@ export async function abrirFoto(ficheiro: File, modelos: ModeloDeCartao[]): Prom
 export function descartar(foto: FotoNoAparelho | null) {
   if (!foto) return
   URL.revokeObjectURL(foto.url)
+  if (foto.urlDaPrevia !== foto.url) URL.revokeObjectURL(foto.urlDaPrevia)
   foto.imagem.removeAttribute('src')
 }

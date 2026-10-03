@@ -1027,7 +1027,8 @@ function CartaoDesenhado({
         {rect ? (
           // eslint-disable-next-line @next/next/no-img-element
           <img
-            src={foto?.url}
+            // A cópia leve no cartão; na lupa, a inteira (é lá que se confere a nitidez).
+            src={altaResolucao ? foto?.url : foto?.urlDaPrevia}
             alt=""
             draggable={false}
             style={{

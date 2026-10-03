@@ -18246,3 +18246,16 @@ a.pi-cartao:hover .pi-cartao-seta {
 .entrega-codigo {
   margin-top: 6px;
 }
+
+/* Quando uma página cai (03/10): a explicação e a saída, em vez do ecrã branco. */
+.erro-da-pagina {
+  display: grid;
+  gap: 14px;
+  justify-items: center;
+  padding-top: 18vh;
+  text-align: center;
+}
+
+.erro-da-pagina h1 {
+  margin: 0;
+}

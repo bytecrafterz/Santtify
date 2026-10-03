@@ -3,6 +3,7 @@ import './globals.css'
 import { RegistroDoServiceWorker } from '@/components/RegistroDoServiceWorker'
 import { ProvedorDeAuth } from '@/components/ProvedorDeAuth'
 import { PainelPersistente } from '@/components/painel/PainelPersistente'
+import { RelatorDeErros } from '@/components/RelatorDeErros'
 import { UmSomDeCadaVez } from '@/components/UmSomDeCadaVez'
 
 export const metadata: Metadata = {
@@ -55,6 +56,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
           <PainelPersistente>{children}</PainelPersistente>
         </ProvedorDeAuth>
         <RegistroDoServiceWorker />
+        <RelatorDeErros />
       </body>
     </html>
   )
