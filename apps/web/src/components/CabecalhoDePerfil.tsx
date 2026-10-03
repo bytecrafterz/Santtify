@@ -115,6 +115,15 @@ export function CabecalhoDePerfil({
     curtidoPorMim: false,
     lista: [],
   })
+  /**
+   * Se os números já chegaram do servidor. Até lá mostra-se "–", e não 0.
+   *
+   * Em 02/10 ele mostrou o perfil num iPad com os quatro números a zero, quando
+   * o servidor tinha 3.552 visualizações e 55 partilhas: o pedido daquele
+   * aparelho não chegou cá, e o zero de partida ficou no ecrã como se fosse a
+   * contagem verdadeira. Um zero que é só "ainda não sei" lê-se como "ninguém".
+   */
+  const [numerosCarregados, definirNumerosCarregados] = useState(false)
   const [comentariosAbertos, definirComentariosAbertos] = useState(false)
   const [pessoasAbertas, definirPessoasAbertas] = useState(false)
   const [opcoesAbertas, definirOpcoesAbertas] = useState(false)
@@ -136,14 +145,52 @@ export function CabecalhoDePerfil({
    * tu". O coração ficava vazio mesmo tendo sido a própria pessoa a enchê-lo.
    *
    * Com `usuario?.id` na lista, a leitura repete-se assim que a sessão entra.
+   *
+   * DEPENDE DO IDENTIFICADOR, E NÃO DO OBJECTO `dono`. No perfil de quem entrou,
+   * `dono` é montado de novo a cada desenho; com ele na lista, cada resposta
+   * redesenhava, o redesenho pedia outra vez, e assim sem parar — três a quatro
+   * pedidos por segundo enquanto a página estivesse aberta. O registo do
+   * servidor de 02/10 tem milhares por hora vindos do telemóvel dele.
+   *
+   * SE O PEDIDO FALHAR, TENTA DE NOVO: algumas vezes, cada vez mais devagar, e
+   * outra vez quando a ligação volta ou a página regressa ao primeiro plano.
    */
+  const donoId = dono?.id ?? null
   useEffect(() => {
-    if (!dono) return
-    void social
-      .estadoDoPerfil(dono.id)
-      .then(definirEstado)
-      .catch(() => {})
-  }, [dono, usuario?.id])
+    if (!donoId) return
+    let vivo = true
+    let falhou = false
+    let tentativas = 0
+    let temporizador: number | undefined
+    const ler = () => {
+      window.clearTimeout(temporizador)
+      social
+        .estadoDoPerfil(donoId)
+        .then((e) => {
+          if (!vivo) return
+          falhou = false
+          definirEstado(e)
+          definirNumerosCarregados(true)
+        })
+        .catch(() => {
+          if (!vivo) return
+          falhou = true
+          if (tentativas < 4) temporizador = window.setTimeout(ler, 3000 * 2 ** tentativas++)
+        })
+    }
+    const seFalhou = () => {
+      if (falhou && document.visibilityState === 'visible') ler()
+    }
+    ler()
+    window.addEventListener('online', seFalhou)
+    document.addEventListener('visibilitychange', seFalhou)
+    return () => {
+      vivo = false
+      window.clearTimeout(temporizador)
+      window.removeEventListener('online', seFalhou)
+      document.removeEventListener('visibilitychange', seFalhou)
+    }
+  }, [donoId, usuario?.id])
 
   // Escape fecha, como em qualquer painel. Sem isto, quem abre sem querer no
   // computador fica sem saída óbvia.
@@ -476,7 +523,7 @@ export function CabecalhoDePerfil({
           <span className="simbolo">
             <OlhoGrande />
           </span>
-          <strong>{abreviar(estado.visualizacoes)}</strong>
+          <strong>{numerosCarregados ? abreviar(estado.visualizacoes) : '–'}</strong>
         </span>
 
         {/* CURTIR O PRÓPRIO PERFIL PASSA A SER PERMITIDO.
@@ -506,7 +553,7 @@ export function CabecalhoDePerfil({
               definirPessoasAbertas(true)
             }}
           >
-            {abreviar(estado.curtidas)}
+            {numerosCarregados ? abreviar(estado.curtidas) : '–'}
           </strong>
         </button>
 
@@ -519,7 +566,7 @@ export function CabecalhoDePerfil({
           <span className="simbolo">
             <BalaoGrande />
           </span>
-          <strong>{abreviar(estado.comentarios)}</strong>
+          <strong>{numerosCarregados ? abreviar(estado.comentarios) : '–'}</strong>
         </button>
 
         <button
@@ -531,7 +578,7 @@ export function CabecalhoDePerfil({
           <span className="simbolo">
             <SetaGrande />
           </span>
-          <strong>{abreviar(estado.compartilhamentos)}</strong>
+          <strong>{numerosCarregados ? abreviar(estado.compartilhamentos) : '–'}</strong>
         </button>
       </div>
 

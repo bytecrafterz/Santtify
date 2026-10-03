@@ -113,6 +113,16 @@ export function EditorDeCartoes({
   const [email, definirEmail] = useState('')
   const [pixCopiado, definirPixCopiado] = useState(false)
   const [categorias, definirCategorias] = useState<Categoria[] | null>(null)
+  /**
+   * A lista não chegou — que é diferente de chegar vazia.
+   *
+   * Uma falha de rede punha aqui uma lista vazia, e a página dizia "os cartões
+   * ainda estão sendo preparados" num projeto que tem cartões à venda. Agora
+   * diz que não carregou, oferece tentar de novo, e tenta sozinha quando a
+   * ligação volta.
+   */
+  const [categoriasFalharam, definirCategoriasFalharam] = useState(false)
+  const [tentativaDeCategorias, definirTentativaDeCategorias] = useState(0)
   const [categoria, definirCategoria] = useState<string | null>(null)
 
   /**
@@ -125,6 +135,7 @@ export function EditorDeCartoes({
    */
   useEffect(() => {
     let vivo = true
+    definirCategoriasFalharam(false)
     cartoes
       .categorias(projectSlug)
       .then((lista) => {
@@ -142,12 +153,19 @@ export function EditorDeCartoes({
         }
       })
       .catch(() => {
-        if (vivo) definirCategorias([])
+        if (vivo) definirCategoriasFalharam(true)
       })
     return () => {
       vivo = false
     }
-  }, [projectSlug])
+  }, [projectSlug, tentativaDeCategorias])
+
+  useEffect(() => {
+    if (!categoriasFalharam) return
+    const tentar = () => definirTentativaDeCategorias((n) => n + 1)
+    window.addEventListener('online', tentar)
+    return () => window.removeEventListener('online', tentar)
+  }, [categoriasFalharam])
 
   /** Os cartões DA categoria escolhida — os dos adultos não entram no editor das crianças. */
   useEffect(() => {
@@ -315,7 +333,20 @@ export function EditorDeCartoes({
       <div className="editor-cartoes">
         <Cabecalho projectSlug={projectSlug} />
         <section className="cartoes-passo">
-          {categorias === null ? (
+          {categoriasFalharam && categorias === null ? (
+            <>
+              <p className="cartoes-ajuda">
+                Não foi possível carregar os cartões agora. Verifique a internet e tente de novo.
+              </p>
+              <button
+                type="button"
+                className="cartoes-accao"
+                onClick={() => definirTentativaDeCategorias((n) => n + 1)}
+              >
+                Tentar de novo
+              </button>
+            </>
+          ) : categorias === null ? (
             <p className="cartoes-ajuda">A carregar…</p>
           ) : categorias.length === 0 ? (
             <p className="cartoes-ajuda">
