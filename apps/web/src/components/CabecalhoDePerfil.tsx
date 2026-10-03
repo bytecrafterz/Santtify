@@ -133,7 +133,7 @@ export function CabecalhoDePerfil({
    * contagem verdadeira. Um zero que é só "ainda não sei" lê-se como "ninguém".
    */
   const [numerosCarregados, definirNumerosCarregados] = useState(false)
-  /** Os visitantes do site, quando o olho é o do site (`olhoDoSite`). */
+  /** As visitas do site inteiro, quando o olho é o do site (`olhoDoSite`). */
   const [visitantesDoSite, definirVisitantesDoSite] = useState<number | null>(null)
   useEffect(() => {
     if (!olhoDoSite) return
@@ -143,7 +143,7 @@ export function CabecalhoDePerfil({
     const ler = () => {
       social
         .visitantesDoSite()
-        .then((r) => vivo && definirVisitantesDoSite(r.visitantes))
+        .then((r) => vivo && definirVisitantesDoSite(r.visitas))
         .catch(() => {
           if (vivo && tentativas < 4) temporizador = window.setTimeout(ler, 3000 * 2 ** tentativas++)
         })
@@ -556,7 +556,7 @@ export function CabecalhoDePerfil({
             <OlhoGrande />
           </span>
           {olhoDoSite ? (
-            <strong title={visitantesDoSite === null ? undefined : `${visitantesDoSite} visitantes no site`}>
+            <strong title={visitantesDoSite === null ? undefined : `${visitantesDoSite} visitas no site`}>
               {visitantesDoSite === null ? '–' : abreviar(visitantesDoSite)}
             </strong>
           ) : (

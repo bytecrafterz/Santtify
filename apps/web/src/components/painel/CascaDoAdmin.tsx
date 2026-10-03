@@ -2,7 +2,7 @@
 
 import Link from 'next/link'
 import { usePathname, useRouter } from 'next/navigation'
-import { useEffect, useState, type ReactNode } from 'react'
+import { useEffect, useRef, useState, type ReactNode } from 'react'
 import { useAuth } from '@/components/ProvedorDeAuth'
 import { admin } from '@/lib/admin'
 import { mensagens } from '@/lib/mensagens'
@@ -164,6 +164,23 @@ export function CascaDoAdmin({ children }: { children: ReactNode }) {
   const areaActual = areaDoCaminho(caminho)
   const area = AREAS.find((a) => a.chave === areaActual)!
 
+  /*
+    NO TELEMÓVEL, A ÁREA ABERTA FICA À VISTA NA FAIXA.
+
+    A faixa desliza para o lado e não cabe inteira num ecrã de 360px: em
+    Análise ou Configurações, a área aberta ficava fora do ecrã e parecia que o
+    menu tinha voltado ao princípio. Centra-se a que está aberta, sem mexer na
+    página.
+  */
+  const menu = useRef<HTMLElement | null>(null)
+  useEffect(() => {
+    const faixa = menu.current
+    const aberta = faixa?.querySelector<HTMLElement>('.adm-area.actual')
+    if (!faixa || !aberta || faixa.scrollWidth <= faixa.clientWidth) return
+    const alvo = aberta.offsetLeft - (faixa.clientWidth - aberta.offsetWidth) / 2
+    faixa.scrollTo({ left: Math.max(0, alvo), behavior: 'smooth' })
+  }, [areaActual, usuario])
+
   useEffect(() => {
     if (carregando || usuario) return
     router.replace(`/${projeto}/entrar?voltar=` + encodeURIComponent(window.location.pathname))
@@ -189,7 +206,7 @@ export function CascaDoAdmin({ children }: { children: ReactNode }) {
 
   return (
     <div className="adm">
-      <aside className="adm-menu">
+      <aside className="adm-menu" ref={menu}>
         <Link className="adm-marca" href="/admin" aria-label="Santtify — Meus Projetos">
           {/* eslint-disable-next-line @next/next/no-img-element */}
           <img src="/icone-192.png?v=20261003" alt="" width={40} height={40} />

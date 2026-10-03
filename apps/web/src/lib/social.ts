@@ -141,8 +141,8 @@ export const social = {
 
   apagarComentario: (id: string) => chamar<void>(`/comments/${id}`, { method: 'DELETE' }),
 
-  /** Quantas pessoas já visitaram o site, sem os aparelhos da casa — o olho da página inicial. */
-  visitantesDoSite: () => chamar<{ visitantes: number }>('/site/visitantes'),
+  /** O público do site: `visitas` (o olho da página inicial) e `visitantes` distintos. */
+  visitantesDoSite: () => chamar<{ visitantes: number; visitas: number }>('/site/visitantes'),
 
   // ── Perfil como objecto social ────────────────────────────────────
   estadoDoPerfil: (userId: string) => chamar<EstadoDaFaixa>(`/profiles/${userId}/social`),

@@ -17084,8 +17084,20 @@ a.pi-cartao:hover .pi-cartao-seta {
   display: flex;
   gap: 8px;
   align-items: center;
+  min-width: 0;
+  max-width: 100%;
   font-weight: 600;
   color: var(--cor-texto-suave);
+}
+
+/* O nome do projeto é longo ("Minha Identidade e Poder em Jesus"), e o select
+   media a largura pelo nome: num telemóvel de 360px passava da borda e a
+   página inteira rolava para o lado. */
+.adm-projeto select {
+  flex: 1 1 auto;
+  min-width: 0;
+  max-width: 100%;
+  text-overflow: ellipsis;
 }
 
 .adm-projeto select {
@@ -18040,6 +18052,10 @@ a.pi-cartao:hover .pi-cartao-seta {
 
   .adm-abas-linha {
     padding: 10px 16px 0;
+  }
+
+  .adm-projeto {
+    width: 100%;
   }
 
   .adm-conteudo {

@@ -1,12 +1,8 @@
 import type { ReactNode } from 'react'
-import { CascaDoAdmin } from '@/components/painel/CascaDoAdmin'
 
 export const metadata = { title: 'Painel', robots: { index: false } }
 
-/**
- * Os ecrãs de um projeto ficam dentro da mesma casca da entrada do painel, com o
- * mesmo menu: de qualquer ecrã chega-se a qualquer área. Ver `CascaDoAdmin`.
- */
+/** O menu do painel vive no layout raiz — ver `PainelPersistente`. */
 export default function LayoutDoPainelDoProjeto({ children }: { children: ReactNode }) {
-  return <CascaDoAdmin>{children}</CascaDoAdmin>
+  return children
 }

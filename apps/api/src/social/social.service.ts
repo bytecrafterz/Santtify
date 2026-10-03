@@ -960,38 +960,45 @@ export class SocialService {
   }
 
   /**
-   * QUANTAS PESSOAS VISITARAM O SITE — o olho da página inicial (03/10).
+   * O PÚBLICO DO SITE — o olho da página inicial (03/10).
    *
    * O olho da página inicial mostrava as visualizações do perfil que estivesse
-   * à vista: para quem tem conta, o seu próprio, com 2 ou 3. Ficou a mostrar o
-   * público do site, igual para toda a gente: quantos aparelhos diferentes já
-   * abriram uma página.
+   * à vista: para quem tem conta, o seu próprio, com 2 ou 3. Passa a mostrar o
+   * site inteiro, igual para toda a gente.
    *
-   * SEM OS DA CASA: um aparelho que alguma vez entrou com uma conta de
-   * administrador não conta — nem quando navega sem sessão. É o telemóvel do
-   * dono, e os de quem testa.
+   * `visitas` é o que o olho mostra: todas as páginas abertas no site, por toda
+   * a gente — "there have to be all visitor number" (03/10). Mostrou primeiro
+   * os aparelhos distintos sem os da casa (590), e era pouco para o que ele
+   * quer dizer ali.
+   *
+   * `visitantes` fica ao lado, para quem quiser o outro número: aparelhos
+   * distintos, sem nenhum que alguma vez tenha entrado como administrador (o
+   * telemóvel do dono, os de quem testa).
    *
    * Guarda-se um minuto: é um número que se lê em cada abertura da página
    * inicial, e não muda a cada segundo.
    */
-  private visitantesEmCache: { valor: number; ate: number } | null = null
-  async visitantesDoSite(): Promise<{ visitantes: number }> {
+  private visitantesEmCache: { visitantes: number; visitas: number; ate: number } | null = null
+  async visitantesDoSite(): Promise<{ visitantes: number; visitas: number }> {
     if (this.visitantesEmCache && this.visitantesEmCache.ate > Date.now()) {
-      return { visitantes: this.visitantesEmCache.valor }
+      const { visitantes, visitas } = this.visitantesEmCache
+      return { visitantes, visitas }
     }
-    const [linha] = await this.prisma.$queryRaw<Array<{ n: bigint }>>`
+    const [linha] = await this.prisma.$queryRaw<Array<{ visitantes: bigint; visitas: bigint }>>`
       WITH da_casa AS (
         SELECT DISTINCT a."visitorId" FROM events a
         JOIN users u ON u.id = a."userId"
         WHERE u.role = 'ADMIN' AND a."visitorId" IS NOT NULL
       )
-      SELECT count(DISTINCT e."visitorId") AS n FROM events e
-      WHERE e.type = 'PAGE_VIEW'
-        AND e."visitorId" IS NOT NULL
-        AND e."visitorId" NOT IN (SELECT "visitorId" FROM da_casa)`
-    const valor = Number(linha?.n ?? 0)
-    this.visitantesEmCache = { valor, ate: Date.now() + 60_000 }
-    return { visitantes: valor }
+      SELECT
+        (SELECT count(DISTINCT e."visitorId") FROM events e
+          WHERE e.type = 'PAGE_VIEW' AND e."visitorId" IS NOT NULL
+            AND e."visitorId" NOT IN (SELECT "visitorId" FROM da_casa)) AS visitantes,
+        (SELECT count(*) FROM events e WHERE e.type = 'PAGE_VIEW') AS visitas`
+    const visitantes = Number(linha?.visitantes ?? 0)
+    const visitas = Number(linha?.visitas ?? 0)
+    this.visitantesEmCache = { visitantes, visitas, ate: Date.now() + 60_000 }
+    return { visitantes, visitas }
   }
 
   async estadoDoPerfil(profileUserId: string, leitorId: string | null) {

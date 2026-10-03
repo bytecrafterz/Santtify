@@ -1,9 +1,11 @@
 import type { ReactNode } from 'react'
-import { CascaDoAdmin } from '@/components/painel/CascaDoAdmin'
 
 export const metadata = { title: 'Painel', robots: { index: false } }
 
-/** O painel: o menu das oito áreas à volta de cada ecrã. Ver `CascaDoAdmin`. */
+/**
+ * O menu do painel não vive aqui: vive no layout raiz (`PainelPersistente`),
+ * para não se desmontar ao passar de `/admin` para `/<projeto>/admin`.
+ */
 export default function LayoutDoPainel({ children }: { children: ReactNode }) {
-  return <CascaDoAdmin>{children}</CascaDoAdmin>
+  return children
 }

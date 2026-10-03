@@ -2,6 +2,7 @@ import type { Metadata, Viewport } from 'next'
 import './globals.css'
 import { RegistroDoServiceWorker } from '@/components/RegistroDoServiceWorker'
 import { ProvedorDeAuth } from '@/components/ProvedorDeAuth'
+import { PainelPersistente } from '@/components/painel/PainelPersistente'
 import { UmSomDeCadaVez } from '@/components/UmSomDeCadaVez'
 
 export const metadata: Metadata = {
@@ -50,7 +51,9 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
     <html lang="pt">
       <body>
         <UmSomDeCadaVez />
-        <ProvedorDeAuth>{children}</ProvedorDeAuth>
+        <ProvedorDeAuth>
+          <PainelPersistente>{children}</PainelPersistente>
+        </ProvedorDeAuth>
         <RegistroDoServiceWorker />
       </body>
     </html>
