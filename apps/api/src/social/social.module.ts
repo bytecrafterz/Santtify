@@ -10,6 +10,7 @@ import {
   PublicacoesController,
   DenunciasController,
   PerfisController,
+  SiteController,
 } from './social.controller'
 import { ShortLinksModule } from '../short-links/short-links.module'
 import { TrackingModule } from '../tracking/tracking.module'
@@ -29,6 +30,7 @@ import { ContagensModule } from './contagens.module'
     PublicacoesController,
     DenunciasController,
     PerfisController,
+    SiteController,
   ],
   providers: [SocialService],
   exports: [SocialService],

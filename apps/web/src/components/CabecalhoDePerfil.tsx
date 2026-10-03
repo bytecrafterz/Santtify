@@ -43,6 +43,7 @@ export function CabecalhoDePerfil({
   donoEhOUtilizador = false,
   preferirOUtilizador = false,
   pessoa,
+  olhoDoSite = false,
 }: {
   projectSlug: string
   projectId: string
@@ -76,6 +77,14 @@ export function CabecalhoDePerfil({
    * duas em 25/08 e pediu o óbvio: a mesma estrutura em todos.
    */
   pessoa?: PerfilAnfitriao | null
+  /**
+   * O OLHO MOSTRA OS VISITANTES DO SITE, e não as visualizações deste perfil.
+   *
+   * Só na página inicial (03/10). Ali o perfil é o de quem tem conta — o seu
+   * próprio, visto por meia dúzia — ou o do anfitrião, e o número que se quer
+   * ver na entrada é o público do site, igual para toda a gente.
+   */
+  olhoDoSite?: boolean
 }) {
   const { usuario, visitante, sair } = useAuth()
   const router = useRouter()
@@ -124,6 +133,29 @@ export function CabecalhoDePerfil({
    * contagem verdadeira. Um zero que é só "ainda não sei" lê-se como "ninguém".
    */
   const [numerosCarregados, definirNumerosCarregados] = useState(false)
+  /** Os visitantes do site, quando o olho é o do site (`olhoDoSite`). */
+  const [visitantesDoSite, definirVisitantesDoSite] = useState<number | null>(null)
+  useEffect(() => {
+    if (!olhoDoSite) return
+    let vivo = true
+    let tentativas = 0
+    let temporizador: number | undefined
+    const ler = () => {
+      social
+        .visitantesDoSite()
+        .then((r) => vivo && definirVisitantesDoSite(r.visitantes))
+        .catch(() => {
+          if (vivo && tentativas < 4) temporizador = window.setTimeout(ler, 3000 * 2 ** tentativas++)
+        })
+    }
+    ler()
+    window.addEventListener('online', ler)
+    return () => {
+      vivo = false
+      window.clearTimeout(temporizador)
+      window.removeEventListener('online', ler)
+    }
+  }, [olhoDoSite])
   const [comentariosAbertos, definirComentariosAbertos] = useState(false)
   const [pessoasAbertas, definirPessoasAbertas] = useState(false)
   const [opcoesAbertas, definirOpcoesAbertas] = useState(false)
@@ -523,7 +555,13 @@ export function CabecalhoDePerfil({
           <span className="simbolo">
             <OlhoGrande />
           </span>
-          <strong>{numerosCarregados ? abreviar(estado.visualizacoes) : '–'}</strong>
+          {olhoDoSite ? (
+            <strong title={visitantesDoSite === null ? undefined : `${visitantesDoSite} visitantes no site`}>
+              {visitantesDoSite === null ? '–' : abreviar(visitantesDoSite)}
+            </strong>
+          ) : (
+            <strong>{numerosCarregados ? abreviar(estado.visualizacoes) : '–'}</strong>
+          )}
         </span>
 
         {/* CURTIR O PRÓPRIO PERFIL PASSA A SER PERMITIDO.

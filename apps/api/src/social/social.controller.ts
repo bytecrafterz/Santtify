@@ -593,3 +593,15 @@ export class PerfisController {
     )
   }
 }
+
+/** Números do site inteiro, para a página inicial. */
+@Controller('site')
+export class SiteController {
+  constructor(private readonly social: SocialService) {}
+
+  /** Quantas pessoas já visitaram o site, sem os aparelhos da casa. Ver `visitantesDoSite`. */
+  @Get('visitantes')
+  visitantes() {
+    return this.social.visitantesDoSite()
+  }
+}

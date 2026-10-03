@@ -1,7 +1,7 @@
 import type { Metadata } from 'next'
 import { notFound } from 'next/navigation'
 import { api } from '@/lib/api'
-import { RastreadorDeVisita } from '@/components/RastreadorDeVisita'
+import { VisitaDaEntrada } from '@/components/VisitaDaEntrada'
 import { BannerDeConsentimento } from '@/components/BannerDeConsentimento'
 import { AvisosDeEntrada } from '@/components/AvisosDeEntrada'
 import { CabecalhoDePerfil } from '@/components/CabecalhoDePerfil'
@@ -50,11 +50,7 @@ export default async function PaginaInicial() {
 
   return (
     <main className="envoltorio com-barra">
-      <RastreadorDeVisita
-        projectId={project.id}
-        type="PAGE_VIEW"
-        props={anfitriao ? { perfilId: anfitriao.id } : undefined}
-      />
+      <VisitaDaEntrada projectId={project.id} anfitriaoId={anfitriao?.id ?? null} />
 
       <CabecalhoDePerfil
         preferirOUtilizador
@@ -62,6 +58,7 @@ export default async function PaginaInicial() {
         projectId={project.id}
         perfisCriados={comunidade.perfis}
         anfitriao={anfitriao}
+        olhoDoSite
       />
 
       {/*

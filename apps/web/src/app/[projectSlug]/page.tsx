@@ -153,7 +153,7 @@ export default async function IndiceDoProjeto({
 
   // `comunidade` saiu com o `CabecalhoDePerfil`: os perfis criados são coisa da
   // entrada, e é lá que agora se contam.
-  const { project, anfitriao, contents, progresso } = dados
+  const { project, contents, progresso } = dados
 
   /**
    * A introdução é o conteúdo SEM LETRA. Vai buscar-se por inteiro, com os
@@ -185,11 +185,9 @@ export default async function IndiceDoProjeto({
           fotografia de perfil sem dar nada em troca — e tinha razão: as saídas
           que ela oferecia estão agora em baixo, onde o polegar chega. */}
 
-      <RastreadorDeVisita
-        projectId={project.id}
-        type="PAGE_VIEW"
-        props={anfitriao ? { perfilId: anfitriao.id } : undefined}
-      />
+      {/* A visita conta para o projeto, e não para o perfil do anfitrião: desde
+          22/09 esta página não mostra perfil nenhum (03/10). */}
+      <RastreadorDeVisita projectId={project.id} type="PAGE_VIEW" />
 
       {/*
         A PÁGINA DE UM PROJETO MOSTRA O PROJETO, E MAIS NADA.

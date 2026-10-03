@@ -20,6 +20,11 @@ import { ContagensService } from './contagens.service'
  * Big Mac ou um par de tênis. Por isso nada aqui importa nada específico do
  * projeto do alfabeto.
  */
+/** Até aqui as páginas de projeto mostravam o perfil do anfitrião (6ee93c7, 22/09). */
+const FIM_DO_PERFIL_NOS_PROJETOS = new Date('2026-09-22T12:00:00+02:00')
+/** Desde aqui quem tem conta vê o seu próprio perfil, e não o do anfitrião (9b4b675, 27/08). */
+const INICIO_DO_PERFIL_PROPRIO = new Date('2026-08-28T00:00:00+02:00')
+
 @Injectable()
 export class SocialService {
   constructor(
@@ -917,6 +922,78 @@ export class SocialService {
     return publico
   }
 
+  /**
+   * AS VISUALIZAÇÕES DE UM PERFIL: SÓ AS VERDADEIRAS (03/10).
+   *
+   * Contava-se todo o evento que trazia `perfilId`, e a página inicial e as
+   * páginas de projeto marcavam com o perfil anfitrião todas as visitas — as do
+   * próprio dono, as de quem tinha conta e via o SEU perfil, e as das páginas
+   * de projeto, que deixaram de mostrar o perfil em 22/09. Medido em 03/10: dos
+   * 3.572 do perfil Santtify, 1.773 eram o próprio dono e 3.017 vinham de
+   * páginas onde o perfil nem aparecia.
+   *
+   * Conta agora o que é uma visualização: alguém que não é o dono, numa página
+   * onde aquele perfil estava à vista —
+   *   - a página do perfil (`/…/pessoa/<id>`);
+   *   - a página inicial, para quem não tinha sessão (quem tem vê o seu);
+   *   - a página de um projeto, até 22/09, quando ainda mostrava o perfil do
+   *     anfitrião a quem chegava (e, até 27/08, também a quem tinha conta).
+   *
+   * Vale para os eventos antigos também: o número corrige-se, não recomeça.
+   */
+  private async visualizacoesDoPerfil(profileUserId: string): Promise<number> {
+    const [linha] = await this.prisma.$queryRaw<Array<{ n: bigint }>>`
+      SELECT count(*) AS n FROM events e
+      WHERE e.type = 'PAGE_VIEW'
+        AND e.props->>'perfilId' = ${profileUserId}
+        AND (e."userId" IS NULL OR e."userId"::text <> ${profileUserId})
+        AND (
+          e.path LIKE ${'%/pessoa/' + profileUserId}
+          OR (e.path = '/' AND e."userId" IS NULL)
+          OR (
+            e.path ~ '^/[^/]+$'
+            AND e."occurredAt" < ${FIM_DO_PERFIL_NOS_PROJETOS}
+            AND (e."userId" IS NULL OR e."occurredAt" < ${INICIO_DO_PERFIL_PROPRIO})
+          )
+        )`
+    return Number(linha?.n ?? 0)
+  }
+
+  /**
+   * QUANTAS PESSOAS VISITARAM O SITE — o olho da página inicial (03/10).
+   *
+   * O olho da página inicial mostrava as visualizações do perfil que estivesse
+   * à vista: para quem tem conta, o seu próprio, com 2 ou 3. Ficou a mostrar o
+   * público do site, igual para toda a gente: quantos aparelhos diferentes já
+   * abriram uma página.
+   *
+   * SEM OS DA CASA: um aparelho que alguma vez entrou com uma conta de
+   * administrador não conta — nem quando navega sem sessão. É o telemóvel do
+   * dono, e os de quem testa.
+   *
+   * Guarda-se um minuto: é um número que se lê em cada abertura da página
+   * inicial, e não muda a cada segundo.
+   */
+  private visitantesEmCache: { valor: number; ate: number } | null = null
+  async visitantesDoSite(): Promise<{ visitantes: number }> {
+    if (this.visitantesEmCache && this.visitantesEmCache.ate > Date.now()) {
+      return { visitantes: this.visitantesEmCache.valor }
+    }
+    const [linha] = await this.prisma.$queryRaw<Array<{ n: bigint }>>`
+      WITH da_casa AS (
+        SELECT DISTINCT a."visitorId" FROM events a
+        JOIN users u ON u.id = a."userId"
+        WHERE u.role = 'ADMIN' AND a."visitorId" IS NOT NULL
+      )
+      SELECT count(DISTINCT e."visitorId") AS n FROM events e
+      WHERE e.type = 'PAGE_VIEW'
+        AND e."visitorId" IS NOT NULL
+        AND e."visitorId" NOT IN (SELECT "visitorId" FROM da_casa)`
+    const valor = Number(linha?.n ?? 0)
+    this.visitantesEmCache = { valor, ate: Date.now() + 60_000 }
+    return { visitantes: valor }
+  }
+
   async estadoDoPerfil(profileUserId: string, leitorId: string | null) {
     const pessoa = await this.prisma.user.findUnique({
       where: { id: profileUserId },
@@ -925,12 +1002,7 @@ export class SocialService {
     if (!pessoa || pessoa.status !== 'ACTIVE') throw new NotFoundException('Perfil não encontrado')
 
     const [visualizacoes, curtidas, compartilhamentos, curtido, lista] = await Promise.all([
-      this.prisma.event.count({
-        where: {
-          type: EventType.PAGE_VIEW,
-          AND: [{ props: { path: ['perfilId'], equals: profileUserId } }],
-        },
-      }),
+      this.visualizacoesDoPerfil(profileUserId),
       this.prisma.profileReaction.count({
         where: { profileUserId, type: ReactionType.LIKE },
       }),
@@ -999,12 +1071,7 @@ export class SocialService {
         distinct: ['userId'],
         select: { user: { select: { id: true, displayName: true, avatarUrl: true } } },
       }),
-      this.prisma.event.count({
-        where: {
-          type: EventType.PAGE_VIEW,
-          AND: [{ props: { path: ['perfilId'], equals: profileUserId } }],
-        },
-      }),
+      this.visualizacoesDoPerfil(profileUserId),
     ])
 
     return {
