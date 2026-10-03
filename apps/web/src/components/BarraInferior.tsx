@@ -271,14 +271,14 @@ export function BarraInferior({
 
         "Como é que eu chego ao painel com um clique?" — 28/09. Não chegava: o
         painel só abria escrevendo o endereço. Fica aqui, na barra que está em
-        todas as páginas do site, e abre o painel do projeto que se está a
-        ver. Para as outras pessoas este botão não existe — o servidor recusava
+        todas as páginas do site, e abre a entrada do painel, "Meus Projetos"
+        (03/10: PAINEL → PROJETOS → selecionar projeto). Para as outras pessoas este botão não existe — o servidor recusava
         na mesma, e um botão que dá "acesso restrito" é uma porta fechada na
         cara. A cor é a do painel, para se ver que não é da barra de toda a
         gente.
       */}
       {usuario?.role === 'ADMIN' && (
-        <Link href={`/${projectSlug}/admin`} className="item-barra item-painel">
+        <Link href="/admin" className="item-barra item-painel">
           <span className="icone" aria-hidden>
             <svg
               viewBox="0 0 24 24"

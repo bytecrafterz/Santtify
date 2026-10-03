@@ -1,4 +1,3 @@
-import { Voltar } from '@/components/Voltar'
 import { AjudaESuporte } from '@/components/AjudaESuporte'
 
 export const metadata = { title: 'Ajuda e suporte' }
@@ -12,7 +11,6 @@ export default async function PaginaDeSuporte({
   return (
     <main className="envoltorio">
       <div className="cabecalho">
-        <Voltar href={`/${projectSlug}/admin`}>Painel</Voltar>
       </div>
       <h1>Ajuda e suporte</h1>
       <p className="subtitulo">Quem ficou sem entrar, e o que fazer por essa pessoa</p>

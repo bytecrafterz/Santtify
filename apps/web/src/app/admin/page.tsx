@@ -1,15 +1,14 @@
-import { redirect } from 'next/navigation'
+import { MeusProjetos } from '@/components/painel/MeusProjetos'
+
+export const metadata = { title: 'Meus Projetos' }
 
 /**
- * Atalho de raiz para /admin.
+ * A entrada do painel: "Meus Projetos" (03/10).
  *
- * As páginas moram sob /[projectSlug], mas ninguém digita o slug do projeto na
- * barra de endereço — escreve santtify.com/admin e espera que abra. Sem isto a
- * pessoa recebe um 404 e conclui que o site está partido, que foi exatamente o
- * que aconteceu com o cliente em 19/08.
+ * Isto era um redirecionamento para o painel do Jesus Alfabeto, que abria com
+ * a lista longa de tudo. Ele pediu o contrário: abrir o painel e ver os
+ * projetos, com o botão de criar em cima.
  */
-const PROJETO_PADRAO = process.env.NEXT_PUBLIC_PROJETO_PADRAO ?? 'jesus-alfabeto-saudavel'
-
-export default function Atalho() {
-  redirect(`/${PROJETO_PADRAO}/admin`)
+export default function PaginaMeusProjetos() {
+  return <MeusProjetos />
 }

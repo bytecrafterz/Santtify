@@ -28,7 +28,7 @@ import {
   MaxLength,
   Min,
 } from 'class-validator'
-import { AdminContentService } from './admin-content.service'
+import { AdminContentService, type EstadoDoProjetoNoPainel } from './admin-content.service'
 import { StorageService, TAMANHO_MAXIMO } from './storage.service'
 import { LaunchesService } from '../content/launches.service'
 import { PostsService } from '../social/posts.service'
@@ -124,6 +124,12 @@ class ClassificarBlocoDto {
 
 class MaterialGratisDto {
   @IsOptional() @IsString() assetId?: string | null
+}
+
+class DadosDoProjetoDto {
+  @IsOptional() @IsString() @MaxLength(120) nome?: string
+  @IsOptional() @IsString() @MaxLength(400) descricao?: string | null
+  @IsOptional() @IsIn(['PUBLICADO', 'RASCUNHO', 'ARQUIVADO']) estado?: EstadoDoProjetoNoPainel
 }
 
 class LinkDeCompraDto {
@@ -333,6 +339,22 @@ export class AdminController {
   @Get('projetos-do-painel')
   projetosDoPainel() {
     return this.conteudo.projetosDoPainel()
+  }
+
+  /** A entrada do painel: todos os projetos, em cartões. */
+  @Get('meus-projetos')
+  meusProjetos() {
+    return this.conteudo.meusProjetos()
+  }
+
+  /** O nome, a descrição e o estado de um projeto. */
+  @Patch('projects/:projectSlug/dados')
+  actualizarProjeto(
+    @Param('projectSlug') projectSlug: string,
+    @Body() dto: DadosDoProjetoDto,
+    @Req() req: Request,
+  ) {
+    return this.conteudo.actualizarProjeto(projectSlug, dto, req.usuario!.id)
   }
 
   @Get('projects/:projectSlug/contents')

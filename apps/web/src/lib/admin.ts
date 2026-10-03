@@ -279,12 +279,25 @@ export const admin = {
   },
 
   denuncias: (projectSlug: string) =>
-    chamar<{ reports: DenunciaAdmin[] }>(`/admin/projects/${projectSlug}/reports`),
+    chamar<{ reports: DenunciaAdmin[] }>(`/projects/${projectSlug}/reports`),
 
   decidirDenuncia: (id: string, status: 'REVIEWED' | 'DISMISSED') =>
-    chamar<{ id: string; status: string }>(`/admin/reports/${id}/decide`, {
+    chamar<{ id: string; status: string }>(`/reports/${id}/decide`, {
       method: 'POST',
       body: JSON.stringify({ status }),
+    }),
+
+  /** "Meus Projetos": todos os projetos, em cartões, arquivados incluídos. */
+  meusProjetos: () => chamarAdmin<MeuProjeto[]>('/admin/meus-projetos'),
+
+  /** O nome, a descrição e o estado de um projeto. O endereço não muda. */
+  actualizarProjeto: (
+    projectSlug: string,
+    dados: { nome?: string; descricao?: string | null; estado?: EstadoDoProjeto },
+  ) =>
+    chamarAdmin<MeuProjeto>(`/admin/projects/${projectSlug}/dados`, {
+      method: 'PATCH',
+      body: JSON.stringify(dados),
     }),
 
   /** Os projetos que existem, para o painel dizer em qual deles se está. */
@@ -674,6 +687,34 @@ export interface PrecoAdmin {
   moeda: string
   descontoPercentagem: number
   descontoAPartirDe: number
+}
+
+/** O estado de um projeto, como o painel o diz. */
+export type EstadoDoProjeto = 'PUBLICADO' | 'RASCUNHO' | 'ARQUIVADO'
+
+export const ROTULO_DO_ESTADO: Record<EstadoDoProjeto, string> = {
+  PUBLICADO: 'Publicado',
+  RASCUNHO: 'Rascunho',
+  ARQUIVADO: 'Arquivado',
+}
+
+/** Um projeto no ecrã "Meus Projetos". */
+export interface MeuProjeto {
+  slug: string
+  nome: string
+  descricao: string | null
+  capa: string | null
+  capaLargura: number | null
+  capaAltura: number | null
+  estado: EstadoDoProjeto
+  unidade: string | null
+  /** Letras (A–Z, sempre 26) ou números (a quantidade que ele decidir). */
+  sequencia: 'LETRAS' | 'NUMEROS'
+  /** Quantas casas tem a grade. Nos alfabetos, 26. */
+  casas: number
+  primeiroNumero: number
+  criadoEm: string
+  actualizadoEm: string
 }
 
 export interface ProjetoNoPainel {

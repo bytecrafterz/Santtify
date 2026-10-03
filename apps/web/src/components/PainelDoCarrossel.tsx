@@ -1,5 +1,6 @@
 'use client'
 
+import Link from 'next/link'
 import { useCallback, useEffect, useState } from 'react'
 import { abreviarKM } from '@pv/cartoes'
 import { admin, painelDeCartoes, type ProjetoNoPainel } from '@/lib/admin'
@@ -19,8 +20,9 @@ import { ErroDeApi } from '@/lib/auth'
  *    ele continua a trabalhar nele.
  * 3. A ORDEM, de cima para baixo. Os antigos destaques da esquerda e da direita
  *    deixaram de fazer sentido numa lista com um projeto por linha.
- * 4. CRIAR PROJETOS com a quantidade de blocos que quiser. O projeto novo
- *    entra na lista sozinho, escondido até ele o mostrar.
+ * 4. Criar projetos estava aqui até 03/10; passou para "+ Novo Projeto", no
+ *    topo de Meus Projetos. O projeto novo entra nesta lista sozinho,
+ *    escondido até ele o mostrar.
  */
 export function PainelDoCarrossel() {
   const [projetos, definirProjetos] = useState<ProjetoNoPainel[]>([])
@@ -194,18 +196,12 @@ export function PainelDoCarrossel() {
         </ul>
       </section>
 
-      <NovoProjeto
-        ocupado={ocupado === 'novo'}
-        aoCriar={(dados) =>
-          comErro('novo', async () => {
-            const feito = await painelDeCartoes.criarProjeto(dados)
-            await carregar()
-            definirAviso(
-              `✓ "${feito.nome}" criado com ${feito.blocos} blocos. Fica escondido até você carregar em Mostrar.`,
-            )
-          })
-        }
-      />
+      {/* Criar um projeto saiu daqui em 03/10: ele não encontrou o formulário
+          no fundo desta página. Agora é o botão + Novo Projeto, no topo de
+          Meus Projetos. */}
+      <p className="subtitulo">
+        Para criar um projeto, use <Link href="/admin/projetos/novo">+ Novo Projeto</Link> em Meus Projetos.
+      </p>
     </div>
   )
 }
@@ -255,129 +251,5 @@ function QuantidadeDeBlocos({
         Guardar
       </button>
     </span>
-  )
-}
-
-function NovoProjeto({
-  ocupado,
-  aoCriar,
-}: {
-  ocupado: boolean
-  aoCriar: (dados: {
-    slug: string
-    nome: string
-    blocos: number
-    unidade: string
-    primeiroNumero: number
-  }) => void
-}) {
-  const [nome, definirNome] = useState('')
-  const [blocos, definirBlocos] = useState(7)
-  /*
-    COMO SE CHAMA CADA BLOCO E ONDE COMEÇA A CONTAGEM (30/09).
-
-    Um projeto novo saía sempre com "Bloco 1, Bloco 2…", e mudar para "Dia" não
-    tinha sítio no painel. E a Escola de Sabedoria continua o Minha Identidade:
-    o primeiro dia dela é o Dia 8, como está impresso na arte.
-  */
-  const [unidade, definirUnidade] = useState('Bloco')
-  const [primeiro, definirPrimeiro] = useState(1)
-  const nomeDoBloco = unidade.trim() || 'Bloco'
-
-  /**
-   * O endereço sai do nome, e mostra-se antes de criar.
-   *
-   * É a parte que fica gravada dentro de cada QR Code impresso: mudá-la depois
-   * invalida os QR que já foram para o papel. Melhor vê-la agora.
-   */
-  const slug = nome
-    .trim()
-    .toLowerCase()
-    .normalize('NFD')
-    .replace(/[̀-ͯ]/g, '')
-    .replace(/[^a-z0-9]+/g, '-')
-    .replace(/^-+|-+$/g, '')
-
-  return (
-    <section className="painel-bloco">
-      <h2>Criar um projeto novo</h2>
-      <p className="subtitulo">
-        Você informa o nome e quantos blocos quer. O sistema cria os blocos, e o
-        projeto entra na lista acima, escondido até você o mostrar.
-      </p>
-
-      <label className="cartoes-campo">
-        <span>Nome do projeto</span>
-        <input
-          type="text"
-          value={nome}
-          placeholder="31 Atributos de Deus"
-          onChange={(e) => definirNome(e.target.value)}
-        />
-      </label>
-
-      <label className="cartoes-campo">
-        <span>Quantos blocos</span>
-        <input
-          type="number"
-          min={1}
-          max={200}
-          value={blocos}
-          onChange={(e) => definirBlocos(Number(e.target.value))}
-        />
-      </label>
-
-      <label className="cartoes-campo">
-        <span>Nome de cada bloco</span>
-        <input
-          type="text"
-          value={unidade}
-          maxLength={30}
-          placeholder="Dia, Atributo, Bloco"
-          onChange={(e) => definirUnidade(e.target.value)}
-        />
-      </label>
-
-      <label className="cartoes-campo">
-        <span>Começa no número</span>
-        <input
-          type="number"
-          min={1}
-          max={1000}
-          value={primeiro}
-          onChange={(e) => definirPrimeiro(Math.max(1, Number(e.target.value) || 1))}
-        />
-      </label>
-
-      {blocos >= 1 && (
-        <p className="painel-exemplo">
-          Os blocos vão ser: <strong>{nomeDoBloco} {primeiro}</strong>
-          {blocos > 1 && (
-            <>
-              {' '}até <strong>{nomeDoBloco} {primeiro + blocos - 1}</strong>
-            </>
-          )}
-          .
-        </p>
-      )}
-
-      {slug && (
-        <p className="painel-exemplo">
-          Endereço: <strong>/{slug}</strong> — fica dentro dos QR Codes impressos, por
-          isso não se muda depois.
-        </p>
-      )}
-
-      <button
-        type="button"
-        className="cartoes-accao"
-        disabled={ocupado || !slug || blocos < 1}
-        onClick={() =>
-          aoCriar({ slug, nome: nome.trim(), blocos, unidade: nomeDoBloco, primeiroNumero: primeiro })
-        }
-      >
-        {ocupado ? 'A criar…' : `Criar projeto com ${blocos} bloco${blocos === 1 ? '' : 's'}`}
-      </button>
-    </section>
   )
 }

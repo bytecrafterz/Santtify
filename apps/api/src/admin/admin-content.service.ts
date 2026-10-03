@@ -1,5 +1,5 @@
 import { BadRequestException, Injectable, Logger, NotFoundException } from '@nestjs/common'
-import { BlockType, CardEstado, CardPapel, ContentStatus, MediaKind, Prisma } from '@pv/db'
+import { BlockType, CardEstado, CardPapel, ContentStatus, MediaKind, Prisma, ProjectStatus } from '@pv/db'
 import { PrismaService } from '../prisma/prisma.service'
 import { ShortLinksService } from '../short-links/short-links.service'
 import { ContagensService } from '../social/contagens.service'
@@ -239,6 +239,73 @@ export class AdminContentService {
       select: { slug: true, name: true, unidade: true },
     })
     return projetos.map((p) => ({ slug: p.slug, nome: p.name, unidade: p.unidade }))
+  }
+
+  /**
+   * "MEUS PROJETOS": a entrada do painel, desde 03/10.
+   *
+   * Ele tentou criar um projeto e não encontrou onde, e descreveu o painel
+   * como "um feed infinito". O mockup dele abre com os projetos em cartões —
+   * capa, nome, descrição e estado — e o botão de criar por cima de tudo.
+   *
+   * Vêm TODOS, arquivados incluídos: é o filtro do ecrã que os separa. Um
+   * arquivado que desaparecesse da lista nunca mais voltava a ser encontrado.
+   */
+  async meusProjetos() {
+    const projetos = await this.prisma.project.findMany({
+      orderBy: [{ ordemNoCarrossel: 'asc' }, { createdAt: 'asc' }],
+      select: SELECCAO_DO_PROJETO_NO_PAINEL,
+    })
+    const medidas = await this.medidasDasCapas(projetos.map((p) => p.coverUrl))
+    return projetos.map((p) => projetoParaOPainel(p, medidas))
+  }
+
+  /**
+   * O nome, a descrição e o estado de um projeto, mudados no painel.
+   *
+   * O endereço (`slug`) não muda aqui, de propósito: está dentro de cada QR
+   * Code já impresso.
+   */
+  async actualizarProjeto(
+    projectSlug: string,
+    dados: { nome?: string; descricao?: string | null; estado?: EstadoDoProjetoNoPainel },
+    adminId: string,
+  ) {
+    const project = await this.projeto(projectSlug)
+    const alteracoes: Prisma.ProjectUpdateInput = {}
+
+    if (dados.nome !== undefined) {
+      const nome = dados.nome.trim()
+      if (!nome) throw new BadRequestException('O projeto precisa de um nome.')
+      alteracoes.name = nome
+    }
+    if (dados.descricao !== undefined) {
+      alteracoes.description = dados.descricao?.trim() || null
+    }
+    if (dados.estado !== undefined) {
+      alteracoes.status = ESTADO_PARA_STATUS[dados.estado]
+    }
+
+    const actualizado = await this.prisma.project.update({
+      where: { id: project.id },
+      data: alteracoes,
+      select: SELECCAO_DO_PROJETO_NO_PAINEL,
+    })
+    await this.auditar(adminId, project.id, 'project.update', 'Project', project.id, {
+      ...dados,
+    })
+    return projetoParaOPainel(actualizado, await this.medidasDasCapas([actualizado.coverUrl]))
+  }
+
+  /** As medidas das capas, para o cartão reservar a altura antes de a imagem chegar. */
+  private async medidasDasCapas(enderecos: Array<string | null>) {
+    const urls = enderecos.filter((u): u is string => Boolean(u))
+    if (urls.length === 0) return new Map<string, { width: number | null; height: number | null }>()
+    const assets = await this.prisma.mediaAsset.findMany({
+      where: { url: { in: urls } },
+      select: { url: true, width: true, height: true },
+    })
+    return new Map(assets.map((a) => [a.url, { width: a.width, height: a.height }]))
   }
 
   async publicar(contentId: string, publicar: boolean, adminId: string) {
@@ -2063,5 +2130,54 @@ export class AdminContentService {
         changes: changes as Prisma.InputJsonValue,
       },
     })
+  }
+}
+
+/** O estado de um projeto como o painel o diz. */
+export type EstadoDoProjetoNoPainel = 'PUBLICADO' | 'RASCUNHO' | 'ARQUIVADO'
+
+const ESTADO_PARA_STATUS: Record<EstadoDoProjetoNoPainel, ProjectStatus> = {
+  PUBLICADO: ProjectStatus.ACTIVE,
+  RASCUNHO: ProjectStatus.DRAFT,
+  ARQUIVADO: ProjectStatus.ARCHIVED,
+}
+
+const SELECCAO_DO_PROJETO_NO_PAINEL = {
+  slug: true,
+  name: true,
+  description: true,
+  tagline: true,
+  coverUrl: true,
+  status: true,
+  unidade: true,
+  sequencia: true,
+  blocos: true,
+  primeiroNumero: true,
+  createdAt: true,
+  updatedAt: true,
+} satisfies Prisma.ProjectSelect
+
+function projetoParaOPainel(
+  p: Prisma.ProjectGetPayload<{ select: typeof SELECCAO_DO_PROJETO_NO_PAINEL }>,
+  medidas: Map<string, { width: number | null; height: number | null }>,
+) {
+  const estado: EstadoDoProjetoNoPainel =
+    p.status === ProjectStatus.ACTIVE ? 'PUBLICADO' : p.status === ProjectStatus.ARCHIVED ? 'ARQUIVADO' : 'RASCUNHO'
+  return {
+    slug: p.slug,
+    nome: p.name,
+    // A descrição é o texto do cartão. Os projetos antigos só tinham a frase
+    // curta do carrossel, e é essa que aparece até ele escrever outra.
+    descricao: p.description ?? p.tagline ?? null,
+    capa: p.coverUrl,
+    capaLargura: (p.coverUrl && medidas.get(p.coverUrl)?.width) || null,
+    capaAltura: (p.coverUrl && medidas.get(p.coverUrl)?.height) || null,
+    estado,
+    unidade: p.unidade,
+    sequencia: p.sequencia,
+    casas: p.sequencia === 'LETRAS' ? 26 : p.blocos,
+    primeiroNumero: p.primeiroNumero,
+    criadoEm: p.createdAt,
+    actualizadoEm: p.updatedAt,
   }
 }
