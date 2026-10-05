@@ -189,6 +189,7 @@ export class ProvedorMercadoPago extends ProvedorDePagamento {
       return {
         idExterno: `mp:order:${order.id}:${estado}:${detalhe}${reembolsado ? `:${reembolsado}` : ''}`,
         referenciaExterna: String(order.id),
+        pedidoId: order.external_reference ? String(order.external_reference) : null,
         tipo: `order.${estado}`,
         pago: (estado === 'processed' && (detalhe === 'accredited' || parcial)) || totalmente,
         reembolsadoCent: reembolsado || null,
@@ -221,6 +222,7 @@ export class ProvedorMercadoPago extends ProvedorDePagamento {
       return {
         idExterno: `mp:payment:${pagamento.id}:${estado}${reembolsado ? `:${reembolsado}` : ''}`,
         referenciaExterna: `${CARTAO}${pagamento.external_reference}`,
+        pedidoId: String(pagamento.external_reference),
         tipo: `payment.${estado}`,
         pago: estado === 'approved' || estado === 'in_mediation' || totalmente,
         reembolsadoCent: reembolsado || null,

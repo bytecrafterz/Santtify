@@ -1,5 +1,6 @@
 import { Injectable, Logger } from '@nestjs/common'
 import { randomUUID } from 'node:crypto'
+import { MeioDePagamento } from '@pv/db'
 import * as QRCode from 'qrcode'
 import {
   ProvedorDePagamento,
@@ -32,6 +33,17 @@ export class ProvedorManual extends ProvedorDePagamento {
 
   async criarCobranca(pedido: CobrancaPedida): Promise<CobrancaCriada> {
     const referenciaExterna = `manual_${randomUUID()}`
+
+    /*
+      NO CARTÃO, NADA DE QR (05/10). Desenhava-se o mesmo QR "de Pix" para os
+      dois meios: quem escolhesse cartão via um Pix, e era mais uma razão para
+      "só aparece a opção PIX". Sem provedor não há página de cartão para onde ir: fica a aguardar, e a
+      confirmação entra pelo painel, como a do Pix.
+    */
+    if (pedido.meio === MeioDePagamento.CARTAO) {
+      this.logger.warn(`Cobrança de cartão sem provedor real (${referenciaExterna}). Confirme pelo painel.`)
+      return { referenciaExterna }
+    }
 
     /**
      * O texto do QR é deliberadamente legível e deliberadamente NÃO é um Pix.

@@ -37,6 +37,9 @@ const TEXTO_DO_CONSENTIMENTO =
 /** As letras do código de liberação: sem 0/O, 1/I/L, que se confundem ao ditar. */
 const ALFABETO_DO_CODIGO = '23456789ABCDEFGHJKMNPQRSTUVWXYZ'
 
+/** Um id de pedido, antes de o levar à base: o `external_reference` vem de fora. */
+const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i
+
 /** "k7qm 2xpa", "K7QM2XPA" → "K7QM-2XPA". */
 function normalizarCodigo(codigo: string): string {
   const limpo = (codigo ?? '').toUpperCase().replace(/[^0-9A-Z]/g, '')
@@ -508,9 +511,14 @@ export class CartoesService {
    * pagamento é a avaria que só aparece no extracto do cliente.
    */
   async registarAviso(aviso: AvisoDePagamento) {
-    const pedido = await this.prisma.pedidoDeCartoes.findUnique({
-      where: { referenciaExterna: aviso.referenciaExterna },
-    })
+    const pedido =
+      (await this.prisma.pedidoDeCartoes.findUnique({
+        where: { referenciaExterna: aviso.referenciaExterna },
+      })) ??
+      // Trocou de meio depois de criar esta cobrança: ver `pedidoId` no aviso.
+      (aviso.pedidoId && UUID.test(aviso.pedidoId)
+        ? await this.prisma.pedidoDeCartoes.findUnique({ where: { id: aviso.pedidoId } })
+        : null)
     if (!pedido) {
       this.logger.warn(`Aviso para referência desconhecida: ${aviso.referenciaExterna}`)
       return { ignorado: true }

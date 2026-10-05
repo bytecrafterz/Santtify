@@ -123,6 +123,8 @@ export function EditorDeCartoes({
   /** Em qual dos sete cartões ela está — fora do editor, para sobreviver ao pagamento. */
   const [cartaoActivo, definirCartaoActivo] = useState(0)
   const [aConfirmar, definirAConfirmar] = useState<'PIX' | 'CARTAO' | null>(null)
+  /** Já escolheu um meio e quer o outro: as duas opções voltam (05/10). */
+  const [trocandoMeio, definirTrocandoMeio] = useState(false)
   const [erro, definirErro] = useState<string | null>(null)
   const [ocupado, definirOcupado] = useState<string | null>(null)
   const { usuario } = useAuth()
@@ -533,7 +535,7 @@ export function EditorDeCartoes({
             </span>
           </p>
 
-          {!pedido.meio && (
+          {(!pedido.meio || trocandoMeio) && (
             <div className="cartoes-meios">
               <label className="cartoes-email-pagamento">
                 <span>Seu e-mail, para o comprovante</span>
@@ -546,22 +548,52 @@ export function EditorDeCartoes({
                   placeholder="voce@exemplo.com"
                 />
               </label>
-              <button
-                type="button"
-                className="cartoes-accao"
-                disabled={ocupado !== null || !emailValido(email)}
-                onClick={() => definirAConfirmar('PIX')}
-              >
-                Pagar com Pix
-              </button>
-              <button
-                type="button"
-                className="cartoes-accao-secundaria"
-                disabled={ocupado !== null || !emailValido(email)}
-                onClick={() => definirAConfirmar('CARTAO')}
-              >
-                Pagar com cartão
-              </button>
+              {/*
+                PIX E CARTÃO, LADO A LADO E DO MESMO TAMANHO (05/10).
+
+                "Só aparece a opção PIX. Não aparece a opção de cartão de
+                crédito." O cartão era um botão claro por baixo do verde do Pix,
+                e lia-se como coisa de segunda; e depois de escolher o Pix uma
+                vez, desaparecia de vez — o pedido ficava com o meio, e o ecrã
+                só mostrava o QR. Agora são duas escolhas iguais, e enquanto
+                não se paga dá para trocar (`trocandoMeio`).
+              */}
+              <p className="cartoes-meios-titulo">Como você quer pagar?</p>
+              <div className="cartoes-meios-opcoes">
+                <button
+                  type="button"
+                  className="cartoes-meio pix"
+                  disabled={ocupado !== null || !emailValido(email)}
+                  onClick={() => definirAConfirmar('PIX')}
+                >
+                  <span className="cartoes-meio-icone" aria-hidden="true">
+                    <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinejoin="round">
+                      <path d="M12 3.5 20.5 12 12 20.5 3.5 12Z" />
+                      <path d="M8.5 12h7" />
+                    </svg>
+                  </span>
+                  <strong>Pix</strong>
+                  <small>Aprovação na hora</small>
+                </button>
+                <button
+                  type="button"
+                  className="cartoes-meio cartao"
+                  disabled={ocupado !== null || !emailValido(email)}
+                  onClick={() => definirAConfirmar('CARTAO')}
+                >
+                  <span className="cartoes-meio-icone" aria-hidden="true">
+                    <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                      <rect x="3" y="5.5" width="18" height="13" rx="2.5" />
+                      <path d="M3 10h18M7 15h4" />
+                    </svg>
+                  </span>
+                  <strong>Cartão de crédito</strong>
+                  <small>Na página do Mercado Pago</small>
+                </button>
+              </div>
+              {!emailValido(email) && (
+                <p className="cartoes-ajuda">Escreva o seu e-mail acima para escolher a forma de pagamento.</p>
+              )}
               {/*
                 O CARTÃO SAI DESTA PÁGINA, e a foto não vai junto.
 
@@ -575,6 +607,11 @@ export function EditorDeCartoes({
                 novo para gerar os cartões (ela não fica guardada em lugar nenhum). No Pix, você continua
                 nesta tela.
               </p>
+              {trocandoMeio && (
+                <button type="button" className="cartoes-ligacao" onClick={() => definirTrocandoMeio(false)}>
+                  Voltar ao pagamento que já tinha escolhido
+                </button>
+              )}
             </div>
           )}
 
@@ -592,6 +629,7 @@ export function EditorDeCartoes({
                 void comErro(meio === 'PIX' ? 'pix' : 'cartao', async () => {
                   const resposta = await cartoes.pagar(projectSlug, pedido.id, meio, email.trim(), true, true)
                   definirPedido(resposta)
+                  definirTrocandoMeio(false)
                   if (meio === 'CARTAO' && resposta.urlDeRedireccionamento) {
                     window.location.assign(resposta.urlDeRedireccionamento)
                   }
@@ -600,7 +638,7 @@ export function EditorDeCartoes({
             />
           )}
 
-          {pedido.pixQrSvg && (
+          {pedido.pixQrSvg && !trocandoMeio && (
             <div className="cartoes-pix">
               <div
                 className="cartoes-pix-qr"
@@ -644,10 +682,14 @@ export function EditorDeCartoes({
             </div>
           )}
 
-          {pedido.meio && <p className="cartoes-estado-espera">Aguardando confirmação do pagamento…</p>}
+          {pedido.meio && !trocandoMeio && (
+            <p className="cartoes-estado-espera">
+              {pedido.meio === 'CARTAO' ? 'Pagamento com cartão: aguardando confirmação…' : 'Aguardando confirmação do pagamento…'}
+            </p>
+          )}
           {erro && <p className="cartoes-erro">{erro}</p>}
 
-          {pedido.meio && (
+          {pedido.meio && !trocandoMeio && (
             <button
               type="button"
               className="cartoes-ligacao"
@@ -658,6 +700,11 @@ export function EditorDeCartoes({
               }
             >
               Já paguei — verificar agora
+            </button>
+          )}
+          {pedido.meio && !trocandoMeio && (
+            <button type="button" className="cartoes-ligacao" onClick={() => definirTrocandoMeio(true)}>
+              {pedido.meio === 'PIX' ? 'Prefiro pagar com cartão de crédito' : 'Trocar a forma de pagamento'}
             </button>
           )}
         </section>

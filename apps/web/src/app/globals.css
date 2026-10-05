@@ -5196,20 +5196,18 @@ button.letra-bloco {
    baixo e a seta num botão de vidro por cima da arte, do lado para onde vai.
 
    O anterior à esquerda, o seguinte à direita, sempre nos mesmos sítios;
-   quando só há um lado, a outra coluna fica vazia. */
+   quando só há um lado, a outra coluna fica vazia.
+
+   05/10: A SEGUINTE GRANDE. No Dia 1 ficava sozinha em meia largura, e ele
+   pediu-a grande. Agora tem a largura toda, e a anterior desce para uma linha
+   com miniatura por baixo dela (ver `CasaAoLado`). O tecto de largura fica:
+   no computador é do tamanho de um telemóvel grande, e não o cartaz de 24/09. */
 .vizinhas {
   display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
   gap: 12px;
-  /* No computador, dois cartazes de meia coluna voltavam a ser o fim de página
-     em cartaz de 24/09; ao meio e com tecto, ficam do tamanho de um telemóvel
-     grande. */
-  max-width: 560px;
+  max-width: 440px;
   margin: 28px auto 1.75rem;
 }
-
-.vizinha-anterior { grid-column: 1; }
-.vizinha-proximo { grid-column: 2; }
 
 .vizinha {
   position: relative;
@@ -5357,9 +5355,67 @@ button.letra-bloco {
   padding: 0 6px;
 }
 
+/* A seguinte, grande: o nome à medida dela. */
 .vizinha-proximo .vizinha-texto {
-  justify-items: end;
-  text-align: right;
+  padding: 0 8px;
+}
+
+.vizinha-proximo .vizinha-texto small {
+  font-size: 0.74rem;
+}
+
+.vizinha-proximo .vizinha-texto strong {
+  font-size: 1.2rem;
+}
+
+.vizinha-proximo .vizinha-seta {
+  right: 12px;
+  bottom: 12px;
+  width: 44px;
+  height: 44px;
+}
+
+.vizinha-proximo .vizinha-seta svg {
+  width: 20px;
+  height: 20px;
+}
+
+/* A anterior, numa linha: seta, miniatura e nome. */
+.vizinha-anterior {
+  flex-direction: row;
+  align-items: center;
+  gap: 12px;
+  padding: 8px 14px 8px 10px;
+  border-radius: 18px;
+}
+
+.vizinha-anterior .vizinha-seta {
+  position: static;
+  flex: none;
+  width: 32px;
+  height: 32px;
+}
+
+.vizinha-miniatura {
+  flex: none;
+  display: grid;
+  place-items: center;
+  width: 56px;
+  height: 56px;
+  overflow: hidden;
+  border-radius: 12px;
+  background: linear-gradient(145deg, #eef1f8 0%, #e2e7f1 100%);
+}
+
+.vizinha-miniatura img {
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.vizinha-miniatura .vizinha-marca {
+  font-size: 1.6rem;
 }
 
 .vizinha-texto small {
@@ -5398,7 +5454,6 @@ button.letra-bloco {
   justify-self: start;
 }
 
-.vizinha-proximo .vizinha-texto em { justify-self: end; }
 
 @media (hover: hover) {
   a.vizinha:hover {
@@ -5459,7 +5514,8 @@ a.vizinha:focus-visible {
     border-color: rgba(255, 255, 255, 0.14);
   }
 
-  .vizinha-arte { background: linear-gradient(145deg, #262a35 0%, #1f2330 100%); }
+  .vizinha-arte,
+  .vizinha-miniatura { background: linear-gradient(145deg, #262a35 0%, #1f2330 100%); }
 
   .vizinha.trancada .vizinha-marca {
     background-image: linear-gradient(135deg, #454c5c 0%, #363c49 100%);
@@ -9900,6 +9956,72 @@ h2.funil {
 .cartoes-meios {
   display: grid;
   gap: 8px;
+}
+
+/* Pix e cartão, duas escolhas do mesmo tamanho (05/10). */
+.cartoes-meios-titulo {
+  margin: 6px 0 0;
+  font-weight: 700;
+}
+
+.cartoes-meios-opcoes {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 10px;
+}
+
+.cartoes-meio {
+  display: grid;
+  justify-items: center;
+  align-content: start;
+  gap: 4px;
+  min-height: 116px;
+  padding: 16px 10px 14px;
+  font: inherit;
+  color: var(--cor-texto);
+  text-align: center;
+  cursor: pointer;
+  background: var(--cor-superficie);
+  border: 2px solid rgb(37 99 235 / 30%);
+  border-radius: 16px;
+  -webkit-tap-highlight-color: transparent;
+  transition: transform 150ms ease, border-color 150ms ease;
+}
+
+.cartoes-meio strong {
+  font-size: 1.02rem;
+  line-height: 1.2;
+}
+
+.cartoes-meio small {
+  font-size: 0.8rem;
+  color: var(--cor-texto-suave);
+}
+
+.cartoes-meio-icone {
+  display: grid;
+  place-items: center;
+  width: 42px;
+  height: 42px;
+  margin-bottom: 4px;
+  color: #fff;
+  border-radius: 12px;
+}
+
+.cartoes-meio.pix .cartoes-meio-icone { background: #32bcad; }
+.cartoes-meio.cartao .cartoes-meio-icone { background: #2563eb; }
+
+.cartoes-meio:not(:disabled):hover { border-color: #2563eb; }
+.cartoes-meio:not(:disabled):active { transform: scale(0.98); }
+
+.cartoes-meio:disabled {
+  cursor: not-allowed;
+  opacity: 0.5;
+}
+
+.cartoes-meio:focus-visible {
+  outline: 2px solid var(--cor-primaria);
+  outline-offset: 3px;
 }
 
 .cartoes-email-pagamento {
@@ -18101,49 +18223,53 @@ a.pi-cartao:hover .pi-cartao-seta {
   display: flex;
   flex-wrap: wrap;
   gap: 4px 8px;
-  align-items: center;
+  align-items: flex-start;
   justify-content: center;
   margin: 10px auto 0;
+  padding: 10px 14px;
   font-weight: 700;
-  text-align: center;
+  line-height: 1.35;
+  text-align: left;
+  border-radius: 12px;
 }
 
-.ce-qualidade small {
-  font-weight: 500;
-  color: var(--cor-texto-suave);
+/* O veredito (05/10): verde aprovada, âmbar aceitável, vermelho recusada. */
+.ce-qualidade-icone {
+  flex: none;
 }
 
-.ce-qualidade-ponto {
-  width: 10px;
-  height: 10px;
-  border-radius: 50%;
+/* Ao lado do ícone, e não por baixo dele. */
+.ce-qualidade-texto {
+  flex: 1 1 0;
+  min-width: 0;
 }
 
-.ce-qualidade.boa {
+.ce-qualidade.aprovada {
   color: #15803d;
-}
-
-.ce-qualidade.boa .ce-qualidade-ponto {
-  background: #16a34a;
-  box-shadow: 0 0 0 4px rgb(22 163 74 / 18%);
+  background: rgb(22 163 74 / 10%);
 }
 
 .ce-qualidade.aceitavel {
-  color: #b45309;
+  color: #92400e;
+  background: rgb(245 158 11 / 14%);
 }
 
-.ce-qualidade.aceitavel .ce-qualidade-ponto {
-  background: #f59e0b;
-  box-shadow: 0 0 0 4px rgb(245 158 11 / 20%);
+.ce-qualidade.recusada {
+  color: #b91c1c;
+  background: rgb(220 38 38 / 10%);
 }
 
 @media (prefers-color-scheme: dark) {
-  .ce-qualidade.boa {
+  .ce-qualidade.aprovada {
     color: #4ade80;
   }
 
   .ce-qualidade.aceitavel {
-    color: #fbbf24;
+    color: #fcd34d;
+  }
+
+  .ce-qualidade.recusada {
+    color: #fca5a5;
   }
 }
 
@@ -18152,21 +18278,7 @@ a.pi-cartao:hover .pi-cartao-seta {
   font-size: 0.85rem;
   font-weight: 500;
   color: var(--cor-texto-suave);
-}
-
-.ce-aviso-nitidez {
-  margin: 10px 0 0;
-  padding: 10px 14px;
-  font-size: 0.92rem;
-  color: #92400e;
-  background: rgb(245 158 11 / 14%);
-  border-radius: 12px;
-}
-
-@media (prefers-color-scheme: dark) {
-  .ce-aviso-nitidez {
-    color: #fcd34d;
-  }
+  text-align: center;
 }
 
 .ce-privacidade {

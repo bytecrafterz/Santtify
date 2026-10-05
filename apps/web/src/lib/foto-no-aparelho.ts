@@ -100,7 +100,62 @@ export function qualidade(
   const dpi = Math.min(
     ...modelos.map((m) => dpiEfetivo({ largura: m.moldura.largura, altura: m.moldura.altura }, foto, ajuste)),
   )
-  return { dpi: Math.round(dpi), nivel: dpi >= DPI_BOM ? 'BOA' : dpi >= DPI_ACEITAVEL ? 'ACEITAVEL' : 'INSUFICIENTE' }
+  // O nível vai pelo número arredondado, o mesmo de que `escalaMaxima` parte:
+  // no zoom máximo o recorte dá 199,9 — e não podia ser "não aprovada" ali.
+  const arredondado = Math.round(dpi)
+  return {
+    dpi: arredondado,
+    nivel: arredondado >= DPI_BOM ? 'BOA' : arredondado >= DPI_ACEITAVEL ? 'ACEITAVEL' : 'INSUFICIENTE',
+  }
+}
+
+export interface Veredito {
+  nivel: 'APROVADA' | 'ACEITAVEL' | 'RECUSADA'
+  texto: string
+  /** Só para quem quiser conferir (fica no `title`); à vista não aparece. */
+  dpi: number
+}
+
+/**
+ * Um veredito só, com a resolução E a nitidez (05/10).
+ *
+ * O ecrã dizia "Qualidade de impressão: boa (200 dpi)" e logo abaixo que a
+ * foto estava desfocada. O cliente: "para o usuário, isso pode parecer
+ * contraditório". E são mesmo duas medidas diferentes — uma foto pode ter 300
+ * dpi e estar desfocada. A regra dele:
+ *
+ *   300 dpi ou mais = excelente; 200 a 299 = boa; abaixo de 200 = não aprovada.
+ *   Aprovada só se passar nos dois: 200 dpi no tamanho real E nitidez mínima.
+ *   Resolução boa e levemente desfocada → aceitável, recomenda-se outra.
+ *   Muito desfocada, mesmo com resolução → não aprovada.
+ *
+ * As frases são as dele. Abaixo de 200 dpi e "muito desfocada" já se recusam
+ * ao abrir (`abrirFoto`) e o zoom não desce dos 200 (`escalaMaxima`); ficam
+ * aqui na mesma, para o veredito nunca dizer "aprovada" ao que não passa.
+ */
+export function veredito(modelos: ModeloDeCartao[], foto: FotoNoAparelho, ajuste: Ajuste): Veredito {
+  const q = qualidade(modelos, foto, ajuste)
+  if (q.nivel === 'INSUFICIENTE') {
+    return { nivel: 'RECUSADA', dpi: q.dpi, texto: 'Foto não aprovada — diminua o zoom ou envie uma foto maior.' }
+  }
+  if (foto.nitidez.nivel === 'DESFOCADA') {
+    return { nivel: 'RECUSADA', dpi: q.dpi, texto: 'Foto não aprovada — envie outra foto mais nítida.' }
+  }
+  if (foto.nitidez.nivel === 'DUVIDOSA') {
+    return {
+      nivel: 'ACEITAVEL',
+      dpi: q.dpi,
+      texto: 'Qualidade aceitável, mas recomendamos uma foto mais nítida para obter um resultado melhor.',
+    }
+  }
+  return {
+    nivel: 'APROVADA',
+    dpi: q.dpi,
+    texto:
+      q.nivel === 'BOA'
+        ? 'Foto aprovada — qualidade excelente para impressão.'
+        : 'Foto aprovada — qualidade adequada para impressão.',
+  }
 }
 
 /**
@@ -199,12 +254,12 @@ export async function abrirFoto(ficheiro: File, modelos: ModeloDeCartao[]): Prom
   const altura = imagem.naturalHeight
   const foto = { largura, altura }
 
+  // "O cliente não precisa entender nada de pixels, DPI ou resolução" — 05/10.
+  // As recusas dizem o veredito e o que fazer, e mais nada. Ver `veredito`.
   if (qualidade(modelos, foto, ajusteNeutro()).nivel === 'INSUFICIENTE') {
     URL.revokeObjectURL(url)
-    const { ideal, minimo } = pixeisNecessarios(modelos)
     throw new FotoRecusada(
-      `Esta foto tem ${largura} × ${altura} pixels e fica sem nitidez no cartão impresso. ` +
-        `Precisa de pelo menos ${minimo.largura} × ${minimo.altura} pixels (o ideal é ${ideal.largura} × ${ideal.altura}). ` +
+      '❌ Foto não aprovada — ela é pequena demais para imprimir com nitidez. ' +
         'Envie a foto original, da galeria, e não uma cópia reduzida.',
     )
   }
@@ -212,9 +267,7 @@ export async function abrirFoto(ficheiro: File, modelos: ModeloDeCartao[]): Prom
   const nitidez = medirNitidez(imagem, largura, altura, modelos)
   if (nitidez.nivel === 'DESFOCADA') {
     URL.revokeObjectURL(url)
-    throw new FotoRecusada(
-      'Esta foto está desfocada e o cartão sairia borrado. Escolha uma foto em que o rosto esteja nítido.',
-    )
+    throw new FotoRecusada('❌ Foto não aprovada — envie outra foto mais nítida.')
   }
 
   return { url, urlDaPrevia: await copiaLeve(imagem, largura, altura, url), imagem, largura, altura, nitidez }

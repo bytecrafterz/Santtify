@@ -9,6 +9,7 @@ import { VisualizacoesDasPublicacoes } from '@/components/VisualizacoesDasPublic
 import { SeloProdutoVivo } from '@/components/SeloProdutoVivo'
 import { BannerDeConsentimento } from '@/components/BannerDeConsentimento'
 import { OfertaDaLetra } from '@/components/OfertaDaLetra'
+import { OfertaDeCartoes } from '@/components/OfertaDeCartoes'
 import { BarraInferior } from '@/components/BarraInferior'
 import { TopoDosProjetos } from '@/components/TopoDosProjetos'
 import { projetosDoCarrossel } from '@/lib/carrossel'
@@ -42,6 +43,14 @@ import type { CasaVizinha } from '@/lib/api'
  * quadradas; numa caixa de proporção fixa, uma delas saía sempre cortada. Fica
  * contida na caixa, e o espaço que sobra é a própria arte desfocada por trás
  * — o fundo é da cor dela, e nenhuma fica com barras vazias.
+ *
+ * ── A SEGUINTE GRANDE, A ANTERIOR NUMA LINHA (05/10) ────────────────
+ *
+ * No Dia 1 não há anterior, e a seguinte ficava sozinha em meia largura,
+ * encostada à direita. Ele: "esta imagem de baixo, coloca grande". A seguinte
+ * passa a ter a largura toda — com tecto, para no computador não voltar a ser
+ * o cartaz de 24/09 — e a anterior, quando existe, fica por baixo numa linha
+ * com miniatura: o caminho para trás continua lá, sem disputar com o da frente.
  */
 function CasaAoLado({
   casa,
@@ -67,7 +76,35 @@ function CasaAoLado({
     casa.publicado ? casa.title : null,
   )
 
-  const dentro = (
+  const seta = (
+    <span className="vizinha-seta" aria-hidden="true">
+      <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round">
+        <path d={lado === 'anterior' ? 'M14.5 5.5 8 12l6.5 6.5' : 'M9.5 5.5 16 12l-6.5 6.5'} />
+      </svg>
+    </span>
+  )
+  const texto = (
+    <span className="vizinha-texto">
+      <small>{rotulo}</small>
+      <strong>{nome}</strong>
+      {!casa.publicado && <em>Em breve</em>}
+    </span>
+  )
+
+  const dentro = lado === 'anterior' ? (
+    <>
+      {seta}
+      <span className="vizinha-miniatura" aria-hidden="true">
+        {casa.publicado && casa.coverUrl ? (
+          // eslint-disable-next-line @next/next/no-img-element
+          <img src={casa.coverUrl} alt="" loading="lazy" />
+        ) : (
+          <span className="vizinha-marca">{casa.letra ?? casa.ordinal}</span>
+        )}
+      </span>
+      {texto}
+    </>
+  ) : (
     <>
       {/*
         O CADEADO É SOBRE ESTAR FECHADA, NÃO SOBRE FALTAR A IMAGEM.
@@ -103,17 +140,9 @@ function CasaAoLado({
             </svg>
           </span>
         )}
-        <span className="vizinha-seta" aria-hidden="true">
-          <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round">
-            <path d={lado === 'anterior' ? 'M14.5 5.5 8 12l6.5 6.5' : 'M9.5 5.5 16 12l-6.5 6.5'} />
-          </svg>
-        </span>
+        {seta}
       </span>
-      <span className="vizinha-texto">
-        <small>{rotulo}</small>
-        <strong>{nome}</strong>
-        {!casa.publicado && <em>Em breve</em>}
-      </span>
+      {texto}
     </>
   )
 
@@ -209,6 +238,16 @@ export default async function PaginaDeConteudo({
      e a lista precisa das faixas. Chamar duas vezes percorreria os blocos
      duas vezes para dar a mesma resposta. */
   const publicacoes = publicacoesDe(dados)
+
+  /*
+    NA ÚLTIMA CASA, A OFERTA DOS CARTÕES (05/10).
+
+    "Quando terminar o número 7, coloca logo abaixo este cartão de 49." O Dia 7
+    não tem seguinte, e o fim dele ficava só com o caminho para trás. É o mesmo
+    cartaz da página do projeto (`OfertaDeCartoes`), com os mesmos dados — a
+    arte, o preço e o "em breve" vêm do painel, não daqui.
+  */
+  const ofertas = navegacao.proximo ? null : await api.cartoesDoProjeto(projectSlug).catch(() => null)
 
   return (
     <main className="envoltorio com-barra com-topo-de-projetos">
@@ -327,6 +366,8 @@ export default async function PaginaDeConteudo({
         do card do projeto passou a trazer o acumulado de tudo — as letras, as
         faixas e a página do projeto. Deixaram de ter um só sítio onde aparecer.
       */}
+      {ofertas && <OfertaDeCartoes projectSlug={projectSlug} projectId={project.id} categorias={ofertas} />}
+
       {/* Depois do conteúdo e da área social: a pessoa ouviu, gostou, e é aí
           que faz sentido oferecer. Antes disso seria vender antes de mostrar. */}
       <OfertaDaLetra
@@ -372,15 +413,16 @@ export default async function PaginaDeConteudo({
           className="vizinhas"
           aria-label={`${unidade} anterior e seguinte`}
         >
+          {/* A seguinte primeiro e grande; a anterior por baixo, numa linha. */}
           <CasaAoLado
-            casa={navegacao.anterior}
-            lado="anterior"
+            casa={navegacao.proximo}
+            lado="proximo"
             unidade={unidade}
             projectSlug={projectSlug}
           />
           <CasaAoLado
-            casa={navegacao.proximo}
-            lado="proximo"
+            casa={navegacao.anterior}
+            lado="anterior"
             unidade={unidade}
             projectSlug={projectSlug}
           />

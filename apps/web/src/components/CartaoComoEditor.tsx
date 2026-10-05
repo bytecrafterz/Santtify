@@ -10,7 +10,7 @@ import {
   type Ajuste,
 } from '@pv/cartoes'
 import type { AlinhamentoDoNome, ModeloDeCartao } from '@/lib/cartoes'
-import { escalaMaxima, qualidade, type FotoNoAparelho } from '@/lib/foto-no-aparelho'
+import { escalaMaxima, veredito, type FotoNoAparelho } from '@/lib/foto-no-aparelho'
 import { medidorDoNome, nomeImprimivel, type Personalizacao } from '@/lib/pdf-no-aparelho'
 import { LupaDoCartao, type FocoDaLupa } from './LupaDoCartao'
 import { ArteEmPdf } from './ArteEmPdf'
@@ -179,7 +179,7 @@ export function CartaoComoEditor({
     aos 200 dpi no cartão que pede mais.
   */
   const zoomMaximo = useMemo(() => (foto ? escalaMaxima(modelos, foto) : 6), [foto, modelos])
-  const qualidadeAgora = useMemo(() => (foto ? qualidade(modelos, foto, ajuste) : null), [foto, modelos, ajuste])
+  const vereditoAgora = useMemo(() => (foto ? veredito(modelos, foto, ajuste) : null), [foto, modelos, ajuste])
 
   /*
     O DESLOCAMENTO FICA DENTRO DO QUE A FOTO TEM PARA DAR.
@@ -497,27 +497,27 @@ export function CartaoComoEditor({
         A QUALIDADE DE IMPRESSÃO, DEPOIS DO CORTE (03/10).
 
         "Qualidade para A4: medir os pixels depois do corte. Ideal 300 dpi (…),
-        mínimo 200 dpi." Medida a cada mexida, no cartão que pede mais, e dita
-        em palavras — com o número ao lado para quem o quiser conferir.
+        mínimo 200 dpi." Medida a cada mexida, no cartão que pede mais.
+
+        05/10: UM VEREDITO SÓ, com a nitidez junto. Eram duas linhas — "boa
+        (200 dpi)" e, por baixo, "parece desfocada" — e ele achou-as
+        contraditórias. Sem números à vista: "o sistema analisa tudo e
+        simplesmente informa se a foto está aprovada". Ver `veredito`.
       */}
-      {foto && qualidadeAgora && (
-        <p className={`ce-qualidade ${qualidadeAgora.nivel === 'BOA' ? 'boa' : 'aceitavel'}`}>
-          <span className="ce-qualidade-ponto" aria-hidden="true" />
-          {qualidadeAgora.nivel === 'BOA'
-            ? 'Qualidade de impressão: ótima'
-            : 'Qualidade de impressão: boa'}{' '}
-          <small>({qualidadeAgora.dpi} dpi)</small>
+      {foto && vereditoAgora && (
+        <p
+          className={`ce-qualidade ${vereditoAgora.nivel.toLowerCase()}`}
+          title={`${vereditoAgora.dpi} dpi no cartão que pede mais`}
+        >
+          <span className="ce-qualidade-icone" aria-hidden="true">
+            {vereditoAgora.nivel === 'APROVADA' ? '✅' : vereditoAgora.nivel === 'ACEITAVEL' ? '⚠️' : '❌'}
+          </span>
+          <span className="ce-qualidade-texto">{vereditoAgora.texto}</span>
           {ajuste.escala >= zoomMaximo - 0.001 && zoomMaximo < 6 && (
             <span className="ce-qualidade-nota">
               Este é o zoom máximo para a foto continuar nítida no papel.
             </span>
           )}
-        </p>
-      )}
-      {foto?.nitidez.nivel === 'DUVIDOSA' && (
-        <p className="ce-aviso-nitidez">
-          A foto parece um pouco desfocada. Se tiver outra com o rosto mais nítido, use-a: no papel, a
-          diferença aparece.
         </p>
       )}
 

@@ -66,6 +66,15 @@ export interface AvisoDePagamento {
   /** O id do EVENTO no provedor. É a chave da idempotência, não o da cobrança. */
   idExterno: string
   referenciaExterna: string
+  /**
+   * O nosso pedido, tal como o provedor o repete (`external_reference`).
+   *
+   * Desde 05/10 dá para trocar de Pix para cartão, e cada troca grava no
+   * pedido a referência da cobrança nova. Um Pix da cobrança anterior, pago
+   * depois da troca, chegava com uma referência que já não está em lado
+   * nenhum — e o dinheiro entrava sem destrancar nada. É por aqui que se acha.
+   */
+  pedidoId?: string | null
   tipo: string
   /**
    * O dinheiro entrou. Continua verdadeiro num reembolso: um pagamento só se
