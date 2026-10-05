@@ -14,7 +14,8 @@ import {
   type TipoDeChavePix,
   type VendaDoAfiliado,
 } from '@/lib/afiliados'
-import { LinhaDeVenda, ResumoDoAfiliado } from './AreaDoAfiliado'
+import { LinhaDeVenda, ResumoDoAfiliado, SeloDeVagas, VagasEsgotadas } from './AreaDoAfiliado'
+import { SimulacoesDeGanhos } from './SimulacaoDeGanhos'
 
 const EXEMPLO: Record<TipoDeChavePix, string> = {
   CPF: '000.000.000-00',
@@ -75,7 +76,25 @@ export function PainelDoAfiliado({ projectSlug }: { projectSlug: string }) {
       {erro && <p className="erro">{erro}</p>}
       {!painel && !erro && <p className="vazio">Carregando...</p>}
 
-      {painel?.estado === 'BLOQUEADO' && (
+      {painel && (
+        <div className="af-area">
+          <div className="af-corpo">
+            <SeloDeVagas vagas={painel.vagas} />
+          </div>
+        </div>
+      )}
+
+      {painel?.estado === 'BLOQUEADO' && painel.programaAtivo && painel.vagas.ocupadas >= painel.vagas.total && (
+        <div className="af-area">
+          <div className="af-corpo">
+            <div className="af-bloqueado">
+              <VagasEsgotadas total={painel.vagas.total} />
+            </div>
+          </div>
+        </div>
+      )}
+
+      {painel?.estado === 'BLOQUEADO' && !(painel.programaAtivo && painel.vagas.ocupadas >= painel.vagas.total) && (
         <div className="af-area">
           <div className="af-corpo">
             <div className="af-bloqueado">
@@ -138,6 +157,14 @@ export function PainelDoAfiliado({ projectSlug }: { projectSlug: string }) {
             </div>
           </section>
         </>
+      )}
+
+      {painel && (
+        <section className="af-area">
+          <div className="af-corpo">
+            <SimulacoesDeGanhos simulacao={painel.simulacao} />
+          </div>
+        </section>
       )}
 
       {r && (

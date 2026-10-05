@@ -1,6 +1,7 @@
 'use client'
 
 import { tokens, ErroDeApi, renovarSessao } from '@/lib/auth'
+import type { Simulacao } from '@/components/SimulacaoDeGanhos'
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL ?? 'http://localhost:3333/api'
 
@@ -35,6 +36,10 @@ export interface PainelDoAfiliado {
   regras: RegrasDoPrograma
   /** Onde comprar o primeiro conjunto — a porta da área bloqueada. */
   compraPath: string
+  /** As vagas do programa (05/10). Cheio, ninguém novo entra. */
+  vagas: { total: number; ocupadas: number }
+  /** A simulação de ganhos por baixo da área — ver `SimulacoesDeGanhos`. */
+  simulacao: Simulacao
   afiliado: {
     codigo: string
     link: string

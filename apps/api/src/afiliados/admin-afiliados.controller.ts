@@ -46,6 +46,11 @@ class ConfiguracaoDto {
   @IsOptional() @IsInt() @Min(0) @Max(2000) taxaPixBp?: number
   @IsOptional() @IsInt() @Min(0) @Max(2000) taxaCartaoBp?: number
   @IsOptional() @IsEmail({}, { message: 'Escreva um e-mail válido para os avisos.' }) emailDeAvisos?: string | null
+
+  @IsOptional() @IsInt() @Min(0) @Max(100_000) vagas?: number
+  @IsOptional() @IsInt() @Min(1) @Max(100_000) simulacaoKits?: number
+  @IsOptional() @IsInt() @Min(0) @Max(10_000_000) simulacaoPrecoNormalCent?: number
+  @IsOptional() @IsInt() @Min(0) @Max(10_000_000) simulacaoPrecoPromocionalCent?: number
 }
 
 class MotivoDto {
@@ -92,7 +97,8 @@ export class AdminAfiliadosController {
   async configuracao() {
     const cfg = await this.afiliados.configuracao()
     const destino = await this.afiliados.destinoDoLink(cfg).catch(() => null)
-    return { ...cfg, destinoResolvido: destino?.url ?? null }
+    const { ocupadas } = await this.afiliados.vagas(cfg)
+    return { ...cfg, destinoResolvido: destino?.url ?? null, vagasOcupadas: ocupadas }
   }
 
   @Patch('configuracao')

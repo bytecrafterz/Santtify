@@ -2457,6 +2457,19 @@ model ConfiguracaoDeAfiliados {
   /// (o painel mostra o lembrete na mesma).
   emailDeAvisos String? @db.VarChar(254)
 
+  /// Quantos afiliados o programa aceita — "inicialmente serão liberadas apenas
+  /// 10 vagas", 05/10. Cheio, ninguém novo entra: nem pela compra, nem pelo
+  /// botão Liberar do painel. Quem já é afiliado continua. Contam todos os
+  /// afiliados, suspensos também; para abrir mais, aumenta-se aqui.
+  vagas Int @default(10)
+
+  /// A simulação de ganhos por baixo da área de afiliado (05/10): quantos kits
+  /// em 30 dias, a que preços. Só ilustração — nada disto são vendas. A
+  /// comissão é a de `comissaoBp`, para a conta bater com as regras.
+  simulacaoKits                 Int @default(100)
+  simulacaoPrecoNormalCent      Int @default(13900)
+  simulacaoPrecoPromocionalCent Int @default(4900)
+
   atualizadoEm    DateTime @updatedAt
   atualizadoPorId String?  @db.Uuid
 

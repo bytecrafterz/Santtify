@@ -34,6 +34,20 @@ import {
   emailDePagamentoFeito,
 } from './emails'
 
+/**
+ * O programa está cheio — ver `vagas` na configuração.
+ *
+ * Do botão Liberar, chega ao painel com esta mensagem. Da compra, é apanhada
+ * em `aoConfirmarPagamento`: a compra vale, só não abre área nova.
+ */
+export class VagasEsgotadas extends ConflictException {
+  constructor(vagas: number) {
+    super(
+      `As ${vagas} vagas de afiliado estão preenchidas. Aumente o número de vagas em Configurações para liberar mais alguém.`,
+    )
+  }
+}
+
 /** Como a comissão aparece a quem a vê: "disponível" é calculado, não guardado. */
 export type EstadoVisivelDaComissao = 'PENDENTE' | 'DISPONIVEL' | 'PAGA' | 'CANCELADA' | 'ESTORNADA'
 
@@ -70,6 +84,10 @@ export interface AlteracaoDaConfiguracao {
   taxaPixBp?: number
   taxaCartaoBp?: number
   emailDeAvisos?: string | null
+  vagas?: number
+  simulacaoKits?: number
+  simulacaoPrecoNormalCent?: number
+  simulacaoPrecoPromocionalCent?: number
 }
 
 /**
@@ -120,6 +138,12 @@ export class AfiliadosService {
       update: {},
       create: { id: 'global' },
     })
+  }
+
+  /** As vagas do programa: quantas há, e quantas já têm afiliado. */
+  async vagas(cfg?: ConfiguracaoDeAfiliados): Promise<{ total: number; ocupadas: number }> {
+    const config = cfg ?? (await this.configuracao())
+    return { total: config.vagas, ocupadas: await this.prisma.afiliado.count() }
   }
 
   async actualizarConfiguracao(dados: AlteracaoDaConfiguracao, adminId: string) {
@@ -263,6 +287,11 @@ export class AfiliadosService {
       select: { id: true, username: true, displayName: true, status: true },
     })
     if (!user || user.status !== 'ACTIVE') throw new NotFoundException('Conta não encontrada.')
+
+    // AS VAGAS (05/10): "ao atingir o limite definido, novos cadastros ficam
+    // automaticamente bloqueados". Quem já é afiliado saiu acima e não conta.
+    const { total, ocupadas } = await this.vagas()
+    if (ocupadas >= total) throw new VagasEsgotadas(total)
 
     for (let tentativa = 0; tentativa < 3; tentativa++) {
       const codigo = await this.codigoLivre(user)
@@ -447,8 +476,15 @@ export class AfiliadosService {
     await this.registarTaxa(pedido.id, info.taxaCent ?? null)
 
     if (pedido.userId && cfg.ativo) {
-      const { afiliado, criado } = await this.garantirAfiliado(pedido.userId, OrigemDoAfiliado.COMPRA, pedido.id)
-      if (criado) void this.avisarAreaLiberada(afiliado, cfg)
+      try {
+        const { afiliado, criado } = await this.garantirAfiliado(pedido.userId, OrigemDoAfiliado.COMPRA, pedido.id)
+        if (criado) void this.avisarAreaLiberada(afiliado, cfg)
+      } catch (erro) {
+        // Vagas esgotadas: a compra vale, a área é que não abre. E a comissão
+        // de quem trouxe a venda segue abaixo na mesma.
+        if (!(erro instanceof VagasEsgotadas)) throw erro
+        this.logger.log(`Vagas de afiliado esgotadas: a compra ${pedido.id} não abriu área nova.`)
+      }
     }
 
     await this.criarComissao(pedido.id)
@@ -816,6 +852,14 @@ export class AfiliadosService {
       regulamento: cfg.regulamento,
     }
     const afiliado = await this.prisma.afiliado.findUnique({ where: { userId } })
+    const vagas = await this.vagas(cfg)
+    // Por baixo da área, para cada pessoa ver quanto poderia ganhar (05/10).
+    const simulacao = {
+      kits: cfg.simulacaoKits,
+      comissaoBp: cfg.comissaoBp,
+      precoNormalCent: cfg.simulacaoPrecoNormalCent,
+      precoPromocionalCent: cfg.simulacaoPrecoPromocionalCent,
+    }
 
     if (!afiliado) {
       return {
@@ -823,6 +867,8 @@ export class AfiliadosService {
         estado: 'BLOQUEADO' as const,
         regras,
         compraPath: loja?.path ?? '/',
+        vagas,
+        simulacao,
         afiliado: null,
       }
     }
@@ -869,6 +915,8 @@ export class AfiliadosService {
       estado: afiliado.estado,
       regras,
       compraPath: loja?.path ?? '/',
+      vagas,
+      simulacao,
       afiliado: {
         codigo: afiliado.codigo,
         link,

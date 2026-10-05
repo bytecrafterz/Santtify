@@ -225,6 +225,12 @@ export interface ConfiguracaoDeAfiliados {
   taxaPixBp: number
   taxaCartaoBp: number
   emailDeAvisos: string | null
+  vagas: number
+  /** Só leitura: quantos afiliados há agora. */
+  vagasOcupadas: number
+  simulacaoKits: number
+  simulacaoPrecoNormalCent: number
+  simulacaoPrecoPromocionalCent: number
   atualizadoEm: string
 }
 

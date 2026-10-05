@@ -6,6 +6,7 @@ import { ErroDeApi } from '@/lib/auth'
 import { dataEHora, percentagem, reais } from '@/lib/dinheiro'
 import { vendas, type ConfiguracaoDeAfiliados } from '@/lib/vendas'
 import { CabecalhoDaPagina, Carregando, useDados } from './comum'
+import { SimulacoesDeGanhos } from '../SimulacaoDeGanhos'
 
 /** "37,5" → 3750 pontos-base. Nulo se não for um número. */
 function paraBp(texto: string): number | null {
@@ -52,6 +53,10 @@ export function ConfiguracoesDoPainel({ projectSlug }: { projectSlug: string }) 
       taxaPix: bpEmTexto(c.taxaPixBp),
       taxaCartao: bpEmTexto(c.taxaCartaoBp),
       email: c.emailDeAvisos ?? '',
+      vagas: String(c.vagas),
+      simKits: String(c.simulacaoKits),
+      simNormal: centEmTexto(c.simulacaoPrecoNormalCent),
+      simPromo: centEmTexto(c.simulacaoPrecoPromocionalCent),
     })
   }, [cfg.dados])
 
@@ -74,6 +79,13 @@ export function ConfiguracoesDoPainel({ projectSlug }: { projectSlug: string }) 
     if (!Number.isInteger(atribuicao) || atribuicao < 1 || atribuicao > 365) return definirMensagem({ ok: false, texto: 'A janela de atribuição é um número de dias entre 1 e 365.' })
     if (minimo === null || minimo < 0) return definirMensagem({ ok: false, texto: 'Escreva o mínimo em reais, por exemplo 50,00.' })
     if (taxaPixBp === null || taxaCartaoBp === null) return definirMensagem({ ok: false, texto: 'As taxas são percentagens, por exemplo 0,99.' })
+    const vagas = Number(f.vagas)
+    const simKits = Number(f.simKits)
+    const simNormal = paraCent(String(f.simNormal))
+    const simPromo = String(f.simPromo).trim() ? paraCent(String(f.simPromo)) : 0
+    if (!Number.isInteger(vagas) || vagas < 0 || vagas > 100_000) return definirMensagem({ ok: false, texto: 'As vagas são um número inteiro, por exemplo 10.' })
+    if (!Number.isInteger(simKits) || simKits < 1 || simKits > 100_000) return definirMensagem({ ok: false, texto: 'Os kits da simulação são um número inteiro, por exemplo 100.' })
+    if (simNormal === null || simNormal < 0 || simPromo === null || simPromo < 0) return definirMensagem({ ok: false, texto: 'Escreva os preços da simulação em reais, por exemplo 139,00.' })
 
     const dados: Partial<ConfiguracaoDeAfiliados> = {
       ativo: Boolean(f.ativo),
@@ -87,6 +99,10 @@ export function ConfiguracoesDoPainel({ projectSlug }: { projectSlug: string }) 
       taxaPixBp,
       taxaCartaoBp,
       emailDeAvisos: String(f.email).trim() || null,
+      vagas,
+      simulacaoKits: simKits,
+      simulacaoPrecoNormalCent: simNormal,
+      simulacaoPrecoPromocionalCent: simPromo,
     }
     // Só o que mudou: o registo de auditoria fica a dizer o que se mexeu.
     const mudou = Object.fromEntries(
@@ -113,6 +129,13 @@ export function ConfiguracoesDoPainel({ projectSlug }: { projectSlug: string }) 
     ? String(f.mensagem).replaceAll('{link}', exemplo)
     : `${String(f.mensagem ?? '')} ${exemplo}`
   const bpAgora = paraBp(String(f.comissao ?? ''))
+  // A prévia da simulação acompanha o que se escreve, antes de salvar.
+  const previaDaSimulacao = {
+    kits: Math.max(1, Math.round(Number(f.simKits) || 0)),
+    comissaoBp: bpAgora ?? c?.comissaoBp ?? 0,
+    precoNormalCent: paraCent(String(f.simNormal ?? '')) ?? 0,
+    precoPromocionalCent: String(f.simPromo ?? '').trim() ? (paraCent(String(f.simPromo)) ?? 0) : 0,
+  }
 
   return (
     <>
@@ -163,6 +186,47 @@ export function ConfiguracoesDoPainel({ projectSlug }: { projectSlug: string }) 
                 <input inputMode="decimal" {...campo('minimo')} />
                 <small>O financeiro destaca quem já passou deste valor. Pode pagar abaixo dele se quiser.</small>
               </label>
+            </div>
+          </section>
+
+          {/*
+            AS VAGAS E A SIMULAÇÃO (05/10).
+
+            "Inicialmente serão liberadas apenas 10 vagas, e eu preciso ter no
+            painel administrativo a opção de aumentar esse número quando quiser.
+            Ao atingir o limite definido, novos cadastros ficam automaticamente
+            bloqueados." E as duas simulações por baixo de cada perfil: os
+            números delas mudam-se aqui, e a prévia mostra-as como aparecem.
+          */}
+          <section className="vd-cartao">
+            <h2 className="vd-titulo-cartao">Vagas e simulação de ganhos</h2>
+            <div className="vd-campos">
+              <label>
+                Vagas de afiliados
+                <input inputMode="numeric" {...campo('vagas')} />
+                <small>
+                  {c.vagasOcupadas} {c.vagasOcupadas === 1 ? 'ocupada' : 'ocupadas'} agora. Ao chegar ao limite, ninguém novo vira
+                  afiliado — nem pela compra, nem pelo botão Liberar. Aumente quando quiser abrir mais.
+                </small>
+              </label>
+              <label>
+                Kits vendidos na simulação
+                <input inputMode="numeric" {...campo('simKits')} />
+                <small>Em 30 dias. A comissão usada é a do programa, acima.</small>
+              </label>
+              <label>
+                Preço normal na simulação (R$)
+                <input inputMode="decimal" {...campo('simNormal')} />
+              </label>
+              <label>
+                Preço promocional na simulação (R$)
+                <input inputMode="decimal" {...campo('simPromo')} />
+                <small>Vazio ou 0 = só a simulação do preço normal.</small>
+              </label>
+            </div>
+            <p className="vd-nota">Como aparece por baixo da área de afiliado, no perfil de cada pessoa:</p>
+            <div className="vd-previa-simulacao">
+              <SimulacoesDeGanhos simulacao={previaDaSimulacao} />
             </div>
           </section>
 

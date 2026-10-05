@@ -12,6 +12,7 @@ import {
   type PainelDoAfiliado,
   type VendaDoAfiliado,
 } from '@/lib/afiliados'
+import { SimulacoesDeGanhos } from './SimulacaoDeGanhos'
 
 /** Os ícones da área, em traço, como os do mockup. */
 function Simbolo({ nome }: { nome: 'moedas' | 'seta' | 'carrinho' | 'barras' | 'link' | 'copiar' | 'carteira' | 'relogio' | 'cadeado' | 'recibo' | 'whatsapp' }) {
@@ -94,6 +95,37 @@ async function copiarTexto(texto: string): Promise<boolean> {
     campo.remove()
     return feito
   }
+}
+
+/**
+ * "VAGAS LIMITADAS · 7 DE 10 AFILIADOS" — o selo do mockup dele (05/10).
+ *
+ * Diz a verdade das vagas: quantas há e quantas já têm dono. Cheio, o texto
+ * muda, e a área bloqueada deixa de convidar a comprar para entrar.
+ */
+export function SeloDeVagas({ vagas }: { vagas: { total: number; ocupadas: number } }) {
+  const lotado = vagas.ocupadas >= vagas.total
+  return (
+    <p className={`af-vagas${lotado ? ' lotado' : ''}`}>
+      <span className="af-vagas-rotulo">{lotado ? 'Vagas esgotadas' : 'Vagas limitadas'}</span>
+      <span className="af-vagas-conta">
+        {Math.min(vagas.ocupadas, vagas.total)} de {vagas.total} afiliados
+      </span>
+    </p>
+  )
+}
+
+/** A área bloqueada, com as vagas esgotadas: não há o que comprar para entrar. */
+export function VagasEsgotadas({ total }: { total: number }) {
+  return (
+    <>
+      <h3>Vagas de afiliado esgotadas</h3>
+      <p>
+        As {total} vagas do programa de afiliados estão preenchidas no momento. Quando abrirmos novas vagas, você poderá
+        participar.
+      </p>
+    </>
+  )
 }
 
 export function LinhaDeVenda({ venda }: { venda: VendaDoAfiliado }) {
@@ -302,8 +334,18 @@ export function AreaDoAfiliado({ projectSlug, pessoaId }: { projectSlug: string;
         <div className="af-corpo">
           {erro && <p className="erro">{erro}</p>}
           {!painel && !erro && <p className="af-nota">Carregando...</p>}
+          {painel && <SeloDeVagas vagas={painel.vagas} />}
 
-          {painel?.estado === 'BLOQUEADO' && (
+          {painel?.estado === 'BLOQUEADO' && painel.vagas.ocupadas >= painel.vagas.total && (
+            <div className="af-bloqueado">
+              <span className="af-cadeado" aria-hidden="true">
+                <Simbolo nome="cadeado" />
+              </span>
+              <VagasEsgotadas total={painel.vagas.total} />
+            </div>
+          )}
+
+          {painel?.estado === 'BLOQUEADO' && painel.vagas.ocupadas < painel.vagas.total && (
             <div className="af-bloqueado">
               <span className="af-cadeado" aria-hidden="true">
                 <Simbolo nome="cadeado" />
@@ -345,6 +387,9 @@ export function AreaDoAfiliado({ projectSlug, pessoaId }: { projectSlug: string;
               )}
             </>
           )}
+
+          {/* "Abaixo de cada perfil de afiliado (…) as simulações" — 05/10. */}
+          {painel && <SimulacoesDeGanhos simulacao={painel.simulacao} />}
         </div>
       )}
     </section>
