@@ -99,6 +99,15 @@ const schema = z.object({
    * volta ao Checkout Pro, a página do Mercado Pago.
    */
   MERCADOPAGO_PUBLIC_KEY: vazioComoAusente,
+
+  /**
+   * "Continuar com Google" (06/10): o cliente OAuth da consola do Google, tipo
+   * "Aplicativo da Web", com o endereço de retorno
+   * `<PUBLIC_API_URL>/auth/google/retorno` registado. Sem os dois, o botão
+   * não aparece e o login por e-mail continua como sempre.
+   */
+  GOOGLE_CLIENT_ID: vazioComoAusente,
+  GOOGLE_CLIENT_SECRET: vazioComoAusente,
   /**
    * A chave secreta das notificações, que o Mercado Pago gera DEPOIS de se
    * configurar o endereço delas no painel dele.

@@ -6,6 +6,7 @@ import { useEffect, useRef, useState } from 'react'
 import { auth, ErroDeApi } from '@/lib/auth'
 import { useAuth } from '@/components/ProvedorDeAuth'
 import { AjustarFoto } from './AjustarFoto'
+import { BotaoDoGoogle } from './BotaoDoGoogle'
 
 /**
  * Cadastro e login no mesmo componente — os dois formulários são quase iguais
@@ -172,6 +173,13 @@ export function FormularioDeAuth({
           Essa área pede login. Entre e você volta direto para ela.
         </p>
       )}
+      {/* "Continuar com Google" (06/10), por cima do e-mail, nos dois modos. */}
+      <BotaoDoGoogle
+        projectId={projectId}
+        projectSlug={projectSlug}
+        voltar={parametros.get('voltar')}
+        motivo={parametros.get('google')}
+      />
       {cadastro && (
         <>
           {/*

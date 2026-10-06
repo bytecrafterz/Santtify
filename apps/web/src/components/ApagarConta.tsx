@@ -3,6 +3,7 @@
 import { useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { auth } from '@/lib/auth'
+import { useAuth } from './ProvedorDeAuth'
 
 /**
  * Apagar a conta.
@@ -23,6 +24,13 @@ import { auth } from '@/lib/auth'
  */
 export function ApagarConta({ projectSlug }: { projectSlug: string }) {
   const router = useRouter()
+  /*
+    QUEM ENTROU PELO GOOGLE NÃO TEM SENHA (06/10) — e a confirmação não pode
+    ser uma senha que não existe. Escreve EXCLUIR: continua a ser um passo
+    deliberado, que não se dá sem ler.
+  */
+  const { usuario } = useAuth()
+  const semSenha = Boolean(usuario?.semSenha)
   const [aberto, definirAberto] = useState(false)
   const [senha, definirSenha] = useState('')
   const [erro, definirErro] = useState<string | null>(null)
@@ -62,7 +70,7 @@ export function ApagarConta({ projectSlug }: { projectSlug: string }) {
           definirErro(null)
           definirAApagar(true)
           try {
-            await auth.apagarConta(senha)
+            await auth.apagarConta(semSenha ? '' : senha)
             // A sessão já foi limpa dentro de `apagarConta`. `replace` e não
             // `push` porque voltar atrás traria a pessoa a um perfil que já
             // não existe, e a página tentaria carregá-lo e falharia.
@@ -73,16 +81,23 @@ export function ApagarConta({ projectSlug }: { projectSlug: string }) {
           }
         }}
       >
-        <label>
-          Escreva a sua senha para confirmar
-          <input
-            type="password"
-            value={senha}
-            autoComplete="current-password"
-            onChange={(e) => definirSenha(e.target.value)}
-            required
-          />
-        </label>
+        {semSenha ? (
+          <label>
+            Escreva EXCLUIR para confirmar
+            <input value={senha} autoComplete="off" onChange={(e) => definirSenha(e.target.value)} required />
+          </label>
+        ) : (
+          <label>
+            Escreva a sua senha para confirmar
+            <input
+              type="password"
+              value={senha}
+              autoComplete="current-password"
+              onChange={(e) => definirSenha(e.target.value)}
+              required
+            />
+          </label>
+        )}
 
         {erro && <p className="erro">{erro}</p>}
 
@@ -90,7 +105,7 @@ export function ApagarConta({ projectSlug }: { projectSlug: string }) {
           <button type="button" className="secundario" onClick={fechar} disabled={aApagar}>
             CANCELAR
           </button>
-          <button type="submit" className="apagar-conta" disabled={aApagar || senha.length === 0}>
+          <button type="submit" className="apagar-conta" disabled={aApagar || (semSenha ? senha.trim().toUpperCase() !== 'EXCLUIR' : senha.length === 0)}>
             {aApagar ? 'A excluir...' : 'SIM, EXCLUIR'}
           </button>
         </div>

@@ -2,6 +2,7 @@
 
 import { useState } from 'react'
 import { auth, ErroDeApi } from '@/lib/auth'
+import { useAuth } from './ProvedorDeAuth'
 
 /**
  * Troca de senha, dentro do perfil.
@@ -16,6 +17,9 @@ import { auth, ErroDeApi } from '@/lib/auth'
  * perto disso.
  */
 export function TrocarSenha() {
+  // Quem entrou pelo Google cria a primeira senha, sem "senha atual" (06/10).
+  const { usuario, definirUsuario } = useAuth()
+  const semSenha = Boolean(usuario?.semSenha)
   const [aberto, definirAberto] = useState(false)
   const [atual, definirAtual] = useState('')
   const [nova, definirNova] = useState('')
@@ -45,7 +49,8 @@ export function TrocarSenha() {
 
     definirEnviando(true)
     try {
-      await auth.trocarSenha({ senhaAtual: atual, senhaNova: nova })
+      await auth.trocarSenha({ senhaAtual: semSenha ? '' : atual, senhaNova: nova })
+      if (usuario && semSenha) definirUsuario({ ...usuario, semSenha: false })
       limpar()
       definirPronto(true)
       definirAberto(false)
@@ -61,9 +66,9 @@ export function TrocarSenha() {
   if (!aberto) {
     return (
       <div className="acoes-perfil">
-        {pronto && <p className="aviso-ok">Senha trocada. Use a nova da próxima vez que entrar.</p>}
+        {pronto && <p className="aviso-ok">Senha salva. Use-a da próxima vez que entrar com e-mail.</p>}
         <button type="button" className="secundario" onClick={() => definirAberto(true)}>
-          Trocar senha
+          {semSenha ? 'Criar senha' : 'Trocar senha'}
         </button>
       </div>
     )
@@ -71,17 +76,23 @@ export function TrocarSenha() {
 
   return (
     <form className="bloco formulario troca-senha" onSubmit={enviar}>
-      <span className="bloco-rotulo">Trocar senha</span>
+      <span className="bloco-rotulo">{semSenha ? 'Criar senha' : 'Trocar senha'}</span>
 
-      <label htmlFor="senha-atual">Senha atual</label>
-      <input
-        id="senha-atual"
-        type="password"
-        autoComplete="current-password"
-        value={atual}
-        onChange={(e) => definirAtual(e.target.value)}
-        required
-      />
+      {semSenha ? (
+        <p className="nota">Você entra com o Google. Com uma senha, pode entrar também com o seu e-mail.</p>
+      ) : (
+        <>
+          <label htmlFor="senha-atual">Senha atual</label>
+          <input
+            id="senha-atual"
+            type="password"
+            autoComplete="current-password"
+            value={atual}
+            onChange={(e) => definirAtual(e.target.value)}
+            required
+          />
+        </>
+      )}
 
       <label htmlFor="senha-nova">Senha nova</label>
       <input

@@ -5,13 +5,14 @@ import { ConsentService } from './consent.service'
 import { ProfileService } from './profile.service'
 import { AuthGuard, AdminGuard } from './auth.guard'
 import { IdentityController } from './identity.controller'
+import { EntradaComGoogle } from './entrada-com-google'
 import { TrackingModule } from '../tracking/tracking.module'
 import { StorageModule } from '../admin/storage.module'
 
 @Module({
   imports: [TrackingModule, StorageModule, JwtModule.register({})],
   controllers: [IdentityController],
-  providers: [AuthService, ConsentService, ProfileService, AuthGuard, AdminGuard],
+  providers: [AuthService, ConsentService, ProfileService, AuthGuard, AdminGuard, EntradaComGoogle],
   exports: [AuthService, ConsentService, ProfileService, AuthGuard, AdminGuard, JwtModule],
 })
 export class IdentityModule {}

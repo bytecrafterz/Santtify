@@ -18631,3 +18631,58 @@ a.pi-cartao:hover .pi-cartao-seta {
 .cartoes-cartao-na-pagina #formulario-de-cartao {
   min-height: 120px;
 }
+
+/* "Continuar com Google" (06/10): o botão branco das regras de marca do
+   Google, por cima do formulário de e-mail, e um "ou" a separá-los. */
+.entrar-com-google {
+  display: grid;
+  gap: 10px;
+  margin-bottom: 6px;
+}
+
+.botao-google {
+  display: flex;
+  gap: 12px;
+  align-items: center;
+  justify-content: center;
+  min-height: 50px;
+  padding: 12px 18px;
+  font-weight: 700;
+  color: #1f1f1f;
+  text-decoration: none;
+  background: #fff;
+  border: 1px solid #747775;
+  border-radius: 999px;
+  -webkit-tap-highlight-color: transparent;
+}
+
+.botao-google:active {
+  background: #f2f2f2;
+}
+
+.botao-google:focus-visible {
+  outline: 2px solid var(--cor-primaria);
+  outline-offset: 3px;
+}
+
+.entrar-com-google .aceite {
+  margin: 0;
+  text-align: center;
+}
+
+.separador-ou {
+  display: flex;
+  gap: 12px;
+  align-items: center;
+  margin: 6px 0 0;
+  font-size: 0.85rem;
+  color: var(--cor-texto-suave);
+}
+
+.separador-ou::before,
+.separador-ou::after {
+  flex: 1;
+  height: 1px;
+  content: '';
+  background: var(--cor-borda);
+}

@@ -438,9 +438,20 @@ da empresa é trocar as chaves no servidor; o código não muda.
   resposta; o QR desenha-se a partir dele e aparece no nosso ecrã, com um botão
   "Copiar código Pix" — no telemóvel é esse o caminho, não a câmara. A Orders é
   a que o cliente escolheu ao criar a aplicação e a que o Mercado Pago mantém.
-- **Cartão pelo Checkout Pro** (`POST /checkout/preferences`). A pessoa paga na
-  página do Mercado Pago e volta para `/[projeto]/cartoes?pedido=<id>`. Os
-  dados do cartão nunca passam por nós.
+- **Cartão digitado na própria página (desde 06/10)**: o formulário do Mercado
+  Pago (Card Payment Brick, `components/FormularioDeCartao.tsx`) desenha os
+  campos do cartão dentro do editor; ao servidor chega só um token, e a
+  cobrança vai pela mesma API de Orders do Pix
+  (`POST /api/projects/:slug/cartoes/pedidos/:id/pagamento/cartao`). Aprovado,
+  o aviso regista-se na hora com o mesmo id que o webhook traria (que depois
+  chega repetido); recusado, o pedido não muda e a pessoa lê o motivo; em
+  análise, espera pelo aviso como o Pix. Ninguém sai da página, e por isso a
+  foto continua na memória. Precisa de `MERCADOPAGO_PUBLIC_KEY`.
+- **Sem a Public Key**, o cartão volta ao **Checkout Pro**
+  (`POST /checkout/preferences`): a pessoa paga na página do Mercado Pago e
+  volta para `/[projeto]/cartoes?pedido=<id>`, onde escolhe a foto de novo.
+- **Trocar de meio** é possível enquanto o pedido não está pago; o aviso de uma
+  cobrança anterior acha o pedido pelo `external_reference`.
 - **O e-mail de quem paga** é pedido no ecrã (o Mercado Pago exige-o), segue para
   ele e não fica guardado no pedido.
 - **Avisos** em `POST /api/pagamentos/mercadopago/aviso`. **Nunca se acredita no
@@ -459,9 +470,10 @@ da empresa é trocar as chaves no servidor; o código não muda.
 ### Pôr no ar (produção)
 
 1. No Mercado Pago, na aplicação "Santtify": **Credenciais de produção**, activar
-   e copiar o **Access Token**.
-2. No servidor, em `.env.production`:
-   `PAGAMENTOS_PROVEDOR=mercadopago` e `MERCADOPAGO_ACCESS_TOKEN=...`
+   e copiar a **Public Key** e o **Access Token**. A conta precisa de uma chave
+   Pix cadastrada para receber Pix.
+2. No servidor, em `.env.production`: `PAGAMENTOS_PROVEDOR=mercadopago`,
+   `MERCADOPAGO_ACCESS_TOKEN=...` e `MERCADOPAGO_PUBLIC_KEY=...`
 3. Reiniciar só a API, com o ambiente novo:
    `docker compose -f docker-compose.prod.yml --env-file .env.production up -d api`
 4. No Mercado Pago: **Webhooks > Configurar notificações**, modo produtivo,
@@ -483,6 +495,63 @@ se paga, e o cartão de teste exige entrar com um comprador de teste na página 
 Mercado Pago. Faz-se no passo 6, com dinheiro de verdade e valor pequeno. Também
 por confirmar: se o Checkout Pro da conta brasileira aceita cartões emitidos
 fora do Brasil (compradores de Portugal).
+
+### Cartão na página: verificado no sandbox (06/10)
+
+Com as credenciais de teste do cliente e os cartões de teste do Mercado Pago
+(Mastercard 5480 8328 0103 3311, CVV 123, 11/30, CPF 12345678909, e-mail
+`test@testuser.com`), num iPhone simulado: titular **APRO** aprova, mostra o
+código de liberação e segue para gerar com a foto ainda na memória; **OTHE**
+recusa ("recusado pelo banco"), **FUND** recusa ("sem limite"), as duas com
+HTTP 402 do Mercado Pago e o formulário aberto para tentar outro cartão;
+**CONT** fica em análise. O corpo enviado à nossa API leva o token, nunca o
+número do cartão.
+
+## Entrar com Google (06/10)
+
+"Continuar com Google" por cima do formulário de e-mail, no login e no
+cadastro; o login por e-mail continua igual.
+
+- **Fluxo de código do OAuth com PKCE**, com o segredo no servidor
+  (`identity/entrada-com-google.ts`) — e não o botão em JavaScript do Google,
+  porque um popup aberto de dentro da app instalada no iPhone perde-se. O botão
+  é uma ligação de página inteira: `GET /api/auth/google` → Google →
+  `GET /api/auth/google/retorno` → `/[projeto]/entrar/google?codigo=…`, onde a
+  página troca o código de entrega (uso único, 2 minutos) pela sessão em
+  `POST /api/auth/google/trocar`. A sessão nunca vai no endereço.
+- **O ID token confere-se no servidor**: assinatura RS256 com as chaves públicas
+  do Google, emissor, destinatário, validade e nonce.
+- **A conta**: a que já tem este Google (`users.googleId`); senão a do mesmo
+  e-mail, que se liga (o Google confirmou o e-mail); senão uma nova, com o nome
+  da conta Google, um @identificador livre e a foto dela copiada para o nosso
+  armazenamento. Conta Google sem e-mail confirmado é recusada.
+- **Sem senha**: a conta criada pelo Google tem `semSenha`. "Criar senha" não
+  pede a atual, e "Excluir minha conta" pede para escrever EXCLUIR em vez da
+  senha. Ao criar senha (ou repô-la por e-mail), passa a ser uma conta normal.
+
+### Pôr no ar
+
+1. Em console.cloud.google.com, na conta Google da Santtify: um projeto
+   "Santtify", a tela de consentimento (externa, nome "Santtify", e-mail de
+   suporte, domínio `santtify.com`, links `/privacidade` e `/termos`; sem logo
+   não há verificação do Google para os escopos básicos), publicada.
+2. Um cliente OAuth "Aplicativo da Web" com o URI de redirecionamento
+   `https://santtify.com/api/auth/google/retorno`.
+3. No servidor: `GOOGLE_CLIENT_ID=…` e `GOOGLE_CLIENT_SECRET=…` em
+   `.env.production`, e reiniciar a API. Sem os dois, o botão não aparece.
+
+Custo: nenhum (o login do Google é gratuito).
+
+### Verificado (06/10)
+
+Contra um Google de teste (a API a correr com o `fetch` dos três endereços do
+Google respondido localmente, e a página de consentimento interceptada no
+navegador): conta nova criada e no perfil com foto e identificador; criar
+senha sem a atual e entrar com ela; excluir a conta escrevendo EXCLUIR; conta
+existente ligada pelo e-mail, sem duplicar, e de volta à página pedida;
+cancelar no Google, e-mail não confirmado e assinatura forjada voltam ao login
+com a frase certa; o código de entrega serve uma vez só; um estado inventado
+não entra. **Falta o Google de verdade**, que depende do passo 1.
 
 ## Modo Karaokê
 

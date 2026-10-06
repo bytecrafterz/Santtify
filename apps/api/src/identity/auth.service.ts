@@ -23,6 +23,8 @@ import {
   problemaNoNomeDeUtilizador,
 } from './nome-de-utilizador'
 import { limparNomeDePerfil, problemaNoNomeDePerfil } from './nome-de-perfil'
+import { sugerirNomeDeUtilizador } from './nome-de-utilizador'
+import { EmailGoogleNaoConfirmado, type PerfilGoogle } from './entrada-com-google'
 
 export interface ParDeTokens {
   accessToken: string
@@ -50,6 +52,8 @@ export interface UsuarioPublico {
   guardianName: string | null
   role: string
   createdAt: Date
+  /** Entrou pelo Google e nunca criou senha: ver `semSenha` no schema. */
+  semSenha: boolean
 }
 
 /**
@@ -346,16 +350,19 @@ export class AuthService {
     const user = await this.prisma.user.findUnique({ where: { id: userId } })
     if (!user || user.status !== 'ACTIVE') throw new UnauthorizedException('Sessão inválida')
 
-    const confere = await argon2.verify(user.passwordHash, senhaAtual)
-    if (!confere) throw new UnauthorizedException('A senha atual não confere')
+    // Quem entrou pelo Google e nunca teve senha cria a primeira sem "atual".
+    if (!user.semSenha) {
+      const confere = await argon2.verify(user.passwordHash, senhaAtual)
+      if (!confere) throw new UnauthorizedException('A senha atual não confere')
 
-    if (senhaAtual === senhaNova) {
-      throw new BadRequestException('A nova senha precisa ser diferente da atual')
+      if (senhaAtual === senhaNova) {
+        throw new BadRequestException('A nova senha precisa ser diferente da atual')
+      }
     }
 
     await this.prisma.user.update({
       where: { id: user.id },
-      data: { passwordHash: await argon2.hash(senhaNova) },
+      data: { passwordHash: await argon2.hash(senhaNova), semSenha: false },
     })
 
     await this.prisma.refreshToken.updateMany({
@@ -393,8 +400,12 @@ export class AuthService {
     // 400 e não 401: a sessão está boa, o campo é que está errado. Com 401 o
     // navegador tentaria renovar a sessão e repetir o pedido, e uma senha
     // enganada passaria a rodar os tokens da pessoa sem motivo nenhum.
-    const confere = await argon2.verify(user.passwordHash, senha)
-    if (!confere) throw new BadRequestException('A senha não confere')
+    // Quem entrou pelo Google sem nunca criar senha confirma com a sessão:
+    // não há senha que lhe possa ser pedida.
+    if (!user.semSenha) {
+      const confere = await argon2.verify(user.passwordHash, senha)
+      if (!confere) throw new BadRequestException('A senha não confere')
+    }
 
     /*
       O anfitrião de um projecto não pode desaparecer por baixo do projecto.
@@ -461,6 +472,143 @@ export class AuthService {
     ])
 
     this.logger.log(`Conta apagada a pedido da pessoa: ${user.id}`)
+  }
+
+  /**
+   * A conta de quem entrou pelo Google (06/10).
+   *
+   * A que já tem este Google; senão a que tem o mesmo e-mail — o Google
+   * confirmou-o, é a mesma pessoa, e liga-se; senão uma conta nova, já
+   * completa: o nome da conta Google, um @identificador livre e a foto dela.
+   * O cadastro por e-mail exige nome, identificador e foto (31/08); aqui
+   * vêm do Google, e tudo se muda depois no perfil.
+   */
+  async entrarComGoogle(
+    perfil: PerfilGoogle,
+    ctx: VisitContext,
+  ): Promise<{ userId: string; novo: boolean; anonId: string | null }> {
+    if (!perfil.emailVerificado) throw new EmailGoogleNaoConfirmado()
+    const email = perfil.email.trim().toLowerCase()
+
+    const existente =
+      (await this.prisma.user.findUnique({ where: { googleId: perfil.sub } })) ??
+      (await this.prisma.user.findUnique({ where: { email } }))
+
+    if (existente) {
+      if (existente.status !== 'ACTIVE') {
+        this.logger.warn(`Entrada com Google recusada: conta ${existente.id} ${existente.status}`)
+        throw new BadRequestException('Esta conta não está ativa.')
+      }
+      const visita = await this.attribution.resolveVisit({ ...ctx, userId: existente.id })
+      await this.prisma.user.update({
+        where: { id: existente.id },
+        data: {
+          lastLoginAt: new Date(),
+          googleId: perfil.sub,
+          emailVerifiedAt: existente.emailVerifiedAt ?? new Date(),
+        },
+      })
+      if (existente.googleId !== perfil.sub) this.logger.log(`Conta ${existente.id} ligada ao Google`)
+      await this.events.registrar({
+        type: EventType.LOGIN,
+        attribution: { ...visita.attribution, userId: existente.id },
+      })
+      return {
+        userId: existente.id,
+        novo: false,
+        anonId: visita.anonIdGerado ? visita.visitor.anonId : null,
+      }
+    }
+
+    const visita = await this.attribution.resolveVisit(ctx)
+    const displayName = this.nomeDoGoogle(perfil)
+    const user = await this.prisma.user.create({
+      data: {
+        email,
+        // Uma senha que ninguém conhece: a conta entra pelo Google. Se a
+        // pessoa quiser senha, cria-a no perfil ou em "Esqueci minha senha".
+        passwordHash: await argon2.hash(randomBytes(32).toString('hex')),
+        semSenha: true,
+        googleId: perfil.sub,
+        displayName,
+        username: await this.identificadorPara(displayName),
+        avatarUrl: await this.fotoDoGoogle(perfil.foto),
+        emailVerifiedAt: new Date(),
+        lastLoginAt: new Date(),
+      },
+    })
+    await this.prisma.visitor.update({
+      where: { id: visita.visitor.id },
+      data: { userId: user.id },
+    })
+    await this.events.registrar({
+      type: EventType.SIGNUP,
+      attribution: { ...visita.attribution, userId: user.id },
+    })
+    this.logger.log(`Conta criada pelo Google: ${user.id}`)
+    return { userId: user.id, novo: true, anonId: visita.anonIdGerado ? visita.visitor.anonId : null }
+  }
+
+  /** A sessão de uma conta já conferida — o fim do "Continuar com Google". */
+  async sessaoPara(userId: string): Promise<{ user: UsuarioPublico; tokens: ParDeTokens }> {
+    const user = await this.prisma.user.findUnique({ where: { id: userId } })
+    if (!user || user.status !== 'ACTIVE') throw new BadRequestException('Conta não encontrada.')
+    return { user: this.publico(user), tokens: await this.emitirTokens(user) }
+  }
+
+  /** O nome da conta Google, se passar nas regras do nome de perfil; senão o do e-mail. */
+  private nomeDoGoogle(perfil: PerfilGoogle): string {
+    const doEmail = perfil.email.split('@')[0].replace(/[._\d-]+/g, ' ')
+    for (const candidato of [perfil.nome, doEmail]) {
+      const nome = limparNomeDePerfil(candidato)
+      if (!problemaNoNomeDePerfil(nome)) return nome
+    }
+    return 'Novo membro'
+  }
+
+  /** Um @identificador livre a partir do nome; a pessoa troca-o no perfil. */
+  private async identificadorPara(displayName: string): Promise<string> {
+    const base = sugerirNomeDeUtilizador(displayName)
+    if (!problemaNoNomeDeUtilizador(base)) {
+      const tomado = await this.prisma.user.findUnique({ where: { username: base }, select: { id: true } })
+      if (!tomado) return base
+      const perto = await this.identificadorLivrePerto(base)
+      if (perto) return perto
+    }
+    return `pessoa${randomBytes(4).toString('hex')}`
+  }
+
+  /**
+   * A foto da conta Google, copiada para o nosso armazenamento.
+   *
+   * Só de `*.googleusercontent.com`, que é de onde o Google as serve: o
+   * endereço vem dentro do token, mas um servidor a ir buscar o que lhe
+   * mandam buscar não aceita outra origem. Falhando, a conta fica sem foto, e
+   * o aviso de "pôr a fotografia" que já existe pede-a depois.
+   */
+  private async fotoDoGoogle(url: string | null): Promise<string | null> {
+    if (!url) return null
+    try {
+      const grande = url.replace(/=s\d+(-c)?$/, '=s400-c')
+      if (!new URL(grande).hostname.endsWith('.googleusercontent.com')) return null
+      const res = await fetch(grande, { signal: AbortSignal.timeout(8_000) })
+      const tipo = res.headers.get('content-type')?.split(';')[0].trim() ?? ''
+      if (!res.ok || !tipo.startsWith('image/')) return null
+      const buffer = Buffer.from(await res.arrayBuffer())
+      if (buffer.length === 0 || buffer.length > 5_000_000) return null
+      const salvo = await this.storage.salvar({
+        buffer,
+        mimetype: tipo,
+        originalname: 'perfil-google.jpg',
+        size: buffer.length,
+        fieldname: 'foto',
+        encoding: '7bit',
+      } as Express.Multer.File)
+      return salvo.url
+    } catch (erro) {
+      this.logger.warn(`Foto do Google não copiada: ${String(erro)}`)
+      return null
+    }
   }
 
   async porId(userId: string): Promise<UsuarioPublico | null> {
@@ -659,7 +807,7 @@ export class AuthService {
     await this.prisma.$transaction([
       this.prisma.user.update({
         where: { id: user.id },
-        data: { passwordHash: await argon2.hash(senhaNova) },
+        data: { passwordHash: await argon2.hash(senhaNova), semSenha: false },
       }),
       // O link serve uma vez. Sem isto, quem o reencaminhasse sem querer —
       // num grupo, por exemplo — dava a conta a quem o lesse.
@@ -725,6 +873,7 @@ export class AuthService {
       guardianName: user.guardianName,
       role: user.role,
       createdAt: user.createdAt,
+      semSenha: user.semSenha,
     }
   }
 }

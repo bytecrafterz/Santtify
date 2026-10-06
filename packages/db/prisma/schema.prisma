@@ -789,6 +789,13 @@ model User {
   role         UserRole @default(USER)
 
   emailVerifiedAt DateTime?
+  /// A conta Google com que a pessoa entra (06/10): o `sub` do Google, que não
+  /// muda mesmo que o e-mail mude. Nulo em quem só entra por e-mail.
+  googleId        String?    @unique @db.VarChar(64)
+  /// Conta criada pelo Google, sem senha que a pessoa conheça (06/10). Apagar a
+  /// conta e criar senha não lhe pedem a "senha atual" que nunca teve. Passa a
+  /// falso quando cria uma senha.
+  semSenha        Boolean    @default(false)
   lastLoginAt     DateTime?
   status          UserStatus @default(ACTIVE)
 

@@ -1,8 +1,10 @@
 import {
+  BadRequestException,
   Body,
   Controller,
   Get,
   HttpCode,
+  Logger,
   Patch,
   Post,
   Query,
@@ -26,6 +28,7 @@ import {
   MinLength,
 } from 'class-validator'
 import { AuthService } from './auth.service'
+import { EmailGoogleNaoConfirmado, EntradaComGoogle } from './entrada-com-google'
 import { ProfileService } from './profile.service'
 import { ConsentService } from './consent.service'
 import { AuthGuard } from './auth.guard'
@@ -104,6 +107,10 @@ class ApagarContaDto {
   @IsString() senha!: string
 }
 
+class TrocarCodigoGoogleDto {
+  @IsString() @MaxLength(100) codigo!: string
+}
+
 class ConsentimentoDto {
   @IsUUID() projectId!: string
   @IsBoolean() granted!: boolean
@@ -115,11 +122,84 @@ class ConsentimentoDto {
 
 @Controller()
 export class IdentityController {
+  private readonly logger = new Logger(IdentityController.name)
+
   constructor(
     private readonly auth: AuthService,
     private readonly consent: ConsentService,
     private readonly profile: ProfileService,
+    private readonly google: EntradaComGoogle,
   ) {}
+
+  // ── "Continuar com Google" (06/10) — ver `EntradaComGoogle` ──────────
+
+  /** Se o botão aparece: só com as duas chaves do Google no servidor. */
+  @Get('auth/google/estado')
+  estadoDoGoogle() {
+    return { ativo: this.google.ativa() }
+  }
+
+  /** O botão leva aqui, numa navegação de página inteira, e daqui ao Google. */
+  @Get('auth/google')
+  iniciarComGoogle(
+    @Query('projectId') projectId: string | undefined,
+    @Query('projeto') projeto: string | undefined,
+    @Query('voltar') voltar: string | undefined,
+    @Res() res: Response,
+  ) {
+    const slug = /^[a-z0-9-]{1,80}$/.test(projeto ?? '') ? (projeto as string) : null
+    const uuid = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(projectId ?? '')
+    if (!this.google.ativa() || !slug || !uuid) return res.redirect(302, `${this.web()}/${slug ?? ''}`)
+    // Só se volta para dentro do próprio projeto — nunca para outro sítio.
+    const destino = voltar && voltar.startsWith(`/${slug}/`) && !voltar.startsWith('//') ? voltar : null
+    return res.redirect(302, this.google.inicio({ projectId: projectId as string, projeto: slug, voltar: destino }))
+  }
+
+  /** O Google devolve a pessoa aqui. Daqui segue para a página de login com um código de entrega. */
+  @Get('auth/google/retorno')
+  async retornoDoGoogle(
+    @Query('code') codigo: string | undefined,
+    @Query('state') estado: string | undefined,
+    @Query('error') recusa: string | undefined,
+    @Req() req: Request,
+    @Res() res: Response,
+  ) {
+    const pendente = this.google.consumir(estado ?? '')
+    if (!pendente) return res.redirect(302, `${this.web()}/`)
+    const entrar = `${this.web()}/${pendente.projeto}/entrar`
+    // "access_denied": a pessoa fechou ou cancelou na página do Google.
+    if (recusa || !codigo) return res.redirect(302, `${entrar}?google=cancelado`)
+    try {
+      const perfil = await this.google.perfil(codigo, pendente)
+      const r = await this.auth.entrarComGoogle(perfil, this.contexto({ projectId: pendente.projectId }, req))
+      if (r.anonId) res.cookie(ANON_COOKIE, r.anonId, cookieOptions())
+      const q = new URLSearchParams({
+        codigo: this.google.entregar(r.userId, r.novo),
+        ...(pendente.voltar ? { voltar: pendente.voltar } : {}),
+      })
+      return res.redirect(302, `${entrar}/google?${q}`)
+    } catch (erro) {
+      this.logger.warn(`Entrada com Google falhou: ${erro instanceof Error ? erro.message : String(erro)}`)
+      return res.redirect(302, `${entrar}?google=${erro instanceof EmailGoogleNaoConfirmado ? 'email' : 'erro'}`)
+    }
+  }
+
+  /** A página de login troca o código de entrega pela sessão — uma vez só. */
+  @Post('auth/google/trocar')
+  @HttpCode(200)
+  async trocarCodigoGoogle(@Body() dto: TrocarCodigoGoogleDto) {
+    const entrega = this.google.levantar(dto.codigo)
+    // 400 e não 401: um 401 faria o navegador tentar renovar uma sessão que não há.
+    if (!entrega) {
+      throw new BadRequestException('A entrada pelo Google expirou. Toque em "Continuar com Google" de novo.')
+    }
+    const sessao = await this.auth.sessaoPara(entrega.userId)
+    return { user: sessao.user, ...sessao.tokens, novo: entrega.novo }
+  }
+
+  private web(): string {
+    return (process.env.PUBLIC_WEB_URL ?? '').replace(/\/+$/, '')
+  }
 
   /**
    * O cadastro passa a levar a fotografia DENTRO do mesmo pedido.

@@ -13,7 +13,7 @@
  * o armazenamento está concentrado neste módulo justamente para isso.
  */
 
-const API_URL = process.env.NEXT_PUBLIC_API_URL ?? 'http://localhost:3333'
+export const API_URL = process.env.NEXT_PUBLIC_API_URL ?? 'http://localhost:3333'
 const CHAVE_REFRESH = 'pv_refresh'
 
 export interface Usuario {
@@ -30,6 +30,8 @@ export interface Usuario {
   guardianName: string | null
   role: string
   createdAt: string
+  /** Entrou pelo Google e nunca criou senha (06/10): não se lhe pede a "atual". */
+  semSenha?: boolean
 }
 
 /** Só em memória: não sobrevive ao fechar a aba, e XSS não lê do storage. */
@@ -215,6 +217,20 @@ export const auth = {
     tokens.access = r.accessToken
     tokens.refresh = r.refreshToken
     return r.user
+  },
+
+  /**
+   * O fim do "Continuar com Google" (06/10): troca o código de entrega, de
+   * uso único, pela sessão. `novo` diz se a conta acabou de nascer.
+   */
+  async entrarComGoogle(codigo: string): Promise<{ usuario: Usuario; novo: boolean }> {
+    const r = await chamar<{ user: Usuario; accessToken: string; refreshToken: string; novo: boolean }>(
+      '/auth/google/trocar',
+      { method: 'POST', body: JSON.stringify({ codigo }) },
+    )
+    tokens.access = r.accessToken
+    tokens.refresh = r.refreshToken
+    return { usuario: r.user, novo: r.novo }
   },
 
   async sair(): Promise<void> {
