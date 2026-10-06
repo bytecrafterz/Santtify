@@ -12,7 +12,12 @@ import { EstadoDoPedido, MeioDePagamento, type Prisma } from '@pv/db'
 import { calcularPreco } from '@pv/cartoes'
 import { PrismaService } from '../prisma/prisma.service'
 import { nomeParaImpressao, StorageService } from '../admin/storage.service'
-import { ProvedorDePagamento, type AvisoDePagamento } from './pagamentos/provedor'
+import {
+  ProvedorDePagamento,
+  type AvisoDePagamento,
+  type CartaoTokenizado,
+  type CobrancaPedida,
+} from './pagamentos/provedor'
 import { MailService } from '../common/mail/mail.service'
 import { AfiliadosService } from '../afiliados/afiliados.service'
 import { MosaicoDaArteService } from './mosaico-da-arte.service'
@@ -403,6 +408,83 @@ export class CartoesService {
     consentiu: boolean,
     sessao: { userId?: string | null; anonId?: string | null } = {},
   ) {
+    const preparo = await this.prepararPagamento(pedidoId, meio, emailDoPagador, aprovou, consentiu, sessao)
+    const cobranca = await this.provedor.criarCobranca(preparo.cobranca)
+    await this.gravarCobranca(preparo, cobranca)
+
+    return {
+      ...(await this.paraEcra(pedidoId)),
+      urlDeRedireccionamento: cobranca.urlDeRedireccionamento ?? null,
+    }
+  }
+
+  /** Há formulário de cartão na página? E com que chave pública. */
+  configuracaoDoPagamento() {
+    return { chavePublicaDoCartao: this.provedor.chavePublica() }
+  }
+
+  /**
+   * O CARTÃO DIGITADO NA PÁGINA (06/10) — ver `cobrarCartao` no provedor.
+   *
+   * As mesmas portas do Pix (aprovação, responsável, pedido por pagar), e a
+   * mesma gravação. A diferença está no fim: o cartão responde na hora.
+   * Aprovado, regista-se já o aviso — o mesmo que o webhook traria, com o mesmo
+   * id, e que por isso o webhook depois encontra repetido. Recusado, o pedido
+   * fica como estava: a pessoa lê porquê e tenta outro cartão ou o Pix.
+   */
+  async pagarComCartao(
+    pedidoId: string,
+    cartao: CartaoTokenizado,
+    emailDoPagador: string,
+    aprovou: boolean,
+    consentiu: boolean,
+    sessao: { userId?: string | null; anonId?: string | null } = {},
+  ) {
+    if (!this.provedor.chavePublica()) {
+      throw new BadRequestException('O pagamento com cartão nesta página ainda não está ativo.')
+    }
+    const preparo = await this.prepararPagamento(
+      pedidoId,
+      MeioDePagamento.CARTAO,
+      emailDoPagador,
+      aprovou,
+      consentiu,
+      sessao,
+    )
+    const resultado = await this.provedor.cobrarCartao(preparo.cobranca, cartao)
+    if (resultado.situacao === 'RECUSADO' || !resultado.referenciaExterna) {
+      throw new BadRequestException(resultado.motivo ?? 'O pagamento foi recusado. Tente outro cartão ou pague com Pix.')
+    }
+
+    await this.gravarCobranca(preparo, { referenciaExterna: resultado.referenciaExterna })
+    if (resultado.aviso) {
+      // O dinheiro entrou. Se registar falhar agora, o webhook da mesma order
+      // chega depois e faz o mesmo — a pessoa não pode ver um erro de cobrança.
+      await this.registarAviso(resultado.aviso).catch((erro) =>
+        this.logger.error(`Pedido ${pedidoId}: cartão aprovado, registo adiado para o aviso: ${String(erro)}`),
+      )
+    }
+
+    return {
+      ...(await this.paraEcra(pedidoId)),
+      situacao: resultado.situacao,
+      motivo: resultado.motivo ?? null,
+    }
+  }
+
+  /**
+   * Tudo o que se confere e se calcula antes de pedir dinheiro, igual para os
+   * dois meios: a aprovação, o responsável, o pedido por pagar, o número, quem
+   * compra e de que afiliado veio. Não grava nada: ver `gravarCobranca`.
+   */
+  private async prepararPagamento(
+    pedidoId: string,
+    meio: MeioDePagamento,
+    emailDoPagador: string,
+    aprovou: boolean,
+    consentiu: boolean,
+    sessao: { userId?: string | null; anonId?: string | null },
+  ) {
     /*
       SEM A APROVAÇÃO, NÃO HÁ COBRANÇA.
 
@@ -464,7 +546,7 @@ export class CartoesService {
           .catch(() => null)
 
     const site = (this.config.get<string>('PUBLIC_WEB_URL') ?? '').replace(/\/+$/, '')
-    const cobranca = await this.provedor.criarCobranca({
+    const cobranca: CobrancaPedida = {
       pedidoId,
       totalCent: actualizado.totalCent,
       moeda: actualizado.moeda,
@@ -476,30 +558,43 @@ export class CartoesService {
       // A cobrança não sobrevive ao pedido: um Pix pago depois do prazo de
       // abandono cairia num pedido que já não existe para gerar.
       expiraEm: actualizado.expiraEm,
-    })
+    }
 
+    return {
+      pedidoId,
+      meio,
+      numero,
+      emailDoPagador,
+      nomeDoComprador: dono?.displayName ?? null,
+      // A conta entra no pedido se ele ainda não tinha dono.
+      novoDono: !pedido.userId && sessao.userId ? sessao.userId : null,
+      afiliadoId,
+      cobranca,
+    }
+  }
+
+  /** Grava no pedido a cobrança criada: a referência, e o QR quando é Pix. */
+  private async gravarCobranca(
+    preparo: Awaited<ReturnType<CartoesService['prepararPagamento']>>,
+    cobranca: { referenciaExterna: string; pixCopiaECola?: string; pixQrSvg?: string },
+  ) {
     await this.prisma.pedidoDeCartoes.update({
-      where: { id: pedidoId },
+      where: { id: preparo.pedidoId },
       data: {
         estado: EstadoDoPedido.AGUARDANDO_PAGAMENTO,
-        meio,
+        meio: preparo.meio,
         aprovacaoEm: new Date(),
         aprovacaoTexto: `${TEXTO_DA_APROVACAO} ${TEXTO_DO_CONSENTIMENTO}`,
-        numero,
-        emailDoComprador: emailDoPagador.trim().toLowerCase().slice(0, 254),
-        ...(dono ? { nomeDoComprador: dono.displayName.slice(0, 120) } : {}),
-        ...(!pedido.userId && sessao.userId ? { userId: sessao.userId } : {}),
-        ...(afiliadoId ? { afiliadoId } : {}),
+        numero: preparo.numero,
+        emailDoComprador: preparo.emailDoPagador.trim().toLowerCase().slice(0, 254),
+        ...(preparo.nomeDoComprador ? { nomeDoComprador: preparo.nomeDoComprador.slice(0, 120) } : {}),
+        ...(preparo.novoDono ? { userId: preparo.novoDono } : {}),
+        ...(preparo.afiliadoId ? { afiliadoId: preparo.afiliadoId } : {}),
         referenciaExterna: cobranca.referenciaExterna,
         pixCopiaECola: cobranca.pixCopiaECola ?? null,
         pixQrSvg: cobranca.pixQrSvg ?? null,
       },
     })
-
-    return {
-      ...(await this.paraEcra(pedidoId)),
-      urlDeRedireccionamento: cobranca.urlDeRedireccionamento ?? null,
-    }
   }
 
   /**

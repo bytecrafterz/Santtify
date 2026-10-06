@@ -226,6 +226,36 @@ export const cartoes = {
       { method: 'POST', body: JSON.stringify({ meio, email, aprovou, consentiu }) },
     ),
 
+  /** Se há formulário de cartão na página (06/10), e a chave pública dele. */
+  configuracaoDoPagamento: (projeto: string) =>
+    chamar<{ chavePublicaDoCartao: string | null }>(`/projects/${projeto}/cartoes/pagamento`),
+
+  /**
+   * O cartão digitado na página: vai o token do formulário do Mercado Pago,
+   * nunca o número. Recusado, lança com a frase do motivo.
+   */
+  pagarComCartao: (
+    projeto: string,
+    pedidoId: string,
+    dados: {
+      token: string
+      metodo: string
+      tipo: 'credit_card' | 'debit_card'
+      parcelas: number
+      documento: { tipo: string; numero: string } | null
+      email: string
+      aprovou: boolean
+      consentiu: boolean
+    },
+  ) =>
+    chamarComRenovacao<Pedido & { situacao: 'APROVADO' | 'EM_ANALISE'; motivo: string | null }>(
+      `/projects/${projeto}/cartoes/pedidos/${pedidoId}/pagamento/cartao`,
+      {
+        method: 'POST',
+        body: JSON.stringify({ ...dados, documento: dados.documento ?? undefined }),
+      },
+    ),
+
   /**
    * As artes de impressão do pedido pago, com o código de liberação.
    *

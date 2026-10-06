@@ -9,8 +9,10 @@ import {
   ProvedorDePagamento,
   type AvisoDePagamento,
   type AvisoRecebido,
+  type CartaoTokenizado,
   type CobrancaCriada,
   type CobrancaPedida,
+  type ResultadoDoCartao,
 } from './provedor'
 
 const API = 'https://api.mercadopago.com'
@@ -143,6 +145,94 @@ export class ProvedorMercadoPago extends ProvedorDePagamento {
     }
   }
 
+  /**
+   * O CARTÃO DIGITADO NA NOSSA PÁGINA (06/10).
+   *
+   * "Ao selecionar cartão de crédito, precisamos ter a opção de o cliente
+   * inserir os dados do cartão" — sem sair da Santtify. O formulário é o do
+   * Mercado Pago (Card Payment Brick): os campos do cartão são deles, dentro
+   * da nossa página, e o que chega aqui é um token. Cobra-se pela mesma API de
+   * Orders do Pix, e por isso o aviso que vier depois é o mesmo `order` que
+   * `lerAviso` já sabe ler — com o mesmo `idExterno`, que o torna repetido.
+   *
+   * E A FOTO FICA. No Checkout Pro a pessoa saía para a página deles e voltava
+   * com a página recarregada, sem a foto, que só vive na memória. Aqui não sai.
+   */
+  chavePublica(): string | null {
+    return this.config.get<string>('MERCADOPAGO_PUBLIC_KEY') || null
+  }
+
+  async cobrarCartao(pedido: CobrancaPedida, cartao: CartaoTokenizado): Promise<ResultadoDoCartao> {
+    const valor = (pedido.totalCent / 100).toFixed(2)
+    const { status, dados } = await this.pedirCru('POST', '/v1/orders', {
+      type: 'online',
+      processing_mode: 'automatic',
+      total_amount: valor,
+      external_reference: pedido.pedidoId,
+      payer: {
+        email: pedido.emailDoPagador,
+        ...(cartao.documento
+          ? { identification: { type: cartao.documento.tipo, number: cartao.documento.numero } }
+          : {}),
+      },
+      transactions: {
+        payments: [
+          {
+            amount: valor,
+            payment_method: {
+              id: cartao.metodo,
+              type: cartao.tipo,
+              token: cartao.token,
+              installments: cartao.parcelas,
+              statement_descriptor: 'SANTTIFY',
+            },
+          },
+        ],
+      },
+    })
+
+    // A order pode vir no corpo mesmo quando a resposta não é 2xx (recusada).
+    const order = (dados?.id ? dados : dados?.data?.id ? dados.data : null) as Record<string, any> | null
+    const estado = String(order?.status ?? '')
+    const detalhe = String(order?.status_detail ?? '')
+    const doPagamento = String(order?.transactions?.payments?.[0]?.status_detail ?? '')
+
+    if (status >= 500) {
+      this.logger.error(`Mercado Pago POST /v1/orders (cartão) → ${status}: ${JSON.stringify(dados)?.slice(0, 500)}`)
+      throw new ServiceUnavailableException('O processador de pagamentos não respondeu. Tente de novo em instantes.')
+    }
+
+    if (order?.id && estado === 'processed' && detalhe === 'accredited') {
+      return {
+        situacao: 'APROVADO',
+        referenciaExterna: String(order.id),
+        aviso: {
+          // O mesmo id que `lerAviso` dá a esta order: o webhook dela chega
+          // depois e é reconhecido como repetido.
+          idExterno: `mp:order:${order.id}:${estado}:${detalhe}`,
+          referenciaExterna: String(order.id),
+          pedidoId: pedido.pedidoId,
+          tipo: `order.${estado}`,
+          pago: true,
+          taxaCent: null,
+          bruto: resumo(order),
+        },
+      }
+    }
+
+    if (order?.id && ['action_required', 'processing', 'in_review', 'in_process'].includes(estado)) {
+      return {
+        situacao: 'EM_ANALISE',
+        referenciaExterna: String(order.id),
+        motivo: 'O pagamento está em análise pelo banco. Assim que for aprovado, os cartões são liberados aqui e por e-mail.',
+      }
+    }
+
+    const codigo = doPagamento || detalhe || String(dados?.errors?.[0]?.code ?? dados?.message ?? '')
+    this.logger.warn(`Cartão recusado (pedido ${pedido.pedidoId}): HTTP ${status}, ${estado || '-'} / ${codigo || '-'}`)
+    return { situacao: 'RECUSADO', referenciaExterna: order?.id ? String(order.id) : null, motivo: motivoDaRecusa(codigo) }
+  }
+
   async lerAviso({ corpo, cabecalhos, consulta }: AvisoRecebido): Promise<AvisoDePagamento | null> {
     const c = (corpo ?? {}) as Record<string, any>
     const tipo = String(consulta['type'] ?? consulta['topic'] ?? c.type ?? c.topic ?? '')
@@ -243,6 +333,22 @@ export class ProvedorMercadoPago extends ProvedorDePagamento {
    * um repetir da rede, não cria duas cobranças.
    */
   private async pedir<T>(metodo: 'GET' | 'POST', caminho: string, corpo?: unknown): Promise<T | null> {
+    const { status, dados } = await this.pedirCru(metodo, caminho, corpo)
+    if (status === 404) return null
+    if (status < 200 || status >= 300) {
+      // O corpo da resposta de erro diz o campo que falhou. O token não vai para o registo.
+      this.logger.error(`Mercado Pago ${metodo} ${caminho} → ${status}: ${JSON.stringify(dados)?.slice(0, 500)}`)
+      throw new ServiceUnavailableException('O processador de pagamentos não respondeu. Tente de novo em instantes.')
+    }
+    return dados as T
+  }
+
+  /** O pedido em si, com o estado e o corpo, sem decidir o que é erro. */
+  private async pedirCru(
+    metodo: 'GET' | 'POST',
+    caminho: string,
+    corpo?: unknown,
+  ): Promise<{ status: number; dados: Record<string, any> | null }> {
     const token = this.config.get<string>('MERCADOPAGO_ACCESS_TOKEN')
     if (!token) throw new ServiceUnavailableException('Pagamentos por configurar.')
 
@@ -254,22 +360,41 @@ export class ProvedorMercadoPago extends ProvedorDePagamento {
         ...(corpo ? { 'Content-Type': 'application/json', 'X-Idempotency-Key': randomUUID() } : {}),
       },
       body: corpo ? JSON.stringify(corpo) : undefined,
-      signal: AbortSignal.timeout(15_000),
+      signal: AbortSignal.timeout(20_000),
     })
-    if (res.status === 404) return null
-    const dados = await res.json().catch(() => null)
-    if (!res.ok) {
-      // O corpo da resposta de erro diz o campo que falhou. O token não vai para o registo.
-      this.logger.error(`Mercado Pago ${metodo} ${caminho} → ${res.status}: ${JSON.stringify(dados)?.slice(0, 500)}`)
-      throw new ServiceUnavailableException('O processador de pagamentos não respondeu. Tente de novo em instantes.')
-    }
-    return dados as T
+    const dados = (await res.json().catch(() => null)) as Record<string, any> | null
+    return { status: res.status, dados }
   }
 
   private urlPublicaDaApi(): string {
     const base = this.config.get<string>('PUBLIC_API_URL') ?? ''
     return base.replace(/\/+$/, '').replace(/\/api$/, '') + '/api'
   }
+}
+
+/**
+ * Porque o cartão foi recusado, numa frase para quem paga.
+ *
+ * Os códigos do Mercado Pago dizem o motivo ("insufficient_amount",
+ * "bad_filled_security_code", "call_for_authorize"…). Mostrá-los crus não
+ * ajuda ninguém; dizer só "recusado" deixa a pessoa sem saber se tenta outra
+ * vez. Cada frase acaba no que fazer.
+ */
+function motivoDaRecusa(codigo: string): string {
+  const c = codigo.toLowerCase()
+  if (c.includes('insufficient')) return 'O cartão não tem limite suficiente. Tente outro cartão ou pague com Pix.'
+  if (c.includes('security_code')) return 'O código de segurança (CVV) não confere. Confira e tente de novo.'
+  if (c.includes('date') || c.includes('expir')) return 'A data de validade não confere. Confira e tente de novo.'
+  if (c.includes('call_for_authorize')) {
+    return 'O banco pediu para autorizar esta compra. Ligue para o banco, autorize e tente de novo.'
+  }
+  if (c.includes('installments')) return 'Este número de parcelas não está disponível. Escolha outro.'
+  if (c.includes('duplicated')) return 'Este pagamento parece repetido. Confira o seu extrato antes de tentar de novo.'
+  if (c.includes('disabled') || c.includes('card_disabled')) {
+    return 'Este cartão está bloqueado para compras online. Fale com o banco ou use outro cartão.'
+  }
+  if (c.includes('bad_filled') || c.includes('invalid')) return 'Algum dado do cartão não confere. Confira e tente de novo.'
+  return 'O pagamento foi recusado pelo banco. Tente outro cartão ou pague com Pix.'
 }
 
 /** Duração ISO 8601 até uma data: "PT36H". Entre 1 hora e 30 dias, que é o que o Pix aceita. */

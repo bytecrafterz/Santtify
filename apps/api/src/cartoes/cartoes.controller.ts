@@ -1,7 +1,20 @@
 import { Body, Controller, Get, HttpCode, Param, Post, Query, Req, UseGuards } from '@nestjs/common'
 import type { Request } from 'express'
 import { MeioDePagamento } from '@pv/db'
-import { IsBoolean, IsEmail, IsEnum, IsInt, IsOptional, IsString, Max, MaxLength, Min } from 'class-validator'
+import { Type } from 'class-transformer'
+import {
+  IsBoolean,
+  IsEmail,
+  IsEnum,
+  IsIn,
+  IsInt,
+  IsOptional,
+  IsString,
+  Max,
+  MaxLength,
+  Min,
+  ValidateNested,
+} from 'class-validator'
 import { CartoesService } from './cartoes.service'
 import { AuthGuard, AuthOpcional } from '../identity/auth.guard'
 import { ANON_COOKIE } from '../common/http.util'
@@ -25,6 +38,23 @@ class PagarDto {
   /** A caixa "Confirmo que revisei e aprovei o nome e a foto". Sem ela não se paga. */
   @IsOptional() @IsBoolean() aprovou?: boolean
   /** A caixa do responsável pela criança (LGPD, art. 14). Sem ela também não. */
+  @IsOptional() @IsBoolean() consentiu?: boolean
+}
+
+class DocumentoDto {
+  @IsString() @MaxLength(10) tipo!: string
+  @IsString() @MaxLength(20) numero!: string
+}
+
+/** O cartão do formulário do Mercado Pago: só o token, nunca o número (06/10). */
+class PagarComCartaoDto {
+  @IsString() @MaxLength(200) token!: string
+  @IsString() @MaxLength(40) metodo!: string
+  @IsIn(['credit_card', 'debit_card']) tipo!: 'credit_card' | 'debit_card'
+  @IsInt() @Min(1) @Max(24) parcelas!: number
+  @IsOptional() @ValidateNested() @Type(() => DocumentoDto) documento?: DocumentoDto
+  @IsEmail({}, { message: 'Escreva um e-mail válido.' }) email!: string
+  @IsOptional() @IsBoolean() aprovou?: boolean
   @IsOptional() @IsBoolean() consentiu?: boolean
 }
 
@@ -92,6 +122,30 @@ export class CartoesController {
   @Get('pedidos/:pedidoId')
   verPedido(@Param('pedidoId') pedidoId: string) {
     return this.cartoes.paraEcra(pedidoId)
+  }
+
+  /** Se há formulário de cartão na página, e a chave pública dele. */
+  @Get('pagamento')
+  configuracaoDoPagamento() {
+    return this.cartoes.configuracaoDoPagamento()
+  }
+
+  @Post('pedidos/:pedidoId/pagamento/cartao')
+  pagarComCartao(@Param('pedidoId') pedidoId: string, @Body() dto: PagarComCartaoDto, @Req() req: Request) {
+    return this.cartoes.pagarComCartao(
+      pedidoId,
+      {
+        token: dto.token,
+        metodo: dto.metodo,
+        tipo: dto.tipo,
+        parcelas: dto.parcelas,
+        documento: dto.documento ?? null,
+      },
+      dto.email,
+      dto.aprovou === true,
+      dto.consentiu === true,
+      { userId: req.usuario?.id ?? null, anonId: req.cookies?.[ANON_COOKIE] ?? null },
+    )
   }
 
   @Post('pedidos/:pedidoId/pagamento')

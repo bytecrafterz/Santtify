@@ -1,3 +1,4 @@
+import { BadRequestException } from '@nestjs/common'
 import { MeioDePagamento } from '@pv/db'
 
 /**
@@ -49,6 +50,33 @@ export interface CobrancaCriada {
   pixQrSvg?: string
   /** Para cartão: o endereço onde ela termina o pagamento. */
   urlDeRedireccionamento?: string
+}
+
+/**
+ * O cartão como o formulário do provedor o devolve: já em token (06/10).
+ *
+ * O número do cartão é digitado num campo do próprio provedor, dentro da nossa
+ * página, e o que chega aqui é um token de uso único. Nunca vemos o número.
+ */
+export interface CartaoTokenizado {
+  token: string
+  /** "master", "visa", "elo"… */
+  metodo: string
+  tipo: 'credit_card' | 'debit_card'
+  parcelas: number
+  /** O CPF/CNPJ que o formulário pede no Brasil. */
+  documento?: { tipo: string; numero: string } | null
+}
+
+/** O que o processador respondeu ao cartão, já traduzido. */
+export interface ResultadoDoCartao {
+  situacao: 'APROVADO' | 'EM_ANALISE' | 'RECUSADO'
+  /** Nulo só quando a recusa veio antes de haver cobrança do lado deles. */
+  referenciaExterna: string | null
+  /** A frase para quem paga: porque recusou, ou que está em análise. */
+  motivo?: string
+  /** Aprovado: o aviso a registar já, sem esperar pelo webhook. */
+  aviso?: AvisoDePagamento
 }
 
 /** Um aviso tal como chegou: corpo, cabeçalhos e os parâmetros do endereço. */
@@ -113,4 +141,17 @@ export abstract class ProvedorDePagamento {
    * assinatura não conferir.
    */
   abstract lerAviso(recebido: AvisoRecebido): Promise<AvisoDePagamento | null>
+
+  /**
+   * A chave pública do formulário de cartão na página. Nula = este provedor
+   * não tem formulário, e o cartão segue o caminho de `criarCobranca`.
+   */
+  chavePublica(): string | null {
+    return null
+  }
+
+  /** Cobra um cartão tokenizado na nossa página. Só quem tem `chavePublica`. */
+  async cobrarCartao(_pedido: CobrancaPedida, _cartao: CartaoTokenizado): Promise<ResultadoDoCartao> {
+    throw new BadRequestException('O pagamento com cartão nesta página ainda não está ativo.')
+  }
 }

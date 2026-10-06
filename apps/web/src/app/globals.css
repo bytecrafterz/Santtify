@@ -18620,3 +18620,14 @@ a.pi-cartao:hover .pi-cartao-seta {
 
   .sg-aviso strong { color: #fcd34d; }
 }
+
+/* O formulário de cartão do Mercado Pago, dentro da página (06/10). */
+.cartoes-cartao-na-pagina {
+  display: grid;
+  gap: 10px;
+  margin-top: 6px;
+}
+
+.cartoes-cartao-na-pagina #formulario-de-cartao {
+  min-height: 120px;
+}

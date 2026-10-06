@@ -12,6 +12,7 @@ import { CartaoComoEditor } from './CartaoComoEditor'
 import { AvisoDaFoto, CaixaDoResponsavel, ConfirmarPersonalizacao } from './ConfirmarPersonalizacao'
 import { Voltar } from './Voltar'
 import { LimiteDeErro } from './LimiteDeErro'
+import { FormularioDeCartao } from './FormularioDeCartao'
 
 /**
  * O editor dos cartões personalizados.
@@ -125,6 +126,15 @@ export function EditorDeCartoes({
   const [aConfirmar, definirAConfirmar] = useState<'PIX' | 'CARTAO' | null>(null)
   /** Já escolheu um meio e quer o outro: as duas opções voltam (05/10). */
   const [trocandoMeio, definirTrocandoMeio] = useState(false)
+  /**
+   * A chave do formulário de cartão na página (06/10). `undefined` enquanto
+   * não se sabe; nula quando não há — e então o cartão vai à página do
+   * Mercado Pago, como antes.
+   */
+  const [chaveDoCartao, definirChaveDoCartao] = useState<string | null | undefined>(undefined)
+  /** O formulário do cartão aberto, depois das duas caixas da confirmação. */
+  const [cartaoNaPagina, definirCartaoNaPagina] = useState(false)
+  const [avisoDoCartao, definirAvisoDoCartao] = useState<string | null>(null)
   const [erro, definirErro] = useState<string | null>(null)
   const [ocupado, definirOcupado] = useState<string | null>(null)
   const { usuario } = useAuth()
@@ -316,6 +326,15 @@ export function EditorDeCartoes({
     }, 5_000)
     return () => window.clearInterval(temporizador)
   }, [aEsperarPagamento, projectSlug])
+
+  // Se há formulário de cartão na página — pergunta-se uma vez, ao chegar ao pagamento.
+  useEffect(() => {
+    if (passo !== 'pagamento' || chaveDoCartao !== undefined) return
+    cartoes
+      .configuracaoDoPagamento(projectSlug)
+      .then((c) => definirChaveDoCartao(c.chavePublicaDoCartao))
+      .catch(() => definirChaveDoCartao(null))
+  }, [passo, chaveDoCartao, projectSlug])
 
   // Pago enquanto esperava no ecrã do pagamento: segue para gerar.
   useEffect(() => {
@@ -531,11 +550,11 @@ export function EditorDeCartoes({
             <span aria-hidden="true">🔒</span>
             <span>
               Pagamento processado pelo <strong>Mercado&nbsp;Pago</strong>. O número do cartão é digitado
-              na página deles — nós nunca o vemos nem o guardamos.
+              num formulário deles — nós nunca o vemos nem o guardamos.
             </span>
           </p>
 
-          {(!pedido.meio || trocandoMeio) && (
+          {(!pedido.meio || trocandoMeio) && !cartaoNaPagina && (
             <div className="cartoes-meios">
               <label className="cartoes-email-pagamento">
                 <span>Seu e-mail, para o comprovante</span>
@@ -588,7 +607,7 @@ export function EditorDeCartoes({
                     </svg>
                   </span>
                   <strong>Cartão de crédito</strong>
-                  <small>Na página do Mercado Pago</small>
+                  <small>{chaveDoCartao ? 'Digite aqui, com segurança' : 'Na página do Mercado Pago'}</small>
                 </button>
               </div>
               {!emailValido(email) && (
@@ -602,11 +621,18 @@ export function EditorDeCartoes({
                 por isso, na volta, pede-se a foto outra vez. Dizê-lo antes evita
                 o susto.
               */}
-              <p className="cartoes-ajuda">
-                No cartão, o pagamento abre na página do Mercado Pago. Ao voltar, você escolhe a foto de
-                novo para gerar os cartões (ela não fica guardada em lugar nenhum). No Pix, você continua
-                nesta tela.
-              </p>
+              {chaveDoCartao ? (
+                <p className="cartoes-ajuda">
+                  Nos dois, você continua nesta tela: no cartão, digita os dados aqui mesmo, num formulário
+                  protegido do Mercado Pago.
+                </p>
+              ) : (
+                <p className="cartoes-ajuda">
+                  No cartão, o pagamento abre na página do Mercado Pago. Ao voltar, você escolhe a foto de
+                  novo para gerar os cartões (ela não fica guardada em lugar nenhum). No Pix, você continua
+                  nesta tela.
+                </p>
+              )}
               {trocandoMeio && (
                 <button type="button" className="cartoes-ligacao" onClick={() => definirTrocandoMeio(false)}>
                   Voltar ao pagamento que já tinha escolhido
@@ -626,6 +652,13 @@ export function EditorDeCartoes({
               aoConfirmar={() => {
                 const meio = aConfirmar
                 definirConsentiu(true)
+                // Cartão com formulário na página: abre-o; a cobrança é no envio dele.
+                if (meio === 'CARTAO' && chaveDoCartao) {
+                  definirAConfirmar(null)
+                  definirAvisoDoCartao(null)
+                  definirCartaoNaPagina(true)
+                  return
+                }
                 void comErro(meio === 'PIX' ? 'pix' : 'cartao', async () => {
                   const resposta = await cartoes.pagar(projectSlug, pedido.id, meio, email.trim(), true, true)
                   definirPedido(resposta)
@@ -638,7 +671,28 @@ export function EditorDeCartoes({
             />
           )}
 
-          {pedido.pixQrSvg && !trocandoMeio && (
+          {cartaoNaPagina && chaveDoCartao && (
+            <FormularioDeCartao
+              chavePublica={chaveDoCartao}
+              valorCent={pedido.preco.totalCent}
+              email={email.trim()}
+              aoCancelar={() => definirCartaoNaPagina(false)}
+              aoPagar={async (dados) => {
+                const resposta = await cartoes.pagarComCartao(projectSlug, pedido.id, {
+                  ...dados,
+                  aprovou: true,
+                  consentiu: true,
+                })
+                definirPedido(resposta)
+                definirTrocandoMeio(false)
+                definirCartaoNaPagina(false)
+                if (resposta.situacao === 'EM_ANALISE') definirAvisoDoCartao(resposta.motivo)
+              }}
+            />
+          )}
+          {avisoDoCartao && !cartaoNaPagina && <p className="cartoes-ajuda">{avisoDoCartao}</p>}
+
+          {pedido.pixQrSvg && !trocandoMeio && !cartaoNaPagina && (
             <div className="cartoes-pix">
               <div
                 className="cartoes-pix-qr"
@@ -682,14 +736,14 @@ export function EditorDeCartoes({
             </div>
           )}
 
-          {pedido.meio && !trocandoMeio && (
+          {pedido.meio && !trocandoMeio && !cartaoNaPagina && (
             <p className="cartoes-estado-espera">
               {pedido.meio === 'CARTAO' ? 'Pagamento com cartão: aguardando confirmação…' : 'Aguardando confirmação do pagamento…'}
             </p>
           )}
           {erro && <p className="cartoes-erro">{erro}</p>}
 
-          {pedido.meio && !trocandoMeio && (
+          {pedido.meio && !trocandoMeio && !cartaoNaPagina && (
             <button
               type="button"
               className="cartoes-ligacao"
@@ -702,7 +756,7 @@ export function EditorDeCartoes({
               Já paguei — verificar agora
             </button>
           )}
-          {pedido.meio && !trocandoMeio && (
+          {pedido.meio && !trocandoMeio && !cartaoNaPagina && (
             <button type="button" className="cartoes-ligacao" onClick={() => definirTrocandoMeio(true)}>
               {pedido.meio === 'PIX' ? 'Prefiro pagar com cartão de crédito' : 'Trocar a forma de pagamento'}
             </button>

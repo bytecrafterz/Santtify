@@ -94,6 +94,12 @@ const schema = z.object({
   /** O Access Token da aplicação no Mercado Pago. É uma senha: só no servidor. */
   MERCADOPAGO_ACCESS_TOKEN: vazioComoAusente,
   /**
+   * A Public Key da mesma aplicação (06/10): a do formulário de cartão na
+   * página. É pública por desenho — vai para o navegador. Sem ela o cartão
+   * volta ao Checkout Pro, a página do Mercado Pago.
+   */
+  MERCADOPAGO_PUBLIC_KEY: vazioComoAusente,
+  /**
    * A chave secreta das notificações, que o Mercado Pago gera DEPOIS de se
    * configurar o endereço delas no painel dele.
    *
