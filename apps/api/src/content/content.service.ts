@@ -247,6 +247,7 @@ export class ContentService {
         id: true,
         slug: true,
         letra: true,
+        ordinal: true,
         title: true,
         subtitle: true,
         coverUrl: true,
@@ -284,6 +285,9 @@ export class ContentService {
           as setas do painel dentro de cada letra.
         */
         letra: c.letra,
+        // O número da casa nos projetos por dias (08/10): é por ele que a
+        // reprodução contínua anda de dia em dia, como anda de letra em letra.
+        ordinal: c.ordinal,
         title: c.title,
         subtitle: c.subtitle,
         // A arte da própria faixa quando existir; a capa da letra como

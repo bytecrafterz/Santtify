@@ -1,10 +1,8 @@
 'use client'
 
-import { useEffect, useRef, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import type { Bloco } from '@/lib/api'
-import { rastrear } from '@/lib/track'
 import { social } from '@/lib/social'
-import { tocarASeguinte } from '@/lib/tocar-em-sequencia'
 import { useSyncExternalStore } from 'react'
 import {
   assinarCategoriaATocar,
@@ -13,6 +11,16 @@ import {
   lerCategoriaATocar,
   lerCategoriaNoServidor,
 } from '@/lib/categoria-a-tocar'
+import {
+  alternarFaixa,
+  assinarTocador,
+  irParaPonto,
+  lerTocador,
+  lerTocadorNoServidor,
+  quandoAcabar,
+  registarTocador,
+  type FaixaATocar,
+} from '@/lib/tocador-da-pagina'
 
 /**
  * O tocador escuro com a onda, colado à imagem de cima.
@@ -82,8 +90,42 @@ export function TocadorDeOnda({
   categorias?: Array<{ slug: string; name: string }>
   aoEscolherCategoria?: (categoria: string | null) => void
 }) {
-  const audio = useRef<HTMLAudioElement>(null)
-  const [tocando, definirTocando] = useState(false)
+  /*
+    ESTE TOCADOR JÁ NÃO TEM ÁUDIO PRÓPRIO (08/10): é uma vista do tocador da
+    página, que toca as faixas todas no mesmo elemento para a sequência
+    continuar com o telefone bloqueado — ver `tocador-da-pagina.ts`. Aqui
+    mostra-se o botão e o tempo quando a faixa que está a tocar é esta.
+  */
+  const tocador = useSyncExternalStore(assinarTocador, lerTocador, lerTocadorNoServidor)
+  const minha = tocador.faixaId === bloco.id
+  const tocando = minha && tocador.tocando
+  const faixa = useMemo<FaixaATocar | null>(
+    () =>
+      bloco.asset?.url
+        ? {
+            id: bloco.id,
+            url: bloco.asset.url,
+            titulo: bloco.titulo ?? bloco.label ?? 'Santtify',
+            rotulo,
+            capa: bloco.arte,
+            contentId,
+            /*
+              A CATEGORIA, E SE NÃO HOUVER, O NOME DA CASA.
+
+              Ele testou e a faixa azul ficava sempre em TODOS. A razão está
+              nos dados dele: das 127 faixas, só 16 têm categoria escolhida no
+              painel. O nome da casa — Explicação, Música, Oração — é o que ele
+              lê na lista e é o mesmo nome das categorias que ele criou. Serve
+              de segunda fonte quando a primeira está vazia.
+            */
+            categoria: bloco.categoriaNome ?? bloco.label ?? categoria ?? null,
+            nomeDoBloco: bloco.label,
+            duracaoMs: bloco.asset.durationMs,
+          }
+        : null,
+    [bloco, rotulo, contentId, categoria],
+  )
+  useEffect(() => registarTocador(), [])
   const [menuAberto, definirMenuAberto] = useState(false)
   /* Qual categoria está a tocar na página, seja em que tocador for. */
   const aTocar = useSyncExternalStore(
@@ -119,17 +161,31 @@ export function TocadorDeOnda({
       clearTimeout(t)
     }
   }, [bloco.id])
-  const [agora, definirAgora] = useState(0)
-  const [total, definirTotal] = useState(0)
+  /*
+    O NÚMERO SOBE NO ECRÃ, NO INSTANTE EM QUE A MÚSICA ACABA.
+
+    O número era buscado uma vez ao abrir a página e nunca mais. Ele ouvia a
+    música até ao fim, o servidor registava, e no ecrã não mexia nada até
+    recarregar — por isso disse "eu termino de ouvir e o número não muda".
+    Somado aqui e não pedido outra vez ao servidor: sabemos que aconteceu.
+  */
+  useEffect(
+    () =>
+      quandoAcabar(bloco.id, () => {
+        definirReproducoes((n) => (n ?? 0) + 1)
+        aoTerminar?.()
+      }),
+    [bloco.id, aoTerminar],
+  )
+
+  const agora = minha ? tocador.agora : 0
+  const total = minha && tocador.total ? tocador.total : (bloco.asset?.durationMs ?? 0) / 1000
 
   const onda = ondaDe(bloco.id)
   const progresso = total > 0 ? agora / total : 0
 
   function alternar() {
-    const el = audio.current
-    if (!el) return
-    if (el.paused) void el.play().catch(() => {})
-    else el.pause()
+    if (faixa) alternarFaixa(faixa, { projectId })
   }
 
   return (
@@ -153,10 +209,9 @@ export function TocadorDeOnda({
           className="onda"
           aria-label="Avançar no áudio"
           onClick={(e) => {
-            const el = audio.current
-            if (!el || !total) return
+            if (!faixa || !total) return
             const caixa = e.currentTarget.getBoundingClientRect()
-            el.currentTime = ((e.clientX - caixa.left) / caixa.width) * total
+            irParaPonto(faixa, ((e.clientX - caixa.left) / caixa.width) * total, { projectId })
           }}
         >
           {onda.map((h, i) => (
@@ -243,7 +298,7 @@ export function TocadorDeOnda({
                   definirCategoriaATocar(c)
                   /* E a ESCOLHA, que é o que manda na sequência. Só muda aqui,
                      no dedo dele, e não quando uma faixa começa. */
-                  definirCategoriaEscolhida(c === TODOS ? null : c)
+                  definirCategoriaEscolhida(c)
                 }}
               >
                 {c}
@@ -252,83 +307,6 @@ export function TocadorDeOnda({
           </div>
         )}
 
-        <audio
-          ref={audio}
-          preload="metadata"
-          // O menu nativo do navegador também oferece "descarregar". Isto
-          // tira-lhe essa entrada; não é uma tranca — nada impede alguém de
-          // ir buscar o endereço — mas deixa de estar à mão de quem só quer
-          // ouvir, que é o que ele pediu.
-          controlsList="nodownload"
-          onContextMenu={(ev) => ev.preventDefault()}
-          onLoadedMetadata={(e) => definirTotal(e.currentTarget.duration)}
-          onTimeUpdate={(e) => definirAgora(e.currentTarget.currentTime)}
-          onPlay={() => {
-            definirTocando(true)
-            /* Diz à página inteira o que está a tocar. É o que faz a faixa azul
-               acompanhar quando o áudio avança sozinho para a faixa seguinte. */
-            /*
-              A CATEGORIA, E SE NÃO HOUVER, O NOME DA CASA.
-
-              Ele testou e a faixa azul ficava sempre em TODOS. A razão está nos
-              dados dele: das 127 faixas, só 16 têm categoria escolhida no
-              painel. Sem categoria eu não tinha o que acender e caía em TODOS.
-
-              O nome da casa — Explicação, Música, Oração — é o que ele lê na
-              lista e é o mesmo nome das categorias que ele criou. Serve de
-              segunda fonte quando a primeira está vazia, e o resultado é o que
-              ele descreveu: toca a oração, ORAÇÃO fica azul.
-
-              Continua a valer a pena escolher a categoria no painel, e é o que
-              lhe vou dizer: aí a faixa acende mesmo quando o nome da casa e o
-              da categoria são diferentes, como em "Repetição do versículo", que
-              é da categoria Memorização.
-            */
-            definirCategoriaATocar(
-              bloco.categoriaNome ?? bloco.label ?? categoria ?? null,
-            )
-            void rastrear({
-              projectId,
-              contentId,
-              type: 'MEDIA_PLAY',
-              props: { bloco: bloco.label, blockId: bloco.id },
-            })
-          }}
-          onPause={() => definirTocando(false)}
-          onEnded={() => {
-            definirTocando(false)
-            /*
-              O NÚMERO SOBE NO ECRÃ, NO INSTANTE EM QUE A MÚSICA ACABA.
-
-              O número era buscado uma vez ao abrir a página e nunca mais. Ele
-              ouvia a música até ao fim, o servidor registava, e no ecrã não
-              mexia nada até recarregar — por isso disse "eu termino de ouvir e
-              o número não muda". O registo estava certo; era o ecrã que não
-              contava.
-
-              Somado aqui e não pedido outra vez ao servidor: a pessoa acabou de
-              o fazer, sabemos que aconteceu, e uma ida à rede para confirmar o
-              que acabámos de causar só serve para o número aparecer tarde.
-            */
-            definirReproducoes((n) => (n ?? 0) + 1)
-            void rastrear({
-              projectId,
-              contentId,
-              type: 'MEDIA_COMPLETE',
-              props: { bloco: bloco.label, blockId: bloco.id },
-            })
-            aoTerminar?.()
-            /*
-              E SEGUE PARA A SEGUINTE.
-              Pedido dele em 02/09, pela segunda vez. Fica aqui, no fim de
-              qualquer faixa, e não numa propriedade que quatro páginas teriam
-              de passar: a que se esquecesse falhava calada.
-            */
-            if (audio.current) void tocarASeguinte(audio.current)
-          }}
-        >
-          <source src={bloco.asset?.url} type={bloco.asset?.mimeType ?? undefined} />
-        </audio>
       </div>
     </>
   )

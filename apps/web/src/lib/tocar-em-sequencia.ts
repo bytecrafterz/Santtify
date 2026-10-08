@@ -24,16 +24,33 @@
  */
 import { lerCategoriaEscolhida } from './categoria-a-tocar'
 
-interface Faixa {
+/**
+ * Uma faixa da fila, com tudo o que é preciso para a TOCAR sem a página.
+ *
+ * 08/10: a seguinte deixou de ser procurada como um `<audio>` desenhado na
+ * página. Com o telefone bloqueado, o iPhone não deixa começar um elemento
+ * diferente do que estava a tocar, nem esperar que a página abra outra letra.
+ * Por isso a fila traz o endereço do áudio, e quem toca troca a fonte no
+ * mesmo elemento — ver `tocador-da-pagina.ts`.
+ */
+export interface FaixaDaFila {
   id: string
   slug: string
-  /** A letra do conteúdo. `null` na introdução e no Produto Vivo. */
+  contentId: string
+  /** A letra do conteúdo. `null` nos projetos por dias, na introdução e no Produto Vivo. */
   letra: string | null
+  /** O número do dia, nos projetos por dias. */
+  ordinal: number | null
   categoriaNome: string | null
+  title: string
+  rotulo: string | null
+  coverUrl: string | null
+  url: string
+  durationMs: number | null
 }
 
-let fila: Faixa[] | null = null
-let aBuscar: Promise<Faixa[]> | null = null
+let fila: FaixaDaFila[] | null = null
+let aBuscar: Promise<FaixaDaFila[]> | null = null
 
 /** O projeto sai do endereço: /<projeto>/... em qualquer página pública. */
 function projetoDoEndereco(): string | null {
@@ -41,7 +58,8 @@ function projetoDoEndereco(): string | null {
   return p[0] ?? null
 }
 
-async function filaDoProjeto(): Promise<Faixa[]> {
+/** A fila do projeto, guardada: busca-se ao primeiro play, para o fim da faixa não esperar pela rede. */
+export async function prepararFila(): Promise<FaixaDaFila[]> {
   if (fila) return fila
   if (aBuscar) return aBuscar
   const projeto = projetoDoEndereco()
@@ -61,46 +79,46 @@ async function filaDoProjeto(): Promise<Faixa[]> {
         E só letras: a introdução e o Produto Vivo não fazem parte do percurso
         que ele descreveu, que é "percorrendo todas as letras disponíveis".
       */
-      fila = (d?.faixas ?? [])
-        .filter((f: Faixa) => f.letra)
-        .map((f: Faixa) => ({
+      /*
+        E OS DIAS (08/10): nos projetos por dias as casas não têm letra, têm
+        número, e a fila ficava vazia — a sequência nunca passava do Dia 1 ao
+        Dia 2. Uma casa é uma letra OU um número; a introdução e o Produto Vivo
+        não são nenhum dos dois e continuam de fora.
+      */
+      const chave = (f: FaixaDaFila) => f.letra ?? String(f.ordinal ?? 0).padStart(4, '0')
+      fila = ((d?.faixas ?? []) as Array<FaixaDaFila & { categoriaNome?: string | null }>)
+        .filter((f) => f.letra || f.ordinal != null)
+        .map((f) => ({
           id: f.id,
           slug: f.slug,
-          letra: f.letra,
+          contentId: f.contentId,
+          letra: f.letra ?? null,
+          ordinal: f.ordinal ?? null,
           categoriaNome: f.categoriaNome ?? null,
+          title: f.title,
+          rotulo: f.rotulo ?? null,
+          coverUrl: f.coverUrl ?? null,
+          url: f.url,
+          durationMs: f.durationMs ?? null,
         }))
-        .sort((a: Faixa, b: Faixa) => (a.letra! < b.letra! ? -1 : a.letra! > b.letra! ? 1 : 0))
+        // Estável: dentro da mesma casa fica a ordem do painel.
+        .sort((a, b) => (chave(a) < chave(b) ? -1 : chave(a) > chave(b) ? 1 : 0))
       return fila!
     })
     .catch(() => [])
   return aBuscar
 }
 
-/** O `<audio>` de uma faixa, se ela estiver desenhada nesta página. */
-function audioDaFaixa(blockId: string): HTMLAudioElement | null {
-  return document.querySelector<HTMLAudioElement>(`#cartao-${blockId} audio`)
-}
-
-/** A que faixa pertence este `<audio>`. */
-function faixaDoAudio(audio: HTMLAudioElement): string | null {
-  const artigo = audio.closest('[id^="cartao-"]')
-  return artigo?.id.replace('cartao-', '') ?? null
-}
-
 /**
- * Toca a faixa a seguir a esta, dentro da categoria escolhida.
+ * A faixa a seguir a esta, dentro da categoria escolhida — SEM ESPERAR.
  *
- * Se a seguinte estiver nesta página, toca-a aqui. Se estiver noutra letra,
- * pede à página que a abra — a página inicial abre letras sem sair dela, e é
- * assim que a sequência atravessa de A para B sem partir a regra dele de 20/08
- * de que ninguém sai do perfil.
+ * Usa a fila já guardada (ver `prepararFila`): é chamada dentro do fim da faixa,
+ * e com o telefone bloqueado não há tempo para ir à rede. Sem fila ainda,
+ * devolve nula e a sequência pára, como antes de a fila chegar.
  */
-export async function tocarASeguinte(atual: HTMLAudioElement): Promise<boolean> {
-  const daqui = faixaDoAudio(atual)
-  if (!daqui) return false
-
-  const todas = await filaDoProjeto()
-  if (!todas.length) return false
+export function proximaDaFila(daqui: string): FaixaDaFila | null {
+  const todas = fila
+  if (!todas?.length) return null
 
   /*
     A ESCOLHA dele quando existe; senão, a CATEGORIA DO QUE ESTÁ A TOCAR.
@@ -157,7 +175,7 @@ export async function tocarASeguinte(atual: HTMLAudioElement): Promise<boolean> 
     isso que ele via como "no final da Letra B não continuou".
   */
   const proxima = candidatas.find((f) => depoisDaqui.has(f.id)) ?? candidatas[0] ?? null
-  if (!proxima) return false
+  if (!proxima) return null
 
   /*
     SALVO SE FOR ELA PRÓPRIA. Há categorias com uma faixa só — hoje só existe
@@ -165,21 +183,6 @@ export async function tocarASeguinte(atual: HTMLAudioElement): Promise<boolean> 
     repetir uma música de cinco minutos para sempre não é o que ele pediu; é o
     que sai de aplicar a regra à letra num caso que ele não tinha em mente.
   */
-  if (proxima.id === daqui) return false
-
-  const aqui = audioDaFaixa(proxima.id)
-  if (aqui) {
-    const caixa = aqui.closest('.publicacao') ?? aqui
-    caixa.scrollIntoView({ behavior: 'smooth', block: 'center' })
-    void aqui.play().catch(() => {})
-    return true
-  }
-
-  /* Noutra letra: quem sabe abri-la é a página. Se ninguém estiver a ouvir
-     este pedido, a sequência pára aqui, que é melhor do que saltar a pessoa
-     para outro endereço sem ela pedir. */
-  window.dispatchEvent(
-    new CustomEvent('pv:tocar-faixa', { detail: { slug: proxima.slug, blockId: proxima.id } }),
-  )
-  return true
+  if (proxima.id === daqui) return null
+  return proxima
 }

@@ -6,6 +6,7 @@ import type { ItemIndice, PaginaConteudo, ProgressoDasLetras } from '@/lib/api'
 import { PublicacaoDaLetra } from './PublicacaoDaLetra'
 import { CartaoDeImpressao } from './CartaoDeImpressao'
 import { rastrear } from '@/lib/track'
+import { registarQuemAbreCasas } from '@/lib/tocador-da-pagina'
 
 /**
  * Quantas casas por linha, conforme quantas casas o projeto tem.
@@ -245,6 +246,14 @@ export function ExperienciaContinua({
     resolver outra coisa.
   */
   const faixaPedida = useRef<string | null>(null)
+  /*
+    08/10: O SOM JÁ NÃO ESPERA POR ESTA PÁGINA. A faixa seguinte toca logo no
+    tocador da página (`tocador-da-pagina.ts`), com o telefone bloqueado ou
+    não; este pedido serve só para a página acompanhar — abrir a casa e levar
+    até à faixa que já está a tocar. E esta página diz que sabe abrir casas:
+    é o que deixa a sequência atravessar de letra em letra.
+  */
+  useEffect(() => registarQuemAbreCasas(), [])
   useEffect(() => {
     const ouvir = (ev: Event) => {
       const { slug, blockId } = (ev as CustomEvent).detail ?? {}
@@ -254,8 +263,8 @@ export function ExperienciaContinua({
       faixaPedida.current = blockId
       void escolher(item)
     }
-    window.addEventListener('pv:tocar-faixa', ouvir)
-    return () => window.removeEventListener('pv:tocar-faixa', ouvir)
+    window.addEventListener('pv:faixa-a-tocar', ouvir)
+    return () => window.removeEventListener('pv:faixa-a-tocar', ouvir)
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [contents])
 
@@ -281,11 +290,11 @@ export function ExperienciaContinua({
     let tentativas = 0
     const tentar = () => {
       if (parado) return
-      const audio = document.querySelector<HTMLAudioElement>(`#cartao-${alvo} audio`)
-      if (audio) {
-        const caixa = audio.closest('.publicacao') ?? audio
+      const cartao = document.getElementById(`cartao-${alvo}`)
+      if (cartao) {
+        // Só leva até lá: a faixa já está a tocar, e o tocador dela mostra-o.
+        const caixa = cartao.closest('.publicacao') ?? cartao
         caixa.scrollIntoView({ behavior: 'smooth', block: 'center' })
-        void audio.play().catch(() => {})
         return
       }
       if (++tentativas < 32) setTimeout(tentar, 250)

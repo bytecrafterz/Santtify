@@ -41,7 +41,12 @@ const ouvintes = new Set<() => void>()
 */
 let escolhida: string | null = null
 
-/** A categoria que ele escolheu no menu. `null` é TODOS. */
+/**
+ * A categoria que ele escolheu no menu. `null` é NADA escolhido (a sequência
+ * segue a categoria do que está a tocar); 'TODOS' é tudo, escolhido de
+ * propósito (08/10: o menu guardava TODOS como `null`, e escolher TODOS não
+ * fazia a sequência passar a tocar tudo).
+ */
 export function definirCategoriaEscolhida(nome: string | null) {
   escolhida = nome?.trim().toUpperCase() || null
 }

@@ -5,6 +5,7 @@ import { useEffect, useRef, useState } from 'react'
 import type { CategoriaDeAudio, Faixa } from '@/lib/api'
 import { rastrear } from '@/lib/track'
 import { plural } from '@/lib/numeros'
+import { botoesDaSessao, descreverNaSessao } from '@/lib/sessao-de-midia'
 
 /**
  * "Reproduzir todas": as músicas do projeto tocando em sequência, do A ao Z.
@@ -84,6 +85,23 @@ export function Playlist({
    */
   const querTocar = useRef(false)
 
+  // A fila em si. Trocar o filtro reinicia a fila do começo — continuar do
+  // índice antigo cairia numa faixa qualquer, porque a numeração muda.
+  const fila = filtro ? faixas.filter((f) => f.categoria === filtro) : faixas
+  const faixa = fila[atual] ?? fila[0]
+
+  /*
+    A FONTE ACOMPANHA A FAIXA ESCOLHIDA, SEM TOCAR. Ao abrir a página e ao
+    trocar o filtro, o elemento fica pronto com a faixa certa; tocar é sempre
+    um gesto da pessoa, ou o fim da faixa anterior.
+  */
+  useEffect(() => {
+    const el = audio.current
+    if (!el || !faixa) return
+    if (el.getAttribute('src') !== faixa.url) el.src = faixa.url
+    descreverNaSessao({ titulo: faixa.title, rotulo: faixa.rotulo, capa: faixa.coverUrl })
+  }, [faixa])
+
   // Autoplay só existe porque houve um toque humano imediatamente antes — no
   // play da capa. O navegador exige esse gesto, e nós exigimos o mesmo por
   // outra razão: som que começa sem ninguém pedir é a forma mais rápida de
@@ -101,11 +119,29 @@ export function Playlist({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
 
-  useEffect(() => {
-    if (!querTocar.current) return
+  /*
+    COM O TELEFONE BLOQUEADO, A SEGUINTE ENTRA NO MESMO INSTANTE (08/10).
+
+    "Com a tela apagada, o áudio continua tocando; mas, quando termina uma
+    faixa, não passa automaticamente para a seguinte." A passagem era: o fim
+    da faixa mudava o índice, o React desenhava, e só depois um efeito
+    recarregava o elemento e pedia `play()`. Com o ecrã apagado o iPhone já
+    não deixa chegar a esse "depois" — a sessão de áudio acaba com a faixa.
+
+    Agora a faixa seguinte entra no MESMO `<audio>`, dentro do próprio fim da
+    anterior: troca-se a fonte e toca-se ali, sem esperar por desenho nenhum.
+    É o mesmo caminho para o toque numa faixa da lista e para os botões do
+    ecrã bloqueado.
+  */
+  function carregarETocar(indice: number) {
     const el = audio.current
-    if (!el) return
-    el.load()
+    const f = fila[indice]
+    if (!el || !f) return
+    querTocar.current = true
+    if (el.getAttribute('src') !== f.url) el.src = f.url
+    else el.currentTime = 0
+    descreverNaSessao({ titulo: f.title, rotulo: f.rotulo, capa: f.coverUrl })
+    definirAtual(indice)
     void el
       .play()
       .then(() => definirErro(null))
@@ -116,11 +152,18 @@ export function Playlist({
         definirTocando(false)
         definirErro('Toque em tocar para continuar ouvindo.')
       })
-  }, [atual])
+  }
 
-  // A fila em si. Trocar o filtro reinicia a fila do começo — continuar do
-  // índice antigo cairia numa faixa qualquer, porque a numeração muda.
-  const fila = filtro ? faixas.filter((f) => f.categoria === filtro) : faixas
+  // Os botões do ecrã bloqueado e dos auscultadores, sempre com a fila de agora.
+  useEffect(() => {
+    botoesDaSessao({
+      tocar: () => void audio.current?.play().catch(() => {}),
+      pausar: () => audio.current?.pause(),
+      seguinte: atual + 1 < fila.length ? () => carregarETocar(atual + 1) : null,
+      anterior: atual > 0 ? () => carregarETocar(atual - 1) : null,
+    })
+  })
+  useEffect(() => () => botoesDaSessao({}), [])
 
   function trocarFiltro(novo: string | null) {
     if (novo === filtro) return
@@ -143,23 +186,10 @@ export function Playlist({
     )
   }
 
-  const faixa = fila[atual] ?? fila[0]
-
+  // Tocar na faixa que já está a tocar recomeça-a do início (ver `carregarETocar`).
   function irPara(indice: number) {
     if (indice < 0 || indice >= fila.length) return
-    querTocar.current = true
-    // Tocar na faixa que já está tocando não muda o índice, então o efeito não
-    // roda: aqui ela recomeça do início, que é o que a pessoa espera.
-    if (indice === atual) {
-      const el = audio.current
-      if (el) {
-        el.currentTime = 0
-        void el.play().catch(() => definirErro('Não foi possível tocar agora.'))
-      }
-      return
-    }
-    definirAtual(indice)
-    definirTocando(true)
+    carregarETocar(indice)
   }
 
   function alternar() {
@@ -275,16 +305,14 @@ export function Playlist({
             })
             // Fim da fila: para, e não volta ao início. Recomeçar sozinho do A
             // depois do Z deixaria a música tocando sem ninguém pedir.
-            if (atual + 1 < fila.length) irPara(atual + 1)
+            if (atual + 1 < fila.length) carregarETocar(atual + 1)
             else {
               querTocar.current = false
               definirTocando(false)
             }
           }}
           onError={() => definirErro('Não foi possível carregar esta música.')}
-        >
-          <source src={faixa.url} type={faixa.mimeType ?? undefined} />
-        </audio>
+        />
 
         {erro && <p className="erro">{erro}</p>}
 
