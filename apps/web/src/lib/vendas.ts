@@ -2,6 +2,7 @@
 
 import { tokens, ErroDeApi, renovarSessao } from '@/lib/auth'
 import type { EstadoDaVenda, TipoDeChavePix } from '@/lib/afiliados'
+import type { Simulacao } from '@/components/SimulacaoDeGanhos'
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL ?? 'http://localhost:3333/api'
 
@@ -116,6 +117,8 @@ export interface DetalheDoPedido {
 export interface LinhaDeAfiliado {
   id: string
   codigo: string
+  /** Pediu o saque e ainda não foi pago (08/10). */
+  saqueSolicitadoEm?: string | null
   link: string
   estado: 'ATIVO' | 'SUSPENSO'
   origem: string
@@ -229,8 +232,9 @@ export interface ConfiguracaoDeAfiliados {
   /** Só leitura: quantos afiliados há agora. */
   vagasOcupadas: number
   simulacaoKits: number
-  simulacaoPrecoNormalCent: number
-  simulacaoPrecoPromocionalCent: number
+  /** Só leitura: a simulação com os preços dos cartões (08/10). */
+  simulacao: Simulacao
+  promocao: { deCent: number; porCent: number; ate: string | null } | null
   atualizadoEm: string
 }
 

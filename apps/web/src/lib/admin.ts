@@ -687,6 +687,9 @@ export interface PrecoAdmin {
   moeda: string
   descontoPercentagem: number
   descontoAPartirDe: number
+  /** O período da promoção (08/10). Nulos = sem início / sem fim. */
+  promocaoInicio?: string | null
+  promocaoFim?: string | null
 }
 
 /** O estado de um projeto, como o painel o diz. */

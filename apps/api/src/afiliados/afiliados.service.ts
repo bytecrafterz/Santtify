@@ -26,6 +26,7 @@ import { sugerirNomeDeUtilizador } from '../identity/nome-de-utilizador'
 import { comissaoDe, diaUtc, nomeResumido, reais, somarDias, taxaEstimadaDe } from './dinheiro'
 import { ehRobo } from './robos'
 import { AGORA } from './sql'
+import { promocaoDe } from '../cartoes/promocao'
 import { normalizarChavePix, type TipoDeChavePix } from './pix'
 import {
   emailDeAreaLiberada,
@@ -86,8 +87,6 @@ export interface AlteracaoDaConfiguracao {
   emailDeAvisos?: string | null
   vagas?: number
   simulacaoKits?: number
-  simulacaoPrecoNormalCent?: number
-  simulacaoPrecoPromocionalCent?: number
 }
 
 /**
@@ -138,6 +137,33 @@ export class AfiliadosService {
       update: {},
       create: { id: 'global' },
     })
+  }
+
+  /**
+   * A oferta da loja, para a faixa da promoção e para as simulações (08/10).
+   *
+   * Os preços são os dos cartões do projeto da loja, com o período da
+   * promoção — "a arte deve mostrar os valores e o período que eu configurar".
+   * Uma promoção que já acabou (ou ainda não começou) não aparece: as
+   * simulações mostram só o preço normal.
+   */
+  async ofertaDaLoja(cfg: ConfiguracaoDeAfiliados, projectId?: string | null) {
+    const loja = projectId ?? (await this.destinoDoLink(cfg).catch(() => null))?.projectId ?? null
+    const preco = loja ? await this.prisma.precoDeCartoes.findUnique({ where: { projectId: loja } }) : null
+    const p = preco ? promocaoDe(preco) : null
+    return {
+      simulacao: {
+        kits: cfg.simulacaoKits,
+        comissaoBp: cfg.comissaoBp,
+        precoNormalCent: p?.normalCent ?? 4900,
+        precoPromocionalCent: p?.emCurso ? (p.promocionalCent ?? 0) : 0,
+        promocaoAte: p?.emCurso ? (p.fim?.toISOString() ?? null) : null,
+      },
+      promocao:
+        p?.emCurso && p.promocionalCent != null
+          ? { deCent: p.normalCent, porCent: p.promocionalCent, ate: p.fim?.toISOString() ?? null }
+          : null,
+    }
   }
 
   /** As vagas do programa: quantas há, e quantas já têm afiliado. */
@@ -740,6 +766,8 @@ export class AfiliadosService {
           changes: { pagamentoId: criado.id, valorCent, comissoes: disponiveis.length, descontosCent },
         },
       })
+      // Pago: o pedido de saque, se havia, está atendido.
+      await tx.afiliado.update({ where: { id: afiliadoId }, data: { saqueSolicitadoEm: null } })
       return criado
     })
 
@@ -835,6 +863,43 @@ export class AfiliadosService {
     return { tipo: dados.tipo, chave: conferida.chave, titular: titular.slice(0, 120) }
   }
 
+  /**
+   * "Depois, o afiliado solicita o saque e eu pago por Pix" (08/10).
+   *
+   * O pedido fica no afiliado e aparece primeiro no Financeiro, e quem recebe
+   * os avisos recebe um e-mail. Pagar (o botão do Financeiro) limpa-o. Só com
+   * o mínimo disponível e a chave Pix cadastrada: é o que o pagamento precisa.
+   */
+  async solicitarSaque(userId: string) {
+    const cfg = await this.configuracao()
+    const afiliado = await this.prisma.afiliado.findUnique({ where: { userId }, include: { user: true } })
+    if (!afiliado) throw new NotFoundException('A sua área de afiliado ainda não foi liberada.')
+    if (afiliado.estado !== EstadoDoAfiliado.ATIVO) throw new BadRequestException('A sua área de afiliado está suspensa.')
+    if (!afiliado.chavePix) throw new BadRequestException('Cadastre sua chave Pix antes de pedir o saque.')
+    if (afiliado.saqueSolicitadoEm) throw new BadRequestException('O seu pedido de saque já foi feito. Você recebe por Pix.')
+    const saldo = await this.saldo(afiliado.id)
+    if (saldo.aPagarCent < cfg.minimoParaPagamentoCent) {
+      throw new BadRequestException(`O saque é a partir de ${reais(cfg.minimoParaPagamentoCent)} disponíveis.`)
+    }
+
+    await this.prisma.afiliado.update({ where: { id: afiliado.id }, data: { saqueSolicitadoEm: new Date() } })
+    this.logger.log(`Saque pedido: ${afiliado.codigo} (${saldo.aPagarCent})`)
+
+    if (cfg.emailDeAvisos && this.mail.activo) {
+      const valor = reais(saldo.aPagarCent)
+      const nome = afiliado.user.displayName
+      await this.mail
+        .enviar({
+          para: cfg.emailDeAvisos,
+          assunto: `Pedido de saque: ${nome} — ${valor}`,
+          texto: `${nome} (@${afiliado.codigo}) pediu o saque de ${valor}.\n\nPague por Pix e marque como pago em Vendas > Financeiro.`,
+          html: `<p><strong>${nome}</strong> (@${afiliado.codigo}) pediu o saque de <strong>${valor}</strong>.</p><p>Pague por Pix e marque como pago em Vendas &gt; Financeiro.</p>`,
+        })
+        .catch((erro) => this.logger.error(`Aviso de saque falhou: ${String(erro)}`))
+    }
+    return this.meuPainel(userId)
+  }
+
   async marcarVisto(userId: string) {
     await this.prisma.afiliado.updateMany({ where: { userId }, data: { vistoEm: new Date() } })
     return { ok: true }
@@ -853,13 +918,9 @@ export class AfiliadosService {
     }
     const afiliado = await this.prisma.afiliado.findUnique({ where: { userId } })
     const vagas = await this.vagas(cfg)
-    // Por baixo da área, para cada pessoa ver quanto poderia ganhar (05/10).
-    const simulacao = {
-      kits: cfg.simulacaoKits,
-      comissaoBp: cfg.comissaoBp,
-      precoNormalCent: cfg.simulacaoPrecoNormalCent,
-      precoPromocionalCent: cfg.simulacaoPrecoPromocionalCent,
-    }
+    // Por baixo da área, para cada pessoa ver quanto poderia ganhar (05/10),
+    // e a faixa da promoção, com os preços e o prazo dos cartões (08/10).
+    const { simulacao, promocao } = await this.ofertaDaLoja(cfg, loja?.projectId)
 
     if (!afiliado) {
       return {
@@ -869,6 +930,7 @@ export class AfiliadosService {
         compraPath: loja?.path ?? '/',
         vagas,
         simulacao,
+        promocao,
         afiliado: null,
       }
     }
@@ -917,12 +979,14 @@ export class AfiliadosService {
       compraPath: loja?.path ?? '/',
       vagas,
       simulacao,
+      promocao,
       afiliado: {
         codigo: afiliado.codigo,
         link,
         mensagemDoWhatsapp: mensagem,
         desde: afiliado.criadoEm,
         motivoDaSuspensao: afiliado.motivoDaSuspensao,
+        saqueSolicitadoEm: afiliado.saqueSolicitadoEm,
         metricas: {
           cliques,
           vendas: saldo.vendas,

@@ -4,9 +4,13 @@ export interface Simulacao {
   kits: number
   comissaoBp: number
   precoNormalCent: number
-  /** 0 = sem promoção: só a do preço normal. */
+  /** 0 = sem promoção a decorrer: só a do preço normal. */
   precoPromocionalCent: number
+  /** Até quando vale a promoção (08/10). Nulo = sem fim marcado. */
+  promocaoAte?: string | null
 }
+
+const diaCurto = (iso: string) => new Date(iso).toLocaleDateString('pt-BR', { timeZone: 'America/Sao_Paulo' })
 
 /** 100 kits em 30 dias → "Média de 3 a 4 kits por dia", como na arte dele. */
 function kitsPorDia(kits: number): string {
@@ -61,11 +65,13 @@ function UmaSimulacao({
   precoCent,
   kits,
   comissaoBp,
+  ate,
 }: {
   tipo: 'promocional' | 'normal'
   precoCent: number
   kits: number
   comissaoBp: number
+  ate?: string | null
 }) {
   const comissaoCent = Math.round((precoCent * comissaoBp) / 10_000)
   const totalCent = comissaoCent * kits
@@ -75,7 +81,9 @@ function UmaSimulacao({
         <span className="sg-selo">
           <Icone nome="barras" /> Simulação de resultados
         </span>
-        <span className="sg-tipo">{tipo === 'promocional' ? 'Preço promocional' : 'Preço normal'}</span>
+        <span className="sg-tipo">
+          {tipo === 'promocional' ? `Preço promocional${ate ? ` · até ${diaCurto(ate)}` : ''}` : 'Preço normal'}
+        </span>
       </header>
       <p className="sg-titulo">
         Venda de <strong>{kits.toLocaleString('pt-BR')} kits</strong> em 30 dias
@@ -138,7 +146,15 @@ export function SimulacoesDeGanhos({ simulacao }: { simulacao: Simulacao }) {
   return (
     <section className="sg-lista" aria-label="Simulação de ganhos como afiliado">
       <h3 className="sg-cabecalho">Quanto você pode ganhar como afiliado</h3>
-      {comPromocao && <UmaSimulacao tipo="promocional" precoCent={precoPromocionalCent} kits={kits} comissaoBp={comissaoBp} />}
+      {comPromocao && (
+        <UmaSimulacao
+          tipo="promocional"
+          precoCent={precoPromocionalCent}
+          kits={kits}
+          comissaoBp={comissaoBp}
+          ate={simulacao.promocaoAte}
+        />
+      )}
       <UmaSimulacao tipo="normal" precoCent={precoNormalCent} kits={kits} comissaoBp={comissaoBp} />
       <p className="sg-aviso">
         <span aria-hidden="true">!</span>

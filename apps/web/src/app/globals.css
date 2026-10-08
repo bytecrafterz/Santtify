@@ -9790,7 +9790,9 @@ h2.funil {
   font-weight: 600;
 }
 
-.cartoes-campo input[type='text'] {
+/* As datas da promoção (08/10) com o mesmo aspecto dos preços. */
+.cartoes-campo input[type='text'],
+.cartoes-campo input[type='date'] {
   padding: 12px;
   font: inherit;
   font-weight: 400;
@@ -18685,4 +18687,151 @@ a.pi-cartao:hover .pi-cartao-seta {
   height: 1px;
   content: '';
   background: var(--cor-borda);
+}
+
+/* O aviso do modo de teste no pagamento (08/10). */
+.cartoes-modo-de-teste {
+  margin: 0 0 12px;
+  padding: 10px 14px;
+  font-size: 0.9rem;
+  color: #92400e;
+  background: rgb(245 158 11 / 14%);
+  border: 1px solid rgb(245 158 11 / 35%);
+  border-radius: 12px;
+}
+
+@media (prefers-color-scheme: dark) {
+  .cartoes-modo-de-teste {
+    color: #fcd34d;
+  }
+}
+
+/* A faixa da promoção e o saque, na área do afiliado (08/10). */
+.af-promocao {
+  display: flex;
+  gap: 12px;
+  align-items: center;
+  justify-content: space-between;
+  margin: 0 0 14px;
+  padding: 10px 14px;
+  background: linear-gradient(90deg, #fef3c7 0%, #fff7ed 100%);
+  border: 2px solid #f59e0b;
+  border-radius: 16px;
+}
+
+.af-promocao div {
+  display: grid;
+}
+
+.af-promocao strong {
+  padding: 3px 10px;
+  font-size: 0.82rem;
+  font-weight: 900;
+  color: #fff;
+  text-transform: uppercase;
+  background: #dc2626;
+  border-radius: 8px;
+}
+
+.af-promocao small {
+  margin-top: 3px;
+  font-size: 0.78rem;
+  font-weight: 700;
+  color: #7c2d12;
+}
+
+.af-promocao p {
+  margin: 0;
+  text-align: right;
+}
+
+.af-promocao s {
+  font-size: 0.9rem;
+  font-weight: 700;
+  color: #57534e;
+}
+
+.af-promocao p span {
+  display: block;
+  font-size: 1.45rem;
+  font-weight: 900;
+  line-height: 1.1;
+  color: #dc2626;
+}
+
+.af-saque {
+  display: grid;
+  gap: 6px;
+  margin: 14px 0 4px;
+  text-align: center;
+}
+
+.af-saque small {
+  color: var(--cor-texto-suave);
+}
+
+.af-sacar {
+  display: flex;
+  gap: 10px;
+  align-items: center;
+  justify-content: center;
+  min-height: 52px;
+  padding: 12px 16px;
+  font: inherit;
+  font-size: 1.02rem;
+  font-weight: 800;
+  color: #fff;
+  text-transform: uppercase;
+  cursor: pointer;
+  background: linear-gradient(180deg, #16a34a 0%, #15803d 100%);
+  border: 0;
+  border-radius: 14px;
+}
+
+.af-sacar svg {
+  width: 22px;
+  height: 22px;
+}
+
+.af-sacar:disabled {
+  cursor: not-allowed;
+  opacity: 0.45;
+}
+
+.af-saque.pedido {
+  padding: 10px 14px;
+  font-weight: 700;
+  color: #15803d;
+  background: rgb(22 163 74 / 10%);
+  border-radius: 12px;
+}
+
+.vd-saque-pedido {
+  display: inline-block;
+  margin-top: 4px;
+  padding: 2px 8px;
+  font-size: 0.75rem;
+  font-weight: 700;
+  color: #15803d;
+  background: rgb(22 163 74 / 12%);
+  border-radius: 999px;
+}
+
+@media (prefers-color-scheme: dark) {
+  .af-promocao {
+    background: linear-gradient(90deg, rgb(245 158 11 / 16%) 0%, rgb(245 158 11 / 8%) 100%);
+  }
+
+  .af-promocao small {
+    color: #fcd34d;
+  }
+
+  .af-promocao s {
+    color: #d6d3d1;
+  }
+
+  .af-saque.pedido,
+  .vd-saque-pedido {
+    color: #4ade80;
+  }
 }

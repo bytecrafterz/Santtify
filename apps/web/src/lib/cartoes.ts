@@ -228,7 +228,7 @@ export const cartoes = {
 
   /** Se há formulário de cartão na página (06/10), e a chave pública dele. */
   configuracaoDoPagamento: (projeto: string) =>
-    chamar<{ chavePublicaDoCartao: string | null }>(`/projects/${projeto}/cartoes/pagamento`),
+    chamar<{ chavePublicaDoCartao: string | null; modoDeTeste?: boolean }>(`/projects/${projeto}/cartoes/pagamento`),
 
   /**
    * O cartão digitado na página: vai o token do formulário do Mercado Pago,

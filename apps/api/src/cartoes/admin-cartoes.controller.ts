@@ -30,6 +30,7 @@ import {
   MaxLength,
   Min,
   IsUUID,
+  Matches,
 } from 'class-validator'
 import { AdminGuard, AuthGuard } from '../identity/auth.guard'
 import { StorageService, TAMANHO_MAXIMO } from '../admin/storage.service'
@@ -95,6 +96,11 @@ class PrecoDto {
   @IsOptional() @IsString() @MaxLength(3) moeda?: string
   @IsOptional() @IsInt() @Min(0) @Max(100) descontoPercentagem?: number
   @IsOptional() @IsInt() @Min(1) descontoAPartirDe?: number
+  /** O período da promoção, em dias: "2026-10-31". Nulo tira a data. */
+  @IsOptional() @Matches(/^\d{4}-\d{2}-\d{2}$/, { message: 'Escolha a data de início da promoção.' })
+  promocaoInicio?: string | null
+  @IsOptional() @Matches(/^\d{4}-\d{2}-\d{2}$/, { message: 'Escolha a data de fim da promoção.' })
+  promocaoFim?: string | null
 }
 
 class DestaqueDto {

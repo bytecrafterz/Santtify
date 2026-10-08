@@ -57,7 +57,7 @@ export class PainelDeAfiliadosService {
         SELECT "afiliadoId", SUM("valorCent") AS recebido FROM pagamentos_a_afiliados GROUP BY "afiliadoId"
       )
       SELECT a.id, a.codigo, a.estado::text AS estado, a.origem::text AS origem, a."criadoEm",
-             a."tipoDaChavePix", a."chavePix", a."nomeDoTitular",
+             a."tipoDaChavePix", a."chavePix", a."nomeDoTitular", a."saqueSolicitadoEm",
              u.id AS "userId", u."displayName" AS nome, CASE WHEN u.status = 'DELETED' THEN NULL ELSE u.email END AS email, u."avatarUrl", u.username,
              COALESCE(cl.cliques, 0) AS cliques,
              COALESCE(co.vendas, 0) AS vendas,
@@ -97,6 +97,7 @@ export class PainelDeAfiliadosService {
       avatarUrl: l.avatarUrl,
       username: l.username,
       temPix: Boolean(l.chavePix),
+      saqueSolicitadoEm: l.saqueSolicitadoEm,
       cliques,
       vendas,
       conversao: cliques > 0 ? vendas / cliques : 0,
@@ -289,7 +290,7 @@ export class PainelDeAfiliadosService {
     const linhas = await this.prisma.$queryRaw<LinhaDeAfiliado[]>(Prisma.sql`
       SELECT * FROM (${this.consulta({})}) x
        WHERE x.disponivel - x.adescontar > 0
-       ORDER BY x.disponivel - x.adescontar DESC
+       ORDER BY x."saqueSolicitadoEm" IS NULL, x."saqueSolicitadoEm", x.disponivel - x.adescontar DESC
        LIMIT 500`)
     // A chave Pix vai junto: é a lista de quem pagar, e pagar é copiar a chave.
     const afiliados = linhas.map((l) => ({
@@ -362,6 +363,7 @@ interface LinhaDeAfiliado {
   tipoDaChavePix: string | null
   chavePix: string | null
   nomeDoTitular: string | null
+  saqueSolicitadoEm: Date | null
   userId: string
   nome: string
   email: string

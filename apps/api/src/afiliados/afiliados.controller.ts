@@ -38,6 +38,12 @@ export class AfiliadosController {
     return this.afiliados.definirPix(req.usuario!.id, dto)
   }
 
+  /** "Sacar meu dinheiro": o pedido de saque, que o cliente paga por Pix (08/10). */
+  @Post('saque')
+  saque(@Req() req: Request) {
+    return this.afiliados.solicitarSaque(req.usuario!.id)
+  }
+
   /** O painel foi aberto: as novidades seguintes contam a partir daqui. */
   @Post('visto')
   visto(@Req() req: Request) {

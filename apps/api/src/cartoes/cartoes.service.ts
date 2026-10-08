@@ -21,6 +21,7 @@ import {
 import { MailService } from '../common/mail/mail.service'
 import { AfiliadosService } from '../afiliados/afiliados.service'
 import { MosaicoDaArteService } from './mosaico-da-arte.service'
+import { dentroDaPromocao } from './promocao'
 
 /** O máximo de crianças num pedido. Acima disto é gráfica, não é família. */
 const MAXIMO_DE_CRIANCAS = 10
@@ -221,10 +222,23 @@ export class CartoesService {
       descontoAPartirDe: number
       precoDeTabelaCent: number | null
       moeda: string
+      promocaoInicio: Date | null
+      promocaoFim: Date | null
     },
   ) {
-    const aCobrar = categoria.precoUnitarioCent ?? projeto.precoUnitarioCent
-    const deTabela = categoria.precoDeTabelaCent ?? projeto.precoDeTabelaCent
+    let aCobrar = categoria.precoUnitarioCent ?? projeto.precoUnitarioCent
+    let deTabela = categoria.precoDeTabelaCent ?? projeto.precoDeTabelaCent
+
+    /*
+      FORA DO PERÍODO DA PROMOÇÃO, COBRA-SE O PREÇO NORMAL (08/10).
+      O riscado é o normal e o preço é o promocional; acabado o prazo, o
+      normal passa a ser o que se cobra e deixa de haver riscado. Ver
+      `cartoes/promocao.ts`.
+    */
+    if (deTabela && deTabela > aCobrar && !dentroDaPromocao(projeto)) {
+      aCobrar = deTabela
+      deTabela = null
+    }
 
     return {
       precoUnitarioCent: aCobrar,
@@ -420,7 +434,12 @@ export class CartoesService {
 
   /** Há formulário de cartão na página? E com que chave pública. */
   configuracaoDoPagamento() {
-    return { chavePublicaDoCartao: this.provedor.chavePublica() }
+    return {
+      chavePublicaDoCartao: this.provedor.chavePublica(),
+      /* Sem processador ligado (o provedor manual): o ecrã diz que nada é
+         cobrado, e que o formulário do cartão aparece quando a conta ligar. */
+      modoDeTeste: this.provedor.nome === 'manual',
+    }
   }
 
   /**

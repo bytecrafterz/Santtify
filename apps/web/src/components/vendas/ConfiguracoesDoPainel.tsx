@@ -55,8 +55,6 @@ export function ConfiguracoesDoPainel({ projectSlug }: { projectSlug: string }) 
       email: c.emailDeAvisos ?? '',
       vagas: String(c.vagas),
       simKits: String(c.simulacaoKits),
-      simNormal: centEmTexto(c.simulacaoPrecoNormalCent),
-      simPromo: centEmTexto(c.simulacaoPrecoPromocionalCent),
     })
   }, [cfg.dados])
 
@@ -81,11 +79,8 @@ export function ConfiguracoesDoPainel({ projectSlug }: { projectSlug: string }) 
     if (taxaPixBp === null || taxaCartaoBp === null) return definirMensagem({ ok: false, texto: 'As taxas são percentagens, por exemplo 0,99.' })
     const vagas = Number(f.vagas)
     const simKits = Number(f.simKits)
-    const simNormal = paraCent(String(f.simNormal))
-    const simPromo = String(f.simPromo).trim() ? paraCent(String(f.simPromo)) : 0
     if (!Number.isInteger(vagas) || vagas < 0 || vagas > 100_000) return definirMensagem({ ok: false, texto: 'As vagas são um número inteiro, por exemplo 10.' })
     if (!Number.isInteger(simKits) || simKits < 1 || simKits > 100_000) return definirMensagem({ ok: false, texto: 'Os kits da simulação são um número inteiro, por exemplo 100.' })
-    if (simNormal === null || simNormal < 0 || simPromo === null || simPromo < 0) return definirMensagem({ ok: false, texto: 'Escreva os preços da simulação em reais, por exemplo 139,00.' })
 
     const dados: Partial<ConfiguracaoDeAfiliados> = {
       ativo: Boolean(f.ativo),
@@ -101,8 +96,6 @@ export function ConfiguracoesDoPainel({ projectSlug }: { projectSlug: string }) 
       emailDeAvisos: String(f.email).trim() || null,
       vagas,
       simulacaoKits: simKits,
-      simulacaoPrecoNormalCent: simNormal,
-      simulacaoPrecoPromocionalCent: simPromo,
     }
     // Só o que mudou: o registo de auditoria fica a dizer o que se mexeu.
     const mudou = Object.fromEntries(
@@ -130,12 +123,13 @@ export function ConfiguracoesDoPainel({ projectSlug }: { projectSlug: string }) 
     : `${String(f.mensagem ?? '')} ${exemplo}`
   const bpAgora = paraBp(String(f.comissao ?? ''))
   // A prévia da simulação acompanha o que se escreve, antes de salvar.
-  const previaDaSimulacao = {
-    kits: Math.max(1, Math.round(Number(f.simKits) || 0)),
-    comissaoBp: bpAgora ?? c?.comissaoBp ?? 0,
-    precoNormalCent: paraCent(String(f.simNormal ?? '')) ?? 0,
-    precoPromocionalCent: String(f.simPromo ?? '').trim() ? (paraCent(String(f.simPromo)) ?? 0) : 0,
-  }
+  const previaDaSimulacao = c
+    ? {
+        ...c.simulacao,
+        kits: Math.max(1, Math.round(Number(f.simKits) || 0)),
+        comissaoBp: bpAgora ?? c.comissaoBp,
+      }
+    : null
 
   return (
     <>
@@ -214,19 +208,14 @@ export function ConfiguracoesDoPainel({ projectSlug }: { projectSlug: string }) 
                 <input inputMode="numeric" {...campo('simKits')} />
                 <small>Em 30 dias. A comissão usada é a do programa, acima.</small>
               </label>
-              <label>
-                Preço normal na simulação (R$)
-                <input inputMode="decimal" {...campo('simNormal')} />
-              </label>
-              <label>
-                Preço promocional na simulação (R$)
-                <input inputMode="decimal" {...campo('simPromo')} />
-                <small>Vazio ou 0 = só a simulação do preço normal.</small>
-              </label>
             </div>
-            <p className="vd-nota">Como aparece por baixo da área de afiliado, no perfil de cada pessoa:</p>
+            <p className="vd-nota">
+              Os preços e o período da promoção são os dos cartões, e mudam-se em{' '}
+              <Link href={`/${projectSlug}/admin/cartoes`}>Cartões personalizados › Preço e promoção</Link>. Como aparece
+              por baixo da área de afiliado, no perfil de cada pessoa:
+            </p>
             <div className="vd-previa-simulacao">
-              <SimulacoesDeGanhos simulacao={previaDaSimulacao} />
+              {previaDaSimulacao && <SimulacoesDeGanhos simulacao={previaDaSimulacao} />}
             </div>
           </section>
 

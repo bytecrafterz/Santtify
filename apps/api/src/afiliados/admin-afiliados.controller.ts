@@ -49,8 +49,6 @@ class ConfiguracaoDto {
 
   @IsOptional() @IsInt() @Min(0) @Max(100_000) vagas?: number
   @IsOptional() @IsInt() @Min(1) @Max(100_000) simulacaoKits?: number
-  @IsOptional() @IsInt() @Min(0) @Max(10_000_000) simulacaoPrecoNormalCent?: number
-  @IsOptional() @IsInt() @Min(0) @Max(10_000_000) simulacaoPrecoPromocionalCent?: number
 }
 
 class MotivoDto {
@@ -98,7 +96,8 @@ export class AdminAfiliadosController {
     const cfg = await this.afiliados.configuracao()
     const destino = await this.afiliados.destinoDoLink(cfg).catch(() => null)
     const { ocupadas } = await this.afiliados.vagas(cfg)
-    return { ...cfg, destinoResolvido: destino?.url ?? null, vagasOcupadas: ocupadas }
+    const oferta = await this.afiliados.ofertaDaLoja(cfg, destino?.projectId)
+    return { ...cfg, destinoResolvido: destino?.url ?? null, vagasOcupadas: ocupadas, ...oferta }
   }
 
   @Patch('configuracao')

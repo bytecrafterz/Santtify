@@ -14,7 +14,14 @@ import {
   type TipoDeChavePix,
   type VendaDoAfiliado,
 } from '@/lib/afiliados'
-import { LinhaDeVenda, ResumoDoAfiliado, SeloDeVagas, VagasEsgotadas } from './AreaDoAfiliado'
+import {
+  BotaoDeSaque,
+  FaixaDaPromocao,
+  LinhaDeVenda,
+  ResumoDoAfiliado,
+  SeloDeVagas,
+  VagasEsgotadas,
+} from './AreaDoAfiliado'
 import { SimulacoesDeGanhos } from './SimulacaoDeGanhos'
 
 const EXEMPLO: Record<TipoDeChavePix, string> = {
@@ -80,6 +87,7 @@ export function PainelDoAfiliado({ projectSlug }: { projectSlug: string }) {
         <div className="af-area">
           <div className="af-corpo">
             <SeloDeVagas vagas={painel.vagas} />
+            <FaixaDaPromocao promocao={painel.promocao} />
           </div>
         </div>
       )}
@@ -119,6 +127,7 @@ export function PainelDoAfiliado({ projectSlug }: { projectSlug: string }) {
           <div className="af-area">
             <div className="af-corpo">
               <ResumoDoAfiliado painel={painel} />
+              <BotaoDeSaque painel={painel} aoAtualizar={definirPainel} />
             </div>
           </div>
 

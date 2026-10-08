@@ -136,6 +136,9 @@ export function FinanceiroDoPainel() {
                             <div>
                               <strong>{a.nome}</strong>
                               <small>@{a.codigo}</small>
+                              {a.saqueSolicitadoEm && (
+                                <span className="vd-saque-pedido">Pediu saque em {dataEHora(a.saqueSolicitadoEm)}</span>
+                              )}
                             </div>
                           </div>
                         </td>

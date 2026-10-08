@@ -132,6 +132,8 @@ export function EditorDeCartoes({
    * Mercado Pago, como antes.
    */
   const [chaveDoCartao, definirChaveDoCartao] = useState<string | null | undefined>(undefined)
+  /** Nenhum processador ligado ainda: nada se cobra, e não há formulário de cartão. */
+  const [modoDeTeste, definirModoDeTeste] = useState(false)
   /** O formulário do cartão aberto, depois das duas caixas da confirmação. */
   const [cartaoNaPagina, definirCartaoNaPagina] = useState(false)
   const [avisoDoCartao, definirAvisoDoCartao] = useState<string | null>(null)
@@ -332,7 +334,10 @@ export function EditorDeCartoes({
     if (passo !== 'pagamento' || chaveDoCartao !== undefined) return
     cartoes
       .configuracaoDoPagamento(projectSlug)
-      .then((c) => definirChaveDoCartao(c.chavePublicaDoCartao))
+      .then((c) => {
+        definirChaveDoCartao(c.chavePublicaDoCartao)
+        definirModoDeTeste(Boolean(c.modoDeTeste))
+      })
       .catch(() => definirChaveDoCartao(null))
   }, [passo, chaveDoCartao, projectSlug])
 
@@ -540,6 +545,18 @@ export function EditorDeCartoes({
         <Cabecalho projectSlug={projectSlug} aoVoltar={() => definirPasso('editor')} />
         <section className="cartoes-passo">
           <h2>Pagamento</h2>
+          {/*
+            O MODO DE TESTE DIZ-SE (08/10). Ele testou o cartão e "não vejo onde
+            inserir os dados do cartão; o fluxo vai direto para pagar, como se
+            já houvesse um cartão registado". Sem o Mercado Pago ligado não há
+            formulário nenhum — e o ecrã não o dizia.
+          */}
+          {modoDeTeste && (
+            <p className="cartoes-modo-de-teste">
+              <strong>Modo de teste:</strong> os pagamentos ainda não estão ativos e nada é cobrado. O
+              formulário do cartão do Mercado Pago aparece aqui quando a conta for ligada.
+            </p>
+          )}
           <Resumo pedido={pedido} />
 
           {/*
@@ -738,7 +755,11 @@ export function EditorDeCartoes({
 
           {pedido.meio && !trocandoMeio && !cartaoNaPagina && (
             <p className="cartoes-estado-espera">
-              {pedido.meio === 'CARTAO' ? 'Pagamento com cartão: aguardando confirmação…' : 'Aguardando confirmação do pagamento…'}
+              {pedido.meio === 'CARTAO'
+                ? modoDeTeste
+                  ? 'Modo de teste: com o Mercado Pago ligado, aqui abre o formulário seguro para digitar o cartão. Por agora, o pagamento fica à espera da confirmação no painel.'
+                  : 'Pagamento com cartão: aguardando confirmação…'
+                : 'Aguardando confirmação do pagamento…'}
             </p>
           )}
           {erro && <p className="cartoes-erro">{erro}</p>}

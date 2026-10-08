@@ -40,12 +40,16 @@ export interface PainelDoAfiliado {
   vagas: { total: number; ocupadas: number }
   /** A simulação de ganhos por baixo da área — ver `SimulacoesDeGanhos`. */
   simulacao: Simulacao
+  /** A promoção a decorrer, com os preços e o prazo do painel (08/10). Nula sem promoção. */
+  promocao: { deCent: number; porCent: number; ate: string | null } | null
   afiliado: {
     codigo: string
     link: string
     mensagemDoWhatsapp: string
     desde: string
     motivoDaSuspensao: string | null
+    /** O pedido de saque, enquanto não é pago (08/10). */
+    saqueSolicitadoEm: string | null
     metricas: {
       cliques: number
       vendas: number
@@ -104,6 +108,8 @@ export const afiliados = {
       body: JSON.stringify({ tipo, chave, titular }),
     }),
   marcarVisto: () => comRenovacao<{ ok: boolean }>('/me/afiliado/visto', { method: 'POST' }),
+  /** "Sacar meu dinheiro": devolve o painel já com o pedido (08/10). */
+  solicitarSaque: () => comRenovacao<PainelDoAfiliado>('/me/afiliado/saque', { method: 'POST' }),
 }
 
 /** Como cada estado se lê, na área do afiliado e no painel. */

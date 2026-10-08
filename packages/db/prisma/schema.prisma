@@ -1839,6 +1839,14 @@ model PrecoDeCartoes {
   /// 49 é uma mentira ao contrário.
   precoDeTabelaCent Int?
 
+  /// A PROMOÇÃO TEM PRAZO (08/10): "quero poder alterar o preço normal, o preço
+  /// promocional e o período da promoção no painel". Dentro do período cobra-se
+  /// o `precoUnitarioCent` (o promocional) com o `precoDeTabelaCent` (o normal)
+  /// riscado; fora dele, cobra-se o normal. Sem datas, não acaba. Ver
+  /// `cartoes/promocao.ts`.
+  promocaoInicio DateTime?
+  promocaoFim    DateTime?
+
   moeda               String @default("BRL")
   descontoPercentagem Int    @default(30)
   /// A partir de quantos conjuntos o desconto entra.
@@ -2293,6 +2301,10 @@ model Afiliado {
   suspensoEm        DateTime?
   motivoDaSuspensao String?   @db.VarChar(300)
 
+  /// O afiliado pediu o saque (08/10): "o afiliado solicita o saque e eu pago
+  /// por Pix". Aparece primeiro no Financeiro; o pagamento limpa-o.
+  saqueSolicitadoEm DateTime?
+
   /// A última vez que a pessoa abriu o painel. É o "desde a sua última
   /// visita" das novidades.
   vistoEm DateTime?
@@ -2471,11 +2483,10 @@ model ConfiguracaoDeAfiliados {
   vagas Int @default(10)
 
   /// A simulação de ganhos por baixo da área de afiliado (05/10): quantos kits
-  /// em 30 dias, a que preços. Só ilustração — nada disto são vendas. A
-  /// comissão é a de `comissaoBp`, para a conta bater com as regras.
-  simulacaoKits                 Int @default(100)
-  simulacaoPrecoNormalCent      Int @default(13900)
-  simulacaoPrecoPromocionalCent Int @default(4900)
+  /// em 30 dias. Só ilustração — nada disto são vendas. Os preços são os dos
+  /// cartões (normal e promocional, com o período), desde 08/10; a comissão é
+  /// a de `comissaoBp`, para a conta bater com as regras.
+  simulacaoKits Int @default(100)
 
   atualizadoEm    DateTime @updatedAt
   atualizadoPorId String?  @db.Uuid

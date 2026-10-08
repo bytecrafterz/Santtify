@@ -6,6 +6,7 @@ import { CartoesService } from './cartoes.service'
 import { StorageService, type ArquivoSalvo } from '../admin/storage.service'
 import { conferirPdf, DPI_DA_LUPA, rasterizarPrimeiraPagina } from './arte-em-pdf'
 import { MosaicoDaArteService } from './mosaico-da-arte.service'
+import { diaDeBrasilia } from './promocao'
 
 /**
  * Os campos que o painel pode mexer num modelo.
@@ -442,13 +443,24 @@ export class AdminCartoesService {
       moeda?: string
       descontoPercentagem?: number
       descontoAPartirDe?: number
+      promocaoInicio?: string | null
+      promocaoFim?: string | null
     },
   ) {
     const projeto = await this.projeto(projectSlug)
+    const { promocaoInicio, promocaoFim, ...resto } = dados
+    // Os dias do painel, no horário de Brasília: do início do primeiro ao fim do último.
+    const datas = {
+      ...(promocaoInicio !== undefined ? { promocaoInicio: promocaoInicio ? diaDeBrasilia(promocaoInicio, false) : null } : {}),
+      ...(promocaoFim !== undefined ? { promocaoFim: promocaoFim ? diaDeBrasilia(promocaoFim, true) : null } : {}),
+    }
+    if (datas.promocaoInicio && datas.promocaoFim && datas.promocaoInicio > datas.promocaoFim) {
+      throw new BadRequestException('A promoção tem de começar antes de acabar.')
+    }
     return this.prisma.precoDeCartoes.upsert({
       where: { projectId: projeto.id },
-      create: { projectId: projeto.id, ...dados },
-      update: dados,
+      create: { projectId: projeto.id, ...resto, ...datas },
+      update: { ...resto, ...datas },
     })
   }
 

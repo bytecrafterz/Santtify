@@ -258,6 +258,29 @@ export function PainelDeModelosDeCartao({ projectSlug }: { projectSlug: string }
   )
 }
 
+/** "R$ 49,00" → 4900; vazio ou inválido → null. */
+function centDe(texto: string): number | null {
+  const n = Number(texto.trim().replace(/[R$\s]/g, '').replace(',', '.'))
+  return texto.trim() && Number.isFinite(n) && n >= 0 ? Math.round(n * 100) : null
+}
+
+const emReais = (cent: number) => (cent / 100).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })
+
+/** A data guardada (ISO) como o dia do campo, no horário de Brasília. */
+function diaDoCampo(iso: string | null | undefined): string {
+  if (!iso) return ''
+  return new Date(iso).toLocaleDateString('en-CA', { timeZone: 'America/Sao_Paulo' })
+}
+
+/**
+ * PREÇO E PROMOÇÃO (08/10).
+ *
+ * "Quero poder alterar o preço normal, o preço promocional e o período da
+ * promoção no painel." Os dois preços guardam-se nos campos de sempre: com
+ * promoção, o promocional é o que se cobra e o normal fica riscado; sem
+ * promoção, cobra-se o normal. O período decide: fora dele cobra-se o normal,
+ * sem riscado. A faixa da área do afiliado e as simulações leem o mesmo.
+ */
 function TabelaDePreco({
   preco,
   ocupado,
@@ -267,105 +290,108 @@ function TabelaDePreco({
   ocupado: boolean
   aoGuardar: (dados: Partial<PrecoAdmin>) => void
 }) {
-  const [reais, definirReais] = useState((preco.precoUnitarioCent / 100).toFixed(2))
-  const [tabela, definirTabela] = useState(
-    preco.precoDeTabelaCent == null ? '' : (preco.precoDeTabelaCent / 100).toFixed(2),
+  const comPromocao = preco.precoDeTabelaCent != null && preco.precoDeTabelaCent > preco.precoUnitarioCent
+  const [normal, definirNormal] = useState(
+    ((comPromocao ? (preco.precoDeTabelaCent as number) : preco.precoUnitarioCent) / 100).toFixed(2),
   )
+  const [promocional, definirPromocional] = useState(comPromocao ? (preco.precoUnitarioCent / 100).toFixed(2) : '')
+  const [inicio, definirInicio] = useState(diaDoCampo(preco.promocaoInicio))
+  const [fim, definirFim] = useState(diaDoCampo(preco.promocaoFim))
   const [desconto, definirDesconto] = useState(String(preco.descontoPercentagem))
   const [aPartirDe, definirAPartirDe] = useState(String(preco.descontoAPartirDe))
 
+  const normalCent = centDe(normal)
+  const promocionalCent = centDe(promocional)
+  const promocaoValida = promocionalCent != null && normalCent != null && promocionalCent < normalCent
+  const hoje = new Date().toLocaleDateString('en-CA', { timeZone: 'America/Sao_Paulo' })
+  const dentro = (!inicio || hoje >= inicio) && (!fim || hoje <= fim)
+  const aCobrarHoje = promocaoValida && dentro ? promocionalCent : normalCent
+  const diaBr = (d: string) => d.split('-').reverse().join('/')
+
   return (
     <section className="painel-bloco">
-      <h2>Preço e desconto</h2>
+      <h2>Preço e promoção</h2>
       <p className="subtitulo">
         É o preço padrão. Uma categoria pode ter o seu próprio preço — veja em Categorias.
       </p>
 
       <div className="painel-campos">
         <label className="cartoes-campo">
-          <span>Preço por conjunto (R$)</span>
+          <span>Preço normal (R$)</span>
+          <input type="text" inputMode="decimal" value={normal} onChange={(e) => definirNormal(e.target.value)} />
+        </label>
+        <label className="cartoes-campo">
+          <span>Preço promocional (R$)</span>
           <input
             type="text"
             inputMode="decimal"
-            value={reais}
-            onChange={(e) => definirReais(e.target.value)}
+            value={promocional}
+            placeholder="sem promoção"
+            onChange={(e) => definirPromocional(e.target.value)}
           />
         </label>
-        {/*
-          O PREÇO RISCADO.
-
-          "Coloca preço 79 por 49" — 25/09. O cartaz dele já mostrava os dois, mas
-          pintados dentro da imagem; a caixa cobrava outra coisa. Agora os dois
-          números vivem no mesmo sítio e ninguém os pode deixar a discordar.
-        */}
         <label className="cartoes-campo">
-          <span>Preço riscado (R$)</span>
-          <input
-            type="text"
-            inputMode="decimal"
-            value={tabela}
-            placeholder="sem riscado"
-            onChange={(e) => definirTabela(e.target.value)}
-          />
+          <span>Promoção de</span>
+          <input type="date" value={inicio} onChange={(e) => definirInicio(e.target.value)} />
+        </label>
+        <label className="cartoes-campo">
+          <span>até</span>
+          <input type="date" value={fim} min={inicio || undefined} onChange={(e) => definirFim(e.target.value)} />
         </label>
         <label className="cartoes-campo">
           <span>Desconto (%)</span>
-          <input
-            type="number"
-            min={0}
-            max={100}
-            value={desconto}
-            onChange={(e) => definirDesconto(e.target.value)}
-          />
+          <input type="number" min={0} max={100} value={desconto} onChange={(e) => definirDesconto(e.target.value)} />
         </label>
         <label className="cartoes-campo">
           <span>A partir de quantos conjuntos</span>
-          <input
-            type="number"
-            min={1}
-            value={aPartirDe}
-            onChange={(e) => definirAPartirDe(e.target.value)}
-          />
+          <input type="number" min={1} value={aPartirDe} onChange={(e) => definirAPartirDe(e.target.value)} />
         </label>
       </div>
 
-      {/* O aviso só aparece quando o riscado não serve, e diz porquê. */}
-      {tabela.trim() &&
-        Math.round(Number(tabela.replace(',', '.')) * 100) <=
-          Math.round(Number(reais.replace(',', '.')) * 100) && (
-          <p className="painel-aviso">
-            O preço riscado tem de ser maior do que o preço a cobrar. Assim, não
-            aparece no site.
-          </p>
-        )}
+      {promocional.trim() && !promocaoValida && (
+        <p className="painel-aviso">O preço promocional tem de ser menor do que o preço normal.</p>
+      )}
+      {inicio && fim && inicio > fim && <p className="painel-aviso">A promoção tem de começar antes de acabar.</p>}
 
-      <p className="painel-exemplo">
-        {(() => {
-          const cent = Math.round(Number(reais.replace(',', '.')) * 100) || 0
-          const pct = Number(desconto) || 0
-          const a = Number(aPartirDe) || 2
-          const dois = cent * 2
-          return `Exemplo: 1 conjunto = ${(cent / 100).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })} · ` +
-            `${a} conjuntos = ${((dois - (2 >= a ? (dois * pct) / 100 : 0)) / 100).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}`
-        })()}
-      </p>
+      {/* O que acontece hoje, dito por palavras: é a pergunta que se faz ao mexer em datas. */}
+      {normalCent != null && (
+        <p className="painel-exemplo">
+          {promocaoValida
+            ? dentro
+              ? `Hoje: promoção — cobra ${emReais(promocionalCent)} (de ${emReais(normalCent)})${fim ? ` até ${diaBr(fim)}` : ', sem data para acabar'}.`
+              : inicio && hoje < inicio
+                ? `Hoje: preço normal, ${emReais(normalCent)}. A promoção começa em ${diaBr(inicio)}.`
+                : `Hoje: preço normal, ${emReais(normalCent)}. A promoção acabou${fim ? ` em ${diaBr(fim)}` : ''}.`
+            : `Hoje: ${emReais(normalCent)}, sem promoção.`}{' '}
+          {aCobrarHoje != null &&
+            (() => {
+              const pct = Number(desconto) || 0
+              const a = Number(aPartirDe) || 2
+              const dois = aCobrarHoje * 2
+              return `2 conjuntos = ${emReais(dois - (2 >= a ? (dois * pct) / 100 : 0))}.`
+            })()}
+        </p>
+      )}
 
       <button
         type="button"
         className="cartoes-accao"
-        disabled={ocupado}
+        disabled={
+          ocupado || normalCent == null || (promocional.trim() !== '' && !promocaoValida) || Boolean(inicio && fim && inicio > fim)
+        }
         onClick={() =>
           aoGuardar({
-            precoUnitarioCent: Math.round(Number(reais.replace(',', '.')) * 100),
-            precoDeTabelaCent: tabela.trim()
-              ? Math.round(Number(tabela.replace(',', '.')) * 100)
-              : null,
+            // Com promoção: cobra-se o promocional e o normal fica riscado.
+            precoUnitarioCent: promocaoValida ? (promocionalCent as number) : (normalCent as number),
+            precoDeTabelaCent: promocaoValida ? normalCent : null,
+            promocaoInicio: promocaoValida && inicio ? inicio : null,
+            promocaoFim: promocaoValida && fim ? fim : null,
             descontoPercentagem: Number(desconto),
             descontoAPartirDe: Number(aPartirDe),
           })
         }
       >
-        {ocupado ? 'A guardar…' : 'Guardar preço'}
+        {ocupado ? 'A guardar…' : 'Guardar preço e promoção'}
       </button>
     </section>
   )

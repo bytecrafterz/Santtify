@@ -115,6 +115,93 @@ export function SeloDeVagas({ vagas }: { vagas: { total: number; ocupadas: numbe
   )
 }
 
+/**
+ * "PROMOÇÃO ATIVA · por tempo limitado · De R$ 79 por R$ 49" — o mockup dele.
+ *
+ * 08/10: "a faixa da promoção pode ficar, mas quero poder alterar o preço
+ * normal, o preço promocional e o período da promoção no painel. A arte deve
+ * mostrar os valores e o período que eu configurar." Os valores e o prazo vêm
+ * do preço dos cartões; acabado o prazo, a faixa sai sozinha.
+ */
+export function FaixaDaPromocao({ promocao }: { promocao: PainelDoAfiliado['promocao'] }) {
+  if (!promocao) return null
+  const ate = promocao.ate
+    ? new Date(promocao.ate).toLocaleDateString('pt-BR', { timeZone: 'America/Sao_Paulo' })
+    : null
+  return (
+    <div className="af-promocao" role="note">
+      <div>
+        <strong>Promoção ativa</strong>
+        <small>{ate ? `Até ${ate}` : 'Por tempo limitado'}</small>
+      </div>
+      <p>
+        <s>{reais(promocao.deCent)}</s> <span>{reais(promocao.porCent)}</span>
+      </p>
+    </div>
+  )
+}
+
+/**
+ * "SACAR MEU DINHEIRO" (08/10): "o afiliado solicita o saque e eu pago por Pix".
+ *
+ * Diz sempre o que falta: a chave Pix, ou chegar ao mínimo. Pedido feito,
+ * fica a dizer que foi pedido até o pagamento sair.
+ */
+export function BotaoDeSaque({
+  painel,
+  aoAtualizar,
+}: {
+  painel: PainelDoAfiliado
+  aoAtualizar: (p: PainelDoAfiliado) => void
+}) {
+  const [aPedir, definirAPedir] = useState(false)
+  const [erro, definirErro] = useState<string | null>(null)
+  const a = painel.afiliado
+  if (!a || painel.estado !== 'ATIVO') return null
+  const minimo = painel.regras.minimoParaPagamentoCent
+  const disponivel = a.metricas.aPagarCent
+
+  if (a.saqueSolicitadoEm) {
+    return (
+      <p className="af-saque pedido">
+        ✓ Saque pedido em {diaEHora(a.saqueSolicitadoEm)}. Você recebe por Pix, na chave cadastrada.
+      </p>
+    )
+  }
+
+  const motivo = !a.pix
+    ? 'Cadastre sua chave Pix para poder sacar.'
+    : disponivel < minimo
+      ? `O saque é a partir de ${reais(minimo)} disponíveis. Agora: ${reais(disponivel)}.`
+      : null
+
+  return (
+    <div className="af-saque">
+      <button
+        type="button"
+        className="af-sacar"
+        disabled={Boolean(motivo) || aPedir}
+        onClick={async () => {
+          if (!window.confirm(`Pedir o saque de ${reais(disponivel)} por Pix?`)) return
+          definirAPedir(true)
+          definirErro(null)
+          try {
+            aoAtualizar(await afiliados.solicitarSaque())
+          } catch (e) {
+            definirErro(e instanceof ErroDeApi ? e.message : 'Não foi possível pedir o saque agora.')
+          } finally {
+            definirAPedir(false)
+          }
+        }}
+      >
+        <Simbolo nome="carteira" /> {aPedir ? 'Pedindo…' : `Sacar meu dinheiro${motivo ? '' : ` (${reais(disponivel)})`}`}
+      </button>
+      {motivo && <small>{motivo}</small>}
+      {erro && <p className="erro">{erro}</p>}
+    </div>
+  )
+}
+
 /** A área bloqueada, com as vagas esgotadas: não há o que comprar para entrar. */
 export function VagasEsgotadas({ total }: { total: number }) {
   return (
@@ -335,6 +422,7 @@ export function AreaDoAfiliado({ projectSlug, pessoaId }: { projectSlug: string;
           {erro && <p className="erro">{erro}</p>}
           {!painel && !erro && <p className="af-nota">Carregando...</p>}
           {painel && <SeloDeVagas vagas={painel.vagas} />}
+          {painel && <FaixaDaPromocao promocao={painel.promocao} />}
 
           {painel?.estado === 'BLOQUEADO' && painel.vagas.ocupadas >= painel.vagas.total && (
             <div className="af-bloqueado">
@@ -367,6 +455,7 @@ export function AreaDoAfiliado({ projectSlug, pessoaId }: { projectSlug: string;
           {painel?.afiliado && (
             <>
               <ResumoDoAfiliado painel={painel} />
+              <BotaoDeSaque painel={painel} aoAtualizar={definirPainel} />
               {!painel.afiliado.pix && (
                 <Link className="af-aviso-pix" href={`/${projectSlug}/afiliado#pix`}>
                   Cadastre sua chave Pix para receber as comissões →
