@@ -80,7 +80,7 @@ export class ShortLinksController {
     const tipoDeEntrada =
       link.kind === ShortLinkKind.SHARE
         ? EventType.SHARE_LINK_CLICKED
-        : link.kind === ShortLinkKind.CONTENT_QR
+        : link.kind === ShortLinkKind.CONTENT_QR || link.kind === ShortLinkKind.PUBLICACAO_QR
           ? EventType.QR_SCAN
           : EventType.PAGE_VIEW
 

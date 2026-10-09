@@ -1,8 +1,26 @@
-import { Controller, Get, Header, Param, Query, Res, UseGuards } from '@nestjs/common'
+import { Controller, Get, Header, Param, ParseUUIDPipe, Query, Res, UseGuards } from '@nestjs/common'
 import type { Response } from 'express'
 import { ContentService } from './content.service'
 import { LaunchesService } from './launches.service'
 import { AdminGuard, AuthGuard } from '../identity/auth.guard'
+
+/**
+ * "attachment; filename=…" com o nome que o painel pediu.
+ *
+ * O nome vem do título do cartão, com acentos e espaços: vai em ASCII limpo no
+ * `filename` (que todos os navegadores entendem) e inteiro no `filename*`.
+ */
+function anexo(nome: string | undefined, blocoId: string, extensao: 'png' | 'svg'): string {
+  const base = (nome ?? '').trim().slice(0, 80) || `publicacao-${blocoId.slice(0, 8)}`
+  const ascii =
+    base
+      .normalize('NFD')
+      .replace(/[̀-ͯ]/g, '')
+      .replace(/[^a-zA-Z0-9]+/g, '-')
+      .replace(/^-+|-+$/g, '')
+      .toLowerCase() || 'publicacao'
+  return `attachment; filename="qr-${ascii}.${extensao}"; filename*=UTF-8''${encodeURIComponent(`qr-${base}.${extensao}`)}`
+}
 
 /**
  * Leitura pública do conteúdo. Sem autenticação: a página da letra é aberta
@@ -103,6 +121,42 @@ export class ContentController {
     if (baixar) {
       res.setHeader('Content-Disposition', `attachment; filename="qr-${contentSlug}.png"`)
     }
+    return res.send(png)
+  }
+
+  /**
+   * O QR de UMA publicação (09/10), para o designer. Ver `qrDaPublicacaoSvg`.
+   *
+   * `?nome=` dá o nome do ficheiro descarregado — o painel manda o título do
+   * cartão, para o designer não receber dez ficheiros "qr.png" iguais.
+   */
+  @Get('publicacoes/:blocoId/qr.svg')
+  async qrDaPublicacao(
+    @Param('projectSlug') projectSlug: string,
+    @Param('blocoId', new ParseUUIDPipe()) blocoId: string,
+    @Query('baixar') baixar: string | undefined,
+    @Query('nome') nome: string | undefined,
+    @Res() res: Response,
+  ) {
+    const svg = await this.content.qrDaPublicacaoSvg(projectSlug, blocoId)
+    res.setHeader('Content-Type', 'image/svg+xml')
+    res.setHeader('Cache-Control', 'public, max-age=86400')
+    if (baixar) res.setHeader('Content-Disposition', anexo(nome, blocoId, 'svg'))
+    return res.send(svg)
+  }
+
+  @Get('publicacoes/:blocoId/qr.png')
+  async qrDaPublicacaoPng(
+    @Param('projectSlug') projectSlug: string,
+    @Param('blocoId', new ParseUUIDPipe()) blocoId: string,
+    @Query('baixar') baixar: string | undefined,
+    @Query('nome') nome: string | undefined,
+    @Res() res: Response,
+  ) {
+    const png = await this.content.qrDaPublicacaoPng(projectSlug, blocoId)
+    res.setHeader('Content-Type', 'image/png')
+    res.setHeader('Cache-Control', 'public, max-age=86400')
+    if (baixar) res.setHeader('Content-Disposition', anexo(nome, blocoId, 'png'))
     return res.send(png)
   }
 

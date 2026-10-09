@@ -609,6 +609,14 @@ export const admin = {
   urlQrPng: (projectSlug: string, contentSlug: string, baixar = false) =>
     `${API_URL}/projects/${projectSlug}/contents/${contentSlug}/qr.png${baixar ? '?baixar=1' : ''}`,
 
+  /**
+   * O QR de UMA publicação (09/10). Com `nome`, a resposta vem como ficheiro a
+   * descarregar com esse nome — o título do cartão.
+   */
+  urlQrDaPublicacao: (projectSlug: string, blocoId: string, formato: 'svg' | 'png', nome?: string) =>
+    `${API_URL}/projects/${projectSlug}/publicacoes/${blocoId}/qr.${formato}` +
+    (nome !== undefined ? `?baixar=1&nome=${encodeURIComponent(nome)}` : ''),
+
   /** O mesmo ficheiro A4 que a pessoa recebe, para ele conferir antes de publicar. */
   urlCartaoPdf: (projectSlug: string, contentSlug: string, baixar = false) =>
     `${API_URL}/projects/${projectSlug}/contents/${contentSlug}/cartao.pdf${baixar ? '?baixar=1' : ''}`,

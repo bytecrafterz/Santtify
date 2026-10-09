@@ -823,4 +823,32 @@ export class ContentService {
     const svg = await this.qrSvg(projectSlug, contentSlug)
     return this.storage.svgEmPng(svg, 1024)
   }
+
+  /**
+   * O QR de uma publicação, criado na primeira vez que alguém o pede (09/10).
+   *
+   * Nasce aqui, e não ao publicar, para os cartões que já existem terem o seu
+   * sem migração nenhuma: o painel mostra-o, e mostrá-lo é pedi-lo. Só os
+   * cartões da página (`CARTAO`) — o de impressão já tem o QR da letra.
+   */
+  async qrDaPublicacaoSvg(projectSlug: string, blocoId: string): Promise<string> {
+    const project = await this.projeto(projectSlug)
+    const bloco = await this.prisma.contentBlock.findFirst({
+      where: { id: blocoId, papel: 'CARTAO', content: { projectId: project.id } },
+      select: { id: true, content: { select: { id: true, slug: true } } },
+    })
+    if (!bloco) throw new NotFoundException('Publicação não encontrada')
+    const link = await this.shortLinks.qrDaPublicacao({
+      projectId: project.id,
+      contentId: bloco.content.id,
+      blocoId: bloco.id,
+      projectSlug,
+      contentSlug: bloco.content.slug,
+    })
+    return link.qrSvg ?? (await this.shortLinks.gerarQrSvg(this.shortLinks.urlPublica(link.code)))
+  }
+
+  async qrDaPublicacaoPng(projectSlug: string, blocoId: string): Promise<Buffer> {
+    return this.storage.svgEmPng(await this.qrDaPublicacaoSvg(projectSlug, blocoId), 1024)
+  }
 }

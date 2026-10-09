@@ -304,13 +304,16 @@ export class AttributionService {
       const platform =
         link.channel ?? // compartilhamento: o canal escolhido por quem compartilhou
         link.campaignPlatform ?? // campanha: a plataforma da publicação
-        (link.kind === 'CONTENT_QR' ? Platform.QR_CODE : null) ??
+        (link.kind === 'CONTENT_QR' || link.kind === 'PUBLICACAO_QR' ? Platform.QR_CODE : null) ??
         link.rootPlatform
 
       return {
         platform,
         source: ctx.utmSource ?? platform?.toLowerCase() ?? null,
-        medium: ctx.utmMedium ?? (link.kind === 'SHARE' ? 'share' : link.kind.toLowerCase()),
+        // O QR de uma publicação é um QR como o da letra: o mesmo meio nas métricas.
+        medium:
+          ctx.utmMedium ??
+          (link.kind === 'SHARE' ? 'share' : link.kind === 'PUBLICACAO_QR' ? 'content_qr' : link.kind.toLowerCase()),
         campaignId: link.campaignId,
         ehNova: true,
       }

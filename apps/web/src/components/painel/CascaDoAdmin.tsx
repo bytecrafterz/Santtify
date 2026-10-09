@@ -7,6 +7,7 @@ import { useAuth } from '@/components/ProvedorDeAuth'
 import { admin } from '@/lib/admin'
 import { mensagens } from '@/lib/mensagens'
 import { IconeDoPainel, type NomeDoIconeDoPainel } from './IconesDoPainel'
+import { Voltar } from '../Voltar'
 
 const PROJETO_PADRAO = process.env.NEXT_PUBLIC_PROJETO_PADRAO ?? 'jesus-alfabeto-saudavel'
 
@@ -143,6 +144,31 @@ function areaDoCaminho(caminho: string): ChaveDaArea {
 }
 
 /**
+ * UM NÍVEL ACIMA, para quando não há passo atrás dentro do painel.
+ *
+ * Quem abre o painel direto num endereço (um link, um favorito, a página
+ * recarregada) não tem para onde recuar no histórico — e recuar ali seria sair
+ * do painel, que ele pediu para só acontecer quando ele decidir (27/08). Então
+ * sobe-se um degrau: a aba volta à primeira da área, a área volta a Meus
+ * Projetos, o karaokê de uma faixa volta à lista do karaokê. Só endereços que
+ * existem: `/admin/projetos` não existe, e "Novo projeto" sobe para `/admin`.
+ */
+function acima(caminho: string, area: Area, projeto: string): string | null {
+  if (caminho === '/admin') return null
+  if (area.chave !== 'projetos') {
+    const entrada = area.href(projeto)
+    if (caminho === entrada) return '/admin'
+    // As abas sobem para a primeira: Pagamentos para Afiliados.
+    if (area.abas?.(projeto).some((a) => a.href === caminho)) return entrada
+  }
+  const { projeto: doEndereco, resto } = lerCaminho(caminho)
+  if (!doEndereco || !resto || resto === '/') return '/admin'
+  const partes = resto.split('/').filter(Boolean)
+  partes.pop()
+  return `/${doEndereco}/admin${partes.length ? `/${partes.join('/')}` : ''}`
+}
+
+/**
  * A CASCA DO PAINEL: o menu das oito áreas, o topo, e a página ao meio.
  *
  * Envolve TODO o painel — a entrada (`/admin`) e cada ecrã de um projeto
@@ -180,6 +206,51 @@ export function CascaDoAdmin({ children }: { children: ReactNode }) {
     const alvo = aberta.offsetLeft - (faixa.clientWidth - aberta.offsetWidth) / 2
     faixa.scrollTo({ left: Math.max(0, alvo), behavior: 'smooth' })
   }, [areaActual, usuario])
+
+  /*
+    O BOTÃO VOLTAR DO PAINEL (09/10).
+
+    "Na página de administração não existe botão para voltar à página
+    anterior." Os ecrãs de dentro de um projeto já tinham o seu (a barra preta
+    do conteúdo, o "Quadrados" do cartão), mas Vendas, Afiliados, Comunidade,
+    Mensagens, Análise e Configurações não tinham nenhum.
+
+    É um passo atrás de verdade: os endereços do painel por onde se passou
+    ficam numa pilha, e enquanto houver um antes deste, Voltar é o mesmo que o
+    gesto do telemóvel. A pilha vive enquanto a casca vive — sair do painel e
+    voltar começa outra — para nunca recuar para fora do painel sem querer.
+    Sem passo atrás, sobe um nível (ver `acima`).
+
+    Desce o "voltou" da pilha quando o endereço novo é o penúltimo: foi o gesto
+    de voltar do navegador, e a pilha acompanha.
+
+    SUBIR SUBSTITUI, NÃO ACRESCENTA. Subir com um passo novo no histórico fazia
+    o Voltar seguinte descer outra vez para o ecrã de onde se tinha subido — de
+    Pedidos de volta a Clientes, em vez de seguir para Meus Projetos.
+  */
+  const pilha = useRef<string[]>([])
+  const aSubir = useRef(false)
+  const [comPassoAtras, definirComPassoAtras] = useState(false)
+  useEffect(() => {
+    const p = pilha.current
+    if (aSubir.current) {
+      aSubir.current = false
+      p.splice(0, p.length, caminho)
+    } else if (p[p.length - 1] !== caminho) {
+      if (p[p.length - 2] === caminho) p.pop()
+      else p.push(caminho)
+      if (p.length > 30) p.splice(0, p.length - 30)
+    }
+    definirComPassoAtras(p.length > 1)
+  }, [caminho])
+  const destinoAcima = acima(caminho, area, projeto)
+  const voltar = () => {
+    if (pilha.current.length > 1) router.back()
+    else if (destinoAcima) {
+      aSubir.current = true
+      router.replace(destinoAcima)
+    }
+  }
 
   useEffect(() => {
     if (carregando || usuario) return
@@ -247,6 +318,11 @@ export function CascaDoAdmin({ children }: { children: ReactNode }) {
 
       <div className="adm-corpo">
         <header className="adm-topo">
+          {(comPassoAtras || destinoAcima) && (
+            <span className="adm-voltar">
+              <Voltar aoClicar={voltar}>Voltar</Voltar>
+            </span>
+          )}
           <Avisos projeto={projeto} />
           <span className="adm-quem">
             {usuario.avatarUrl ? (

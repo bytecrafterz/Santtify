@@ -571,6 +571,11 @@ model ShortLink {
   /// QR gerado no momento da publicação. Nulo para links de compartilhamento.
   qrSvg String?
 
+  /// A publicação (cartão) de um `PUBLICACAO_QR`. Sem chave estrangeira de
+  /// propósito: um QR impresso continua a existir se o cartão for apagado, e
+  /// deve continuar a abrir a letra em vez de dar erro.
+  blocoId String? @unique @db.Uuid
+
   clickCount Int       @default(0)
   active     Boolean   @default(true)
   expiresAt  DateTime?
@@ -609,6 +614,10 @@ enum ShortLinkKind {
   /// `af-<código>`, que nunca colide com os aleatórios — o alfabeto deles não
   /// tem hífen.
   AFILIADO
+  /// QR Code de UMA publicação (09/10): "todas as publicações precisam gerar
+  /// um QR Code, com opção de baixar e enviar ao designer". Abre a letra já na
+  /// publicação (`?letra=&pub=`), e conta como leitura de QR nas métricas.
+  PUBLICACAO_QR
 }
 
 /// Vitrine de próximos produtos — a área "Meus Lançamentos" do perfil.

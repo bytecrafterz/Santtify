@@ -6653,8 +6653,20 @@ a.vizinha:focus-visible {
   color: var(--cor-texto-suave);
 }
 
+/*
+  A COLUNA NUNCA PASSA DA LARGURA DO ECRÃ (09/10).
+
+  "As fotos estão sendo geradas pela metade." A grelha tinha uma coluna `auto`,
+  e uma coluna `auto` cresce até ao mínimo do item mais largo. O campo do
+  título é um `<input>`, e um input tem largura própria (20 caracteres) — a
+  1,25rem em negrito são uns 280px. Num iPhone estreito isso passa da largura
+  do cartão, a coluna estica, a foto estica com ela, e o `overflow: hidden`
+  corta-a à direita. `minmax(0, 1fr)` prende a coluna ao cartão e os campos
+  encolhem para caber.
+*/
 .previa-cartao {
   display: grid;
+  grid-template-columns: minmax(0, 1fr);
   gap: 0;
   border-radius: 16px;
   overflow: hidden;
@@ -17046,6 +17058,20 @@ a.pi-cartao:hover .pi-cartao-seta {
   align-items: center;
   justify-content: flex-end;
   padding: 16px 32px 0;
+}
+
+/* O Voltar do painel (09/10), encostado à esquerda do topo. */
+.adm-voltar {
+  margin-right: auto;
+}
+
+/*
+  Os ecrãs do conteúdo já têm o seu Voltar, na barra preta (`CabecalhoFixo`), e
+  esse sabe recuar dentro do próprio ecrã — do cartão aos quadrados. Dois
+  "Voltar" no mesmo ecrã obrigavam a escolher; fica o de lá.
+*/
+.adm:has(.cabecalho-fixo) .adm-voltar {
+  display: none;
 }
 
 .adm-quem {

@@ -72,6 +72,60 @@ export class ShortLinksService {
     })
   }
 
+  /**
+   * O QR de UMA publicação (09/10).
+   *
+   * "Todas as publicações precisam gerar um QR Code, com opção de baixar e
+   * enviar ao designer." O da letra abre a letra; este abre a letra já na
+   * publicação, pelo mesmo `?letra=&pub=` do botão de partilhar.
+   *
+   * Passa por um link curto, como o da letra, e não pelo endereço direto: o
+   * que vai para o papel não se corrige depois, e o link curto continua a
+   * funcionar se os endereços mudarem. E cada leitura conta como QR.
+   *
+   * Um por cartão (`blocoId` é único). Dois pedidos ao mesmo tempo — a imagem
+   * e o PNG — não criam dois QR diferentes: o segundo perde a corrida na base e
+   * lê o do primeiro.
+   */
+  async qrDaPublicacao(params: {
+    projectId: string
+    contentId: string
+    blocoId: string
+    projectSlug: string
+    contentSlug: string
+  }): Promise<ShortLink> {
+    const existente = await this.prisma.shortLink.findUnique({ where: { blocoId: params.blocoId } })
+    if (existente) return existente
+
+    const code = await this.gerarCodigoUnico()
+    const targetUrl =
+      `${this.webUrl}/${params.projectSlug}` +
+      `?letra=${encodeURIComponent(params.contentSlug)}&pub=${params.blocoId}`
+    try {
+      const link = await this.prisma.shortLink.create({
+        data: {
+          projectId: params.projectId,
+          code,
+          kind: ShortLinkKind.PUBLICACAO_QR,
+          contentId: params.contentId,
+          blocoId: params.blocoId,
+          targetUrl,
+          depth: 0,
+          rootPlatform: Platform.QR_CODE,
+          qrSvg: await this.gerarQrSvg(this.urlPublica(code)),
+        },
+      })
+      return this.prisma.shortLink.update({
+        where: { id: link.id },
+        data: { rootShortLinkId: link.id },
+      })
+    } catch (erro) {
+      const ganhou = await this.prisma.shortLink.findUnique({ where: { blocoId: params.blocoId } })
+      if (ganhou) return ganhou
+      throw erro
+    }
+  }
+
   /** Link de uma campanha/post/vídeo — o identificador próprio por publicação. */
   async criarLinkDeCampanha(params: {
     projectId: string

@@ -5,6 +5,7 @@ import { useEffect } from 'react'
 import { admin, type CartaoAdmin, type CategoriaAdmin } from '@/lib/admin'
 import { Voltar } from './Voltar'
 import { PrepararKaraoke } from './PrepararKaraoke'
+import { QrDaPublicacao } from './QrDaPublicacao'
 
 /**
  * A terceira tela: o cartão, inteiro, numa página só.
@@ -434,6 +435,14 @@ export function EditorDeCartao({
           <>PRONTO — este cartão aparece na página assim que guardar</>
         )}
       </p>
+
+      {/* O QR desta publicação, para o designer (09/10). */}
+      <QrDaPublicacao
+        projectSlug={projectSlug}
+        blocoId={cartao.id}
+        titulo={titulo || cartao.titulo}
+        publicado={cartao.estado === 'PUBLICADO'}
+      />
     </div>
   )
 }
