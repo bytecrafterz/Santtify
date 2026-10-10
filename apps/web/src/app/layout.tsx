@@ -5,6 +5,7 @@ import { ProvedorDeAuth } from '@/components/ProvedorDeAuth'
 import { PainelPersistente } from '@/components/painel/PainelPersistente'
 import { RelatorDeErros } from '@/components/RelatorDeErros'
 import { UmSomDeCadaVez } from '@/components/UmSomDeCadaVez'
+import { TocadorGlobal } from '@/components/TocadorGlobal'
 
 export const metadata: Metadata = {
   title: 'Santtify',
@@ -55,6 +56,9 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
         <ProvedorDeAuth>
           <PainelPersistente>{children}</PainelPersistente>
         </ProvedorDeAuth>
+        {/* A música que continua pela plataforma inteira (10/10). Fora das
+            páginas, para nunca ser desmontado ao navegar. */}
+        <TocadorGlobal />
         <RegistroDoServiceWorker />
         <RelatorDeErros />
       </body>

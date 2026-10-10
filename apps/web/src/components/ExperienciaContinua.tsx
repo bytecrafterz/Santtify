@@ -106,6 +106,25 @@ export function ExperienciaContinua({
     : Array.from({ length: Math.max(0, blocos) }, (_, i) => primeiroNumero + i)
   const colunas = colunasDaGrade(casas.length)
   const sozinhaEm = colunaDaSozinha(casas.length, colunas)
+  /*
+    AS CASAS TÊM O FORMATO DA ARTE (10/10).
+
+    "O quadrado tem que aparecer todo design." A grade era de quadrados e a
+    arte entrava cortada: no Quem é Jesus as artes são retrato (2:3), e o terço
+    de baixo do desenho ficava de fora.
+
+    A proporção é a MEDIANA das artes do projeto, e serve a grade toda — as
+    trancadas também, para as filas não ficarem desencontradas. E só muda
+    quando as artes são claramente retrato: no Jesus Alfabeto elas vão do
+    quadrado ao quase-quadrado (1200x1302), e ele pediu em 29/08 que lá as
+    miniaturas enchessem o quadrado. Aí, e sem medidas, fica o quadrado.
+  */
+  const formatos = contents
+    .filter((c) => c.publicado && c.capaLargura && c.capaAltura)
+    .map((c) => c.capaLargura! / c.capaAltura!)
+    .sort((a, b) => a - b)
+  const mediana = formatos.length ? formatos[Math.floor(formatos.length / 2)] : null
+  const proporcao = mediana !== null && mediana < 0.85 ? Math.max(0.5, mediana) : null
   /** O conteúdo que mora numa casa, ou nada se ela ainda estiver vazia. */
   const conteudoDaCasa = (casa: string | number) =>
     contents.find(
@@ -407,7 +426,12 @@ export function ExperienciaContinua({
           computador e no telefone".
         */
         className={colunas === 3 ? 'grade-letras grade-fixa' : 'grade-letras'}
-        style={{ '--colunas': colunas } as CSSProperties}
+        style={
+          {
+            '--colunas': colunas,
+            ...(proporcao ? { '--proporcao': proporcao.toFixed(4) } : {}),
+          } as CSSProperties
+        }
       >
         {casas.map((casa, i) => {
           // A última casa, quando fica sozinha na fila, salta para o meio.

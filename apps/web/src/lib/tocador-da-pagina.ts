@@ -2,7 +2,7 @@
 
 import { definirCategoriaATocar } from './categoria-a-tocar'
 import { botoesDaSessao, descreverNaSessao } from './sessao-de-midia'
-import { prepararFila, proximaDaFila, type FaixaDaFila } from './tocar-em-sequencia'
+import { faixaNaFila, prepararFila, projetoDaFila, proximaDaFila, type FaixaDaFila } from './tocar-em-sequencia'
 import { rastrear } from './track'
 
 /**
@@ -24,6 +24,19 @@ import { rastrear } from './track'
  *
  * Vive no `body` para a regra de "um som de cada vez" o ver: tocar o karaokê
  * ou outro áudio pára este, e o contrário.
+ *
+ * ── E É O TOCADOR DA PLATAFORMA INTEIRA (10/10) ─────────────────────────
+ *
+ * "Se estou ouvindo uma música no projeto Quem é Jesus? e entro no Jesus
+ * Alfabeto Saudável, a música não pode parar. Só deve parar quando eu
+ * escolher outra música ou apertar Pausar."
+ *
+ * O elemento já sobrevivia à troca de página — está no `body`, fora do que o
+ * React desenha. Era eu que o parava: sem tocadores na página, parava ao fim
+ * de um segundo e meio. Isso saiu. A música continua, a sequência continua
+ * de faixa em faixa do projeto onde começou, e o `TocadorGlobal` mostra-a em
+ * baixo, com pausar, seguinte e fechar, sempre que o cartão dela não está à
+ * vista. A playlist passou a tocar aqui também, com a sua própria lista.
  */
 
 export interface FaixaATocar {
@@ -38,6 +51,8 @@ export interface FaixaATocar {
   /** Para as estatísticas: o nome do bloco, como sempre se registou. */
   nomeDoBloco: string | null
   duracaoMs: number | null
+  /** O que mais vai no registo de MEDIA_PLAY/COMPLETE (a playlist diz de onde veio). */
+  rastreio?: Record<string, unknown>
 }
 
 export interface EstadoDoTocador {
@@ -56,11 +71,16 @@ let projectId: string | null = null
 let saltarPara: number | null = null
 /** Quem quer saber que uma faixa acabou (o contador de reproduções de cada tocador). */
 const aoAcabar = new Map<string, Set<() => void>>()
-/** Os tocadores desenhados agora. Sem nenhum, a página deixou de os ter: pára. */
-let tocadores = 0
-let pararSemTocadores: ReturnType<typeof setTimeout> | null = null
 /** A página sabe abrir outras casas sem sair dela (a experiência contínua). */
 let quemAbreCasas = 0
+/**
+ * A lista de uma página que tem a sua (a playlist, com o filtro dela). Manda
+ * sobre a fila do projeto enquanto se toca a partir dela, e acaba no fim —
+ * como a playlist sempre acabou.
+ */
+let filaPropria: FaixaATocar[] | null = null
+/** A página onde a faixa foi tocada com o dedo: para onde o tocador global leva. */
+let paginaDeOrigem: string | null = null
 
 function publicar(parcial: Partial<EstadoDoTocador>) {
   estado = { ...estado, ...parcial }
@@ -110,10 +130,8 @@ function carregar(f: FaixaATocar) {
   botoesDaSessao({
     tocar: () => void a.play().catch(() => {}),
     pausar: () => a.pause(),
-    seguinte: () => avancar(false),
-    anterior: () => {
-      a.currentTime = 0
-    },
+    seguinte: () => avancar(),
+    anterior: () => recuar(),
   })
 }
 
@@ -128,7 +146,7 @@ function aoComecar() {
       projectId,
       contentId: faixa.contentId,
       type: 'MEDIA_PLAY',
-      props: { bloco: faixa.nomeDoBloco, blockId: faixa.id },
+      props: { bloco: faixa.nomeDoBloco, blockId: faixa.id, ...faixa.rastreio },
     })
   }
 }
@@ -143,33 +161,43 @@ function aoTerminar() {
       projectId,
       contentId: terminada.contentId,
       type: 'MEDIA_COMPLETE',
-      props: { bloco: terminada.nomeDoBloco, blockId: terminada.id },
+      props: { bloco: terminada.nomeDoBloco, blockId: terminada.id, ...terminada.rastreio },
     })
   }
-  avancar(true)
+  avancar()
 }
 
 /**
  * Passa à faixa seguinte NO MESMO ELEMENTO, já — é isto que funciona com o
- * telefone bloqueado. `sozinha`: veio do fim da faixa (e não do botão
- * "seguinte" do ecrã bloqueado).
+ * telefone bloqueado.
  */
-function avancar(sozinha: boolean) {
+function avancar() {
   const actual = faixa
   if (!actual) return
+
+  // A lista própria (a playlist) manda enquanto se toca a partir dela.
+  if (filaPropria) {
+    const i = filaPropria.findIndex((f) => f.id === actual.id)
+    const daLista = i >= 0 ? filaPropria[i + 1] : undefined
+    if (!daLista) return
+    carregar(daLista)
+    void oElemento()
+      .play()
+      .catch(() => publicar({ tocando: false }))
+    return
+  }
+
   const seguinte = proximaDaFila(actual.id)
   if (!seguinte) return
 
   /*
-    SÓ ATRAVESSA PARA OUTRA CASA ONDE A PÁGINA A SABE MOSTRAR.
-
-    Na página inicial do projeto (a experiência contínua) as letras e os dias
-    abrem-se sem sair dela, e a sequência atravessa-os. Na página de um dia, a
-    faixa seguinte de outro dia não está à vista e a página não a sabe abrir —
-    aí a sequência fica no que a página tem, como sempre ficou.
+    ATRAVESSA SEMPRE (10/10). Até aqui a sequência só passava para outra casa
+    onde a página a soubesse mostrar, e parava no fim do dia aberto. Com o
+    tocador global ela segue: a faixa seguinte aparece em baixo, no
+    `TocadorGlobal`, mesmo que a página seja outra — é a música a continuar
+    enquanto ele navega, que foi o pedido.
   */
   const estaNaPagina = Boolean(document.getElementById(`cartao-${seguinte.id}`))
-  if (sozinha && !estaNaPagina && quemAbreCasas === 0) return
 
   carregar(paraTocar(seguinte, actual))
   void oElemento()
@@ -201,6 +229,29 @@ function paraTocar(f: FaixaDaFila, anterior: FaixaATocar): FaixaATocar {
   }
 }
 
+/** A faixa anterior: na lista própria volta uma; senão recomeça esta. */
+function recuar() {
+  const a = oElemento()
+  const actual = faixa
+  if (!actual) return
+  if (a.currentTime > 3 || !filaPropria) {
+    a.currentTime = 0
+    return
+  }
+  const i = filaPropria.findIndex((f) => f.id === actual.id)
+  const anterior = i > 0 ? filaPropria[i - 1] : undefined
+  if (!anterior) {
+    a.currentTime = 0
+    return
+  }
+  carregar(anterior)
+  void a.play().catch(() => publicar({ tocando: false }))
+}
+
+function lembrarDeOnde() {
+  paginaDeOrigem = window.location.pathname + window.location.search
+}
+
 /** O play e a pausa de um tocador: é sempre o dedo de alguém. */
 export function alternarFaixa(f: FaixaATocar, opcoes: { projectId: string }) {
   projectId = opcoes.projectId
@@ -210,10 +261,90 @@ export function alternarFaixa(f: FaixaATocar, opcoes: { projectId: string }) {
     else a.pause()
     return
   }
+  // Tocar uma faixa de um cartão é sair da lista da playlist, se se estava nela.
+  filaPropria = null
+  lembrarDeOnde()
   carregar(f)
   void a.play().catch(() => publicar({ tocando: false }))
-  // A fila vem já, para o fim desta faixa encontrar a seguinte sem esperar.
+  // A fila vem já, para o fim desta faixa encontrar a seguinte sem esperar. É
+  // a do projeto DESTA página: tocar noutro projeto troca de fila.
   void prepararFila()
+}
+
+/**
+ * Tocar uma faixa de uma lista própria (a playlist). A seguinte é a seguinte
+ * DESTA lista, e no fim pára. Devolve se começou — o navegador pode recusar.
+ */
+export async function tocarDaLista(
+  lista: FaixaATocar[],
+  indice: number,
+  opcoes: { projectId: string },
+): Promise<boolean> {
+  const f = lista[indice]
+  if (!f) return false
+  projectId = opcoes.projectId
+  filaPropria = lista
+  lembrarDeOnde()
+  const a = oElemento()
+  if (faixa?.id === f.id && a.getAttribute('src')) a.currentTime = 0
+  else carregar(f)
+  try {
+    await a.play()
+    return true
+  } catch {
+    publicar({ tocando: false })
+    return false
+  }
+}
+
+/** Pausar ou continuar o que está a tocar, sem saber qual é (o tocador global). */
+export function alternarOQueToca() {
+  const a = elemento
+  if (!a || !faixa) return
+  if (a.paused) void a.play().catch(() => {})
+  else a.pause()
+}
+
+/** A seguinte, a pedido (o botão do tocador global). */
+export function tocarSeguinte() {
+  avancar()
+}
+
+/** A anterior, a pedido. */
+export function tocarAnterior() {
+  recuar()
+}
+
+/** Fechar o tocador global: pára e esquece a faixa. */
+export function pararTudo() {
+  elemento?.pause()
+  faixa = null
+  filaPropria = null
+  publicar(PARADO)
+  botoesDaSessao({})
+}
+
+/** A faixa carregada agora, com o que o tocador global precisa de mostrar. */
+export function faixaAtual(): FaixaATocar | null {
+  return faixa
+}
+
+/**
+ * Para onde leva tocar no título do tocador global: a página da casa (a letra,
+ * o dia) já no cartão desta faixa, quando a faixa é de uma casa; senão, a
+ * página onde ela foi tocada.
+ *
+ * A página da casa, e não o `?letra=&pub=` da página do projeto: esse só se lê
+ * ao abrir a página de raiz, e vindo de outro projeto pela navegação da
+ * aplicação a página do projeto pode já estar montada e não o ler. A âncora
+ * `#cartao-` a página da casa lê sempre, abre o cartão e leva até ele.
+ */
+export function enderecoDaFaixaAtual(): string | null {
+  if (!faixa) return null
+  const naFila = faixaNaFila(faixa.id)
+  const projeto = projetoDaFila()
+  if (naFila && projeto) return `/${projeto}/${encodeURIComponent(naFila.slug)}#cartao-${faixa.id}`
+  return paginaDeOrigem
 }
 
 /** Tocar na onda: salta para aquele ponto (e começa a faixa, se não era esta). */
@@ -237,28 +368,16 @@ export function quandoAcabar(faixaId: string, f: () => void) {
 }
 
 /**
- * Cada tocador desenhado regista-se. Quando a página deixa de ter tocadores —
- * a pessoa foi para o karaokê, para o perfil —, o som pára, como parava quando
- * cada tocador tinha o seu elemento. A folga cobre a troca de letra, em que os
- * tocadores de uma saem e os da outra entram.
+ * Cada tocador desenhado regista-se.
+ *
+ * Servia para PARAR a música quando a página deixava de ter tocadores — a
+ * pessoa ia para o perfil, para outro projeto. Desde 10/10 é o contrário que
+ * ele quer: a música segue pela plataforma toda, e quem a mostra fora da
+ * página dela é o `TocadorGlobal`. Fica o registo, sem parar nada; o karaokê
+ * continua a pará-la, pela regra de um som de cada vez.
  */
 export function registarTocador() {
-  tocadores++
-  if (pararSemTocadores) {
-    clearTimeout(pararSemTocadores)
-    pararSemTocadores = null
-  }
-  return () => {
-    tocadores--
-    if (tocadores > 0) return
-    pararSemTocadores = setTimeout(() => {
-      // A página inicial a abrir outra letra não é "sair": os tocadores voltam.
-      if (tocadores > 0 || quemAbreCasas > 0 || !elemento) return
-      elemento.pause()
-      faixa = null
-      publicar(PARADO)
-    }, 1500)
-  }
+  return () => {}
 }
 
 /** A página que abre letras e dias sem sair dela diz que está cá. */
@@ -268,3 +387,6 @@ export function registarQuemAbreCasas() {
     quemAbreCasas--
   }
 }
+
+/** Há uma página que abre casas? (A sequência leva-a até à faixa seguinte.) */
+export const haQuemAbraCasas = () => quemAbreCasas > 0

@@ -92,6 +92,17 @@ class NovoCartaoDto {
   @IsOptional() @IsInt() @Min(1) @Max(4) casa?: number
 }
 
+/**
+ * Para onde vai a cópia de um quadrado: o dia (ou a letra), e dentro dele a
+ * casa (1 a 4), um cartão que já lá está, ou nenhum dos dois — uma publicação
+ * nova no fim do dia.
+ */
+class CopiarCartaoDto {
+  @IsUUID() contentId!: string
+  @IsOptional() @IsInt() @Min(1) @Max(4) casa?: number
+  @IsOptional() @IsUUID() destinoId?: string
+}
+
 class SalvarCartaoDto {
   @IsOptional() @IsString() @MaxLength(120) titulo?: string | null
   @IsOptional() @IsString() @MaxLength(4000) descricao?: string | null
@@ -473,6 +484,16 @@ export class AdminController {
   @Post('cards/:id/duplicate')
   duplicarCartao(@Param('id') id: string, @Req() req: Request) {
     return this.conteudo.duplicarCartao(id, req.usuario!.id)
+  }
+
+  /** Duplicar UM quadrado para o dia e a casa que ele escolher (10/10). */
+  @Post('cards/:id/copy-to')
+  copiarCartaoPara(@Param('id') id: string, @Body() dto: CopiarCartaoDto, @Req() req: Request) {
+    return this.conteudo.copiarCartaoPara(
+      id,
+      { contentId: dto.contentId, casa: dto.casa, destinoId: dto.destinoId },
+      req.usuario!.id,
+    )
   }
 
   @Delete('cards/:id')

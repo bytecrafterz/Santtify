@@ -51,6 +51,12 @@ export interface FaixaDaFila {
 
 let fila: FaixaDaFila[] | null = null
 let aBuscar: Promise<FaixaDaFila[]> | null = null
+/**
+ * De que projeto é a fila (10/10). Era uma por página aberta, e com a música a
+ * seguir pela plataforma inteira deixou de chegar: tocar no Jesus Alfabeto
+ * depois de ouvir o Quem é Jesus tem de trazer a fila do Alfabeto.
+ */
+let filaDe: string | null = null
 
 /** O projeto sai do endereço: /<projeto>/... em qualquer página pública. */
 function projetoDoEndereco(): string | null {
@@ -60,10 +66,15 @@ function projetoDoEndereco(): string | null {
 
 /** A fila do projeto, guardada: busca-se ao primeiro play, para o fim da faixa não esperar pela rede. */
 export async function prepararFila(): Promise<FaixaDaFila[]> {
+  const projeto = projetoDoEndereco()
+  if (!projeto) return fila ?? []
+  if (projeto !== filaDe) {
+    fila = null
+    aBuscar = null
+    filaDe = projeto
+  }
   if (fila) return fila
   if (aBuscar) return aBuscar
-  const projeto = projetoDoEndereco()
-  if (!projeto) return []
   const base = process.env.NEXT_PUBLIC_API_URL ?? ''
   aBuscar = fetch(`${base}/projects/${projeto}/playlist`)
     .then((r) => (r.ok ? r.json() : null))
@@ -116,6 +127,10 @@ export async function prepararFila(): Promise<FaixaDaFila[]> {
  * e com o telefone bloqueado não há tempo para ir à rede. Sem fila ainda,
  * devolve nula e a sequência pára, como antes de a fila chegar.
  */
+/** O projeto da fila carregada, e uma faixa dela (o tocador global leva lá). */
+export const projetoDaFila = () => filaDe
+export const faixaNaFila = (id: string) => fila?.find((f) => f.id === id) ?? null
+
 export function proximaDaFila(daqui: string): FaixaDaFila | null {
   const todas = fila
   if (!todas?.length) return null

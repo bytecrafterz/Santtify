@@ -2310,7 +2310,8 @@ img.avatar {
 
 .letra-bloco {
   position: relative;
-  aspect-ratio: 1;
+  /* O formato da arte do projeto, quando se conhece (10/10); senão, quadrado. */
+  aspect-ratio: var(--proporcao, 1);
   border-radius: 14px;
   border: 1px solid var(--cor-borda);
   background: var(--cor-superficie);
@@ -18860,4 +18861,319 @@ a.pi-cartao:hover .pi-cartao-seta {
   .vd-saque-pedido {
     color: #4ade80;
   }
+}
+
+/* ── Duplicar um quadrado para outro dia (10/10) ─────────────────────── */
+/* O quadrado da sequência passa a ter, ao lado do botão que o abre, os seus
+   três pontos. A caixa é o item da grelha; o botão enche-a como antes. */
+.ep-ladrilho-caixa {
+  position: relative;
+  display: grid;
+  min-width: 0;
+}
+
+.ep-ladrilho-caixa > .ep-ladrilho {
+  width: 100%;
+}
+
+.ep-ladrilho-mais {
+  position: absolute;
+  top: 3px;
+  right: 3px;
+  z-index: 2;
+  display: grid;
+  place-items: center;
+  width: 30px;
+  height: 30px;
+  padding: 0;
+  border: 1.5px solid rgba(255, 255, 255, 0.85);
+  border-radius: 50%;
+  /* Escuro e com contorno: por baixo está a arte, que muda de dia para dia. */
+  background: rgba(13, 14, 18, 0.78);
+  color: #fff;
+  font-size: 1.1rem;
+  line-height: 1;
+  cursor: pointer;
+}
+
+.ep-ladrilho-menu {
+  top: 38px;
+  right: 0;
+  min-width: 190px;
+}
+
+/* Os três pontos ficam no canto de cima, onde estão os dos outros ecrãs; o
+   sinal do áudio desce para o canto de baixo, por cima da faixa do estado,
+   para nenhum dos dois tapar o número do quadrado. */
+.ep-ladrilho-caixa:has(.ep-ladrilho-mais) .ep-som {
+  top: auto;
+  bottom: 28px;
+}
+
+.ep-ladrilho-caixa.acabada-de-criar > .ep-ladrilho {
+  outline: 3px solid var(--cor-primaria);
+  outline-offset: 2px;
+}
+
+.dp-fundo {
+  position: fixed;
+  inset: 0;
+  z-index: 60;
+  display: grid;
+  place-items: end center;
+  padding: 16px;
+  background: rgba(10, 12, 18, 0.55);
+}
+
+@media (min-width: 640px) {
+  .dp-fundo {
+    place-items: center;
+  }
+}
+
+.dp-caixa {
+  width: min(440px, 100%);
+  max-height: calc(100dvh - 32px);
+  overflow: auto;
+  padding: 20px 18px 16px;
+  border-radius: 18px;
+  background: var(--cor-superficie);
+  color: var(--cor-texto);
+  box-shadow: var(--sombra-alta);
+}
+
+.dp-caixa h2 {
+  margin: 0 0 4px;
+  font-size: 1.15rem;
+}
+
+.dp-caixa h2 small {
+  font-weight: 600;
+  color: var(--cor-texto-suave);
+}
+
+.dp-origem {
+  margin: 0 0 12px;
+  font-size: 0.85rem;
+  color: var(--cor-texto-suave);
+}
+
+.dp-campo {
+  display: grid;
+  gap: 6px;
+  margin: 12px 0 0;
+  padding: 0;
+  border: 0;
+  font-size: 0.85rem;
+  font-weight: 700;
+}
+
+.dp-campo legend {
+  padding: 0;
+  margin-bottom: 6px;
+}
+
+.dp-campo select {
+  min-height: 44px;
+  padding: 0 12px;
+  border: 1px solid var(--cor-borda);
+  border-radius: 10px;
+  background: var(--cor-fundo);
+  color: var(--cor-texto);
+  font: inherit;
+  font-weight: 600;
+}
+
+.dp-opcoes {
+  display: grid;
+  gap: 6px;
+}
+
+.dp-opcao {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  min-height: 44px;
+  padding: 8px 12px;
+  border: 1.5px solid var(--cor-borda);
+  border-radius: 10px;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.dp-opcao.escolhida {
+  border-color: var(--cor-primaria);
+}
+
+.dp-opcao em {
+  font-style: normal;
+  font-weight: 500;
+  color: var(--cor-texto-suave);
+}
+
+.dp-opcao:has(input:disabled) {
+  opacity: 0.55;
+  cursor: default;
+}
+
+.dp-aviso {
+  margin: 12px 0 0;
+  padding: 8px 12px;
+  border-radius: 10px;
+  background: rgba(234, 88, 12, 0.12);
+  color: #c2410c;
+  font-size: 0.85rem;
+  font-weight: 600;
+}
+
+.dp-nota {
+  margin: 10px 0 0;
+  font-size: 0.8rem;
+  color: var(--cor-texto-suave);
+}
+
+.dp-accoes {
+  display: flex;
+  justify-content: flex-end;
+  gap: 8px;
+  margin-top: 16px;
+}
+
+.dp-accoes .secundario {
+  min-height: 44px;
+  padding: 0 18px;
+  border: 1px solid var(--cor-borda);
+  border-radius: 999px;
+  background: var(--cor-superficie);
+  color: var(--cor-texto);
+  font: inherit;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.dp-feito {
+  position: fixed;
+  left: 50%;
+  bottom: calc(24px + env(safe-area-inset-bottom));
+  z-index: 61;
+  transform: translateX(-50%);
+  max-width: calc(100% - 32px);
+  margin: 0;
+  padding: 10px 16px;
+  border-radius: 999px;
+  background: #15803d;
+  color: #fff;
+  font-size: 0.9rem;
+  font-weight: 700;
+  box-shadow: var(--sombra-alta);
+}
+
+/* ── O tocador da plataforma inteira (10/10) ──────────────────────────── */
+.tocador-global {
+  position: fixed;
+  left: 50%;
+  bottom: calc(12px + env(safe-area-inset-bottom));
+  z-index: 55;
+  transform: translateX(-50%);
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  width: min(560px, calc(100% - 16px));
+  min-height: 60px;
+  padding: 6px 6px 6px 6px;
+  overflow: hidden;
+  border-radius: 16px;
+  background: #17181c;
+  color: #fff;
+  box-shadow: 0 10px 30px rgba(10, 12, 18, 0.35);
+}
+
+.tg-progresso {
+  position: absolute;
+  left: 0;
+  top: 0;
+  height: 3px;
+  background: #a78bfa;
+  transition: width 0.25s linear;
+}
+
+.tg-abrir {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex: 1;
+  min-width: 0;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  color: inherit;
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+
+.tg-abrir img,
+.tg-sem-capa {
+  flex: none;
+  width: 46px;
+  height: 46px;
+  border-radius: 10px;
+  object-fit: cover;
+}
+
+.tg-sem-capa {
+  display: grid;
+  place-items: center;
+  background: #2a2c33;
+  font-size: 1.2rem;
+}
+
+.tg-texto {
+  display: grid;
+  min-width: 0;
+}
+
+.tg-texto strong,
+.tg-texto small {
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
+
+.tg-texto strong {
+  font-size: 0.92rem;
+}
+
+.tg-texto small {
+  font-size: 0.75rem;
+  color: rgba(255, 255, 255, 0.7);
+}
+
+.tg-botao {
+  flex: none;
+  display: grid;
+  place-items: center;
+  width: 44px;
+  height: 44px;
+  padding: 0;
+  border: 0;
+  border-radius: 50%;
+  background: transparent;
+  color: #fff;
+  cursor: pointer;
+}
+
+.tg-tocar {
+  background: #fff;
+  color: #17181c;
+}
+
+.tg-fechar {
+  width: 36px;
+  color: rgba(255, 255, 255, 0.65);
+}
+
+/* A página ganha folga em baixo para a barra não tapar o fim do conteúdo. */
+html.com-tocador-global body {
+  padding-bottom: 76px;
 }

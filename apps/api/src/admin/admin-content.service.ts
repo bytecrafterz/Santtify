@@ -1957,6 +1957,157 @@ export class AdminContentService {
   }
 
   /**
+   * DUPLICAR UM QUADRADO PARA OUTRO DIA (10/10).
+   *
+   * "Cada quadrado (Explicação, Música, Versículo e Oração) deve ter os três
+   * pontinhos, permitindo duplicar individualmente e escolher o dia e o
+   * quadrado de destino. Por exemplo, duplicar a Música do Dia 1 para a Música
+   * do Dia 2, sem duplicar o dia inteiro."
+   *
+   * Leva o que faz o cartão: a foto, o áudio, o título, a descrição, a
+   * categoria, o link e a letra do karaokê já sincronizada (o áudio é o
+   * mesmo, os tempos também). Não leva as curtidas, os comentários nem as
+   * visualizações — essas são do original, de quem o viu lá.
+   *
+   * O destino é uma de três coisas, porque os projetos não são todos iguais:
+   * uma CASA (1 a 4: os dias do Quem é Jesus e as letras têm-nas), um CARTÃO
+   * que já lá está (os dias do Minha Identidade são cartões soltos), ou
+   * NENHUM — e nasce uma publicação nova no fim do dia.
+   *
+   * O quadrado de destino fica com a casa e o nome que já tinha. Se tinha
+   * conteúdo, é substituído: o painel pergunta antes. Se a casa ainda não
+   * existia, nasce. E fica no ar se o original estava no ar — é o mesmo
+   * cartão inteiro, que já passou pela régua de publicar.
+   */
+  async copiarCartaoPara(
+    cartaoId: string,
+    para: { contentId: string; casa?: number; destinoId?: string },
+    adminId: string,
+  ) {
+    const destinoContentId = para.contentId
+    const casa = para.casa ?? null
+    if (casa !== null && (!Number.isInteger(casa) || casa < 1 || casa > CASAS_POR_PUBLICACAO)) {
+      throw new BadRequestException(`A casa tem de ser de 1 a ${CASAS_POR_PUBLICACAO}.`)
+    }
+    const original = await this.prisma.contentBlock.findUnique({
+      where: { id: cartaoId },
+      select: {
+        id: true,
+        papel: true,
+        estado: true,
+        imageAssetId: true,
+        assetId: true,
+        titulo: true,
+        text: true,
+        categoryId: true,
+        linkUpgrade: true,
+        meta: true,
+        label: true,
+        content: { select: { projectId: true } },
+        letraSincronizada: { select: { texto: true, frases: true, publicada: true, origem: true } },
+      },
+    })
+    if (!original) throw new NotFoundException('Cartão não encontrado')
+    if (original.papel === CardPapel.IMPRESSAO) {
+      throw new BadRequestException('O cartão de impressão é único e não se duplica.')
+    }
+    const destino = await this.prisma.content.findUnique({
+      where: { id: destinoContentId },
+      select: { id: true, projectId: true },
+    })
+    if (!destino || destino.projectId !== original.content.projectId) {
+      throw new BadRequestException('Escolha um dia deste mesmo projeto.')
+    }
+
+    const metaOriginal = (original.meta ?? {}) as Record<string, unknown>
+    const foraDoAr = metaOriginal.foraDoAr === true
+    const dados = {
+      type: BlockType.AUDIO,
+      imageAssetId: original.imageAssetId,
+      assetId: original.assetId,
+      titulo: original.titulo,
+      text: original.text,
+      categoryId: original.categoryId,
+      linkUpgrade: original.linkUpgrade,
+      // Do `meta` só o subtítulo: "fora do ar" e a folha A4 são do original.
+      meta: (typeof metaOriginal.subtitulo === 'string'
+        ? { subtitulo: metaOriginal.subtitulo }
+        : {}) as Prisma.InputJsonValue,
+      estado:
+        original.estado === CardEstado.PUBLICADO && !foraDoAr ? CardEstado.PUBLICADO : CardEstado.RASCUNHO,
+    }
+
+    const resultado = await this.prisma.$transaction(async (tx) => {
+      const comoEstava = { id: true, imageAssetId: true, assetId: true, titulo: true, text: true } as const
+      const ocupante = para.destinoId
+        ? await tx.contentBlock.findFirst({
+            where: { id: para.destinoId, contentId: destino.id, papel: CardPapel.CARTAO },
+            select: comoEstava,
+          })
+        : casa !== null
+          ? await tx.contentBlock.findFirst({
+              where: { contentId: destino.id, slot: casa, papel: CardPapel.CARTAO },
+              select: comoEstava,
+            })
+          : null
+      /** Substituir é haver lá alguma coisa; uma casa vazia só se preenche. */
+      const tinhaConteudo = Boolean(
+        ocupante && (ocupante.imageAssetId || ocupante.assetId || ocupante.titulo?.trim() || ocupante.text?.trim()),
+      )
+      if (para.destinoId && !ocupante) throw new NotFoundException('O cartão de destino não existe.')
+      if (ocupante?.id === original.id) {
+        throw new BadRequestException('Esse é o próprio quadrado. Escolha outro dia ou outra casa.')
+      }
+      let alvoId: string
+      if (ocupante) {
+        await tx.contentBlock.update({ where: { id: ocupante.id }, data: dados })
+        alvoId = ocupante.id
+      } else {
+        const ultimo = await tx.contentBlock.findFirst({
+          where: { contentId: destino.id },
+          orderBy: { position: 'desc' },
+          select: { position: true },
+        })
+        const novo = await tx.contentBlock.create({
+          data: {
+            ...dados,
+            contentId: destino.id,
+            papel: CardPapel.CARTAO,
+            slot: casa,
+            label: casa !== null ? (NOMES_DAS_CASAS[casa - 1] ?? 'Publicação') : (original.label ?? 'Publicação'),
+            position: (ultimo?.position ?? 0) + 1,
+          },
+          select: { id: true },
+        })
+        alvoId = novo.id
+      }
+      // A letra do karaokê vai com o áudio. A que o destino tinha era de outro áudio.
+      await tx.letraSincronizada.deleteMany({ where: { blocoId: alvoId } })
+      await tx.transcricaoDeAudio.deleteMany({ where: { blocoId: alvoId } })
+      if (original.letraSincronizada) {
+        await tx.letraSincronizada.create({
+          data: {
+            blocoId: alvoId,
+            texto: original.letraSincronizada.texto,
+            frases: original.letraSincronizada.frases as Prisma.InputJsonValue,
+            publicada: original.letraSincronizada.publicada,
+            origem: original.letraSincronizada.origem,
+          },
+        })
+      }
+      return { id: alvoId, substituido: tinhaConteudo }
+    })
+
+    await this.auditar(adminId, original.content.projectId, 'card.copy', 'ContentBlock', resultado.id, {
+      de: cartaoId,
+      paraConteudo: destino.id,
+      casa,
+      substituido: resultado.substituido,
+    })
+    return resultado
+  }
+
+  /**
    * Esvazia um cartão original — o quadrado fica.
    *
    * "Deletar remove apenas seu conteúdo, mas preserva o quadrado vazio", disse

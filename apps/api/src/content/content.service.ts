@@ -118,7 +118,7 @@ export class ContentService {
           where: { type: BlockType.AUDIO, imageAssetId: { not: null } },
           orderBy: [{ slot: 'asc' }, { position: 'asc' }],
           take: 1,
-          select: { imageAsset: { select: { url: true } } },
+          select: { imageAsset: { select: { url: true, width: true, height: true } } },
         },
       },
     })
@@ -141,6 +141,16 @@ export class ContentService {
         publicado,
         subtitle: publicado ? c.subtitle : null,
         coverUrl: publicado ? (c.coverUrl ?? c.blocks[0]?.imageAsset?.url ?? null) : null,
+        /*
+          AS MEDIDAS DA CAPA, quando a capa é a arte do primeiro cartão (10/10).
+
+          "O quadrado tem que aparecer todo design." A grade cortava a arte em
+          quadrado, e a do Quem é Jesus é retrato (2:3): o terço de baixo do
+          desenho ficava de fora. Com as medidas, a grade dá às casas o formato
+          da arte. Uma capa enviada à mão não traz medidas: fica o quadrado.
+        */
+        capaLargura: publicado && !c.coverUrl ? (c.blocks[0]?.imageAsset?.width ?? null) : null,
+        capaAltura: publicado && !c.coverUrl ? (c.blocks[0]?.imageAsset?.height ?? null) : null,
         stats: publicado ? (numeros.get(c.id) ?? null) : null,
       }
     })
@@ -257,6 +267,7 @@ export class ContentService {
           select: {
             id: true,
             label: true,
+            slot: true,
             category: { select: { slug: true, name: true, position: true } },
             imageAsset: { select: { url: true, width: true, height: true } },
             asset: { select: { url: true, mimeType: true, durationMs: true } },
@@ -264,6 +275,7 @@ export class ContentService {
         },
       },
     })
+    const casas = await this.casasComoCategorias(project.id)
 
     const faixas = contents.flatMap((c) =>
       c.blocks.map((b) => ({
@@ -311,8 +323,8 @@ export class ContentService {
         // O rótulo do bloco descreve a faixa ("Explicação e música"); a
         // categoria é o que agrupa as faixas entre letras diferentes.
         rotulo: b.label,
-        categoria: b.category?.slug ?? null,
-        categoriaNome: b.category?.name ?? null,
+        categoria: this.categoriaEfectiva(b, casas)?.slug ?? null,
+        categoriaNome: this.categoriaEfectiva(b, casas)?.name ?? null,
         url: b.asset!.url,
         mimeType: b.asset!.mimeType,
         durationMs: b.asset!.durationMs,
@@ -327,14 +339,15 @@ export class ContentService {
     >()
     for (const c of contents) {
       for (const b of c.blocks) {
-        if (!b.category) continue
-        const atual = porCategoria.get(b.category.slug)
+        const categoria = this.categoriaEfectiva(b, casas)
+        if (!categoria) continue
+        const atual = porCategoria.get(categoria.slug)
         if (atual) atual.total++
         else
-          porCategoria.set(b.category.slug, {
-            slug: b.category.slug,
-            nome: b.category.name,
-            posicao: b.category.position,
+          porCategoria.set(categoria.slug, {
+            slug: categoria.slug,
+            nome: categoria.name,
+            posicao: categoria.position,
             total: 1,
           })
       }
@@ -349,6 +362,7 @@ export class ContentService {
   /** Página de um conteúdo, com os blocos que o admin montou. */
   async porSlug(projectSlug: string, contentSlug: string) {
     const project = await this.projeto(projectSlug)
+    const casas = await this.casasComoCategorias(project.id)
 
     const content = await this.prisma.content.findUnique({
       where: { projectId_slug: { projectId: project.id, slug: contentSlug } },
@@ -501,8 +515,8 @@ export class ContentService {
             text: b.text,
             url: b.url,
             linkUpgrade: b.linkUpgrade,
-            categoria: b.category?.slug ?? null,
-            categoriaNome: b.category?.name ?? null,
+            categoria: this.categoriaEfectiva(b, casas)?.slug ?? null,
+            categoriaNome: this.categoriaEfectiva(b, casas)?.name ?? null,
             asset: b.asset,
             arte: b.imageAsset?.url ?? null,
             /*
@@ -636,8 +650,78 @@ export class ContentService {
    *
    * Passa a ler daqui. Cria uma categoria no painel e ela aparece no filtro.
    */
+  /**
+   * OS QUADRADOS SERVEM DE CATEGORIAS quando o projeto não tem nenhuma (10/10).
+   *
+   * No Quem é Jesus o menu do tocador só tinha TODOS: "aqui só tem uma opção".
+   * As categorias são criadas à mão no painel, e o Jesus Alfabeto e o Minha
+   * Identidade têm-nas; um projeto novo nasce sem nenhuma. Só que os quadrados
+   * dele já dizem o que são — Explicação, Música, Repetição do versículo,
+   * Oração —, e é exactamente isso que o menu oferece nos outros projetos.
+   *
+   * Por isso, sem categorias criadas, cada casa (1 a 4) passa a ser uma, com o
+   * nome que o quadrado tem na maior parte dos dias. E a sequência, que só
+   * anda entre faixas com categoria, passa a andar de dia em dia também aqui.
+   * Assim que ele criar categorias no painel, mandam as dele, como sempre.
+   *
+   * Nula quando o projeto tem categorias suas.
+   */
+  private async casasComoCategorias(
+    projectId: string,
+  ): Promise<Map<number, { slug: string; name: string; position: number }> | null> {
+    const temCategorias = await this.prisma.blockCategory.count({ where: { projectId } })
+    if (temCategorias > 0) return null
+    const nomes = await this.prisma.contentBlock.groupBy({
+      by: ['slot', 'label'],
+      where: { papel: 'CARTAO', slot: { not: null }, label: { not: null }, content: { projectId } },
+      _count: { _all: true },
+    })
+    const porCasa = new Map<number, { slug: string; name: string; position: number; vezes: number }>()
+    for (const n of nomes) {
+      const nome = n.label?.trim()
+      if (n.slot == null || !nome) continue
+      const atual = porCasa.get(n.slot)
+      if (!atual || n._count._all > atual.vezes) {
+        porCasa.set(n.slot, { slug: `casa-${n.slot}`, name: nome, position: n.slot, vezes: n._count._all })
+      }
+    }
+    return new Map([...porCasa].map(([casa, c]) => [casa, { slug: c.slug, name: c.name, position: c.position }]))
+  }
+
+  /** A categoria de um bloco: a sua, ou a da casa quando o projeto não tem nenhuma. */
+  private categoriaEfectiva(
+    b: { slot: number | null; category: { slug: string; name: string; position?: number } | null },
+    casas: Map<number, { slug: string; name: string; position: number }> | null,
+  ): { slug: string; name: string; position: number } | null {
+    if (b.category) return { slug: b.category.slug, name: b.category.name, position: b.category.position ?? 0 }
+    if (!casas || b.slot == null) return null
+    return casas.get(b.slot) ?? null
+  }
+
   async categoriasDoProjeto(projectSlug: string) {
     const project = await this.projeto(projectSlug)
+    const casas = await this.casasComoCategorias(project.id)
+    if (casas) {
+      // Só as casas que já têm faixa no ar: "só orações" sem oração nenhuma
+      // seria prometer o que não existe (a mesma regra da playlist).
+      const comFaixa = await this.prisma.contentBlock.findMany({
+        where: {
+          papel: 'CARTAO',
+          slot: { not: null },
+          assetId: { not: null },
+          estado: 'PUBLICADO',
+          content: { projectId: project.id, status: ContentStatus.PUBLISHED },
+        },
+        distinct: ['slot'],
+        select: { slot: true },
+      })
+      const usadas = new Set(comFaixa.map((b) => b.slot))
+      const categorias = [...casas.entries()]
+        .filter(([casa]) => usadas.has(casa))
+        .sort(([a], [b]) => a - b)
+        .map(([, c]) => ({ id: c.slug, slug: c.slug, name: c.name }))
+      return { categorias }
+    }
     const categorias = await this.prisma.blockCategory.findMany({
       where: { projectId: project.id },
       orderBy: [{ position: 'asc' }, { name: 'asc' }],

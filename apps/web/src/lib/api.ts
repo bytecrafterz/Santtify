@@ -128,6 +128,9 @@ export interface ItemIndice {
   ordinal?: number | null
   /** Falso enquanto a letra ainda não tem conteúdo: aparece trancada na grade. */
   publicado: boolean
+  /** As medidas da capa, quando ela é a arte do primeiro cartão (10/10). */
+  capaLargura?: number | null
+  capaAltura?: number | null
   stats: { views: number; likes: number; comments: number; shares: number } | null
 }
 

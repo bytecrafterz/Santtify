@@ -9,6 +9,7 @@ import { useAuth } from './ProvedorDeAuth'
 import { EditorDeCartao } from './EditorDeCartao'
 import { EditorDoCartaoDeImpressao } from './EditorDoCartaoDeImpressao'
 import { QrDaLetra } from './QrDaLetra'
+import { DuplicarPara } from './DuplicarPara'
 import { Voltar } from './Voltar'
 
 /**
@@ -77,6 +78,10 @@ export function SequenciaDoAlfabeto({ projectSlug }: { projectSlug: string }) {
    */
   const [aDuplicar, definirADuplicar] = useState<string | null>(null)
   const [copiaNova, definirCopiaNova] = useState<string | null>(null)
+  /** O quadrado a duplicar para outro dia, com a casa de onde sai (10/10). */
+  const [aDuplicarPara, definirADuplicarPara] = useState<{ cartao: CartaoAdmin; casa: string } | null>(null)
+  /** "Música copiada para o Dia 2": dito por um instante, em baixo. */
+  const [feito, definirFeito] = useState<string | null>(null)
   const [aCriarImpressao, definirACriarImpressao] = useState(false)
   /**
    * Que casa está a ser criada agora: 1 a 4, ou 0 para um cartão solto.
@@ -193,6 +198,42 @@ export function SequenciaDoAlfabeto({ projectSlug }: { projectSlug: string }) {
   }, [])
 
   const vagao = 'casa' in onde ? vagoes.find((v) => v.casa === onde.casa) : undefined
+
+  /*
+    O DIÁLOGO DE DUPLICAR, o mesmo na sequência e nos quadrados (10/10).
+
+    Acabado, recarrega, diz o que fez, e acende o quadrado de destino — saber
+    que foi copiado não chega, é preciso ver ONDE (a mesma regra da cópia).
+  */
+  const dialogoDeDuplicar = aDuplicarPara ? (
+    <DuplicarPara
+      cartao={aDuplicarPara.cartao}
+      casaDeOrigem={aDuplicarPara.casa}
+      vagoes={vagoes}
+      unidade={unidade}
+      aoFechar={() => definirADuplicarPara(null)}
+      aoConcluir={async ({ vagao: destino, id, nome: nomeDoDestino }) => {
+        definirADuplicarPara(null)
+        await recarregar()
+        definirCopiaNova(id)
+        definirFeito(`${nomeDoDestino}: copiado para ${destino.rotulo}.`)
+        requestAnimationFrame(() => {
+          const alvo =
+            document.getElementById(`quadrado-${id}`) ?? document.getElementById(`ladrilho-${id}`)
+          alvo?.scrollIntoView({ block: 'center', behavior: 'smooth' })
+        })
+        setTimeout(() => {
+          definirCopiaNova(null)
+          definirFeito(null)
+        }, 4500)
+      }}
+    />
+  ) : null
+  const avisoDeFeito = feito ? (
+    <p className="dp-feito" role="status">
+      ✓ {feito}
+    </p>
+  ) : null
 
   // ── Tela 3: o cartão ──────────────────────────────────────────────
   // Da introdução: o mesmo editor, com a introdução como sítio de onde se veio.
@@ -342,6 +383,8 @@ export function SequenciaDoAlfabeto({ projectSlug }: { projectSlug: string }) {
           onde={vagao.rotulo}
           aoVoltar={voltar}
         />
+        {dialogoDeDuplicar}
+        {avisoDeFeito}
         <div className="painel-quadrados">
           {/*
             Dizia "← Alfabeto" num projeto de sete dias — o nome de outro
@@ -388,6 +431,10 @@ export function SequenciaDoAlfabeto({ projectSlug }: { projectSlug: string }) {
                 }}
                 aDuplicar={aDuplicar === c.id}
                 acabadaDeCriar={copiaNova === c.id}
+                aoDuplicarPara={() => {
+                  definirMenuAberto(null)
+                  definirADuplicarPara({ cartao: c, casa: vagao.casa })
+                }}
                 aoDuplicar={async () => {
                   /*
                     O MENU FICA ABERTO ENQUANTO DUPLICA.
@@ -742,6 +789,8 @@ export function SequenciaDoAlfabeto({ projectSlug }: { projectSlug: string }) {
         voltarPara={`/${projectSlug}/admin`}
         rotuloDeVolta="Painel"
       />
+      {dialogoDeDuplicar}
+      {avisoDeFeito}
       <div className="editor-projeto">
         <div className="ep-topo">
           <h1>{nome}</h1>
@@ -887,6 +936,18 @@ export function SequenciaDoAlfabeto({ projectSlug }: { projectSlug: string }) {
                         key={l.chave}
                         numero={k + 1}
                         cartao={l.cartao}
+                        acabadaDeCriar={Boolean(l.cartao && copiaNova === l.cartao.id)}
+                        menuAberto={Boolean(l.cartao && menuAberto === `ladrilho-${l.cartao.id}`)}
+                        aoAbrirMenu={() => {
+                          if (!l.cartao) return
+                          const chave = `ladrilho-${l.cartao.id}`
+                          definirMenuAberto(menuAberto === chave ? null : chave)
+                        }}
+                        aoDuplicarPara={() => {
+                          if (!l.cartao) return
+                          definirMenuAberto(null)
+                          definirADuplicarPara({ cartao: l.cartao, casa: v.casa })
+                        }}
                         aCriar={aCriar === `${v.casa}-${l.chave}`}
                         desactivado={!l.cartao && (!v.contentId || aCriar !== null)}
                         aoTocar={() => {
@@ -1056,18 +1117,36 @@ function LinhaDaIntroducao({
  * ver a nota que estava no antigo quadradinho: RASCUNHO quando já há alguma
  * coisa, VAZIO só quando não há nada.
  */
+/*
+  OS TRÊS PONTOS EM CADA QUADRADO (10/10).
+
+  "Cada quadrado (Explicação, Música, Versículo e Oração) deve ter os três
+  pontinhos, permitindo duplicar individualmente." Aqui só havia os três
+  pontos do dia inteiro, que levavam a outro ecrã. Agora cada quadrado com
+  conteúdo tem os seus, no canto, e o menu abre ali mesmo: editar, ou
+  duplicar para outro dia. O quadrado continua a ser um botão inteiro para
+  abrir — os pontos são um botão ao lado dele, e não dentro.
+*/
 function Ladrilho({
   numero,
   cartao,
   aCriar,
   desactivado,
   aoTocar,
+  menuAberto = false,
+  aoAbrirMenu,
+  aoDuplicarPara,
+  acabadaDeCriar = false,
 }: {
   numero: number
   cartao?: CartaoAdmin
   aCriar: boolean
   desactivado: boolean
   aoTocar: () => void
+  menuAberto?: boolean
+  aoAbrirMenu?: () => void
+  aoDuplicarPara?: () => void
+  acabadaDeCriar?: boolean
 }) {
   const noAr = cartao?.estado === 'PUBLICADO'
   const temAlgo = Boolean(
@@ -1075,6 +1154,10 @@ function Ladrilho({
   )
   const estado = noAr ? 'pronto' : temAlgo ? 'rascunho' : 'vazio'
   return (
+    <div
+      className={acabadaDeCriar ? 'ep-ladrilho-caixa acabada-de-criar' : 'ep-ladrilho-caixa'}
+      id={cartao ? `ladrilho-${cartao.id}` : undefined}
+    >
     <button
       type="button"
       className={`ep-ladrilho ${estado}`}
@@ -1100,6 +1183,28 @@ function Ladrilho({
         {estado === 'pronto' ? 'PRONTO' : estado === 'rascunho' ? 'RASCUNHO' : 'VAZIO'}
       </span>
     </button>
+      {cartao && temAlgo && aoAbrirMenu && (
+        <button
+          type="button"
+          className="ep-ladrilho-mais"
+          aria-label={`Opções do quadrado ${numero}`}
+          aria-expanded={menuAberto}
+          onClick={aoAbrirMenu}
+        >
+          ⋯
+        </button>
+      )}
+      {menuAberto && (
+        <div className="menu-quadrado ep-ladrilho-menu" role="menu">
+          <button type="button" onClick={aoTocar}>
+            ✎ Editar
+          </button>
+          <button type="button" onClick={aoDuplicarPara}>
+            ⧉ Duplicar para…
+          </button>
+        </div>
+      )}
+    </div>
   )
 }
 
@@ -1166,6 +1271,7 @@ function Quadrado({
   aDuplicar,
   acabadaDeCriar,
   aoDuplicar,
+  aoDuplicarPara,
   aoApagar,
   aoTirarDoAr,
   aoPorNoAr,
@@ -1180,6 +1286,8 @@ function Quadrado({
   aoAbrirMenu: () => void
   aoEditar: () => void
   aoDuplicar: () => Promise<void>
+  /** Duplicar para outro dia e outro quadrado (10/10). */
+  aoDuplicarPara: () => void
   /** Este cartão está a ser duplicado agora. */
   aDuplicar: boolean
   /** É a cópia acabada de criar: acende por um instante para se ver onde ficou. */
@@ -1246,8 +1354,13 @@ function Quadrado({
           <button type="button" onClick={aoEditar}>
             ✎ Editar
           </button>
+          {/* Duplicar escolhe o destino: o dia e o quadrado (10/10). A cópia vazia
+              ao lado, que era o que isto fazia, ficou como "Nova cópia aqui". */}
+          <button type="button" onClick={aoDuplicarPara}>
+            ⧉ Duplicar para…
+          </button>
           <button type="button" disabled={aDuplicar} onClick={() => void aoDuplicar()}>
-            {aDuplicar ? '⧉ A duplicar...' : '⧉ Duplicar'}
+            {aDuplicar ? '＋ A criar...' : '＋ Nova cópia aqui'}
           </button>
           {/* TIRAR DO AR e EXCLUIR são duas acções, e não uma com aviso.
               Tirar do ar é reversível e usa-se com pressa — publicou-se o que

@@ -1,11 +1,17 @@
 'use client'
 
 import Link from 'next/link'
-import { useEffect, useRef, useState } from 'react'
+import { useEffect, useMemo, useState, useSyncExternalStore } from 'react'
 import type { CategoriaDeAudio, Faixa } from '@/lib/api'
-import { rastrear } from '@/lib/track'
 import { plural } from '@/lib/numeros'
-import { botoesDaSessao, descreverNaSessao } from '@/lib/sessao-de-midia'
+import {
+  alternarFaixa,
+  assinarTocador,
+  lerTocador,
+  lerTocadorNoServidor,
+  tocarDaLista,
+  type FaixaATocar,
+} from '@/lib/tocador-da-pagina'
 
 /**
  * "Reproduzir todas": as músicas do projeto tocando em sequência, do A ao Z.
@@ -20,10 +26,14 @@ import { botoesDaSessao, descreverNaSessao } from '@/lib/sessao-de-midia'
  * segunda seria bloqueada em silêncio — o defeito clássico deste tipo de tela,
  * e que só aparece no aparelho de verdade, nunca no computador.
  *
- * A tela mora numa página só e não segue a pessoa pelo site. Áudio que
- * atravessa a navegação exige o tocador no layout e estado global; o cliente
- * pediu a experiência simples, e simples aqui também significa menos coisa
- * para quebrar no celular da mãe.
+ * ── E ESSE ELEMENTO É O DA PLATAFORMA (10/10) ──────────────────────────
+ *
+ * Isto morava numa página só e não seguia a pessoa pelo site — era o que se
+ * tinha combinado. Em 10/10 ele pediu o contrário: "a música continua tocando
+ * enquanto navego por toda a plataforma". A playlist deixou de ter `<audio>`
+ * seu e toca no do tocador global (`tocador-da-pagina.ts`), com a sua própria
+ * lista: a seguinte é a seguinte daqui, e no fim pára, como sempre parou. Sair
+ * da página já não pára a música; o `TocadorGlobal` mostra-a em baixo.
  *
  * FILTRO POR CATEGORIA (14/08): cada letra passa a ter vários áudios —
  * explicação, música, memorização, oração — e a pessoa escolhe o que quer
@@ -65,42 +75,56 @@ export function Playlist({
   compacto?: boolean
 }) {
   const [filtro, definirFiltro] = useState<string | null>(filtroInicial)
-  const audio = useRef<HTMLAudioElement>(null)
-  const [atual, definirAtual] = useState(0)
-  const [tocando, definirTocando] = useState(false)
+  /** A faixa escolhida enquanto nada desta lista toca. */
+  const [escolhida, definirEscolhida] = useState(0)
   const [erro, definirErro] = useState<string | null>(null)
-
-  /**
-   * Só toca sozinho quando a pessoa PEDIU para tocar.
-   *
-   * A intenção é registrada explicitamente, e não deduzida de "já montei uma
-   * vez". A primeira versão usava um contador de montagem e tocava som ao abrir
-   * a página: em desenvolvimento o React monta os efeitos duas vezes de
-   * propósito, a segunda passagem via o contador já marcado e mandava tocar.
-   * Ninguém tinha pedido música nenhuma.
-   *
-   * É `ref` e não estado porque pausar não pode reiniciar a faixa: se entrasse
-   * na lista de dependências, o efeito rodaria de novo e voltaria a música
-   * para o começo a cada pausa.
-   */
-  const querTocar = useRef(false)
+  const tocador = useSyncExternalStore(assinarTocador, lerTocador, lerTocadorNoServidor)
 
   // A fila em si. Trocar o filtro reinicia a fila do começo — continuar do
   // índice antigo cairia numa faixa qualquer, porque a numeração muda.
-  const fila = filtro ? faixas.filter((f) => f.categoria === filtro) : faixas
+  const fila = useMemo(
+    () => (filtro ? faixas.filter((f) => f.categoria === filtro) : faixas),
+    [faixas, filtro],
+  )
+  /** A fila no formato do tocador global, com o que o registo sempre levou. */
+  const lista = useMemo<FaixaATocar[]>(
+    () =>
+      fila.map((f) => ({
+        id: f.id,
+        url: f.url,
+        titulo: f.title,
+        rotulo: f.rotulo,
+        capa: f.coverUrl,
+        contentId: f.contentId,
+        categoria: f.categoriaNome ?? f.rotulo ?? null,
+        nomeDoBloco: f.rotulo,
+        duracaoMs: f.durationMs,
+        // O que a playlist sempre registou: de onde veio, a faixa e a categoria.
+        rastreio: { origem: 'playlist', faixa: f.rotulo, categoria: f.categoria },
+      })),
+    [fila],
+  )
+
+  /* O que está a tocar, se for desta lista, é a faixa atual; senão, a escolhida. */
+  const aTocarAqui = fila.findIndex((f) => f.id === tocador.faixaId)
+  const atual = aTocarAqui >= 0 ? aTocarAqui : Math.min(escolhida, Math.max(0, fila.length - 1))
+  const tocando = aTocarAqui >= 0 && tocador.tocando
   const faixa = fila[atual] ?? fila[0]
 
   /*
-    A FONTE ACOMPANHA A FAIXA ESCOLHIDA, SEM TOCAR. Ao abrir a página e ao
-    trocar o filtro, o elemento fica pronto com a faixa certa; tocar é sempre
-    um gesto da pessoa, ou o fim da faixa anterior.
+    COM O TELEFONE BLOQUEADO, A SEGUINTE ENTRA NO MESMO INSTANTE (08/10).
+
+    É o tocador global que o faz agora: a lista vai com a primeira faixa, e no
+    fim de cada uma a seguinte entra no mesmo elemento, no próprio `ended`.
   */
-  useEffect(() => {
-    const el = audio.current
-    if (!el || !faixa) return
-    if (el.getAttribute('src') !== faixa.url) el.src = faixa.url
-    descreverNaSessao({ titulo: faixa.title, rotulo: faixa.rotulo, capa: faixa.coverUrl })
-  }, [faixa])
+  async function carregarETocar(indice: number) {
+    if (!lista[indice]) return
+    definirEscolhida(indice)
+    const comecou = await tocarDaLista(lista, indice, { projectId })
+    // O navegador pode recusar em alguns aparelhos. Melhor dizer o que fazer do
+    // que deixar a tela parada sem explicação.
+    definirErro(comecou ? null : 'Toque em tocar para continuar ouvindo.')
+  }
 
   // Autoplay só existe porque houve um toque humano imediatamente antes — no
   // play da capa. O navegador exige esse gesto, e nós exigimos o mesmo por
@@ -108,70 +132,16 @@ export function Playlist({
   // alguém fechar a página.
   useEffect(() => {
     if (!autoIniciar) return
-    querTocar.current = true
-    const el = audio.current
-    if (!el) return
-    void el.play().then(
-      () => definirTocando(true),
-      () => definirErro('Toque em tocar para começar.'),
-    )
+    void carregarETocar(0)
     // Só na montagem: reiniciar a cada render voltaria a música ao princípio.
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
 
-  /*
-    COM O TELEFONE BLOQUEADO, A SEGUINTE ENTRA NO MESMO INSTANTE (08/10).
-
-    "Com a tela apagada, o áudio continua tocando; mas, quando termina uma
-    faixa, não passa automaticamente para a seguinte." A passagem era: o fim
-    da faixa mudava o índice, o React desenhava, e só depois um efeito
-    recarregava o elemento e pedia `play()`. Com o ecrã apagado o iPhone já
-    não deixa chegar a esse "depois" — a sessão de áudio acaba com a faixa.
-
-    Agora a faixa seguinte entra no MESMO `<audio>`, dentro do próprio fim da
-    anterior: troca-se a fonte e toca-se ali, sem esperar por desenho nenhum.
-    É o mesmo caminho para o toque numa faixa da lista e para os botões do
-    ecrã bloqueado.
-  */
-  function carregarETocar(indice: number) {
-    const el = audio.current
-    const f = fila[indice]
-    if (!el || !f) return
-    querTocar.current = true
-    if (el.getAttribute('src') !== f.url) el.src = f.url
-    else el.currentTime = 0
-    descreverNaSessao({ titulo: f.title, rotulo: f.rotulo, capa: f.coverUrl })
-    definirAtual(indice)
-    void el
-      .play()
-      .then(() => definirErro(null))
-      .catch(() => {
-        // O navegador pode recusar em alguns aparelhos. Melhor dizer o que
-        // fazer do que deixar a tela parada sem explicação.
-        querTocar.current = false
-        definirTocando(false)
-        definirErro('Toque em tocar para continuar ouvindo.')
-      })
-  }
-
-  // Os botões do ecrã bloqueado e dos auscultadores, sempre com a fila de agora.
-  useEffect(() => {
-    botoesDaSessao({
-      tocar: () => void audio.current?.play().catch(() => {}),
-      pausar: () => audio.current?.pause(),
-      seguinte: atual + 1 < fila.length ? () => carregarETocar(atual + 1) : null,
-      anterior: atual > 0 ? () => carregarETocar(atual - 1) : null,
-    })
-  })
-  useEffect(() => () => botoesDaSessao({}), [])
-
   function trocarFiltro(novo: string | null) {
     if (novo === filtro) return
-    const el = audio.current
-    if (el) el.pause()
-    querTocar.current = false
-    definirTocando(false)
-    definirAtual(0)
+    // Pausa só se o que toca é desta lista: a música de outro sítio continua.
+    if (aTocarAqui >= 0 && tocador.tocando && faixa) alternarFaixa(lista[atual], { projectId })
+    definirEscolhida(0)
     definirFiltro(novo)
   }
 
@@ -186,29 +156,16 @@ export function Playlist({
     )
   }
 
-  // Tocar na faixa que já está a tocar recomeça-a do início (ver `carregarETocar`).
+  // Tocar na faixa que já está a tocar recomeça-a do início (ver `tocarDaLista`).
   function irPara(indice: number) {
     if (indice < 0 || indice >= fila.length) return
-    carregarETocar(indice)
+    void carregarETocar(indice)
   }
 
   function alternar() {
-    const el = audio.current
-    if (!el) return
-    if (el.paused) {
-      querTocar.current = true
-      void el.play().then(
-        () => {
-          definirTocando(true)
-          definirErro(null)
-        },
-        () => definirErro('Não foi possível tocar agora.'),
-      )
-    } else {
-      querTocar.current = false
-      el.pause()
-      definirTocando(false)
-    }
+    // A tocar daqui: pausar ou continuar. Senão, começa pela escolhida.
+    if (aTocarAqui >= 0) alternarFaixa(lista[atual], { projectId })
+    else void carregarETocar(atual)
   }
 
   return (
@@ -262,57 +219,6 @@ export function Playlist({
             {atual + 1} de {fila.length}
           </small>
         </div>
-
-        <audio
-          ref={audio}
-          preload="metadata"
-          onPlay={() => {
-            definirTocando(true)
-            // contentId, e não faixa.id: desde que a fila passou a ser por
-            // faixa, `id` é o do BLOCO. Registrar o bloco aqui apontaria o
-            // evento para um conteúdo que não existe, e "conteúdos mais
-            // acessados" ficaria em branco sem nenhum erro aparecer na tela.
-            void rastrear({
-              projectId,
-              contentId: faixa.contentId,
-              type: 'MEDIA_PLAY',
-              // blockId vai junto: sem ele, tocar pela playlist não contava para as
-              // visualizações daquela faixa, e a playlist é onde mais se ouve.
-              // O número por faixa ficava a mentir sem nada acusar erro.
-              props: {
-                origem: 'playlist',
-                blockId: faixa.id,
-                faixa: faixa.rotulo,
-                categoria: faixa.categoria,
-              },
-            })
-          }}
-          onPause={() => definirTocando(false)}
-          onEnded={() => {
-            void rastrear({
-              projectId,
-              contentId: faixa.contentId,
-              type: 'MEDIA_COMPLETE',
-              // blockId vai junto: sem ele, tocar pela playlist não contava para as
-              // visualizações daquela faixa, e a playlist é onde mais se ouve.
-              // O número por faixa ficava a mentir sem nada acusar erro.
-              props: {
-                origem: 'playlist',
-                blockId: faixa.id,
-                faixa: faixa.rotulo,
-                categoria: faixa.categoria,
-              },
-            })
-            // Fim da fila: para, e não volta ao início. Recomeçar sozinho do A
-            // depois do Z deixaria a música tocando sem ninguém pedir.
-            if (atual + 1 < fila.length) carregarETocar(atual + 1)
-            else {
-              querTocar.current = false
-              definirTocando(false)
-            }
-          }}
-          onError={() => definirErro('Não foi possível carregar esta música.')}
-        />
 
         {erro && <p className="erro">{erro}</p>}
 

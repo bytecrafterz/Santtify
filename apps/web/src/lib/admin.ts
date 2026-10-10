@@ -444,6 +444,16 @@ export const admin = {
   duplicarCartao: (id: string) => chamar<CartaoAdmin>(`/cards/${id}/duplicate`, { method: 'POST' }),
 
   /**
+   * Duplicar UM quadrado para outro dia (10/10): para uma casa (1 a 4), para um
+   * cartão que já lá está, ou — sem nenhum dos dois — como publicação nova.
+   */
+  copiarCartaoPara: (id: string, para: { contentId: string; casa?: number; destinoId?: string }) =>
+    chamar<{ id: string; substituido: boolean }>(`/cards/${id}/copy-to`, {
+      method: 'POST',
+      body: JSON.stringify(para),
+    }),
+
+  /**
    * Um cartão novo e vazio, sem precisar de um original para duplicar.
    *
    * Com `casa` (1 a 4) nasce naquela casa — é assim que uma publicação de um
