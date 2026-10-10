@@ -4,6 +4,7 @@ import { useState } from 'react'
 import { admin, type CartaoAdmin } from '@/lib/admin'
 import { Voltar } from './Voltar'
 import { QrDaLetra } from './QrDaLetra'
+import { BotaoDeEnviar } from './EnviarSemSair'
 import { artigoDefinido } from '@/lib/unidade'
 
 /**
@@ -232,16 +233,31 @@ export function EditorDoCartaoDeImpressao({
           <h3>A FOLHA A4</h3>
           <p className="nota-qr">Uma folha, só o cartão, sem nada do site.</p>
           <div className="linha-acoes">
-            <a className="botao-acao" href={pdf} target="_blank" rel="noopener noreferrer">
-              🖨 IMPRIMIR
-            </a>
-            <a
+            {/* No iPhone os dois abriam o PDF no visor do sistema, sem saída (10/10).
+                Lá Imprimir vive na folha de partilha. Ver `EnviarSemSair`. */}
+            <BotaoDeEnviar
               className="botao-acao"
-              href={pdfParaBaixar}
-              download={`cartao-${unidade.toLowerCase()}-${letra.toLowerCase()}.pdf`}
+              url={pdf}
+              nome={`cartao-${unidade.toLowerCase()}-${letra.toLowerCase()}.pdf`}
+              tipo="application/pdf"
+              titulo="Imprimir a folha A4"
+              previa={folha}
+              dica="Escolha Imprimir na lista que vai abrir."
+              abrirNoComputador
+            >
+              🖨 IMPRIMIR
+            </BotaoDeEnviar>
+            <BotaoDeEnviar
+              className="botao-acao"
+              url={pdfParaBaixar}
+              nome={`cartao-${unidade.toLowerCase()}-${letra.toLowerCase()}.pdf`}
+              tipo="application/pdf"
+              titulo="A folha A4 em PDF"
+              previa={folha}
+              dica="Escolha Guardar em Arquivos, ou o WhatsApp do designer."
             >
               ⬇ BAIXAR PDF
-            </a>
+            </BotaoDeEnviar>
           </div>
         </section>
       )}

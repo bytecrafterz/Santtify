@@ -2,6 +2,7 @@
 
 import { admin } from '@/lib/admin'
 import { artigoDefinido, capitalizar } from '@/lib/unidade'
+import { BotaoDeEnviar } from './EnviarSemSair'
 
 /**
  * O QR de uma casa, com as duas formas de o levar dali para fora.
@@ -60,7 +61,7 @@ export function QrDaLetra({
   }
 
   const svg = admin.urlQrSvg(projectSlug, contentSlug)
-  const png = admin.urlQrPng(projectSlug, contentSlug)
+  const png = admin.urlQrPng(projectSlug, contentSlug, true)
   /* O nome do ficheiro segue a unidade: "qr-dia-1.png" e não "qr-letra-1.png". */
   const ficheiro = `qr-${unidade.toLowerCase()}-${letra.toLowerCase()}`
 
@@ -72,13 +73,29 @@ export function QrDaLetra({
       <p className="nota-qr">
         {capitalizar('este')} é o código que leva {aQue} {nome}.
       </p>
+      {/* Links para o ficheiro prendiam-no no visor do iPhone (10/10). Ver `EnviarSemSair`. */}
       <div className="linha-acoes centrada">
-        <a className="botao-acao" href={png} download={`${ficheiro}.png`}>
+        <BotaoDeEnviar
+          className="botao-acao"
+          url={png}
+          nome={`${ficheiro}.png`}
+          tipo="image/png"
+          titulo="QR Code para o WhatsApp"
+          previa={svg}
+        >
           ⬇ PNG (WhatsApp)
-        </a>
-        <a className="botao-acao" href={svg} download={`${ficheiro}.svg`}>
+        </BotaoDeEnviar>
+        <BotaoDeEnviar
+          className="botao-acao"
+          url={svg}
+          nome={`${ficheiro}.svg`}
+          tipo="image/svg+xml"
+          titulo="QR Code para a gráfica"
+          previa={svg}
+          dica="O SVG é para a gráfica: amplia sem perder qualidade. Para o WhatsApp use o PNG."
+        >
           ⬇ SVG (gráfica)
-        </a>
+        </BotaoDeEnviar>
       </div>
     </section>
   )

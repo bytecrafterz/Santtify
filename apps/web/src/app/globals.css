@@ -19068,6 +19068,76 @@ a.pi-cartao:hover .pi-cartao-seta {
   box-shadow: var(--sombra-alta);
 }
 
+/* ── Enviar um ficheiro sem sair da página (10/10) ─────────────────────
+   A folha que abre por cima, no telemóvel, em vez do visor do sistema que
+   não tinha saída. Ver `EnviarSemSair`. */
+.fe-caixa {
+  text-align: center;
+}
+
+.fe-previa {
+  display: block;
+  width: min(220px, 70vw);
+  max-height: 46dvh;
+  margin: 12px auto 0;
+  padding: 10px;
+  border: 1px solid var(--cor-borda);
+  border-radius: 12px;
+  background: #fff;
+  object-fit: contain;
+}
+
+.fe-icone {
+  display: grid;
+  place-items: center;
+  width: 96px;
+  height: 120px;
+  margin: 12px auto 0;
+  border: 1px solid var(--cor-borda);
+  border-radius: 10px;
+  background: var(--cor-fundo);
+  font-weight: 800;
+  letter-spacing: 0.06em;
+  color: var(--cor-texto-suave);
+}
+
+.fe-nome {
+  margin: 8px 0 0;
+  font-size: 0.8rem;
+  color: var(--cor-texto-suave);
+  overflow-wrap: anywhere;
+}
+
+.fe-accoes {
+  display: grid;
+  gap: 8px;
+  margin-top: 16px;
+}
+
+.fe-accoes .botao-acao {
+  width: 100%;
+  min-height: 48px;
+  justify-content: center;
+  font-family: inherit;
+}
+
+.fe-accoes .botao-acao:disabled {
+  opacity: 0.6;
+  cursor: default;
+}
+
+.fe-accoes .secundario {
+  min-height: 48px;
+  padding: 0 18px;
+  border: 1px solid var(--cor-borda);
+  border-radius: 999px;
+  background: var(--cor-superficie);
+  color: var(--cor-texto);
+  font: inherit;
+  font-weight: 700;
+  cursor: pointer;
+}
+
 /* ── O tocador da plataforma inteira (10/10) ──────────────────────────── */
 .tocador-global {
   position: fixed;

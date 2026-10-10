@@ -2,6 +2,7 @@
 
 import Link from 'next/link'
 import { Voltar } from './Voltar'
+import { BotaoDeEnviar } from './EnviarSemSair'
 import { useRouter } from 'next/navigation'
 import { useEffect, useRef, useState } from 'react'
 import {
@@ -143,9 +144,15 @@ export function EditorDeConteudo({
             <br />
             <code>{content.qrUrl}</code>
             <br />
-            <a href={admin.urlQrSvg(projectSlug, content.slug)} download={`qr-${content.slug}.svg`}>
+            <BotaoDeEnviar
+              url={admin.urlQrSvg(projectSlug, content.slug)}
+              nome={`qr-${content.slug}.svg`}
+              tipo="image/svg+xml"
+              titulo="QR Code para a gráfica"
+              previa={admin.urlQrSvg(projectSlug, content.slug)}
+            >
               Baixar para impressão (SVG)
-            </a>
+            </BotaoDeEnviar>
           </div>
         </div>
       )}

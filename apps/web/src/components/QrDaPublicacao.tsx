@@ -1,6 +1,7 @@
 'use client'
 
 import { admin } from '@/lib/admin'
+import { BotaoDeEnviar } from './EnviarSemSair'
 
 /**
  * O QR DE UMA PUBLICAÇÃO, com as duas formas de o levar ao designer (09/10).
@@ -26,13 +27,16 @@ export function QrDaPublicacao({
   publicado: boolean
 }) {
   const nome = titulo?.trim() || 'publicacao'
+  const base = paraNomeDeFicheiro(nome) || 'publicacao'
+  const ficheiro = `qr-${base}`
+  const svg = admin.urlQrDaPublicacao(projectSlug, blocoId, 'svg')
   return (
     <section className="bloco-qr qr-da-publicacao">
       <h3>QR CODE DESTA PUBLICAÇÃO</h3>
       {/* eslint-disable-next-line @next/next/no-img-element */}
       <img
         className="imagem-qr"
-        src={admin.urlQrDaPublicacao(projectSlug, blocoId, 'svg')}
+        src={svg}
         alt={`QR Code de ${nome}`}
         width={160}
         height={160}
@@ -41,14 +45,47 @@ export function QrDaPublicacao({
         Quem escanear abre direto esta publicação.
         {!publicado && ' Ela só aparece depois de publicada.'}
       </p>
+      {/* Na aplicação do iPhone estes eram links para o ficheiro, e prendiam-no
+          no visor do sistema sem saída (10/10). Ver `EnviarSemSair`. */}
       <div className="linha-acoes centrada">
-        <a className="botao-acao" href={admin.urlQrDaPublicacao(projectSlug, blocoId, 'png', nome)} download>
+        <BotaoDeEnviar
+          className="botao-acao"
+          url={admin.urlQrDaPublicacao(projectSlug, blocoId, 'png', base)}
+          nome={`${ficheiro}.png`}
+          tipo="image/png"
+          titulo="QR Code para o WhatsApp"
+          previa={svg}
+        >
           ⬇ PNG (WhatsApp)
-        </a>
-        <a className="botao-acao" href={admin.urlQrDaPublicacao(projectSlug, blocoId, 'svg', nome)} download>
+        </BotaoDeEnviar>
+        <BotaoDeEnviar
+          className="botao-acao"
+          url={admin.urlQrDaPublicacao(projectSlug, blocoId, 'svg', base)}
+          nome={`${ficheiro}.svg`}
+          tipo="image/svg+xml"
+          titulo="QR Code para a gráfica"
+          previa={svg}
+          dica="O SVG é para a gráfica: amplia sem perder qualidade. Para o WhatsApp use o PNG."
+        >
           ⬇ SVG (gráfica)
-        </a>
+        </BotaoDeEnviar>
       </div>
     </section>
   )
+}
+
+/**
+ * "🎧 Conheça o Jesus Alfabeto Saudável" → "conheca-o-jesus-alfabeto-saudavel".
+ * O nome ia com o emoji e os acentos, e há programas de gráfica e computadores
+ * que tropeçam neles; o designer só precisa de saber qual é qual.
+ */
+function paraNomeDeFicheiro(texto: string): string {
+  return texto
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '')
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, '-')
+    .replace(/^-+|-+$/g, '')
+    .slice(0, 60)
+    .replace(/-+$/, '')
 }
