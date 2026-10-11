@@ -43,6 +43,11 @@ const CASAS = ['Explicação', 'Música', 'Repetição do versículo', 'Oração
 /** Uma cor por casa, para se reconhecer o quadrado sem ler. */
 const CORES = ['#2563eb', '#7c3aed', '#ea580c', '#7c3aed']
 
+/** Um cartão com alguma coisa dentro: o que vale a pena duplicar. */
+function temConteudo(c: CartaoAdmin) {
+  return Boolean(c.imagem || c.audio || c.titulo?.trim() || c.estado === 'PUBLICADO')
+}
+
 export function SequenciaDoAlfabeto({ projectSlug }: { projectSlug: string }) {
   const [vagoes, definirVagoes] = useState<VagaoAdmin[]>([])
   /** "Letra", "Dia", "Atributo" — vem do projeto. Ver `Project.unidade`. */
@@ -63,23 +68,16 @@ export function SequenciaDoAlfabeto({ projectSlug }: { projectSlug: string }) {
   const [carregando, definirCarregando] = useState(true)
   const [erro, definirErro] = useState<string | null>(null)
   const [menuAberto, definirMenuAberto] = useState<string | null>(null)
-  /**
-   * Duplicar demorava sem dizer nada.
-   *
-   * Ele escreveu em 31/08 que a função "simplesmente não está funcionando".
-   * Fui ver e ela funciona: o servidor responde 201 e a cópia fica criada. O
-   * que não havia era sinal nenhum. Carrega-se, o menu fecha, e durante alguns
-   * segundos o ecrã fica igual enquanto a cópia é criada e a lista recarrega.
-   * Com oito cartões na letra, a cópia nasce no meio da lista e passa
-   * despercebida.
-   *
-   * É a mesma queixa que ele já me tinha feito do botão PUBLICAR em 29/08, e eu
-   * corrigi só naquele botão em vez de perceber que era um padrão meu.
-   */
-  const [aDuplicar, definirADuplicar] = useState<string | null>(null)
+  /** O cartão acabado de copiar: acende por um instante para se ver onde ficou. */
   const [copiaNova, definirCopiaNova] = useState<string | null>(null)
-  /** O quadrado a duplicar para outro dia, com a casa de onde sai (10/10). */
-  const [aDuplicarPara, definirADuplicarPara] = useState<{ cartao: CartaoAdmin; casa: string } | null>(null)
+  /**
+   * O que duplicar para outro dia, com a casa de onde sai (10/10). Um cartão,
+   * pelos três pontos dele, ou os da letra, pelo "Duplicar letra A" (11/10).
+   */
+  const [aDuplicarPara, definirADuplicarPara] = useState<{
+    cartoes: CartaoAdmin[]
+    casa: string
+  } | null>(null)
   /** "Música copiada para o Dia 2": dito por um instante, em baixo. */
   const [feito, definirFeito] = useState<string | null>(null)
   const [aCriarImpressao, definirACriarImpressao] = useState(false)
@@ -207,7 +205,7 @@ export function SequenciaDoAlfabeto({ projectSlug }: { projectSlug: string }) {
   */
   const dialogoDeDuplicar = aDuplicarPara ? (
     <DuplicarPara
-      cartao={aDuplicarPara.cartao}
+      cartoes={aDuplicarPara.cartoes}
       casaDeOrigem={aDuplicarPara.casa}
       vagoes={vagoes}
       unidade={unidade}
@@ -234,6 +232,43 @@ export function SequenciaDoAlfabeto({ projectSlug }: { projectSlug: string }) {
       ✓ {feito}
     </p>
   ) : null
+
+  /* O que os três pontos de um quadrado fazem, o mesmo na sequência e nos quadrados. */
+  async function apagar(c: CartaoAdmin) {
+    definirMenuAberto(null)
+    const nome = c.titulo || c.nomeInterno || 'este cartão'
+    const aviso =
+      c.slot === null
+        ? `Remover a cópia "${nome}"? Ela desaparece.`
+        : `Esvaziar "${nome}"? O quadrado fica, só o conteúdo sai.`
+    if (!confirm(aviso)) return
+    await admin.apagarCartaoDeVez(c.id)
+    await recarregar()
+  }
+  async function tirarDoAr(c: CartaoAdmin) {
+    definirMenuAberto(null)
+    await admin.tirarCartaoDoAr(c.id)
+    await recarregar()
+  }
+  async function porNoAr(c: CartaoAdmin) {
+    definirMenuAberto(null)
+    try {
+      await admin.porCartaoNoAr(c.id)
+    } catch (e) {
+      alert(e instanceof Error ? e.message : 'Não foi possível pôr no ar.')
+    }
+    await recarregar()
+  }
+  /** Só o quarto quadrado cria o cartão de impressão, e só uma vez. */
+  function criarImpressaoDe(v: VagaoAdmin, c: CartaoAdmin) {
+    if (c.slot !== 4 || !v.contentId || v.cartoes.some((x) => x.papel === 'IMPRESSAO')) return undefined
+    const contentId = v.contentId
+    return async () => {
+      definirMenuAberto(null)
+      await admin.criarCartaoDeImpressao(contentId)
+      await recarregar()
+    }
+  }
 
   // ── Tela 3: o cartão ──────────────────────────────────────────────
   // Da introdução: o mesmo editor, com a introdução como sítio de onde se veio.
@@ -429,84 +464,17 @@ export function SequenciaDoAlfabeto({ projectSlug }: { projectSlug: string }) {
                   definirMenuAberto(null)
                   ir({ tela: 'cartao', casa: vagao.casa, cartaoId: c.id })
                 }}
-                aDuplicar={aDuplicar === c.id}
                 acabadaDeCriar={copiaNova === c.id}
                 aoDuplicarPara={() => {
                   definirMenuAberto(null)
-                  definirADuplicarPara({ cartao: c, casa: vagao.casa })
+                  definirADuplicarPara({ cartoes: [c], casa: vagao.casa })
                 }}
-                aoDuplicar={async () => {
-                  /*
-                    O MENU FICA ABERTO ENQUANTO DUPLICA.
-
-                    Fechava-o na primeira linha, e com ele desaparecia o botão
-                    que devia dizer "A duplicar...". Ou seja: pus o aviso e
-                    tirei-o do ecrã no mesmo gesto. Medido — o rótulo nunca
-                    chegou a ser visto uma única vez.
-
-                    Fecha no fim, quando já há uma cópia acesa para onde olhar.
-                  */
-                  definirADuplicar(c.id)
-                  definirErro(null)
-                  try {
-                    const copia = await admin.duplicarCartao(c.id)
-                    await recarregar()
-                    definirCopiaNova(copia.id)
-                    // Levar a pessoa até à cópia e acendê-la por um instante:
-                    // saber que foi criada não chega, é preciso ver ONDE.
-                    requestAnimationFrame(() => {
-                      document
-                        .getElementById(`quadrado-${copia.id}`)
-                        ?.scrollIntoView({ block: 'center', behavior: 'smooth' })
-                    })
-                    definirMenuAberto(null)
-                    setTimeout(() => definirCopiaNova(null), 4000)
-                  } catch (e) {
-                    definirMenuAberto(null)
-                    definirErro(
-                      e instanceof Error ? e.message : 'Não foi possível duplicar este cartão.',
-                    )
-                  } finally {
-                    definirADuplicar(null)
-                  }
-                }}
-                aoApagar={async () => {
-                  definirMenuAberto(null)
-                  const nome = c.titulo || c.nomeInterno || 'este cartão'
-                  const aviso =
-                    c.slot === null
-                      ? `Remover a cópia "${nome}"? Ela desaparece.`
-                      : `Esvaziar "${nome}"? O quadrado fica, só o conteúdo sai.`
-                  if (!confirm(aviso)) return
-                  await admin.apagarCartaoDeVez(c.id)
-                  await recarregar()
-                }}
-                /* Só o quarto quadrado cria o cartão de impressão, e só uma vez. */
-                aoTirarDoAr={async () => {
-                  definirMenuAberto(null)
-                  await admin.tirarCartaoDoAr(c.id)
-                  await recarregar()
-                }}
-                aoPorNoAr={async () => {
-                  definirMenuAberto(null)
-                  try {
-                    await admin.porCartaoNoAr(c.id)
-                  } catch (e) {
-                    alert(e instanceof Error ? e.message : 'Não foi possível pôr no ar.')
-                  }
-                  await recarregar()
-                }}
+                aoApagar={() => apagar(c)}
+                aoTirarDoAr={() => tirarDoAr(c)}
+                aoPorNoAr={() => porNoAr(c)}
                 aoSubir={i > 0 ? () => mover(i, -1) : undefined}
                 aoDescer={i < lista.length - 1 ? () => mover(i, 1) : undefined}
-                aoCriarImpressao={
-                  c.slot === 4 && !impressao && vagao.contentId
-                    ? async () => {
-                        definirMenuAberto(null)
-                        await admin.criarCartaoDeImpressao(vagao.contentId!)
-                        await recarregar()
-                      }
-                    : undefined
-                }
+                aoCriarImpressao={criarImpressaoDe(vagao, c)}
               />
             ))}
           </div>
@@ -879,6 +847,11 @@ export function SequenciaDoAlfabeto({ projectSlug }: { projectSlug: string }) {
                   ? cartoes.map((c) => ({ chave: c.id, cartao: c }))
                   : [{ chave: 'novo' }]
             const noAr = cartoes.filter((c) => c.estado === 'PUBLICADO').length
+            /* O que o "Duplicar letra A" oferece: os quadrados com alguma coisa dentro. */
+            const paraDuplicar = ladrilhos.flatMap((l) =>
+              l.cartao && temConteudo(l.cartao) ? [l.cartao] : [],
+            )
+            const usaCasasAqui = cartoes.some((c) => c.slot !== null)
             const resumo =
               v.letra !== null
                 ? `${v.prontos} de 4 preenchidos${
@@ -903,22 +876,26 @@ export function SequenciaDoAlfabeto({ projectSlug }: { projectSlug: string }) {
                       <strong>{v.rotulo.toUpperCase()}</strong>
                       <small>{resumo}</small>
                     </span>
+                    {/*
+                      "DUPLICAR LETRA A" DUPLICA UM QUADRADO (11/10).
+
+                      Acrescentava um cartão vazio no fim da letra, e ele via
+                      a "duplicação" cair na lista geral sem quadrado nenhum:
+                      "quero duplicar uma Música da Letra A diretamente para o
+                      quadrado Música da Letra B, sem alterar os outros
+                      conteúdos". Agora pergunta qual quadrado, para que letra
+                      e para que quadrado — o mesmo diálogo dos três pontos.
+                    */}
                     {v.contentId && (
                       <button
                         type="button"
                         className="ep-duplicar"
                         style={{ '--cor': cor } as CSSProperties}
-                        disabled={aCriar !== null}
-                        onClick={() =>
-                          void criarEAbrir(`duplicar-${v.casa}`, v.casa, () =>
-                            admin.acrescentarCartao(v.contentId!),
-                          )
-                        }
+                        disabled={paraDuplicar.length === 0}
+                        onClick={() => definirADuplicarPara({ cartoes: paraDuplicar, casa: v.casa })}
                       >
                         <IconeDuplicar />
-                        {aCriar === `duplicar-${v.casa}`
-                          ? 'A criar...'
-                          : `Duplicar ${unidade.toLowerCase()} ${v.casa}`}
+                        {`Duplicar ${unidade.toLowerCase()} ${v.casa}`}
                       </button>
                     )}
                     <button
@@ -930,38 +907,92 @@ export function SequenciaDoAlfabeto({ projectSlug }: { projectSlug: string }) {
                       ⋯
                     </button>
                   </header>
-                  <div className="ep-cartoes">
-                    {ladrilhos.map((l, k) => (
-                      <Ladrilho
-                        key={l.chave}
-                        numero={k + 1}
-                        cartao={l.cartao}
-                        acabadaDeCriar={Boolean(l.cartao && copiaNova === l.cartao.id)}
-                        menuAberto={Boolean(l.cartao && menuAberto === `ladrilho-${l.cartao.id}`)}
-                        aoAbrirMenu={() => {
-                          if (!l.cartao) return
-                          const chave = `ladrilho-${l.cartao.id}`
-                          definirMenuAberto(menuAberto === chave ? null : chave)
-                        }}
-                        aoDuplicarPara={() => {
-                          if (!l.cartao) return
-                          definirMenuAberto(null)
-                          definirADuplicarPara({ cartao: l.cartao, casa: v.casa })
-                        }}
-                        aCriar={aCriar === `${v.casa}-${l.chave}`}
-                        desactivado={!l.cartao && (!v.contentId || aCriar !== null)}
-                        aoTocar={() => {
-                          if (l.cartao) {
-                            entrar(v.casa, { tela: 'cartao', casa: v.casa, cartaoId: l.cartao.id })
-                            return
-                          }
-                          if (!v.contentId) return
-                          void criarEAbrir(`${v.casa}-${l.chave}`, v.casa, () =>
-                            admin.acrescentarCartao(v.contentId!, l.casa),
+                  {/*
+                    OS QUADRADOS, DOIS POR LINHA, COM O NOME DE CADA UM (11/10).
+
+                    Eram ladrilhos de quatro por linha só com um número, e as
+                    publicações a mais vinham a seguir como 5, 6, 7, 8. "Têm
+                    que ser máximo 2 por um. Do lado do outro está muito
+                    acumulado, faça exatamente como este segundo" — e o
+                    segundo era o ecrã original dos quadrados: o número na
+                    cor da casa, a arte, EXPLICAÇÃO / MÚSICA / REPETIÇÃO DO
+                    VERSÍCULO / ORAÇÃO, o estado, e os três pontos de cada um.
+                  */}
+                  <div className="grade-quadrados ep-quadrados">
+                    {ladrilhos.map((l, k) => {
+                      const numero = k + 1
+                      const cor = CORES[((l.cartao?.slot ?? l.casa ?? numero) - 1) % CORES.length]
+                      const c = l.cartao
+                      if (!c) {
+                        return (
+                          <QuadradoVazio
+                            key={l.chave}
+                            numero={numero}
+                            cor={cor}
+                            nome={l.casa ? CASAS[l.casa - 1] : 'Primeira publicação'}
+                            aCriar={aCriar === `${v.casa}-${l.chave}`}
+                            desactivado={!v.contentId || aCriar !== null}
+                            aoTocar={() => {
+                              if (!v.contentId) return
+                              void criarEAbrir(`${v.casa}-${l.chave}`, v.casa, () =>
+                                admin.acrescentarCartao(v.contentId!, l.casa),
+                              )
+                            }}
+                          />
+                        )
+                      }
+                      const chaveDoMenu = `ladrilho-${c.id}`
+                      return (
+                        <Quadrado
+                          key={l.chave}
+                          cartao={c}
+                          numero={numero}
+                          cor={cor}
+                          setas={false}
+                          marcarCopia={usaCasasAqui}
+                          menuAberto={menuAberto === chaveDoMenu}
+                          aoAbrirMenu={() => definirMenuAberto(menuAberto === chaveDoMenu ? null : chaveDoMenu)}
+                          aoEditar={() => {
+                            definirMenuAberto(null)
+                            entrar(v.casa, { tela: 'cartao', casa: v.casa, cartaoId: c.id })
+                          }}
+                          acabadaDeCriar={copiaNova === c.id}
+                          aoDuplicarPara={() => {
+                            definirMenuAberto(null)
+                            definirADuplicarPara({ cartoes: [c], casa: v.casa })
+                          }}
+                          aoApagar={() => apagar(c)}
+                          aoTirarDoAr={() => tirarDoAr(c)}
+                          aoPorNoAr={() => porNoAr(c)}
+                          aoCriarImpressao={criarImpressaoDe(v, c)}
+                        />
+                      )
+                    })}
+                    {/* Nos dias, acrescentar uma publicação continua à mão — era o
+                        que o botão do topo fazia, e ele usa-o (Quem é Jesus, 09/10).
+                        Agora diz o que faz. As letras ficam nas quatro casas. */}
+                    {v.letra === null && v.contentId && cartoes.length > 0 && (
+                      <button
+                        type="button"
+                        className="quadrado-impressao criar"
+                        disabled={aCriar !== null}
+                        onClick={() =>
+                          void criarEAbrir(`acrescentar-${v.casa}`, v.casa, () =>
+                            admin.acrescentarCartao(v.contentId!),
                           )
-                        }}
-                      />
-                    ))}
+                        }
+                      >
+                        <span className="icone" aria-hidden>
+                          +
+                        </span>
+                        <span className="nome">ACRESCENTAR PUBLICAÇÃO</span>
+                        <span className="estado">
+                          {aCriar === `acrescentar-${v.casa}`
+                            ? 'A criar...'
+                            : `no fim d${artigoDefinido(unidade)} ${v.rotulo}`}
+                        </span>
+                      </button>
+                    )}
                   </div>
                 </section>
               </li>
@@ -1127,83 +1158,37 @@ function LinhaDaIntroducao({
   duplicar para outro dia. O quadrado continua a ser um botão inteiro para
   abrir — os pontos são um botão ao lado dele, e não dentro.
 */
-function Ladrilho({
+/**
+ * A casa que ainda não tem cartão, no mesmo desenho dos outros quadrados: o
+ * número, o nome da casa, e um toque para a criar.
+ */
+function QuadradoVazio({
   numero,
-  cartao,
+  nome,
+  cor,
   aCriar,
   desactivado,
   aoTocar,
-  menuAberto = false,
-  aoAbrirMenu,
-  aoDuplicarPara,
-  acabadaDeCriar = false,
 }: {
   numero: number
-  cartao?: CartaoAdmin
+  nome: string
+  cor: string
   aCriar: boolean
   desactivado: boolean
   aoTocar: () => void
-  menuAberto?: boolean
-  aoAbrirMenu?: () => void
-  aoDuplicarPara?: () => void
-  acabadaDeCriar?: boolean
 }) {
-  const noAr = cartao?.estado === 'PUBLICADO'
-  const temAlgo = Boolean(
-    cartao && (cartao.imagem || cartao.audio || cartao.titulo?.trim() || noAr),
-  )
-  const estado = noAr ? 'pronto' : temAlgo ? 'rascunho' : 'vazio'
   return (
-    <div
-      className={acabadaDeCriar ? 'ep-ladrilho-caixa acabada-de-criar' : 'ep-ladrilho-caixa'}
-      id={cartao ? `ladrilho-${cartao.id}` : undefined}
-    >
-    <button
-      type="button"
-      className={`ep-ladrilho ${estado}`}
-      onClick={aoTocar}
-      disabled={desactivado}
-      aria-label={`Cartão ${numero}: ${estado === 'pronto' ? 'pronto' : estado === 'rascunho' ? 'rascunho' : 'vazio'}`}
-    >
-      {cartao?.imagem && (
-        // eslint-disable-next-line @next/next/no-img-element
-        <img className="ep-ladrilho-foto" src={cartao.imagem} alt="" />
-      )}
-      <span className="ep-num">{numero}</span>
-      <span className={cartao?.audio ? 'ep-som tem' : 'ep-som'} aria-hidden>
-        <IconeSom />
+    <div className="quadrado vazio">
+      <span className="numero" style={{ background: cor }}>
+        {numero}
       </span>
-      {!cartao?.imagem && (
-        <span className="ep-vazio" aria-hidden>
-          <IconeImagem />
-          <em>{aCriar ? 'A criar...' : 'Toque para adicionar'}</em>
+      <button type="button" className="corpo-quadrado" onClick={aoTocar} disabled={desactivado}>
+        <span className="pilha" aria-hidden style={{ color: cor }}>
+          +
         </span>
-      )}
-      <span className="ep-estado">
-        {estado === 'pronto' ? 'PRONTO' : estado === 'rascunho' ? 'RASCUNHO' : 'VAZIO'}
-      </span>
-    </button>
-      {cartao && temAlgo && aoAbrirMenu && (
-        <button
-          type="button"
-          className="ep-ladrilho-mais"
-          aria-label={`Opções do quadrado ${numero}`}
-          aria-expanded={menuAberto}
-          onClick={aoAbrirMenu}
-        >
-          ⋯
-        </button>
-      )}
-      {menuAberto && (
-        <div className="menu-quadrado ep-ladrilho-menu" role="menu">
-          <button type="button" onClick={aoTocar}>
-            ✎ Editar
-          </button>
-          <button type="button" onClick={aoDuplicarPara}>
-            ⧉ Duplicar para…
-          </button>
-        </div>
-      )}
+        <span className="nome-quadrado">{nome.toUpperCase()}</span>
+        <span className="estado-quadrado">{aCriar ? 'A CRIAR...' : 'VAZIO · TOQUE PARA CRIAR'}</span>
+      </button>
     </div>
   )
 }
@@ -1268,9 +1253,7 @@ function Quadrado({
   menuAberto,
   aoAbrirMenu,
   aoEditar,
-  aDuplicar,
   acabadaDeCriar,
-  aoDuplicar,
   aoDuplicarPara,
   aoApagar,
   aoTirarDoAr,
@@ -1278,6 +1261,8 @@ function Quadrado({
   aoSubir,
   aoDescer,
   aoCriarImpressao,
+  setas = true,
+  marcarCopia = true,
 }: {
   cartao: CartaoAdmin
   numero: number
@@ -1285,11 +1270,8 @@ function Quadrado({
   menuAberto: boolean
   aoAbrirMenu: () => void
   aoEditar: () => void
-  aoDuplicar: () => Promise<void>
   /** Duplicar para outro dia e outro quadrado (10/10). */
   aoDuplicarPara: () => void
-  /** Este cartão está a ser duplicado agora. */
-  aDuplicar: boolean
   /** É a cópia acabada de criar: acende por um instante para se ver onde ficou. */
   acabadaDeCriar: boolean
   aoApagar: () => Promise<void>
@@ -1298,6 +1280,10 @@ function Quadrado({
   aoSubir?: () => void
   aoDescer?: () => void
   aoCriarImpressao?: () => Promise<void>
+  /** As setas de mudar de lugar. Na sequência não há: a ordem muda-se nos quadrados da letra. */
+  setas?: boolean
+  /** Dizer "(cópia)" num cartão sem casa. Num dia feito só de publicações soltas, não é cópia de nada. */
+  marcarCopia?: boolean
 }) {
   return (
     <div
@@ -1325,7 +1311,7 @@ function Quadrado({
         )}
         <span className="nome-quadrado">
           {(cartao.nomeInterno ?? 'Cartão').toUpperCase()}
-          {cartao.slot === null && <em> (cópia)</em>}
+          {cartao.slot === null && marcarCopia && <em> (cópia)</em>}
         </span>
         <span className="estado-quadrado">
           {cartao.estado === 'PUBLICADO' ? 'PRONTO' : 'RASCUNHO'}
@@ -1335,32 +1321,32 @@ function Quadrado({
       {/* Setas, e não arrastar. O painel é usado no telemóvel, e arrastar uma
           grelha é justamente o gesto que briga com a rolagem da página — a
           pessoa tenta descer e leva um cartão com ela. */}
-      <div className="setas-quadrado">
-        <button type="button" aria-label="Mover para trás" onClick={aoSubir} disabled={!aoSubir}>
-          ‹
-        </button>
-        <button
-          type="button"
-          aria-label="Mover para a frente"
-          onClick={aoDescer}
-          disabled={!aoDescer}
-        >
-          ›
-        </button>
-      </div>
+      {setas && (
+        <div className="setas-quadrado">
+          <button type="button" aria-label="Mover para trás" onClick={aoSubir} disabled={!aoSubir}>
+            ‹
+          </button>
+          <button
+            type="button"
+            aria-label="Mover para a frente"
+            onClick={aoDescer}
+            disabled={!aoDescer}
+          >
+            ›
+          </button>
+        </div>
+      )}
 
       {menuAberto && (
         <div className="menu-quadrado" role="menu">
           <button type="button" onClick={aoEditar}>
             ✎ Editar
           </button>
-          {/* Duplicar escolhe o destino: o dia e o quadrado (10/10). A cópia vazia
-              ao lado, que era o que isto fazia, ficou como "Nova cópia aqui". */}
+          {/* Duplicar escolhe o destino: o dia e o quadrado (10/10). A "Nova cópia
+              aqui" saiu em 11/10: punha uma cópia sem casa no fim da lista, que
+              é justamente o que ele pediu que deixasse de acontecer. */}
           <button type="button" onClick={aoDuplicarPara}>
             ⧉ Duplicar para…
-          </button>
-          <button type="button" disabled={aDuplicar} onClick={() => void aoDuplicar()}>
-            {aDuplicar ? '＋ A criar...' : '＋ Nova cópia aqui'}
           </button>
           {/* TIRAR DO AR e EXCLUIR são duas acções, e não uma com aviso.
               Tirar do ar é reversível e usa-se com pressa — publicou-se o que

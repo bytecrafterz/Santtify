@@ -17061,9 +17061,50 @@ a.pi-cartao:hover .pi-cartao-seta {
   padding: 16px 32px 0;
 }
 
-/* O Voltar do painel (09/10), encostado à esquerda do topo. */
-.adm-voltar {
+/* O Voltar do painel (09/10) e a Página pública (11/10), encostados à esquerda do topo. */
+.adm-saidas {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  align-items: center;
+  min-width: 0;
   margin-right: auto;
+}
+
+.adm-saidas .adm-voltar {
+  margin-bottom: 0;
+}
+
+/* A porta para o site (11/10), em todos os ecrãs do painel. */
+.adm-publica {
+  display: inline-flex;
+  gap: 6px;
+  align-items: center;
+  min-height: 38px;
+  padding: 0 14px;
+  border: 1px solid var(--cor-borda);
+  border-radius: 999px;
+  color: var(--cor-texto);
+  font-size: 0.85rem;
+  font-weight: 700;
+  text-decoration: none;
+  white-space: nowrap;
+}
+
+.adm-publica:hover {
+  border-color: var(--cor-primaria);
+  color: var(--cor-primaria);
+}
+
+/*
+  Num telemóvel estreito, com o Voltar e a Página pública os dois à vista, o
+  nome do administrador ao lado da foto já não cabia e a Página pública ia
+  por baixo do sino. Fica a foto; o nome volta onde há espaço.
+*/
+@media (max-width: 480px) {
+  .adm:not(:has(.cabecalho-fixo)) .adm-topo:has(.adm-voltar) .adm-quem > span {
+    display: none;
+  }
 }
 
 /*
@@ -18915,6 +18956,21 @@ a.pi-cartao:hover .pi-cartao-seta {
   outline-offset: 2px;
 }
 
+/* Os quadrados na sequência do projeto (11/10): os mesmos dos quadrados da letra. */
+.ep-quadrados {
+  margin-top: 14px;
+}
+
+.quadrado.vazio {
+  border-style: dashed;
+  background: transparent;
+}
+
+.quadrado.vazio .corpo-quadrado:disabled {
+  cursor: default;
+  opacity: 0.6;
+}
+
 .dp-fundo {
   position: fixed;
   inset: 0;
@@ -18982,6 +19038,9 @@ a.pi-cartao:hover .pi-cartao-seta {
   color: var(--cor-texto);
   font: inherit;
   font-weight: 600;
+  width: 100%;
+  min-width: 0;
+  text-overflow: ellipsis;
 }
 
 .dp-opcoes {
@@ -19037,6 +19096,10 @@ a.pi-cartao:hover .pi-cartao-seta {
   justify-content: flex-end;
   gap: 8px;
   margin-top: 16px;
+}
+
+.dp-accoes .botao-acao {
+  font-family: inherit;
 }
 
 .dp-accoes .secundario {

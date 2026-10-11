@@ -318,11 +318,26 @@ export function CascaDoAdmin({ children }: { children: ReactNode }) {
 
       <div className="adm-corpo">
         <header className="adm-topo">
-          {(comPassoAtras || destinoAcima) && (
-            <span className="adm-voltar">
-              <Voltar aoClicar={voltar}>Voltar</Voltar>
-            </span>
-          )}
+          <span className="adm-saidas">
+            {(comPassoAtras || destinoAcima) && (
+              <span className="adm-voltar">
+                <Voltar aoClicar={voltar}>Voltar</Voltar>
+              </span>
+            )}
+            {/*
+              A PORTA PARA O SITE, EM TODOS OS ECRÃS DO PAINEL (11/10).
+
+              "Não têm opção de voltar para página pública." Havia um "Ver no
+              site" só na página de um projeto; no resto do painel, e na
+              aplicação instalada, que não tem barra de endereço, a única saída
+              era fechar. Dentro de um projeto leva à página dele; fora, à
+              entrada do site.
+            */}
+            <Link className="adm-publica" href={projetoDoEndereco ? `/${projetoDoEndereco}` : '/'}>
+              <IconeDoPainel nome="site" tamanho={16} />
+              <span>Página pública</span>
+            </Link>
+          </span>
           <Avisos projeto={projeto} />
           <span className="adm-quem">
             {usuario.avatarUrl ? (

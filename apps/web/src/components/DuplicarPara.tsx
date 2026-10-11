@@ -26,6 +26,22 @@ function nomeDoCartao(c: CartaoAdmin) {
   return c.nomeInterno?.trim() || c.titulo?.trim() || 'Publicação'
 }
 
+/** "Repetição do versículo" e "repeticao do versiculo" são a mesma casa. */
+function semAcentos(s: string) {
+  return s.normalize('NFD').replace(/[̀-ͯ]/g, '').toLowerCase().trim()
+}
+
+/**
+ * A casa a que um cartão pertence: a dele, ou, numa cópia antiga sem casa, a
+ * do nome que traz ("Música" é a casa 2). Sem nenhuma das duas, nenhuma.
+ */
+function casaDoCartao(c: CartaoAdmin): number | null {
+  if (c.slot !== null) return c.slot
+  const nome = semAcentos(c.nomeInterno ?? '')
+  const i = CASAS.findIndex((n) => semAcentos(n) === nome)
+  return i >= 0 ? i + 1 : null
+}
+
 /**
  * DUPLICAR UM QUADRADO PARA OUTRO DIA (10/10).
  *
@@ -42,16 +58,33 @@ function nomeDoCartao(c: CartaoAdmin) {
  *
  * Substituir o que já lá está pede uma palavra antes, aqui mesmo: o aviso
  * aparece por baixo da escolha, e não num `confirm` depois de carregar.
+ *
+ * ── SÓ OS QUADRADOS, NUNCA A LISTA GERAL (11/10) ──────────────────────
+ *
+ * "O problema é que a duplicação está colocando os conteúdos na lista geral,
+ * sem identificar o quadrado de destino." Onde o projeto tem as quatro casas,
+ * o destino é uma delas e mais nada: saíram daqui as publicações soltas e a
+ * "publicação nova no fim", que era para onde ia uma cópia antiga sem casa.
+ * Essa cópia vai agora para a casa do nome que traz — uma "Música" sem casa
+ * vai para a Música.
+ *
+ * Aberto pelo "Duplicar letra A" do topo da letra, pergunta primeiro QUAL
+ * quadrado: o botão acrescentava um cartão vazio no fim da lista, e era
+ * isso que ele via aparecer sem nome.
  */
 export function DuplicarPara({
-  cartao,
+  cartoes,
+  inicial,
   casaDeOrigem,
   vagoes,
   unidade,
   aoConcluir,
   aoFechar,
 }: {
-  cartao: CartaoAdmin
+  /** O que se pode duplicar: um cartão (dos três pontos dele) ou os da letra (do topo dela). */
+  cartoes: CartaoAdmin[]
+  /** O que vem escolhido. Sem ele, o primeiro. */
+  inicial?: string
   /** A casa (o dia, a letra) de onde o cartão sai. */
   casaDeOrigem: string
   vagoes: VagaoAdmin[]
@@ -59,9 +92,15 @@ export function DuplicarPara({
   aoConcluir: (r: { vagao: VagaoAdmin; id: string; nome: string }) => void
   aoFechar: () => void
 }) {
+  const [origemId, definirOrigemId] = useState(inicial ?? cartoes[0]?.id ?? '')
+  const cartao = cartoes.find((c) => c.id === origemId) ?? cartoes[0]
   const comConteudo = vagoes.filter((v) => v.contentId)
-  /** O projeto usa as quatro casas se alguma publicação as usa. */
-  const usaCasas = vagoes.some((v) => v.cartoes.some((c) => c.slot !== null))
+  /**
+   * O projeto usa as quatro casas se é de letras — uma letra tem sempre as
+   * quatro, mesmo antes de alguma estar criada — ou se alguma publicação as usa.
+   */
+  const usaCasas =
+    vagoes.some((v) => v.letra !== null) || vagoes.some((v) => v.cartoes.some((c) => c.slot !== null))
   const origem = comConteudo.findIndex((v) => v.casa === casaDeOrigem)
   // Começa no dia seguinte: duplicar para o mesmo dia é o caso raro.
   const [diaEscolhido, definirDiaEscolhido] = useState(
@@ -83,6 +122,7 @@ export function DuplicarPara({
           proprio: ali?.id === cartao.id,
         })
       }
+      return lista
     }
     for (const c of vagao.cartoes.filter((x) => x.papel === 'CARTAO' && x.slot === null)) {
       lista.push({
@@ -98,11 +138,10 @@ export function DuplicarPara({
   }, [vagao, usaCasas, cartao.id, unidade])
 
   const preferido = () => {
-    if (cartao.slot !== null) {
-      const mesma = destinos.find((d) => d.casa === cartao.slot && !d.proprio)
-      if (mesma) return mesma.chave
-    }
-    return destinos.find((d) => d.chave === 'nova')?.chave ?? ''
+    const casa = casaDoCartao(cartao)
+    const mesma = destinos.find((d) => d.casa === casa && !d.proprio)
+    if (mesma) return mesma.chave
+    return (destinos.find((d) => d.chave === 'nova') ?? destinos.find((d) => !d.proprio))?.chave ?? ''
   }
   const [escolha, definirEscolha] = useState<string | null>(null)
   const chave = escolha && destinos.some((d) => d.chave === escolha) ? escolha : preferido()
@@ -112,6 +151,8 @@ export function DuplicarPara({
   const [erro, definirErro] = useState<string | null>(null)
 
   const nomeDaOrigem = nomeDoCartao(cartao)
+  /** Com a escolha do quadrado à frente, os passos seguintes contam a partir de 2. */
+  const passo = (n: number) => (cartoes.length > 1 ? n + 1 : n)
   const rotuloDaOrigem = vagoes.find((v) => v.casa === casaDeOrigem)?.rotulo ?? ''
 
   async function duplicar() {
@@ -145,10 +186,31 @@ export function DuplicarPara({
           Duplicar {nomeDaOrigem}
           {rotuloDaOrigem && <small> d{unidade === 'Letra' ? 'a' : 'o'} {rotuloDaOrigem}</small>}
         </h2>
-        {cartao.titulo?.trim() && <p className="dp-origem">“{cartao.titulo.trim()}”</p>}
+        {cartoes.length > 1 ? (
+          <label className="dp-campo">
+            <span>1. Qual quadrado duplicar?</span>
+            <select
+              value={cartao.id}
+              onChange={(e) => {
+                definirOrigemId(e.target.value)
+                definirEscolha(null)
+              }}
+              disabled={ocupado}
+            >
+              {cartoes.map((c) => (
+                <option key={c.id} value={c.id}>
+                  {nomeDoCartao(c)}
+                  {c.titulo?.trim() && c.titulo.trim() !== nomeDoCartao(c) ? ` — ${c.titulo.trim()}` : ''}
+                </option>
+              ))}
+            </select>
+          </label>
+        ) : (
+          cartao.titulo?.trim() && <p className="dp-origem">“{cartao.titulo.trim()}”</p>
+        )}
 
         <label className="dp-campo">
-          <span>1. Para qual {unidade.toLowerCase()}?</span>
+          <span>{passo(1)}. Para qual {unidade.toLowerCase()}?</span>
           <select
             value={diaEscolhido}
             onChange={(e) => {
@@ -167,7 +229,7 @@ export function DuplicarPara({
         </label>
 
         <fieldset className="dp-campo" disabled={ocupado}>
-          <legend>2. Para qual quadrado?</legend>
+          <legend>{passo(2)}. Para qual quadrado?</legend>
           <div className="dp-opcoes">
             {destinos.map((d) => (
               <label key={d.chave} className={d.chave === chave ? 'dp-opcao escolhida' : 'dp-opcao'}>
