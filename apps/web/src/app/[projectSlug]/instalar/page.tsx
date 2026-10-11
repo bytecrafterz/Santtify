@@ -5,6 +5,7 @@ import { api } from '@/lib/api'
 import { FormularioDeAuth } from '@/components/FormularioDeAuth'
 import { FolhaDeInstalacao } from '@/components/FolhaDeInstalacao'
 import { DecoracaoPastel } from '@/components/DecoracaoPastel'
+import { Voltar } from '@/components/Voltar'
 
 // O `<title>` é o nome da aplicação: o iPhone usa-o ao instalar.
 export const metadata = { title: 'Santtify' }
@@ -32,6 +33,11 @@ export default async function PaginaDeInstalacao({
       <DecoracaoPastel />
 
       <div className="boas-vindas-conteudo">
+        {/* A primeira tela da aplicação não tem "acima": o Voltar só aparece
+            a quem chegou aqui vindo de outra página (11/10). */}
+        <Voltar href={`/${projectSlug}`} soComAnterior>
+          Voltar
+        </Voltar>
         {/* eslint-disable-next-line @next/next/no-img-element */}
         <img className="marca-boas-vindas" src="/logo-santtify.png" alt="Santtify" />
 

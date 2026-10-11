@@ -7,6 +7,7 @@ import { AvisosDeEntrada } from '@/components/AvisosDeEntrada'
 import { CabecalhoDePerfil } from '@/components/CabecalhoDePerfil'
 import { CarrosselDeProjetos } from '@/components/CarrosselDeProjetos'
 import { BarraInferior } from '@/components/BarraInferior'
+import { Voltar } from '@/components/Voltar'
 
 /**
  * A PÁGINA INICIAL: o perfil e os projetos, e mais nada.
@@ -50,6 +51,10 @@ export default async function PaginaInicial() {
 
   return (
     <main className="envoltorio com-barra">
+      {/* O início não tem "acima"; o Voltar aparece a quem chegou de outra página (11/10). */}
+      <Voltar href="/" soComAnterior>
+        Voltar
+      </Voltar>
       <VisitaDaEntrada projectId={project.id} anfitriaoId={anfitriao?.id ?? null} />
 
       <CabecalhoDePerfil

@@ -1,4 +1,13 @@
+'use client'
+
 import Link from 'next/link'
+import { useSyncExternalStore } from 'react'
+import {
+  assinarPaginas,
+  haPaginaAnterior,
+  haPaginaAnteriorNoServidor,
+  voltarAPaginaAnterior,
+} from '@/lib/paginas-visitadas'
 
 /**
  * O BOTÃO DE VOLTAR, UM SÓ EM TODA A PLATAFORMA.
@@ -30,6 +39,18 @@ import Link from 'next/link'
  * O ALVO TEM 44px DE ALTURA mesmo quando o desenho parece menor. É a medida
  * que a Apple e a Google dão como mínimo para um dedo, e este botão é tocado
  * por mães com uma criança ao colo.
+ *
+ * ── E O LINK VAI À PÁGINA ANTERIOR (11/10) ────────────────────────────
+ *
+ * "Return to Previous Page on every page." Com `href`, o Voltar leva à página
+ * de onde se veio, se se veio de alguma nesta visita (ver
+ * `paginas-visitadas.ts`), e diz só "Voltar" — "Início" ou o nome do projeto
+ * seriam mentira quando a anterior é outra. O `href` fica para quem abriu a
+ * página direta, por um link ou um QR Code: aí não há anterior, e vai-se ao
+ * sítio de sempre, com o nome de sempre.
+ *
+ * `fixo` mantém o destino de sempre; `soComAnterior` só mostra o botão quando
+ * há para onde voltar — nas páginas de entrada, que não têm "acima".
  */
 function Seta() {
   return (
@@ -56,6 +77,8 @@ export function Voltar({
   children,
   rotulo,
   emLinha = false,
+  fixo = false,
+  soComAnterior = false,
 }: {
   /** Para onde vai, quando muda de página. */
   href?: string
@@ -67,8 +90,17 @@ export function Voltar({
   rotulo?: string
   /** Dentro de um ecrã, e não no topo: acrescenta a folga de baixo. */
   emLinha?: boolean
+  /** Vai sempre ao `href`, mesmo havendo página anterior. */
+  fixo?: boolean
+  /** Só aparece quando há página anterior para onde voltar. */
+  soComAnterior?: boolean
 }) {
-  const soSeta = !children
+  const haAnterior = useSyncExternalStore(assinarPaginas, haPaginaAnterior, haPaginaAnteriorNoServidor)
+  const vaiAtras = !aoClicar && !fixo && haAnterior
+  if (soComAnterior && !haAnterior) return null
+  const texto = vaiAtras && children ? 'Voltar' : children
+
+  const soSeta = !texto
   const classe = [
     'voltar-elegante',
     soSeta ? 'so-seta' : '',
@@ -80,10 +112,10 @@ export function Voltar({
   const dentro = (
     <>
       <Seta />
-      {children && <span className="rotulo">{children}</span>}
+      {texto && <span className="rotulo">{texto}</span>}
     </>
   )
-  const etiqueta = rotulo ?? (soSeta ? 'Voltar' : undefined)
+  const etiqueta = vaiAtras && soSeta ? 'Voltar à página anterior' : (rotulo ?? (soSeta ? 'Voltar' : undefined))
 
   if (aoClicar) {
     return (
@@ -94,7 +126,15 @@ export function Voltar({
   }
 
   return (
-    <Link href={href ?? '/'} className={classe} aria-label={etiqueta}>
+    <Link
+      href={href ?? '/'}
+      className={classe}
+      aria-label={etiqueta}
+      onClick={(ev) => {
+        if (fixo) return
+        if (voltarAPaginaAnterior()) ev.preventDefault()
+      }}
+    >
       {dentro}
     </Link>
   )

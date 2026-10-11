@@ -4,6 +4,7 @@ import Link from 'next/link'
 import { useEffect, useRef, useState } from 'react'
 import { karaoke, PrecisaDeConta, type KaraokeParaTocar } from '@/lib/karaoke'
 import { rastrear } from '@/lib/track'
+import { voltarAPaginaAnterior } from '@/lib/paginas-visitadas'
 import { PalcoDoKaraoke } from './PalcoDoKaraoke'
 import { fonteDoKaraoke } from '@/app/fontes/karaoke'
 
@@ -157,7 +158,15 @@ export function KaraokeDaFaixa({ projectSlug, blocoId }: { projectSlug: string; 
       />
 
       <header className="karaoke-topo">
-        <Link className="karaoke-sair" href={voltar} aria-label="Sair do karaokê">
+        <Link
+          className="karaoke-sair"
+          href={voltar}
+          aria-label="Sair do karaokê"
+          onClick={(ev) => {
+            // À página de onde se abriu o karaokê; aberto direto, à letra.
+            if (voltarAPaginaAnterior()) ev.preventDefault()
+          }}
+        >
           ✕
         </Link>
         <div>

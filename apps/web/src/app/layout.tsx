@@ -6,6 +6,7 @@ import { PainelPersistente } from '@/components/painel/PainelPersistente'
 import { RelatorDeErros } from '@/components/RelatorDeErros'
 import { UmSomDeCadaVez } from '@/components/UmSomDeCadaVez'
 import { TocadorGlobal } from '@/components/TocadorGlobal'
+import { RegistoDasPaginas } from '@/components/RegistoDasPaginas'
 
 export const metadata: Metadata = {
   title: 'Santtify',
@@ -52,6 +53,8 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
   return (
     <html lang="pt">
       <body>
+        {/* As páginas por onde se passa, para o Voltar de cada uma ir à anterior (11/10). */}
+        <RegistoDasPaginas />
         <UmSomDeCadaVez />
         <ProvedorDeAuth>
           <PainelPersistente>{children}</PainelPersistente>

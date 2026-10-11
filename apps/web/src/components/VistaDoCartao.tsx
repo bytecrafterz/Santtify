@@ -3,6 +3,7 @@
 import { useEffect, useRef, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { api } from '@/lib/api'
+import { voltarAPaginaAnterior } from '@/lib/paginas-visitadas'
 
 /**
  * A folha A4 na tela, e as quatro coisas que se fazem com ela.
@@ -243,8 +244,7 @@ export function VistaDoCartao({
           onClick={() => {
             // `back()` respeita de onde a pessoa veio. Quem chegou por um
             // endereço directo não tem para onde voltar, e por isso há destino.
-            if (window.history.length > 1) router.back()
-            else router.push(`/${projectSlug}`)
+            if (!voltarAPaginaAnterior()) router.push(`/${projectSlug}`)
           }}
         >
           <span aria-hidden>←</span>

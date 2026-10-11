@@ -3,6 +3,7 @@ import { Suspense } from 'react'
 import { notFound } from 'next/navigation'
 import { api } from '@/lib/api'
 import { ReporSenha } from '@/components/ReporSenha'
+import { Voltar } from '@/components/Voltar'
 
 // O `<title>` é o nome da aplicação: o iPhone usa-o ao instalar.
 export const metadata = { title: 'Santtify' }
@@ -21,6 +22,7 @@ export default async function PaginaDeReposicao({
 
   return (
     <main className="envoltorio estreito">
+      <Voltar href={`/${projectSlug}/entrar`}>Entrar</Voltar>
       <h1>Escolher senha nova</h1>
       {t ? (
         <Suspense fallback={null}>

@@ -2,6 +2,7 @@ import Link from 'next/link'
 import type { Metadata } from 'next'
 import { abreviarKM } from '@pv/cartoes'
 import { projetosDoCarrossel } from '@/lib/carrossel'
+import { Voltar } from '@/components/Voltar'
 
 export const metadata: Metadata = {
   title: 'Projetos · Santtify',
@@ -20,6 +21,7 @@ export default async function PaginaDeProjetos() {
 
   return (
     <main className="envoltorio">
+      <Voltar href="/">Início</Voltar>
       <h1>Projetos</h1>
       <p className="subtitulo">Toque num projeto para entrar.</p>
 
