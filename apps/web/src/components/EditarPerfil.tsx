@@ -5,6 +5,7 @@ import { Voltar } from './Voltar'
 import { auth, ErroDeApi, type PerfilResposta } from '@/lib/auth'
 import { useAuth } from './ProvedorDeAuth'
 import { AjustarFoto } from './AjustarFoto'
+import { PAGINAS_MUDARAM } from '@/lib/paginas-visitadas'
 
 /**
  * Edição do próprio perfil: fotografia, nome, descrição e responsável.
@@ -160,7 +161,10 @@ export function EditarPerfil({
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ projectSlug, userId: novo.user.id }),
-        }).catch(() => {}),
+        })
+          // E o telemóvel larga as cópias que tem na memória (12/10).
+          .then(() => window.dispatchEvent(new Event(PAGINAS_MUDARAM)))
+          .catch(() => {}),
         new Promise((r) => setTimeout(r, 2500)),
       ])
 

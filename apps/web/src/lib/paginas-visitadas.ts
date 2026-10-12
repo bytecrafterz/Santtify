@@ -22,6 +22,12 @@ const CHAVE = 'pv_paginas_visitadas'
 const MAXIMO = 60
 
 /**
+ * O painel mudou o site: a aplicação larga as páginas que guardou na memória
+ * do telemóvel. Lançado em `admin.ts`, ouvido em `RegistoDasPaginas`.
+ */
+export const PAGINAS_MUDARAM = 'pv:paginas-mudaram'
+
+/**
  * Páginas de passagem: entrar, criar conta, recuperar a senha, a de boas-vindas
  * da aplicação. Voltar a uma delas depois de entrar é convidar a entrar quem já
  * entrou — o defeito que o `VoltarParaOInicio` foi escrito para evitar. Saltam-se,

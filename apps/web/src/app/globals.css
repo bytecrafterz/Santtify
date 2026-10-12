@@ -150,6 +150,20 @@ body {
 }
 
 /*
+  No escuro a pastilha é um véu quase transparente (ver mais abaixo), o que
+  está certo parada no topo e errado colada: ao descer, passava por cima das
+  capas e ficava só a palavra "Voltar" a flutuar na arte — ele fotografou-a
+  assim no início, em 12/10. Colada, tem fundo.
+*/
+@media (prefers-color-scheme: dark) {
+  .envoltorio > .voltar-elegante:not(.voltar-em-linha) {
+    background: rgba(22, 24, 31, 0.94);
+    -webkit-backdrop-filter: blur(8px);
+    backdrop-filter: blur(8px);
+  }
+}
+
+/*
   `:not(.voltar-elegante)` porque esta regra é mais específica do que a do botão
   de voltar (0,1,1 contra 0,1,0) e ganhava-lhe a cor e o tamanho: a pastilha
   desenhava-se certa e o texto lá dentro saía cinzento e a 15px, desirmanado da

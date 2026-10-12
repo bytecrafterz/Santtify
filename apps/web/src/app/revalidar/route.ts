@@ -92,7 +92,19 @@ export async function POST(pedido: Request) {
   */
   revalidatePath('/[projectSlug]/pessoa/[userId]', 'page')
 
+  /*
+    E O INÍCIO E A LISTA DOS PROJETOS (12/10).
+
+    Os dois mostram a capa, o nome e o estado de TODOS os projetos. Ele trocou
+    a capa do Quem é Jesus às 06:09:08 e, 26 segundos depois, o início ainda
+    mostrava a antiga: esta rota esquecia as páginas do projeto e não as que o
+    listam. É a quinta vez que a lista fica curta pelo mesmo padrão — o ecrã do
+    lado.
+  */
+  revalidatePath('/')
+  revalidatePath('/projetos')
+
   return NextResponse.json({
-    esquecidos: [...caminhos, 'as páginas das letras', 'os perfis'],
+    esquecidos: [...caminhos, 'as páginas das letras', 'os perfis', 'o início', 'os projetos'],
   })
 }

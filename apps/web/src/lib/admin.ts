@@ -1,6 +1,7 @@
 'use client'
 
 import { tokens, ErroDeApi, renovarSessao } from '@/lib/auth'
+import { PAGINAS_MUDARAM } from '@/lib/paginas-visitadas'
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL ?? 'http://localhost:3333'
 
@@ -168,7 +169,10 @@ function esquecerPaginasGuardadas(metodo?: string) {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({ projectSlug: projeto }),
-  }).catch(() => {})
+  })
+    // E o telemóvel larga as cópias que tem na memória. Ver `RegistoDasPaginas`.
+    .then(() => window.dispatchEvent(new Event(PAGINAS_MUDARAM)))
+    .catch(() => {})
 }
 
 export interface DenunciaAdmin {

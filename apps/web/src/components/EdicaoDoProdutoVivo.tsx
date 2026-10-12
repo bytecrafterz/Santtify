@@ -2,6 +2,7 @@
 
 import { useCallback, useEffect, useRef, useState } from 'react'
 import { admin, type CartaoAdmin } from '@/lib/admin'
+import { PAGINAS_MUDARAM } from '@/lib/paginas-visitadas'
 
 /**
  * A publicação do Produto Vivo, inteira, num ecrã só.
@@ -102,7 +103,9 @@ export function EdicaoDoProdutoVivo({ projectSlug }: { projectSlug: string }) {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ projectSlug }),
-      }).catch(() => {})
+      })
+        .then(() => window.dispatchEvent(new Event(PAGINAS_MUDARAM)))
+        .catch(() => {})
     } catch (e) {
       definirErro(e instanceof Error ? e.message : 'Não foi possível concluir.')
     } finally {
