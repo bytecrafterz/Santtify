@@ -7,6 +7,8 @@ export interface Projeto {
   slug: string
   name: string
   description: string | null
+  /** A frase curta do projeto ("Aprenda com fé, saúde, música e diversão"). */
+  tagline?: string | null
   branding: Record<string, unknown>
   /** Link externo de compra, quando o dono já tiver cadastrado. */
   checkoutUrl?: string | null

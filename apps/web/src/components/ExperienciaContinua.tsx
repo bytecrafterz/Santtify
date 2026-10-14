@@ -72,6 +72,7 @@ export function ExperienciaContinua({
   blocos = 26,
   primeiroNumero = 1,
   unidade = 'Letra',
+  subtitulo = null,
 }: {
   projectSlug: string
   projectId: string
@@ -98,6 +99,16 @@ export function ExperienciaContinua({
    * "Escolha um bloco" e "Bloco 1". Ver `Project.unidade`.
    */
   unidade?: string
+  /**
+   * A frase por baixo de "Escolha um dia" (14/10).
+   *
+   * Estava escrita aqui, "Aprenda com fé, saúde, música e diversão", e por
+   * isso todos os projetos diziam o lema do Jesus Alfabeto. Ele criou o
+   * Laboratório de Invenções com a descrição dele, publicou, e a página
+   * pública mostrava a frase do outro projeto: "eu postei, não apareceu".
+   * Vem do projeto: a frase curta, ou a descrição. Sem nenhuma, não há linha.
+   */
+  subtitulo?: string | null
 }) {
   const porLetras = sequencia === 'LETRAS'
   /** As casas desta grade, na ordem em que aparecem. */
@@ -402,7 +413,7 @@ export function ExperienciaContinua({
       </div>
 
       <h2>{`Escolha ${artigoIndefinido(unidade)} ${unidade.toLowerCase()}`}</h2>
-      <p className="subtitulo">Aprenda com fé, saúde, música e diversão</p>
+      {subtitulo && <p className="subtitulo">{subtitulo}</p>}
 
       {/*
         QUANTAS CASAS CABEM NUMA LINHA DEPENDE DE QUANTAS CASAS HÁ.

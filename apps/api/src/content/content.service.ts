@@ -33,6 +33,8 @@ export class ContentService {
         slug: true,
         name: true,
         description: true,
+        // A frase curta do carrossel, que é o subtítulo da página (14/10).
+        tagline: true,
         branding: true,
         status: true,
         checkoutUrl: true,

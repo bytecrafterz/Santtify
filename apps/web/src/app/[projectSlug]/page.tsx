@@ -276,6 +276,7 @@ export default async function IndiceDoProjeto({
           blocos={project.blocos ?? 26}
           primeiroNumero={project.primeiroNumero ?? 1}
           unidade={project.unidade ?? 'Letra'}
+          subtitulo={project.tagline?.trim() || project.description?.trim() || null}
         />
       )}
 

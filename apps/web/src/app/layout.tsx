@@ -52,6 +52,33 @@ export const viewport: Viewport = {
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
     <html lang="pt">
+      <head>
+        {/*
+          A APLICAÇÃO DO IPHONE ABRE SEMPRE NO INÍCIO (14/10).
+
+          "Quando eu entro no aplicativo ele sempre vai na página da cenoura.
+          Eu quero que ele vá na página principal." O registo do servidor
+          mostra-o: cada vez que a aplicação dele abre, o primeiro pedido é
+          /jesus-alfabeto-saudavel?letra=c&pub=… — a publicação da cenoura.
+
+          O manifesto diz `start_url: "/"`, mas o iPhone guarda como início a
+          página onde a pessoa estava quando tocou em "Adicionar ao Ecrã
+          Principal". Ele instalou-a a partir do QR de um cartão, e é o que
+          acontece a qualquer família que instale depois de ler um QR.
+
+          Aqui: só no iPhone (`navigator.standalone`, que só o iPhone tem), só
+          quando a aplicação acaba de ser aberta pelo ícone (a sessão começa
+          vazia), e só se não abriu no início — troca para o início antes de
+          desenhar a página errada. Recarregar a meio do uso não volta ao
+          início, porque a sessão já tem a marca. No Android não se toca: lá a
+          aplicação abre links de QR por si, e esses devem abrir onde apontam.
+        */}
+        <script
+          dangerouslySetInnerHTML={{
+            __html: `(function(){try{if(navigator.standalone!==true)return;if(sessionStorage.getItem('pv_aplicacao_aberta'))return;sessionStorage.setItem('pv_aplicacao_aberta','1');if(location.pathname+location.search!=='/')location.replace('/')}catch(e){}})()`,
+          }}
+        />
+      </head>
       <body>
         {/* As páginas por onde se passa, para o Voltar de cada uma ir à anterior (11/10). */}
         <RegistoDasPaginas />
