@@ -79,7 +79,8 @@ export function PublicarNoPerfil({
   function escolher(arquivo: File | undefined) {
     definirErro(null)
     if (!arquivo) return
-    if (!arquivo.type.startsWith('image/')) {
+    // Sem tipo pode ser foto (sem extensão, do app Arquivos): o servidor reconhece (16/10).
+    if (arquivo.type && !arquivo.type.startsWith('image/')) {
       definirErro('Por enquanto dá para enviar foto. Vídeo ainda não.')
       return
     }

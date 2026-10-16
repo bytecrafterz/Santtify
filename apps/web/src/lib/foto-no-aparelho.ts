@@ -231,7 +231,9 @@ function medirNitidez(imagem: HTMLImageElement, largura: number, altura: number,
  */
 export async function abrirFoto(ficheiro: File, modelos: ModeloDeCartao[]): Promise<FotoNoAparelho> {
   if (modelos.length === 0) throw new FotoRecusada('Os cartões ainda estão carregando. Tente de novo em instantes.')
-  if (!/^image\//i.test(ficheiro.type) && !ehHeic(ficheiro)) {
+  // Sem tipo (um arquivo sem extensão, vindo do app Arquivos) pode ser foto:
+  // quem decide é abri-la, logo a seguir (16/10).
+  if (ficheiro.type && !/^image\//i.test(ficheiro.type) && !ehHeic(ficheiro)) {
     throw new FotoRecusada('Este arquivo não é uma foto. Escolha uma foto da galeria ou da câmera.')
   }
 

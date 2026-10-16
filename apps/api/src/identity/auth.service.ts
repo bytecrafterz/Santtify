@@ -159,6 +159,8 @@ export class AuthService {
       foto nem nome que o levou a escrever este requisito.
     */
     if (!foto) throw new BadRequestException('Escolha uma fotografia de perfil para continuar.')
+    // Uma foto sem extensão, vinda do app Arquivos, também é foto (16/10).
+    foto = this.storage.identificar(foto)
     if (this.storage.tipoDe(foto.mimetype) !== MediaKind.IMAGE) {
       throw new BadRequestException('A foto do perfil precisa ser uma imagem.')
     }

@@ -7,6 +7,7 @@ import { RelatorDeErros } from '@/components/RelatorDeErros'
 import { UmSomDeCadaVez } from '@/components/UmSomDeCadaVez'
 import { TocadorGlobal } from '@/components/TocadorGlobal'
 import { RegistoDasPaginas } from '@/components/RegistoDasPaginas'
+import { ArquivosNoIphone } from '@/components/ArquivosNoIphone'
 
 export const metadata: Metadata = {
   title: 'Santtify',
@@ -82,6 +83,8 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
       <body>
         {/* As páginas por onde se passa, para o Voltar de cada uma ir à anterior (11/10). */}
         <RegistoDasPaginas />
+        {/* No iPhone, os arquivos da pasta Downloads deixam de ficar apagados (16/10). */}
+        <ArquivosNoIphone />
         <UmSomDeCadaVez />
         <ProvedorDeAuth>
           <PainelPersistente>{children}</PainelPersistente>

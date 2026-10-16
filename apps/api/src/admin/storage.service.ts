@@ -45,6 +45,29 @@ const PERMITIDOS: Record<string, { kind: MediaKind; exts: string[] }> = {
   'application/pdf': { kind: MediaKind.DOCUMENT, exts: ['.pdf'] },
 }
 
+/**
+ * O tipo de um arquivo pelos primeiros bytes. Só os que o site aceita; o
+ * resto devolve nulo e é recusado como antes. Ver `identificar`.
+ */
+function tipoPeloConteudo(dados: Buffer | undefined): string | null {
+  if (!dados || dados.length < 12) return null
+  const texto = (inicio: number, fim: number) => dados.subarray(inicio, fim).toString('latin1')
+  if (dados[0] === 0xff && dados[1] === 0xd8 && dados[2] === 0xff) return 'image/jpeg'
+  if (texto(0, 8) === '\x89PNG\r\n\x1a\n') return 'image/png'
+  if (texto(0, 4) === 'RIFF' && texto(8, 12) === 'WEBP') return 'image/webp'
+  if (texto(0, 4) === 'RIFF' && texto(8, 12) === 'WAVE') return 'audio/wav'
+  if (texto(0, 5) === '%PDF-') return 'application/pdf'
+  if (texto(0, 3) === 'ID3' || (dados[0] === 0xff && (dados[1] & 0xe0) === 0xe0)) return 'audio/mpeg'
+  if (texto(0, 4) === 'OggS') return 'audio/ogg'
+  if (texto(4, 8) === 'ftyp') {
+    const marca = texto(8, 12)
+    if (['heic', 'heix', 'hevc', 'heim', 'heis', 'mif1', 'msf1'].includes(marca)) return 'image/heic'
+    if (marca === 'M4A ') return 'audio/mp4'
+    if (marca === 'qt  ') return 'video/quicktime'
+  }
+  return null
+}
+
 /** 100 MB. Música de qualidade gravada no iPhone passa fácil de 20 MB. */
 export const TAMANHO_MAXIMO = 100 * 1024 * 1024
 
@@ -128,6 +151,26 @@ export class StorageService {
   }
 
   /**
+   * O TIPO DO ARQUIVO PELO QUE ELE É, quando o nome não diz (16/10).
+   *
+   * "Os arquivos aparecem na pasta Downloads, mas ficam desativados e não
+   * consigo tocar neles. Quando faço o mesmo pelo Firefox, consigo." Um
+   * arquivo descarregado de um link sem extensão (o ChatGPT, alguns
+   * designers) fica sem tipo no iPhone: o Firefox sabe que é imagem porque
+   * foi ele que o descarregou, o resto do aparelho não. O painel passou a
+   * deixar escolhê-lo; e aqui ele chegava como `application/octet-stream`,
+   * sem extensão, e era recusado.
+   *
+   * Pela ordem: o tipo que veio, se é um dos aceites; a extensão do nome; e,
+   * sem nenhum dos dois, os primeiros bytes do próprio arquivo.
+   */
+  identificar(arquivo: Express.Multer.File): Express.Multer.File {
+    if (PERMITIDOS[arquivo.mimetype]) return arquivo
+    const tipo = this.tipoPelaExtensao(arquivo.originalname) ?? tipoPeloConteudo(arquivo.buffer)
+    return tipo ? ({ ...arquivo, mimetype: tipo } as Express.Multer.File) : arquivo
+  }
+
+  /**
    * Conserta o nome do arquivo enviado.
    *
    * O Multer entrega `originalname` interpretado como latin1, então um arquivo
@@ -162,6 +205,7 @@ export class StorageService {
    * imprevisíveis conforme o aparelho.
    */
   async salvarComoPdf(arquivo: Express.Multer.File): Promise<ArquivoSalvo> {
+    arquivo = this.identificar(arquivo)
     if (arquivo.mimetype === 'application/pdf') return this.salvar(arquivo)
 
     if (this.tipoDe(arquivo.mimetype) !== MediaKind.IMAGE) {
@@ -316,16 +360,12 @@ export class StorageService {
   }
 
   async salvar(arquivo: Express.Multer.File): Promise<ArquivoSalvo> {
-    const generico = arquivo.mimetype === 'application/octet-stream' || !arquivo.mimetype
-    if (generico) {
-      const adivinhado = this.tipoPelaExtensao(arquivo.originalname)
-      if (adivinhado) arquivo = { ...arquivo, mimetype: adivinhado } as Express.Multer.File
-    }
+    arquivo = this.identificar(arquivo)
 
     const permitido = PERMITIDOS[arquivo.mimetype]
     if (!permitido) {
       throw new BadRequestException(
-        `Tipo de arquivo não aceito (${arquivo.mimetype}). Envie áudio, vídeo ou imagem.`,
+        'Este arquivo não é uma imagem, áudio, vídeo ou PDF que o site aceite. Envie JPG, PNG, HEIC, WebP, MP3, M4A, MP4 ou PDF.',
       )
     }
     if (arquivo.size > TAMANHO_MAXIMO) {

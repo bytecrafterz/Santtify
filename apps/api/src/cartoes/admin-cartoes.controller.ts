@@ -202,6 +202,8 @@ export class AdminCartoesController {
   @UseInterceptors(FileInterceptor('file', { limits: { fileSize: TAMANHO_MAXIMO } }))
   async enviarArte(@Param('id') id: string, @UploadedFile() file: Express.Multer.File) {
     if (!file?.buffer?.length) throw new BadRequestException('Nenhum arquivo recebido.')
+    // O PDF do designer sem extensão, vindo do app Arquivos, também é PDF (16/10).
+    file = this.storage.identificar(file)
 
     /**
      * DOIS CAMINHOS, e a diferença é a qualidade final.

@@ -514,10 +514,13 @@ function EditorDoModelo({
 
         <div className="painel-modelo-folha">
           <FolhaDeReferencia modelo={campos} />
+          {/* PDF também: o servidor aceita o PDF do designer desde sempre
+              (ver `enviarArte`), mas aqui só se podia escolher imagem, e no
+              iPhone o PDF ficava apagado na pasta (16/10). */}
           <input
             ref={ficheiro}
             type="file"
-            accept="image/*"
+            accept="image/*,application/pdf,.pdf"
             className="apenas-leitor-de-ecra"
             onChange={(e) => {
               const f = e.target.files?.[0]
@@ -537,7 +540,9 @@ function EditorDoModelo({
                 ? 'Trocar arte'
                 : 'Enviar arte'}
           </button>
-          <p className="painel-exemplo">A arte precisa de 2480px de largura para os 300 dpi.</p>
+          <p className="painel-exemplo">
+            O PDF do designer, ou uma imagem com 2480px de largura para os 300 dpi.
+          </p>
         </div>
       </div>
 
