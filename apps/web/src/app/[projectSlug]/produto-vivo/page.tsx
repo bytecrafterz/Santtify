@@ -30,6 +30,26 @@ import { Voltar } from '@/components/Voltar'
  */
 const GRUPO_PV = process.env.NEXT_PUBLIC_PV_GRUPO_URL ?? ''
 
+const PROJETO_PADRAO = process.env.NEXT_PUBLIC_PROJETO_PADRAO ?? 'jesus-alfabeto-saudavel'
+
+/**
+ * O PRODUTO VIVO É UM SÓ, E APARECE EM TODOS OS PROJETOS.
+ *
+ * Ele apanhou-o em 20/10, no Minha Identidade: "o produto vivo não está on!".
+ * Cada projeto ganha o seu Produto Vivo vazio na primeira vez que o painel é
+ * aberto, e as publicações só existiam no Jesus Alfabeto Saudável — nos
+ * projetos novos a página mostrava o botão do grupo e mais nada.
+ *
+ * O Produto Vivo é a tecnologia dele, não um conteúdo de cada projeto. Um
+ * projeto sem publicações próprias mostra as do projeto padrão, e ele edita
+ * num lugar só. Se um dia preencher as de um projeto, são essas que aparecem.
+ */
+async function publicacoesDoPv(projectSlug: string) {
+  const proprio = await api.conteudo(projectSlug, 'produto-vivo').catch(() => null)
+  if (projectSlug === PROJETO_PADRAO || (proprio && proprio.content.blocks.length > 0)) return proprio
+  return (await api.conteudo(PROJETO_PADRAO, 'produto-vivo').catch(() => null)) ?? proprio
+}
+
 /**
  * O CARTÃO DE PARTILHA DO PRODUTO VIVO É O PRODUTO VIVO.
  *
@@ -48,7 +68,7 @@ export async function generateMetadata({
   params: Promise<{ projectSlug: string }>
 }): Promise<Metadata> {
   const { projectSlug } = await params
-  const pv = await api.conteudo(projectSlug, 'produto-vivo').catch(() => null)
+  const pv = await publicacoesDoPv(projectSlug)
   const arte = pv?.content.blocks.find((b) => b.arte)?.arte ?? pv?.content.coverUrl ?? undefined
 
   const descricao =
@@ -81,14 +101,25 @@ export default async function PaginaProdutoVivo({
   const { projectSlug } = await params
   const project = await api.projeto(projectSlug)
 
-  const cats = await api.categorias(projectSlug).catch(() => null)
-
   /**
    * As publicações do Produto Vivo. Se falharem, a página abre à mesma com o
    * grupo e a nota da patente: o convite às empresas é o que esta página existe
    * para dar, e não pode depender de já haver conteúdo preenchido.
    */
-  const pv = await api.conteudo(projectSlug, 'produto-vivo').catch(() => null)
+  const pv = await publicacoesDoPv(projectSlug)
+
+  /**
+   * SÓ O KARAOKÊ VAI PARA O PROJETO DONO DAS PUBLICAÇÕES.
+   *
+   * O karaokê só abre debaixo do projeto a que a faixa pertence; com o slug
+   * daqui, a publicação emprestada do projeto padrão dava "Karaokê não
+   * encontrado". O resto fica neste projeto: o selo PV e o link partilhado
+   * trazem a pessoa de volta a esta página, e as visitas contam aqui — contá-
+   * las no projeto padrão engordaria os visitantes dele com gente que nunca lá
+   * entrou.
+   */
+  const donoDoPv = pv?.project.slug ?? projectSlug
+  const cats = await api.categorias(projectSlug).catch(() => null)
 
   // Aceita só convite de grupo do WhatsApp. Um endereço qualquer colado aqui
   // por engano viraria um botão levando a lugar nenhum, numa página que é a
@@ -147,6 +178,7 @@ export default async function PaginaProdutoVivo({
           blocos={pv.content.blocks}
           projectId={project?.id ?? ''}
           projectSlug={projectSlug}
+          projetoDoKaraoke={donoDoPv}
           categorias={cats?.categorias ?? []}
           publicacaoUnica
         />

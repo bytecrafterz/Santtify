@@ -24,6 +24,7 @@ export function IntroducaoEmCartoes({
   blocos,
   projectId,
   projectSlug,
+  projetoDoKaraoke,
   categorias = [],
   publicacaoUnica = false,
 }: {
@@ -34,6 +35,8 @@ export function IntroducaoEmCartoes({
   blocos: Bloco[]
   projectId: string
   projectSlug: string
+  /** O dono das faixas, quando não é este projeto. Ver PublicacaoDaLetra. */
+  projetoDoKaraoke?: string
   /** As categorias do projeto, para o filtro do tocador. */
   categorias?: Array<{ slug: string; name: string }>
   /**
@@ -87,6 +90,7 @@ export function IntroducaoEmCartoes({
           projectId={projectId}
           contentId={contentId}
           projectSlug={projectSlug}
+          projetoDoKaraoke={projetoDoKaraoke}
           ligacao={`/${projectSlug}/produto-vivo`}
           ancora={`publicacao-${contentId}`}
           categorias={categorias}
@@ -109,6 +113,7 @@ export function IntroducaoEmCartoes({
           projectId={projectId}
           contentId={contentId}
           projectSlug={projectSlug}
+          projetoDoKaraoke={projetoDoKaraoke}
           /*
             O LINK DA INTRODUÇÃO TAMBÉM IDENTIFICA A PUBLICAÇÃO.
 

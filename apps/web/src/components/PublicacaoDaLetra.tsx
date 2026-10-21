@@ -35,6 +35,7 @@ export function PublicacaoDaLetra({
   projectId,
   contentId,
   projectSlug,
+  projetoDoKaraoke = projectSlug,
   ligacao,
   ancora,
   categorias,
@@ -59,6 +60,12 @@ export function PublicacaoDaLetra({
   /** A letra a que esta publicação pertence — a contagem de escutas é dela. */
   contentId: string
   projectSlug: string
+  /**
+   * O projeto a que a faixa pertence, para o link do karaokê. O karaokê só abre
+   * debaixo do dono da faixa; é outro que não este só no Produto Vivo de um
+   * projeto que mostra as publicações do projeto padrão.
+   */
+  projetoDoKaraoke?: string
   ligacao: string
   ancora: string
   /** As categorias do projeto, para o menu do tocador. */
@@ -189,7 +196,7 @@ export function PublicacaoDaLetra({
               que ele publicou a letra sincronizada.
             */}
             {bloco.karaoke && (
-              <Link className="entrar-no-karaoke" href={`/${projectSlug}/karaoke/${bloco.id}`}>
+              <Link className="entrar-no-karaoke" href={`/${projetoDoKaraoke}/karaoke/${bloco.id}`}>
                 <span className="convite-karaoke">
                   <span aria-hidden>🎤</span> Cantar no Modo Karaokê
                 </span>
